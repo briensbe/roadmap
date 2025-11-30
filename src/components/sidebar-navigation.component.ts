@@ -10,7 +10,8 @@ import {
   Building2,
   Settings,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Gauge
 } from 'lucide-angular';
 import { SidebarService } from '../services/sidebar.service';
 
@@ -223,10 +224,12 @@ export class SidebarNavigationComponent {
   Settings = Settings;
   ChevronLeft = ChevronLeft;
   ChevronRight = ChevronRight;
+  Gauge = Gauge;
 
   navigationItems: NavigationItem[] = [
     { label: 'Tableau de bord', icon: this.LayoutDashboard },
     { label: 'Planification', icon: this.Calendar, route: '/planification' },
+    { label: 'Capacité', icon: this.Gauge, route: '/capacite' },
     { label: 'Projets', icon: this.FolderKanban },
     { label: 'Ressources', icon: this.Users, route: '/ressources' },
     { label: 'Organisation', icon: this.Building2, route: '/organisation' },
