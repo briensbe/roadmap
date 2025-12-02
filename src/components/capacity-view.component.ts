@@ -182,6 +182,8 @@ interface TeamRow {
       padding: 20px;
       background: #f5f7fa;
       min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
 
     .capacity-header {
@@ -189,6 +191,7 @@ interface TeamRow {
       justify-content: space-between;
       align-items: center;
       margin-bottom: 24px;
+      flex-shrink: 0;
     }
 
     .header-actions {
@@ -205,6 +208,7 @@ interface TeamRow {
       background: white;
       border-radius: 8px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      flex-shrink: 0;
     }
 
     .date-navigation {
@@ -212,46 +216,61 @@ interface TeamRow {
       gap: 8px;
     }
 
+    /* Main scrollable container */
     .calendar-grid-wrapper {
-      overflow-x: auto;
+      overflow: auto; /* Both X and Y scrolling */
       background: white;
       border-radius: 8px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      flex: 1;
+      position: relative;
+      max-height: calc(100vh - 200px); /* Adjust based on header heights */
     }
 
     .calendar-grid {
-      min-width: 1200px;
-      display: flex;
-      flex-direction: column;
+      display: inline-block; /* Allows content to expand horizontally */
+      min-width: 100%;
     }
 
+    /* Header Row */
     .grid-header {
-      display: grid;
-      grid-template-columns: 300px 1fr;
+      display: flex;
       background: #f8fafc;
       border-bottom: 2px solid #e2e8f0;
       font-weight: 600;
       position: sticky;
       top: 0;
-      z-index: 100;
+      z-index: 20; /* Higher than content, lower than corner */
     }
 
+    /* Top Left Corner - Sticky both ways */
     .row-label-header {
+      position: sticky;
+      left: 0;
+      z-index: 30; /* Highest priority */
+      background: #f8fafc; /* Match header background */
+      min-width: 300px;
+      width: 300px;
       padding: 12px 16px;
       border-right: 1px solid #e2e8f0;
+      box-sizing: border-box;
     }
 
+    /* Weeks Header Container */
     .weeks-header {
       display: flex;
-      overflow-x: auto;
+      /* No overflow-x here, it flows with the grid */
     }
 
     .week-header {
       min-width: 80px;
+      width: 80px;
       padding: 8px;
       text-align: center;
       border-right: 1px solid #e2e8f0;
       font-size: 12px;
+      box-sizing: border-box;
+      background: #f8fafc;
     }
 
     .week-header.current-week {
@@ -270,10 +289,12 @@ interface TeamRow {
       color: #6b7280;
     }
 
+    /* Rows */
     .team-row, .resource-row {
-      display: grid;
-      grid-template-columns: 300px 1fr;
+      display: flex;
       border-bottom: 1px solid #e2e8f0;
+      width: max-content; /* Ensure full width of content */
+      min-width: 100%;
     }
 
     .team-row {
@@ -289,15 +310,23 @@ interface TeamRow {
       background: #f9fafb;
     }
 
+    /* Sticky Left Column for Rows */
     .row-label {
+      position: sticky;
+      left: 0;
+      z-index: 10; /* Above scrolling content */
+      min-width: 300px;
+      width: 300px;
       padding: 12px 16px;
       border-right: 1px solid #e2e8f0;
       display: flex;
       align-items: center;
       gap: 8px;
+      box-sizing: border-box;
     }
 
     .team-label {
+      background: #f9fafb; /* Match row background */
       cursor: pointer;
       font-weight: 600;
       user-select: none;
@@ -307,13 +336,18 @@ interface TeamRow {
       background: #f3f4f6;
     }
 
+    .resource-label {
+      background: white; /* Match row background */
+      padding-left: 32px;
+    }
+
+    .resource-row:hover .resource-label {
+      background: #f9fafb; /* Match hover state */
+    }
+
     .expand-icon {
       font-size: 12px;
       color: #6b7280;
-    }
-
-    .resource-label {
-      padding-left: 32px;
     }
 
     .resource-type-icon {
@@ -322,6 +356,9 @@ interface TeamRow {
 
     .resource-name {
       flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .btn-add {
@@ -345,17 +382,19 @@ interface TeamRow {
       background: #dc2626;
     }
 
+    /* Weeks Content */
     .weeks-content {
       display: flex;
-      overflow-x: auto;
-      user-select: none;
+      /* No overflow-x here */
     }
 
     .week-cell {
       min-width: 80px;
+      width: 80px;
       padding: 8px;
       border-right: 1px solid #e2e8f0;
       text-align: center;
+      box-sizing: border-box;
     }
 
     .team-cell {
