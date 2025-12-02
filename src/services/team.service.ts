@@ -5,6 +5,7 @@ import { Equipe, Role, Personne, Capacite } from '../models/types';
 export interface EquipeResource {
     type: 'role' | 'personne';
     id: string;
+    uniqueId: string;
     nom: string;
     prenom?: string;
     jours_par_semaine: number;
@@ -32,7 +33,7 @@ export class TeamService {
         // Get roles attached to this team
         const { data: roleAttachments, error: roleError } = await this.supabase.client
             .from('role_attachments')
-            .select('role_id, roles(*)')
+            .select('id, role_id, roles(*)')
             .eq('equipe_id', equipeId);
 
         if (!roleError && roleAttachments) {
@@ -41,6 +42,7 @@ export class TeamService {
                     resources.push({
                         type: 'role',
                         id: attachment.roles.id,
+                        uniqueId: attachment.id,
                         nom: attachment.roles.nom,
                         jours_par_semaine: attachment.roles.jours_par_semaine
                     });
@@ -59,6 +61,7 @@ export class TeamService {
                 resources.push({
                     type: 'personne',
                     id: personne.id,
+                    uniqueId: personne.id,
                     nom: personne.nom,
                     prenom: personne.prenom,
                     jours_par_semaine: personne.jours_par_semaine

@@ -8,6 +8,7 @@ import { Equipe, Role, Personne, Capacite } from '../models/types';
 interface ResourceRow {
   type: 'role' | 'personne';
   id: string;
+  uniqueId: string;
   label: string;
   equipeId: string;
   weeks: Map<string, number>;
@@ -585,6 +586,7 @@ export class CapacityViewComponent implements OnInit {
           resourceRows.push({
             type: resource.type,
             id: resource.id,
+            uniqueId: resource.uniqueId,
             label: resource.type === 'role'
               ? resource.nom
               : `${resource.prenom} ${resource.nom}`,
@@ -690,7 +692,7 @@ export class CapacityViewComponent implements OnInit {
   onMouseMove(event: MouseEvent, resource: ResourceRow) {
     if (!this.isDragging || !this.dragStartResource) return;
 
-    if (resource.id !== this.dragStartResource.id) return;
+    if (resource.uniqueId !== this.dragStartResource.uniqueId) return;
 
     const target = event.target as HTMLElement;
     const cell = target.closest('.week-cell');
@@ -727,7 +729,8 @@ export class CapacityViewComponent implements OnInit {
 
   isCellSelected(resource: ResourceRow, week: Date): boolean {
     return this.selectedCells.some(
-      s => s.resource.id === resource.id && s.week.getTime() === week.getTime()
+      s => s.resource.uniqueId === resource.uniqueId &&
+        s.week.getTime() === week.getTime()
     );
   }
 
