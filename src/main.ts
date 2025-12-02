@@ -34,12 +34,14 @@ const routes: Routes = [
     .app-layout {
       display: flex;
       min-height: 100vh;
+      overflow-x: hidden;
     }
 
     .main-content {
       flex: 1;
       margin-left: 256px;
       transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow-x: hidden;
     }
 
     .main-content.sidebar-collapsed {

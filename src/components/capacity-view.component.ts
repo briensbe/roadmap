@@ -41,25 +41,16 @@ interface TeamRow {
         </div>
       </div>
 
-      <div class="calendar-grid-wrapper">
-        <div class="calendar-grid">
-          <div class="grid-header sticky-header">
-            <div class="row-label-header">
-              <span>Équipes / Ressources</span>
-            </div>
-            <div class="weeks-header">
-              <div *ngFor="let week of displayedWeeks"
-                   class="week-header"
-                   [class.current-week]="isCurrentWeek(week)">
-                <div class="week-date">{{ formatWeekHeader(week) }}</div>
-                <div class="week-number">S{{ getWeekNumber(week) }}</div>
-              </div>
-            </div>
+      <div class="calendar-wrapper">
+        <!-- Fixed Left Column: Labels -->
+        <div class="labels-column">
+          <div class="labels-header">
+            <span>Équipes / Ressources</span>
           </div>
-
+          
           <ng-container *ngFor="let teamRow of teamRows">
-            <div class="team-row">
-              <div class="row-label team-label" (click)="toggleTeam(teamRow)">
+            <div class="team-label-row">
+              <div class="team-label" (click)="toggleTeam(teamRow)">
                 <span class="expand-icon">{{ teamRow.expanded ? '▼' : '▶' }}</span>
                 <strong>{{ teamRow.equipe.nom }}</strong>
                 <button class="btn btn-xs btn-add" 
@@ -67,14 +58,11 @@ interface TeamRow {
                   + Ressource
                 </button>
               </div>
-              <div class="weeks-content">
-                <div *ngFor="let week of displayedWeeks" class="week-cell team-cell"></div>
-              </div>
             </div>
 
             <ng-container *ngIf="teamRow.expanded">
-              <div *ngFor="let resource of teamRow.resources" class="resource-row">
-                <div class="row-label resource-label">
+              <div *ngFor="let resource of teamRow.resources" class="resource-label-row">
+                <div class="resource-label">
                   <span class="resource-type-icon">{{ resource.type === 'role' ? '👤' : '👨' }}</span>
                   <span class="resource-name">{{ resource.label }}</span>
                   <button class="btn btn-xs btn-danger" 
@@ -82,27 +70,53 @@ interface TeamRow {
                     ×
                   </button>
                 </div>
-                <div class="weeks-content"
-                     (mousedown)="onMouseDown($event, resource)"
-                     (mousemove)="onMouseMove($event, resource)"
-                     (mouseup)="onMouseUp()"
-                     (mouseleave)="onMouseUp()">
-                  <div *ngFor="let week of displayedWeeks; let i = index"
-                       class="week-cell resource-cell"
-                       [class.selected]="isCellSelected(resource, week)"
-                       [class.has-capacity]="getCapacite(resource, week) > 0"
-                       [attr.data-week-index]="i">
-                    <div class="cell-content" *ngIf="getCapacite(resource, week) > 0">
-                      {{ getCapacite(resource, week) }}
-                    </div>
+              </div>
+            </ng-container>
+          </ng-container>
+
+          <div *ngIf="teamRows.length === 0" class="empty-state-label">
+            <p>Aucune équipe</p>
+          </div>
+        </div>
+
+        <!-- Scrollable Right Column: Weeks -->
+        <div class="weeks-column">
+          <div class="weeks-header">
+            <div *ngFor="let week of displayedWeeks"
+                 class="week-header"
+                 [class.current-week]="isCurrentWeek(week)">
+              <div class="week-date">{{ formatWeekHeader(week) }}</div>
+              <div class="week-number">S{{ getWeekNumber(week) }}</div>
+            </div>
+          </div>
+
+          <ng-container *ngFor="let teamRow of teamRows">
+            <div class="team-weeks-row">
+              <div *ngFor="let week of displayedWeeks" class="week-cell team-cell"></div>
+            </div>
+
+            <ng-container *ngIf="teamRow.expanded">
+              <div *ngFor="let resource of teamRow.resources" 
+                   class="resource-weeks-row"
+                   (mousedown)="onMouseDown($event, resource)"
+                   (mousemove)="onMouseMove($event, resource)"
+                   (mouseup)="onMouseUp()"
+                   (mouseleave)="onMouseUp()">
+                <div *ngFor="let week of displayedWeeks; let i = index"
+                     class="week-cell resource-cell"
+                     [class.selected]="isCellSelected(resource, week)"
+                     [class.has-capacity]="getCapacite(resource, week) > 0"
+                     [attr.data-week-index]="i">
+                  <div class="cell-content" *ngIf="getCapacite(resource, week) > 0">
+                    {{ getCapacite(resource, week) }}
                   </div>
                 </div>
               </div>
             </ng-container>
           </ng-container>
 
-          <div *ngIf="teamRows.length === 0" class="empty-state">
-            <p>Aucune équipe trouvée. Créez des équipes dans la vue Organisation.</p>
+          <div *ngIf="teamRows.length === 0" class="empty-state-weeks">
+            <p>Aucune donnée</p>
           </div>
         </div>
       </div>
@@ -184,6 +198,7 @@ interface TeamRow {
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      overflow-x: hidden; /* Prevent horizontal scroll of entire container */
     }
 
     .capacity-header {
@@ -191,7 +206,6 @@ interface TeamRow {
       justify-content: space-between;
       align-items: center;
       margin-bottom: 24px;
-      flex-shrink: 0;
     }
 
     .header-actions {
@@ -208,7 +222,6 @@ interface TeamRow {
       background: white;
       border-radius: 8px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-      flex-shrink: 0;
     }
 
     .date-navigation {
@@ -216,138 +229,79 @@ interface TeamRow {
       gap: 8px;
     }
 
-    /* Main scrollable container */
-    .calendar-grid-wrapper {
-      overflow: auto; /* Both X and Y scrolling */
+    /* Two-column layout wrapper */
+    .calendar-wrapper {
+      display: flex;
       background: white;
       border-radius: 8px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-      flex: 1;
-      position: relative;
-      max-height: calc(100vh - 200px); /* Adjust based on header heights */
+      overflow: hidden;
+      max-height: calc(100vh - 200px);
+      position: relative; /* Ensure it stays in place */
     }
 
-    .calendar-grid {
-      display: inline-block; /* Allows content to expand horizontally */
-      min-width: 100%;
+    /* Fixed left column for labels */
+    .labels-column {
+      width: 300px;
+      flex-shrink: 0;
+      border-right: 2px solid #e2e8f0;
+      overflow-y: auto;
+      overflow-x: hidden;
     }
 
-    /* Header Row */
-    .grid-header {
-      display: flex;
+    .labels-header {
+      padding: 12px 16px;
       background: #f8fafc;
       border-bottom: 2px solid #e2e8f0;
       font-weight: 600;
       position: sticky;
       top: 0;
-      z-index: 20; /* Higher than content, lower than corner */
-    }
-
-    /* Top Left Corner - Sticky both ways */
-    .row-label-header {
-      position: sticky;
-      left: 0;
-      z-index: 30; /* Highest priority */
-      background: #f8fafc; /* Match header background */
-      min-width: 300px;
-      width: 300px;
-      padding: 12px 16px;
-      border-right: 1px solid #e2e8f0;
-      box-sizing: border-box;
-    }
-
-    /* Weeks Header Container */
-    .weeks-header {
-      display: flex;
-      /* No overflow-x here, it flows with the grid */
-    }
-
-    .week-header {
-      min-width: 80px;
-      width: 80px;
-      padding: 8px;
-      text-align: center;
-      border-right: 1px solid #e2e8f0;
-      font-size: 12px;
-      box-sizing: border-box;
-      background: #f8fafc;
-    }
-
-    .week-header.current-week {
-      background: #dbeafe;
-      border-left: 2px solid #3b82f6;
-      border-right: 2px solid #3b82f6;
-    }
-
-    .week-date {
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-
-    .week-number {
-      font-size: 11px;
-      color: #6b7280;
-    }
-
-    /* Rows */
-    .team-row, .resource-row {
-      display: flex;
-      border-bottom: 1px solid #e2e8f0;
-      width: max-content; /* Ensure full width of content */
-      min-width: 100%;
-    }
-
-    .team-row {
-      background: #f9fafb;
-    }
-
-    .resource-row {
-      background: white;
-      transition: background 0.15s ease;
-    }
-
-    .resource-row:hover {
-      background: #f9fafb;
-    }
-
-    /* Sticky Left Column for Rows */
-    .row-label {
-      position: sticky;
-      left: 0;
-      z-index: 10; /* Above scrolling content */
-      min-width: 300px;
-      width: 300px;
-      padding: 12px 16px;
-      border-right: 1px solid #e2e8f0;
+      z-index: 10;
+      min-height: 60px;
       display: flex;
       align-items: center;
-      gap: 8px;
-      box-sizing: border-box;
+    }
+
+    .team-label-row {
+      border-bottom: 1px solid #e2e8f0;
+      background: #f9fafb;
     }
 
     .team-label {
-      background: #f9fafb; /* Match row background */
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
       cursor: pointer;
       font-weight: 600;
       user-select: none;
+      min-height: 48px;
     }
 
     .team-label:hover {
       background: #f3f4f6;
     }
 
-    .resource-label {
-      background: white; /* Match row background */
-      padding-left: 32px;
-    }
-
-    .resource-row:hover .resource-label {
-      background: #f9fafb; /* Match hover state */
-    }
-
     .expand-icon {
       font-size: 12px;
       color: #6b7280;
+    }
+
+    .resource-label-row {
+      border-bottom: 1px solid #e2e8f0;
+      background: white;
+    }
+
+    .resource-label-row:hover {
+      background: #f9fafb;
+    }
+
+    .resource-label {
+      padding: 12px 16px 12px 32px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 48px;
     }
 
     .resource-type-icon {
@@ -382,10 +336,75 @@ interface TeamRow {
       background: #dc2626;
     }
 
-    /* Weeks Content */
-    .weeks-content {
+    .empty-state-label {
+      padding: 40px 20px;
+      text-align: center;
+      color: #6b7280;
+    }
+
+    /* Scrollable right column for weeks */
+    .weeks-column {
+      flex: 1;
+      overflow-x: auto;
+      overflow-y: auto;
+    }
+
+    .weeks-header {
       display: flex;
-      /* No overflow-x here */
+      background: #f8fafc;
+      border-bottom: 2px solid #e2e8f0;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      min-height: 60px;
+    }
+
+    .week-header {
+      min-width: 80px;
+      width: 80px;
+      padding: 8px;
+      text-align: center;
+      border-right: 1px solid #e2e8f0;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .week-header.current-week {
+      background: #dbeafe;
+      border-left: 2px solid #3b82f6;
+      border-right: 2px solid #3b82f6;
+    }
+
+    .week-date {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .week-number {
+      font-size: 11px;
+      color: #6b7280;
+    }
+
+    .team-weeks-row {
+      display: flex;
+      border-bottom: 1px solid #e2e8f0;
+      background: #f9fafb;
+      min-height: 48px;
+    }
+
+    .resource-weeks-row {
+      display: flex;
+      border-bottom: 1px solid #e2e8f0;
+      background: white;
+      min-height: 48px;
+      user-select: none;
+    }
+
+    .resource-weeks-row:hover {
+      background: #f9fafb;
     }
 
     .week-cell {
@@ -394,7 +413,10 @@ interface TeamRow {
       padding: 8px;
       border-right: 1px solid #e2e8f0;
       text-align: center;
-      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
     }
 
     .team-cell {
@@ -431,6 +453,12 @@ interface TeamRow {
       font-size: 13px;
     }
 
+    .empty-state-weeks {
+      padding: 40px;
+      text-align: center;
+      color: #6b7280;
+    }
+
     .selection-toolbar {
       position: fixed;
       bottom: 20px;
@@ -462,12 +490,6 @@ interface TeamRow {
       padding: 6px 12px;
       border: 1px solid #d1d5db;
       border-radius: 6px;
-    }
-
-    .empty-state {
-      padding: 40px;
-      text-align: center;
-      color: #6b7280;
     }
 
     .modal-overlay {
@@ -594,7 +616,7 @@ export class CapacityViewComponent implements OnInit {
 
     const firstWeek = this.calendarService.getWeekStart(startDate);
 
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < 32; i++) {
       const week = new Date(firstWeek);
       week.setDate(week.getDate() + (i * 7));
       this.displayedWeeks.push(week);
