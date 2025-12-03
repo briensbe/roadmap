@@ -12,6 +12,7 @@ interface ResourceRow {
   label: string;
   equipeId: string;
   weeks: Map<string, number>;
+  jours_par_semaine: number;
 }
 
 interface TeamRow {
@@ -108,7 +109,8 @@ interface TeamRow {
                      [class.has-capacity]="getCapacite(resource, week) > 0"
                      [attr.data-week-index]="i">
                   <div class="cell-content" *ngIf="getCapacite(resource, week) > 0">
-                    {{ getCapacite(resource, week) }}
+                    <div class="capacity-value">{{ getCapacite(resource, week) }}</div>
+                    <div class="days-value">{{ (getCapacite(resource, week) * resource.jours_par_semaine) | number:'1.1-1' }}j</div>
                   </div>
                 </div>
               </div>
@@ -456,7 +458,21 @@ interface TeamRow {
     }
 
     .cell-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      line-height: 1.1;
+    }
+
+    .capacity-value {
       font-size: 13px;
+      font-weight: 600;
+    }
+
+    .days-value {
+      font-size: 10px;
+      opacity: 0.9;
     }
 
     .empty-state-weeks {
@@ -672,7 +688,8 @@ export class CapacityViewComponent implements OnInit {
               ? resource.nom
               : `${resource.prenom} ${resource.nom}`,
             equipeId: equipe.id!,
-            weeks
+            weeks,
+            jours_par_semaine: resource.jours_par_semaine
           });
         }
 
