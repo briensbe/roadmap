@@ -835,7 +835,8 @@ export class CapacityViewComponent implements OnInit {
   }
 
   async applyBulkCapacite() {
-    if (this.selectedCells.length === 0 || !this.bulkCapaciteValue) return;
+    // Autorise 0, bloque seulement null et undefined
+    if (this.selectedCells.length === 0 || this.bulkCapaciteValue == null) return;
 
     try {
       for (const cell of this.selectedCells) {
