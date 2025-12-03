@@ -82,6 +82,25 @@ export class TeamService {
         return data || [];
     }
 
+    async getAvailableRolesForEquipe(equipeId: string): Promise<Role[]> {
+        // Get all roles
+        const allRoles = await this.getAllRoles();
+
+        // Get roles already attached to THIS specific team
+        const { data: attachments, error } = await this.supabase.client
+            .from('role_attachments')
+            .select('role_id')
+            .eq('equipe_id', equipeId);
+
+        if (error) throw error;
+
+        // Extract role IDs already attached to this team
+        const attachedRoleIds = new Set((attachments || []).map(a => a.role_id));
+
+        // Filter out roles that are already attached to THIS team
+        return allRoles.filter(role => !attachedRoleIds.has(role.id!));
+    }
+
     async getAllPersonnes(): Promise<Personne[]> {
         const { data, error } = await this.supabase.client
             .from('personnes')
@@ -100,7 +119,13 @@ export class TeamService {
                 equipe_id: equipeId
             });
 
-        if (error) throw error;
+        if (error) {
+            // Check if it's a unique constraint violation
+            if (error.code === '23505' || error.message.includes('unique_role_per_team')) {
+                throw new Error('Ce rôle est déjà attaché à cette équipe.');
+            }
+            throw error;
+        }
     }
 
     async addPersonneToEquipe(equipeId: string, personneId: string): Promise<void> {

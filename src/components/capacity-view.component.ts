@@ -694,11 +694,14 @@ export class CapacityViewComponent implements OnInit {
     teamRow.expanded = !teamRow.expanded;
   }
 
-  openAddResourceModal(equipe: Equipe) {
+  async openAddResourceModal(equipe: Equipe) {
     this.selectedEquipe = equipe;
     this.resourceTypeToAdd = 'role';
     this.selectedResourceId = '';
     this.showAddResourceModal = true;
+
+    // Load only available roles (not already attached to this team)
+    this.availableRoles = await this.teamService.getAvailableRolesForEquipe(equipe.id!);
   }
 
   async addResourceToTeam() {
@@ -713,8 +716,14 @@ export class CapacityViewComponent implements OnInit {
 
       this.showAddResourceModal = false;
       await this.loadData();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding resource:', error);
+      // Display user-friendly error message
+      if (error.message && error.message.includes('déjà attaché')) {
+        alert(error.message);
+      } else {
+        alert('Erreur lors de l\'ajout de la ressource. Veuillez réessayer.');
+      }
     }
   }
 
