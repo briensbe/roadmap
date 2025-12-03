@@ -1,12 +1,12 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { TeamService, EquipeResource } from '../services/team.service';
-import { CalendarService } from '../services/calendar.service';
-import { Equipe, Role, Personne, Capacite } from '../models/types';
+import { Component, OnInit } from "@angular/core";
+import { CommonModule } from "@angular/common";
+import { FormsModule } from "@angular/forms";
+import { TeamService, EquipeResource } from "../services/team.service";
+import { CalendarService } from "../services/calendar.service";
+import { Equipe, Role, Personne, Capacite } from "../models/types";
 
 interface ResourceRow {
-  type: 'role' | 'personne';
+  type: "role" | "personne";
   id: string;
   uniqueId: string;
   label: string;
@@ -22,7 +22,7 @@ interface TeamRow {
 }
 
 @Component({
-  selector: 'app-capacity-view',
+  selector: "app-capacity-view",
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
@@ -40,6 +40,14 @@ interface TeamRow {
           <button class="btn btn-sm btn-primary" (click)="goToToday()">Aujourd'hui</button>
           <button class="btn btn-sm" (click)="goToNextMonth()">Mois suivant →</button>
         </div>
+
+        <div class="controls-right" style="display:flex;align-items:center;gap:12px;">
+          <label class="ios-switch" title="Afficher les jours (j)">
+            <input type="checkbox" [(ngModel)]="showDaysInCells" />
+            <span class="ios-slider"></span>
+          </label>
+          <span style="user-select:none;">Afficher les jours (j) dans les cellules</span>
+        </div>
       </div>
 
       <div class="calendar-wrapper">
@@ -48,14 +56,16 @@ interface TeamRow {
           <div class="labels-header">
             <span>Équipes / Ressources</span>
           </div>
-          
+
           <ng-container *ngFor="let teamRow of teamRows">
             <div class="team-label-row">
               <div class="team-label" (click)="toggleTeam(teamRow)">
-                <span class="expand-icon">{{ teamRow.expanded ? '▼' : '▶' }}</span>
+                <span class="expand-icon">{{ teamRow.expanded ? "▼" : "▶" }}</span>
                 <strong>{{ teamRow.equipe.nom }}</strong>
-                <button class="btn btn-xs btn-add" 
-                        (click)="openAddResourceModal(teamRow.equipe); $event.stopPropagation()">
+                <button
+                  class="btn btn-xs btn-add"
+                  (click)="openAddResourceModal(teamRow.equipe); $event.stopPropagation()"
+                >
                   + Ressource
                 </button>
               </div>
@@ -64,12 +74,9 @@ interface TeamRow {
             <ng-container *ngIf="teamRow.expanded">
               <div *ngFor="let resource of teamRow.resources" class="resource-label-row">
                 <div class="resource-label">
-                  <span class="resource-type-icon">{{ resource.type === 'role' ? '👤' : '👨' }}</span>
+                  <span class="resource-type-icon">{{ resource.type === "role" ? "👤" : "👨" }}</span>
                   <span class="resource-name">{{ resource.label }}</span>
-                  <button class="btn btn-xs btn-danger" 
-                          (click)="removeResource(resource, teamRow.equipe)">
-                    ×
-                  </button>
+                  <button class="btn btn-xs btn-danger" (click)="removeResource(resource, teamRow.equipe)">×</button>
                 </div>
               </div>
             </ng-container>
@@ -83,9 +90,7 @@ interface TeamRow {
         <!-- Scrollable Right Column: Weeks -->
         <div class="weeks-column">
           <div class="weeks-header">
-            <div *ngFor="let week of displayedWeeks"
-                 class="week-header"
-                 [class.current-week]="isCurrentWeek(week)">
+            <div *ngFor="let week of displayedWeeks" class="week-header" [class.current-week]="isCurrentWeek(week)">
               <div class="week-date">{{ formatWeekHeader(week) }}</div>
               <div class="week-number">S{{ getWeekNumber(week) }}</div>
             </div>
@@ -97,20 +102,26 @@ interface TeamRow {
             </div>
 
             <ng-container *ngIf="teamRow.expanded">
-              <div *ngFor="let resource of teamRow.resources" 
-                   class="resource-weeks-row"
-                   (mousedown)="onMouseDown($event, resource)"
-                   (mousemove)="onMouseMove($event, resource)"
-                   (mouseup)="onMouseUp()"
-                   (mouseleave)="onMouseUp()">
-                <div *ngFor="let week of displayedWeeks; let i = index"
-                     class="week-cell resource-cell"
-                     [class.selected]="isCellSelected(resource, week)"
-                     [class.has-capacity]="getCapacite(resource, week) > 0"
-                     [attr.data-week-index]="i">
+              <div
+                *ngFor="let resource of teamRow.resources"
+                class="resource-weeks-row"
+                (mousedown)="onMouseDown($event, resource)"
+                (mousemove)="onMouseMove($event, resource)"
+                (mouseup)="onMouseUp()"
+                (mouseleave)="onMouseUp()"
+              >
+                <div
+                  *ngFor="let week of displayedWeeks; let i = index"
+                  class="week-cell resource-cell"
+                  [class.selected]="isCellSelected(resource, week)"
+                  [class.has-capacity]="getCapacite(resource, week) > 0"
+                  [attr.data-week-index]="i"
+                >
                   <div class="cell-content" *ngIf="getCapacite(resource, week) > 0">
                     <div class="capacity-value">{{ getCapacite(resource, week) }}</div>
-                    <div class="days-value">{{ (getCapacite(resource, week) * resource.jours_par_semaine) | number:'1.1-1' }}j</div>
+                    <div class="days-value" *ngIf="showDaysInCells">
+                      {{ getCapacite(resource, week) * resource.jours_par_semaine | number : "1.1-1" }}j
+                    </div>
                   </div>
                 </div>
               </div>
@@ -126,20 +137,21 @@ interface TeamRow {
       <div *ngIf="selectedCells.length > 0" class="selection-toolbar">
         <div class="selection-info">
           {{ selectedCells.length }} semaine(s) sélectionnée(s)
+          <div style="font-weight:500; font-size:13px; margin-top:6px; color:#065f46;">
+            Total jours sélectionnés: {{ totalSelectedDays | number : "1.1-1" }}j
+          </div>
         </div>
         <div class="selection-actions">
-          <input type="number"
-                 [(ngModel)]="bulkCapaciteValue"
-                 placeholder="Capacité (unités)"
-                 step="0.5"
-                 min="0"
-                 class="bulk-input">
-          <button class="btn btn-sm btn-primary" (click)="applyBulkCapacite()">
-            Appliquer
-          </button>
-          <button class="btn btn-sm btn-secondary" (click)="clearSelection()">
-            Annuler
-          </button>
+          <input
+            type="number"
+            [(ngModel)]="bulkCapaciteValue"
+            placeholder="Capacité (unités)"
+            step="0.5"
+            min="0"
+            class="bulk-input"
+          />
+          <button class="btn btn-sm btn-primary" (click)="applyBulkCapacite()">Appliquer</button>
+          <button class="btn btn-sm btn-secondary" (click)="clearSelection()">Annuler</button>
         </div>
       </div>
     </div>
@@ -186,431 +198,493 @@ interface TeamRow {
           </div>
 
           <div class="modal-actions">
-            <button class="btn btn-primary" 
-                    (click)="addResourceToTeam()"
-                    [disabled]="!selectedResourceId || (resourceTypeToAdd === 'role' && availableRoles.length === 0) || (resourceTypeToAdd === 'personne' && availablePersonnes.length === 0)">
+            <button
+              class="btn btn-primary"
+              (click)="addResourceToTeam()"
+              [disabled]="
+                !selectedResourceId ||
+                (resourceTypeToAdd === 'role' && availableRoles.length === 0) ||
+                (resourceTypeToAdd === 'personne' && availablePersonnes.length === 0)
+              "
+            >
               Ajouter
             </button>
-            <button class="btn btn-secondary" (click)="showAddResourceModal = false">
-              Annuler
-            </button>
+            <button class="btn btn-secondary" (click)="showAddResourceModal = false">Annuler</button>
           </div>
         </div>
       </div>
     </div>
   `,
-  styles: [`
-    .capacity-container {
-      padding: 20px;
-      background: #f5f7fa;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      overflow-x: hidden; /* Prevent horizontal scroll of entire container */
-    }
+  styles: [
+    `
+      .capacity-container {
+        padding: 20px;
+        background: #f5f7fa;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow-x: hidden; /* Prevent horizontal scroll of entire container */
+      }
 
-    .capacity-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-    }
+      .capacity-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+      }
 
-    .header-actions {
-      display: flex;
-      gap: 12px;
-    }
+      .header-actions {
+        display: flex;
+        gap: 12px;
+      }
 
-    .calendar-controls {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      padding: 16px;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
+      .calendar-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding: 16px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
 
-    .date-navigation {
-      display: flex;
-      gap: 8px;
-    }
+      .date-navigation {
+        display: flex;
+        gap: 8px;
+      }
 
-    /* Two-column layout wrapper */
-    .calendar-wrapper {
-      display: flex;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
-      max-height: calc(100vh - 200px);
-      position: relative; /* Ensure it stays in place */
-    }
+      /* Two-column layout wrapper */
+      .calendar-wrapper {
+        display: flex;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        max-height: calc(100vh - 200px);
+        position: relative; /* Ensure it stays in place */
+      }
 
-    /* Fixed left column for labels */
-    .labels-column {
-      width: 300px;
-      flex-shrink: 0;
-      border-right: 2px solid #e2e8f0;
-      overflow-y: auto;
-      overflow-x: hidden;
-    }
+      /* Fixed left column for labels */
+      .labels-column {
+        width: 300px;
+        flex-shrink: 0;
+        border-right: 2px solid #e2e8f0;
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
 
-    .labels-header {
-      padding: 12px 16px;
-      background: #f8fafc;
-      border-bottom: 2px solid #e2e8f0;
-      font-weight: 600;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      min-height: 60px;
-      display: flex;
-      align-items: center;
-    }
+      .labels-header {
+        padding: 12px 16px;
+        background: #f8fafc;
+        border-bottom: 2px solid #e2e8f0;
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        min-height: 60px;
+        display: flex;
+        align-items: center;
+      }
 
-    .team-label-row {
-      border-bottom: 1px solid #e2e8f0;
-      background: #f9fafb;
-    }
+      .team-label-row {
+        border-bottom: 1px solid #e2e8f0;
+        background: #f9fafb;
+      }
 
-    .team-label {
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      user-select: none;
-      min-height: 48px;
-    }
+      .team-label {
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        user-select: none;
+        min-height: 48px;
+      }
 
-    .team-label:hover {
-      background: #f3f4f6;
-    }
+      .team-label:hover {
+        background: #f3f4f6;
+      }
 
-    .expand-icon {
-      font-size: 12px;
-      color: #6b7280;
-    }
+      .expand-icon {
+        font-size: 12px;
+        color: #6b7280;
+      }
 
-    .resource-label-row {
-      border-bottom: 1px solid #e2e8f0;
-      background: white;
-    }
+      .resource-label-row {
+        border-bottom: 1px solid #e2e8f0;
+        background: white;
+      }
 
-    .resource-label-row:hover {
-      background: #f9fafb;
-    }
+      .resource-label-row:hover {
+        background: #f9fafb;
+      }
 
-    .resource-label {
-      padding: 12px 16px 12px 32px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      min-height: 48px;
-    }
+      .resource-label {
+        padding: 12px 16px 12px 32px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 48px;
+      }
 
-    .resource-type-icon {
-      font-size: 16px;
-    }
+      .resource-type-icon {
+        font-size: 16px;
+      }
 
-    .resource-name {
-      flex: 1;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+      .resource-name {
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
 
-    .btn-add {
-      margin-left: auto;
-      padding: 2px 8px;
-      font-size: 11px;
-    }
+      .btn-add {
+        margin-left: auto;
+        padding: 2px 8px;
+        font-size: 11px;
+      }
 
-    .btn-danger {
-      background: #ef4444;
-      color: white;
-      border: none;
-      padding: 2px 6px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-      line-height: 1;
-    }
+      .btn-danger {
+        background: #ef4444;
+        color: white;
+        border: none;
+        padding: 2px 6px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        line-height: 1;
+      }
 
-    .btn-danger:hover {
-      background: #dc2626;
-    }
+      .btn-danger:hover {
+        background: #dc2626;
+      }
 
-    .empty-state-label {
-      padding: 40px 20px;
-      text-align: center;
-      color: #6b7280;
-    }
+      .empty-state-label {
+        padding: 40px 20px;
+        text-align: center;
+        color: #6b7280;
+      }
 
-    /* Scrollable right column for weeks */
-    .weeks-column {
-      flex: 1;
-      overflow-x: auto;
-      overflow-y: auto;
-    }
+      /* Scrollable right column for weeks */
+      .weeks-column {
+        flex: 1;
+        overflow-x: auto;
+        overflow-y: auto;
+      }
 
-    .weeks-header {
-      display: flex;
-      background: #f8fafc;
-      border-bottom: 2px solid #e2e8f0;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      min-height: 60px;
-    }
+      .weeks-header {
+        display: flex;
+        background: #f8fafc;
+        border-bottom: 2px solid #e2e8f0;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        min-height: 60px;
+      }
 
-    .week-header {
-      min-width: 80px;
-      width: 80px;
-      padding: 8px;
-      text-align: center;
-      border-right: 1px solid #e2e8f0;
-      font-size: 12px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      flex-shrink: 0;
-    }
+      .week-header {
+        min-width: 80px;
+        width: 80px;
+        padding: 8px;
+        text-align: center;
+        border-right: 1px solid #e2e8f0;
+        font-size: 12px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        flex-shrink: 0;
+      }
 
-    .week-header.current-week {
-      background: #dbeafe;
-      border-left: 2px solid #3b82f6;
-      border-right: 2px solid #3b82f6;
-    }
+      .week-header.current-week {
+        background: #dbeafe;
+        border-left: 2px solid #3b82f6;
+        border-right: 2px solid #3b82f6;
+      }
 
-    .week-date {
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
+      .week-date {
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
 
-    .week-number {
-      font-size: 11px;
-      color: #6b7280;
-    }
+      .week-number {
+        font-size: 11px;
+        color: #6b7280;
+      }
 
-    .team-weeks-row {
-      display: flex;
-      border-bottom: 1px solid #e2e8f0;
-      background: #f9fafb;
-      min-height: 48px;
-    }
+      .team-weeks-row {
+        display: flex;
+        border-bottom: 1px solid #e2e8f0;
+        background: #f9fafb;
+        min-height: 48px;
+      }
 
-    .resource-weeks-row {
-      display: flex;
-      border-bottom: 1px solid #e2e8f0;
-      background: white;
-      min-height: 48px;
-      user-select: none;
-    }
+      .resource-weeks-row {
+        display: flex;
+        border-bottom: 1px solid #e2e8f0;
+        background: white;
+        min-height: 48px;
+        user-select: none;
+      }
 
-    .resource-weeks-row:hover {
-      background: #f9fafb;
-    }
+      .resource-weeks-row:hover {
+        background: #f9fafb;
+      }
 
-    .week-cell {
-      min-width: 80px;
-      width: 80px;
-      padding: 8px;
-      border-right: 1px solid #e2e8f0;
-      text-align: center;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
+      .week-cell {
+        min-width: 80px;
+        width: 80px;
+        padding: 8px;
+        border-right: 1px solid #e2e8f0;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
 
-    .team-cell {
-      background: #f9fafb;
-    }
+      .team-cell {
+        background: #f9fafb;
+      }
 
-    .resource-cell {
-      cursor: pointer;
-      transition: background 0.15s ease;
-      position: relative;
-    }
+      .resource-cell {
+        cursor: pointer;
+        transition: background 0.15s ease;
+        position: relative;
+      }
 
-    .resource-cell:hover {
-      background: #f3f4f6;
-    }
+      .resource-cell:hover {
+        background: #f3f4f6;
+      }
 
-    .resource-cell.selected {
-      background: #dbeafe;
-      border: 2px solid #3b82f6;
-    }
+      .resource-cell.selected {
+        background: #dbeafe;
+        border: 2px solid #3b82f6;
+      }
 
-    .resource-cell.has-capacity {
-      background: #d1fae5;
-      font-weight: 600;
-      color: #059669;
-    }
+      .resource-cell.has-capacity {
+        background: #d1fae5;
+        font-weight: 600;
+        color: #059669;
+      }
 
-    .resource-cell.has-capacity.selected {
-      background: #a7f3d0;
-      border: 2px solid #3b82f6;
-    }
+      .resource-cell.has-capacity.selected {
+        background: #a7f3d0;
+        border: 2px solid #3b82f6;
+      }
 
-    .cell-content {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      line-height: 1.1;
-    }
+      .cell-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        line-height: 1.1;
+      }
 
-    .capacity-value {
-      font-size: 13px;
-      font-weight: 600;
-    }
+      .capacity-value {
+        font-size: 13px;
+        font-weight: 600;
+      }
 
-    .days-value {
-      font-size: 10px;
-      opacity: 0.9;
-    }
+      .days-value {
+        font-size: 10px;
+        opacity: 0.9;
+      }
 
-    .empty-state-weeks {
-      padding: 40px;
-      text-align: center;
-      color: #6b7280;
-    }
+      .empty-state-weeks {
+        padding: 40px;
+        text-align: center;
+        color: #6b7280;
+      }
 
-    .selection-toolbar {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: white;
-      padding: 16px 24px;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      z-index: 1000;
-    }
+      .selection-toolbar {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: white;
+        padding: 16px 24px;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        z-index: 1000;
+      }
 
-    .selection-info {
-      font-weight: 600;
-      color: #374151;
-    }
+      .selection-info {
+        font-weight: 600;
+        color: #374151;
+      }
 
-    .selection-actions {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
+      .selection-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
 
-    .bulk-input {
-      width: 150px;
-      padding: 6px 12px;
-      border: 1px solid #d1d5db;
-      border-radius: 6px;
-    }
+      .bulk-input {
+        width: 150px;
+        padding: 6px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+      }
 
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 2000;
-    }
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+      }
 
-    .modal {
-      background: white;
-      border-radius: 12px;
-      min-width: 500px;
-      max-width: 90vw;
-      max-height: 90vh;
-      overflow: auto;
-    }
+      .modal {
+        background: white;
+        border-radius: 12px;
+        min-width: 500px;
+        max-width: 90vw;
+        max-height: 90vh;
+        overflow: auto;
+      }
 
-    .modal-header {
-      padding: 20px 24px;
-      border-bottom: 1px solid #e2e8f0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+      .modal-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
 
-    .modal-header h2 {
-      margin: 0;
-      font-size: 18px;
-    }
+      .modal-header h2 {
+        margin: 0;
+        font-size: 18px;
+      }
 
-    .modal-close {
-      background: none;
-      border: none;
-      font-size: 24px;
-      cursor: pointer;
-      color: #6b7280;
-      padding: 0;
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 4px;
-    }
+      .modal-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #6b7280;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+      }
 
-    .modal-close:hover {
-      background: #f3f4f6;
-    }
+      .modal-close:hover {
+        background: #f3f4f6;
+      }
 
-    .modal-body {
-      padding: 24px;
-    }
+      .modal-body {
+        padding: 24px;
+      }
 
-    .form-group {
-      margin-bottom: 16px;
-    }
+      .form-group {
+        margin-bottom: 16px;
+      }
 
-    .form-group label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 500;
-      color: #374151;
-    }
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #374151;
+      }
 
-    .form-control {
-      width: 100%;
-      padding: 8px 12px;
-      border: 1px solid #d1d5db;
-      border-radius: 6px;
-      font-size: 14px;
-    }
+      .form-control {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+      }
 
-    .no-roles-message {
-      padding: 9px;
-      background: #fef3c7;
-      border: 1px solid #f59e0b;
-      border-radius: 6px;
-      color: #92400e;
-      text-align: center;
-    }
+      .no-roles-message {
+        padding: 9px;
+        background: #fef3c7;
+        border: 1px solid #f59e0b;
+        border-radius: 6px;
+        color: #92400e;
+        text-align: center;
+      }
 
-    .no-roles-message p {
-      margin: 0;
-      font-size: 14px;
-    }
+      .no-roles-message p {
+        margin: 0;
+        font-size: 14px;
+      }
 
-    .modal-actions {
-      display: flex;
-      gap: 12px;
-      margin-top: 24px;
-    }
-  `]
+      .modal-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+      }
+
+      /* iOS-style toggle switch */
+      .ios-switch {
+        position: relative;
+        display: inline-block;
+        width: 40px;
+        height: 20px; /* 🔧 MODIFIER ICI - était 28px */
+        vertical-align: middle;
+      }
+
+      .ios-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+        position: absolute;
+        left: 0;
+        top: 0;
+      }
+
+      .ios-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #e5e7eb; /* neutral gray */
+        border-radius: 999px;
+        transition: background-color 0.18s ease;
+        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.03);
+      }
+
+      .ios-slider:before {
+        content: "";
+        position: absolute;
+        height: 14px; /* 🔧 MODIFIER ICI - était 22px */
+        width: 14px; /* 🔧 MODIFIER ICI aussi pour garder un cercle */
+        left: 3px;
+        top: 3px;
+        background: #fff;
+        border-radius: 50%;
+        transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.12s ease;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+      }
+
+      .ios-switch input:checked + .ios-slider {
+        background-color: #34d399; /* green */
+      }
+
+      .ios-switch input:checked + .ios-slider:before {
+        transform: translateX(20px); /* 🔧 AJUSTER si nécessaire */
+      }
+
+      .ios-switch input:focus + .ios-slider {
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+      }
+    `,
+  ],
 })
 export class CapacityViewComponent implements OnInit {
   displayedWeeks: Date[] = [];
@@ -623,8 +697,8 @@ export class CapacityViewComponent implements OnInit {
 
   showAddResourceModal = false;
   selectedEquipe: Equipe | null = null;
-  resourceTypeToAdd: 'role' | 'personne' = 'role';
-  selectedResourceId: string = '';
+  resourceTypeToAdd: "role" | "personne" = "role";
+  selectedResourceId: string = "";
 
   // Drag selection
   isDragging = false;
@@ -634,11 +708,10 @@ export class CapacityViewComponent implements OnInit {
   selectedCells: Array<{ resource: ResourceRow; week: Date }> = [];
 
   bulkCapaciteValue: number = 1;
+  // Toggle to show/hide the computed days inside cells. Default: hidden (user activates toggle to show)
+  showDaysInCells: boolean = false;
 
-  constructor(
-    private teamService: TeamService,
-    private calendarService: CalendarService
-  ) { }
+  constructor(private teamService: TeamService, private calendarService: CalendarService) {}
 
   async ngOnInit() {
     this.generateWeeks();
@@ -654,7 +727,7 @@ export class CapacityViewComponent implements OnInit {
 
     for (let i = 0; i < 32; i++) {
       const week = new Date(firstWeek);
-      week.setDate(week.getDate() + (i * 7));
+      week.setDate(week.getDate() + i * 7);
       this.displayedWeeks.push(week);
     }
   }
@@ -675,7 +748,7 @@ export class CapacityViewComponent implements OnInit {
           const capacites = await this.teamService.getCapacites(resource.id, resource.type, equipe.id!);
           const weeks = new Map<string, number>();
 
-          capacites.forEach(cap => {
+          capacites.forEach((cap) => {
             const weekStr = this.calendarService.formatWeekStart(new Date(cap.semaine_debut));
             weeks.set(weekStr, cap.capacite);
           });
@@ -684,30 +757,27 @@ export class CapacityViewComponent implements OnInit {
             type: resource.type,
             id: resource.id,
             uniqueId: resource.uniqueId,
-            label: resource.type === 'role'
-              ? resource.nom
-              : `${resource.prenom} ${resource.nom}`,
+            label: resource.type === "role" ? resource.nom : `${resource.prenom} ${resource.nom}`,
             equipeId: equipe.id!,
             weeks,
-            jours_par_semaine: resource.jours_par_semaine
+            jours_par_semaine: resource.jours_par_semaine,
           });
         }
 
         this.teamRows.push({
           equipe,
           resources: resourceRows,
-          expanded: true
+          expanded: true,
         });
       }
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error("Error loading data:", error);
     }
   }
 
-
   formatWeekHeader(date: Date): string {
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
     return `${day}/${month}`;
   }
 
@@ -718,8 +788,7 @@ export class CapacityViewComponent implements OnInit {
   isCurrentWeek(date: Date): boolean {
     const now = new Date();
     const currentWeekStart = this.calendarService.getWeekStart(now);
-    return this.calendarService.formatWeekStart(date) ===
-      this.calendarService.formatWeekStart(currentWeekStart);
+    return this.calendarService.formatWeekStart(date) === this.calendarService.formatWeekStart(currentWeekStart);
   }
 
   getCapacite(resource: ResourceRow, week: Date): number {
@@ -733,8 +802,8 @@ export class CapacityViewComponent implements OnInit {
 
   async openAddResourceModal(equipe: Equipe) {
     this.selectedEquipe = equipe;
-    this.resourceTypeToAdd = 'role';
-    this.selectedResourceId = '';
+    this.resourceTypeToAdd = "role";
+    this.selectedResourceId = "";
     this.showAddResourceModal = true;
 
     // Load only available roles (not already attached to this team)
@@ -748,7 +817,7 @@ export class CapacityViewComponent implements OnInit {
     if (!this.selectedEquipe || !this.selectedResourceId) return;
 
     try {
-      if (this.resourceTypeToAdd === 'role') {
+      if (this.resourceTypeToAdd === "role") {
         await this.teamService.addRoleToEquipe(this.selectedEquipe.id!, this.selectedResourceId);
       } else {
         await this.teamService.addPersonneToEquipe(this.selectedEquipe.id!, this.selectedResourceId);
@@ -757,12 +826,12 @@ export class CapacityViewComponent implements OnInit {
       this.showAddResourceModal = false;
       await this.loadData();
     } catch (error: any) {
-      console.error('Error adding resource:', error);
+      console.error("Error adding resource:", error);
       // Display user-friendly error message
-      if (error.message && error.message.includes('déjà attaché')) {
+      if (error.message && error.message.includes("déjà attaché")) {
         alert(error.message);
       } else {
-        alert('Erreur lors de l\'ajout de la ressource. Veuillez réessayer.');
+        alert("Erreur lors de l'ajout de la ressource. Veuillez réessayer.");
       }
     }
   }
@@ -771,7 +840,7 @@ export class CapacityViewComponent implements OnInit {
     if (!confirm(`Retirer ${resource.label} de l'équipe ${equipe.nom} ?`)) return;
 
     try {
-      if (resource.type === 'role') {
+      if (resource.type === "role") {
         await this.teamService.removeRoleFromEquipe(resource.id, equipe.id!);
       } else {
         await this.teamService.removePersonneFromEquipe(resource.id);
@@ -779,7 +848,7 @@ export class CapacityViewComponent implements OnInit {
 
       await this.loadData();
     } catch (error) {
-      console.error('Error removing resource:', error);
+      console.error("Error removing resource:", error);
     }
   }
 
@@ -788,9 +857,9 @@ export class CapacityViewComponent implements OnInit {
     this.dragStartResource = resource;
 
     const target = event.target as HTMLElement;
-    const cell = target.closest('.week-cell');
+    const cell = target.closest(".week-cell");
     if (cell) {
-      const indexStr = cell.getAttribute('data-week-index');
+      const indexStr = cell.getAttribute("data-week-index");
       if (indexStr) {
         this.dragStartWeekIndex = parseInt(indexStr, 10);
         this.dragEndWeekIndex = this.dragStartWeekIndex;
@@ -805,9 +874,9 @@ export class CapacityViewComponent implements OnInit {
     if (resource.uniqueId !== this.dragStartResource.uniqueId) return;
 
     const target = event.target as HTMLElement;
-    const cell = target.closest('.week-cell');
+    const cell = target.closest(".week-cell");
     if (cell) {
-      const indexStr = cell.getAttribute('data-week-index');
+      const indexStr = cell.getAttribute("data-week-index");
       if (indexStr) {
         const newIndex = parseInt(indexStr, 10);
         if (newIndex !== this.dragEndWeekIndex) {
@@ -832,15 +901,14 @@ export class CapacityViewComponent implements OnInit {
     for (let i = startIndex; i <= endIndex; i++) {
       this.selectedCells.push({
         resource: this.dragStartResource,
-        week: this.displayedWeeks[i]
+        week: this.displayedWeeks[i],
       });
     }
   }
 
   isCellSelected(resource: ResourceRow, week: Date): boolean {
     return this.selectedCells.some(
-      s => s.resource.uniqueId === resource.uniqueId &&
-        s.week.getTime() === week.getTime()
+      (s) => s.resource.uniqueId === resource.uniqueId && s.week.getTime() === week.getTime()
     );
   }
 
@@ -872,8 +940,19 @@ export class CapacityViewComponent implements OnInit {
 
       this.clearSelection();
     } catch (error) {
-      console.error('Error saving capacities:', error);
+      console.error("Error saving capacities:", error);
     }
+  }
+
+  // Sum of days (capacite * jours_par_semaine) for currently selected cells
+  get totalSelectedDays(): number {
+    let total = 0;
+    for (const cell of this.selectedCells) {
+      const cap = this.getCapacite(cell.resource, cell.week) || 0;
+      const jours = cell.resource.jours_par_semaine || 0;
+      total += cap * jours;
+    }
+    return total;
   }
 
   goToPreviousMonth() {
