@@ -159,7 +159,10 @@ interface TeamRow {
 
           <div class="form-group" *ngIf="resourceTypeToAdd === 'role'">
             <label>Sélectionner un rôle</label>
-            <select [(ngModel)]="selectedResourceId" class="form-control">
+            <div *ngIf="availableRoles.length === 0" class="no-roles-message">
+              <p>Aucun rôle disponible. Tous les rôles sont déjà utilisés.</p>
+            </div>
+            <select *ngIf="availableRoles.length > 0" [(ngModel)]="selectedResourceId" class="form-control">
               <option value="">-- Choisir un rôle --</option>
               <option *ngFor="let role of availableRoles" [value]="role.id">
                 {{ role.nom }} ({{ role.jours_par_semaine }}j/sem)
@@ -180,7 +183,7 @@ interface TeamRow {
           <div class="modal-actions">
             <button class="btn btn-primary" 
                     (click)="addResourceToTeam()"
-                    [disabled]="!selectedResourceId">
+                    [disabled]="!selectedResourceId || (resourceTypeToAdd === 'role' && availableRoles.length === 0)">
               Ajouter
             </button>
             <button class="btn btn-secondary" (click)="showAddResourceModal = false">
@@ -566,6 +569,20 @@ interface TeamRow {
       padding: 8px 12px;
       border: 1px solid #d1d5db;
       border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .no-roles-message {
+      padding: 9px;
+      background: #fef3c7;
+      border: 1px solid #f59e0b;
+      border-radius: 6px;
+      color: #92400e;
+      text-align: center;
+    }
+
+    .no-roles-message p {
+      margin: 0;
       font-size: 14px;
     }
 
