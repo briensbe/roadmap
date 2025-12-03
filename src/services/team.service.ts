@@ -111,6 +111,25 @@ export class TeamService {
         return data || [];
     }
 
+    async getAvailablePersonnesForEquipe(equipeId: string): Promise<Personne[]> {
+        // Get all persons
+        const allPersonnes = await this.getAllPersonnes();
+
+        // Get persons already attached to THIS specific team
+        const { data: personnes, error } = await this.supabase.client
+            .from('personnes')
+            .select('id')
+            .eq('equipe_id', equipeId);
+
+        if (error) throw error;
+
+        // Extract person IDs already attached to this team
+        const attachedPersonIds = new Set((personnes || []).map(p => p.id));
+
+        // Filter out persons that are already attached to THIS team
+        return allPersonnes.filter(personne => !attachedPersonIds.has(personne.id!));
+    }
+
     async addRoleToEquipe(equipeId: string, roleId: string): Promise<void> {
         const { error } = await this.supabase.client
             .from('role_attachments')

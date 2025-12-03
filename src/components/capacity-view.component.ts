@@ -172,7 +172,10 @@ interface TeamRow {
 
           <div class="form-group" *ngIf="resourceTypeToAdd === 'personne'">
             <label>Sélectionner une personne</label>
-            <select [(ngModel)]="selectedResourceId" class="form-control">
+            <div *ngIf="availablePersonnes.length === 0" class="no-roles-message">
+              <p>Aucune personne disponible.</p>
+            </div>
+            <select *ngIf="availablePersonnes.length > 0" [(ngModel)]="selectedResourceId" class="form-control">
               <option value="">-- Choisir une personne --</option>
               <option *ngFor="let personne of availablePersonnes" [value]="personne.id">
                 {{ personne.prenom }} {{ personne.nom }} ({{ personne.jours_par_semaine }}j/sem)
@@ -183,7 +186,7 @@ interface TeamRow {
           <div class="modal-actions">
             <button class="btn btn-primary" 
                     (click)="addResourceToTeam()"
-                    [disabled]="!selectedResourceId || (resourceTypeToAdd === 'role' && availableRoles.length === 0)">
+                    [disabled]="!selectedResourceId || (resourceTypeToAdd === 'role' && availableRoles.length === 0) || (resourceTypeToAdd === 'personne' && availablePersonnes.length === 0)">
               Ajouter
             </button>
             <button class="btn btn-secondary" (click)="showAddResourceModal = false">
@@ -719,6 +722,9 @@ export class CapacityViewComponent implements OnInit {
 
     // Load only available roles (not already attached to this team)
     this.availableRoles = await this.teamService.getAvailableRolesForEquipe(equipe.id!);
+
+    // Load only available persons (not already attached to this team)
+    this.availablePersonnes = await this.teamService.getAvailablePersonnesForEquipe(equipe.id!);
   }
 
   async addResourceToTeam() {
