@@ -230,7 +230,7 @@ export class SidebarNavigationComponent {
     { label: 'Tableau de bord', icon: this.LayoutDashboard },
     { label: 'Planification', icon: this.Calendar, route: '/planification' },
     { label: 'Capacité', icon: this.Gauge, route: '/capacite' },
-    { label: 'Projets', icon: this.FolderKanban },
+    { label: 'Projets', icon: this.FolderKanban, route: '/projets' },
     { label: 'Ressources', icon: this.Users, route: '/ressources' },
     { label: 'Organisation', icon: this.Building2, route: '/organisation' },
     { label: 'Paramètres', icon: this.Settings }
