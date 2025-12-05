@@ -98,7 +98,16 @@ interface TeamRow {
 
           <ng-container *ngFor="let teamRow of teamRows">
             <div class="team-weeks-row">
-              <div *ngFor="let week of displayedWeeks" class="week-cell team-cell"></div>
+              <div *ngFor="let week of displayedWeeks" class="week-cell team-cell">
+                <div class="team-summary" *ngIf="getTeamTotalCapacity(teamRow, week) > 0">
+                  <div class="capacity-value">
+                    {{ getTeamTotalCapacity(teamRow, week) | number : "1.0-1" }}
+                  </div>
+                  <div class="days-value" *ngIf="showDaysInCells">
+                    {{ getTeamTotalDays(teamRow, week) | number : "1.1-1" }}j
+                  </div>
+                </div>
+              </div>
             </div>
 
             <ng-container *ngIf="teamRow.expanded">
@@ -492,6 +501,15 @@ interface TeamRow {
         opacity: 0.9;
       }
 
+      .team-summary {
+        color: #6b7280;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        line-height: 1.1;
+      }
+
       .empty-state-weeks {
         padding: 40px;
         text-align: center;
@@ -711,7 +729,7 @@ export class CapacityViewComponent implements OnInit {
   // Toggle to show/hide the computed days inside cells. Default: hidden (user activates toggle to show)
   showDaysInCells: boolean = false;
 
-  constructor(private teamService: TeamService, private calendarService: CalendarService) {}
+  constructor(private teamService: TeamService, private calendarService: CalendarService) { }
 
   async ngOnInit() {
     this.generateWeeks();
@@ -968,5 +986,16 @@ export class CapacityViewComponent implements OnInit {
   goToToday() {
     this.currentDate = new Date();
     this.generateWeeks();
+  }
+
+  getTeamTotalCapacity(teamRow: TeamRow, week: Date): number {
+    return teamRow.resources.reduce((sum, resource) => sum + this.getCapacite(resource, week), 0);
+  }
+
+  getTeamTotalDays(teamRow: TeamRow, week: Date): number {
+    return teamRow.resources.reduce(
+      (sum, resource) => sum + this.getCapacite(resource, week) * resource.jours_par_semaine,
+      0
+    );
   }
 }
