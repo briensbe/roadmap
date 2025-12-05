@@ -670,18 +670,19 @@ import { Projet } from '../models/types';
     .projects-list {
       background: white;
       border-radius: 12px;
-      overflow: hidden;
+      /* overflow: hidden; Removed to prevent menu clipping */
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
     .projects-table {
       width: 100%;
-      border-collapse: collapse;
+      border-collapse: separate; /* Changed for border-radius */
+      border-spacing: 0;
     }
 
     .projects-table thead {
       background: #f9fafb;
-      border-bottom: 2px solid #e5e7eb;
+      /* border-bottom removed as it doesn't work well with separate */
     }
 
     .projects-table th {
@@ -692,6 +693,15 @@ import { Projet } from '../models/types';
       color: #6b7280;
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      border-bottom: 2px solid #e5e7eb;
+    }
+
+    .projects-table th:first-child {
+      border-top-left-radius: 12px;
+    }
+
+    .projects-table th:last-child {
+      border-top-right-radius: 12px;
     }
 
     .projects-table th.text-right {
