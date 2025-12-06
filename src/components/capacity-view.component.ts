@@ -111,9 +111,10 @@ interface TeamRow {
             </div>
 
             <ng-container *ngIf="teamRow.expanded">
-              <div
+                <div
                 *ngFor="let resource of teamRow.resources"
                 class="resource-weeks-row"
+                [attr.data-resource-id]="resource.uniqueId"
                 (mousedown)="onMouseDown($event, resource)"
                 (mousemove)="onMouseMove($event, resource)"
                 (mouseup)="onMouseUp()"
@@ -143,14 +144,21 @@ interface TeamRow {
         </div>
       </div>
 
-      <div *ngIf="selectedCells.length > 0" class="selection-toolbar">
+      <div 
+        *ngIf="selectedCells.length > 0 && isSelectionFinished" 
+        class="selection-toolbar"
+        [style.top.px]="toolbarPosition?.top"
+        [style.left.px]="toolbarPosition?.left"
+        [style.transform]="'translate(-50%, 10px)'">
         <div class="selection-info">
           {{ selectedCells.length }} semaine(s) sélectionnée(s)
-          <div style="font-weight:500; font-size:13px; margin-top:6px; color:#065f46;">
+          <div class="selection-total">
             Total jours sélectionnés: {{ totalSelectedDays | number : "1.1-1" }}j
+          <!-- </div>
+            Total jours sélectionnés: {{ totalSelectedDays | number : "1.1-1" }}j -->
           </div>
         </div>
-        <div class="selection-actions">
+        <div class="selection-input-row">
           <input
             type="number"
             [(ngModel)]="bulkCapaciteValue"
@@ -158,9 +166,12 @@ interface TeamRow {
             step="0.5"
             min="0"
             class="bulk-input"
+            (keydown.enter)="applyBulkCapacite()"
           />
-          <button class="btn btn-sm btn-primary" (click)="applyBulkCapacite()">Appliquer</button>
+        </div>
+        <div class="selection-actions">
           <button class="btn btn-sm btn-secondary" (click)="clearSelection()">Annuler</button>
+          <button class="btn btn-sm btn-primary" (click)="applyBulkCapacite()">Appliquer</button>
         </div>
       </div>
     </div>
@@ -518,28 +529,54 @@ interface TeamRow {
 
       .selection-toolbar {
         position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
+        /* bottom and left/transform are now handled dynamically via style binding, 
+           but we keep initial values or rely on overriding. 
+           Current update will use inline styles to position absolutely relative to viewport. */
         background: white;
         padding: 16px 24px;
         border-radius: 12px;
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-        display: flex;
+        /*display: flex;*/
         align-items: center;
         gap: 16px;
         z-index: 1000;
+        transition: top 0.2s ease, left 0.2s ease;
+        min-width: 260px;
+
       }
 
       .selection-info {
         font-weight: 600;
         color: #374151;
       }
-
-      .selection-actions {
+      .selection-total {
+        font-weight: 500;
+        font-size: 13px;
+        margin-top: 6px;
+        margin-bottom: 10px;
+        color: #065f46;
+      }
+      .selection-input-row input {
+        flex: 1;
+        width: 100%;
         display: flex;
         gap: 8px;
         align-items: center;
+        margin-bottom: 12px;
+        width: 100%;
+    }
+
+      .selection-actions {
+        display: flex;
+        flex: 1;
+        gap: 8px;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .selection-actions button  {
+        flex: 1;
+        
       }
 
       .bulk-input {
@@ -724,8 +761,10 @@ export class CapacityViewComponent implements OnInit {
   dragStartWeekIndex: number = -1;
   dragEndWeekIndex: number = -1;
   selectedCells: Array<{ resource: ResourceRow; week: Date }> = [];
+  isSelectionFinished: boolean = false;
+  toolbarPosition: { top: number; left: number } | null = null;
 
-  bulkCapaciteValue: number = 1;
+  bulkCapaciteValue: number | null = null;
   // Toggle to show/hide the computed days inside cells. Default: hidden (user activates toggle to show)
   showDaysInCells: boolean = false;
 
@@ -872,6 +911,7 @@ export class CapacityViewComponent implements OnInit {
 
   onMouseDown(event: MouseEvent, resource: ResourceRow) {
     this.isDragging = true;
+    this.isSelectionFinished = false;
     this.dragStartResource = resource;
 
     const target = event.target as HTMLElement;
@@ -907,6 +947,36 @@ export class CapacityViewComponent implements OnInit {
 
   onMouseUp() {
     this.isDragging = false;
+    if (this.selectedCells.length > 0) {
+      this.isSelectionFinished = true;
+      this.updateToolbarPosition();
+    }
+  }
+
+  updateToolbarPosition() {
+    if (!this.dragStartResource || this.dragEndWeekIndex < 0) return;
+
+    // Use setTimeout to allow DOM to update if necessary, or just run immediately if purely purely based on existing elements
+    setTimeout(() => {
+      // Find the row
+      const rowSelector = `[data-resource-id="${this.dragStartResource!.uniqueId}"]`;
+      const rowElement = document.querySelector(rowSelector);
+
+      if (rowElement) {
+        // Find the specific cell
+        const cellSelector = `[data-week-index="${this.dragEndWeekIndex}"]`;
+        const cellElement = rowElement.querySelector(cellSelector);
+
+        if (cellElement) {
+          const rect = cellElement.getBoundingClientRect();
+          // Position below the cell, centered horizontally
+          this.toolbarPosition = {
+            top: rect.bottom,
+            left: rect.left + (rect.width / 2)
+          };
+        }
+      }
+    }, 0);
   }
 
   updateSelection() {
@@ -932,6 +1002,8 @@ export class CapacityViewComponent implements OnInit {
 
   clearSelection() {
     this.selectedCells = [];
+    this.isSelectionFinished = false;
+    this.toolbarPosition = null;
     this.dragStartResource = null;
     this.dragStartWeekIndex = -1;
     this.dragEndWeekIndex = -1;
