@@ -15,19 +15,44 @@ export interface EquipeResource {
     providedIn: 'root'
 })
 export class TeamService {
+    // Caches
+    private _equipesCache: Equipe[] | null = null;
+    private _rolesCache: Role[] | null = null;
+    private _personnesCache: Personne[] | null = null;
+    private _equipeResourcesCache = new Map<string, EquipeResource[]>();
+    private _capacitesCache = new Map<string, Capacite[]>();
+
     constructor(private supabase: SupabaseService) { }
 
+    private clearCache() {
+        this._equipesCache = null;
+        this._rolesCache = null;
+        this._personnesCache = null;
+        this._equipeResourcesCache.clear();
+        this._capacitesCache.clear();
+    }
+
     async getAllEquipes(): Promise<Equipe[]> {
+        if (this._equipesCache) {
+            return this._equipesCache;
+        }
+
         const { data, error } = await this.supabase.client
             .from('equipes')
             .select('*')
             .order('nom');
 
         if (error) throw error;
-        return data || [];
+
+        this._equipesCache = data || [];
+        return this._equipesCache;
     }
 
     async getEquipeResources(equipeId: string): Promise<EquipeResource[]> {
+        if (this._equipeResourcesCache.has(equipeId)) {
+            return this._equipeResourcesCache.get(equipeId)!;
+        }
+
         const resources: EquipeResource[] = [];
 
         // Get roles attached to this team
@@ -69,17 +94,24 @@ export class TeamService {
             });
         }
 
+        this._equipeResourcesCache.set(equipeId, resources);
         return resources;
     }
 
     async getAllRoles(): Promise<Role[]> {
+        if (this._rolesCache) {
+            return this._rolesCache;
+        }
+
         const { data, error } = await this.supabase.client
             .from('roles')
             .select('*')
             .order('nom');
 
         if (error) throw error;
-        return data || [];
+
+        this._rolesCache = data || [];
+        return this._rolesCache;
     }
 
     async getAvailableRolesForEquipe(equipeId: string): Promise<Role[]> {
@@ -102,13 +134,19 @@ export class TeamService {
     }
 
     async getAllPersonnes(): Promise<Personne[]> {
+        if (this._personnesCache) {
+            return this._personnesCache;
+        }
+
         const { data, error } = await this.supabase.client
             .from('personnes')
             .select('*')
             .order('nom', { ascending: true });
 
         if (error) throw error;
-        return data || [];
+
+        this._personnesCache = data || [];
+        return this._personnesCache;
     }
 
     async getAvailablePersonnesForEquipe(equipeId: string): Promise<Personne[]> {
@@ -145,6 +183,7 @@ export class TeamService {
             }
             throw error;
         }
+        this.clearCache();
     }
 
     async addPersonneToEquipe(equipeId: string, personneId: string): Promise<void> {
@@ -154,6 +193,7 @@ export class TeamService {
             .eq('id', personneId);
 
         if (error) throw error;
+        this.clearCache();
     }
 
     async removeRoleFromEquipe(roleId: string, equipeId: string): Promise<void> {
@@ -164,6 +204,7 @@ export class TeamService {
             .eq('equipe_id', equipeId);
 
         if (error) throw error;
+        this.clearCache();
     }
 
     async removePersonneFromEquipe(personneId: string): Promise<void> {
@@ -173,9 +214,15 @@ export class TeamService {
             .eq('id', personneId);
 
         if (error) throw error;
+        this.clearCache();
     }
 
     async getCapacites(resourceId: string, type: 'role' | 'personne', equipeId: string): Promise<Capacite[]> {
+        const cacheKey = `${resourceId}:${type}:${equipeId}`;
+        if (this._capacitesCache.has(cacheKey)) {
+            return this._capacitesCache.get(cacheKey)!;
+        }
+
         const query = this.supabase.client
             .from('capacites')
             .select('*')
@@ -190,7 +237,10 @@ export class TeamService {
         const { data, error } = await query.order('semaine_debut');
 
         if (error) throw error;
-        return data || [];
+
+        const result = data || [];
+        this._capacitesCache.set(cacheKey, result);
+        return result;
     }
 
     async saveCapacite(
@@ -243,6 +293,7 @@ export class TeamService {
 
             if (error) throw error;
         }
+        this.clearCache();
     }
 
     async deleteCapacite(
@@ -263,5 +314,6 @@ export class TeamService {
 
         const { error } = await query;
         if (error) throw error;
+        this.clearCache();
     }
 }
