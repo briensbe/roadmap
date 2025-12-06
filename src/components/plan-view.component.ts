@@ -12,7 +12,7 @@ interface ResourceRow {
   id: string;
   uniqueId: string; // Unique identifier combining parent, child, and resource context
   label: string;
-  type: 'role' | 'personne';
+  type: "role" | "personne";
   jours_par_semaine: number;
   charges: Map<string, number>; // week string -> amount
 }
@@ -42,23 +42,25 @@ interface ParentRow {
       <div class="capacity-header">
         <h1>Vue Planification</h1>
         <div class="header-actions">
-           <div class="view-mode-toggle">
-            <button 
-                class="btn" 
-                [class.btn-primary]="viewMode === 'project'" 
-                [class.btn-secondary]="viewMode !== 'project'"
-                (click)="switchViewMode('project')">
-                Par Projet
+          <div class="view-mode-toggle">
+            <button
+              class="btn"
+              [class.btn-primary]="viewMode === 'project'"
+              [class.btn-secondary]="viewMode !== 'project'"
+              (click)="switchViewMode('project')"
+            >
+              Par Projet
             </button>
-            <button 
-                class="btn" 
-                [class.btn-primary]="viewMode === 'team'" 
-                [class.btn-secondary]="viewMode !== 'team'"
-                (click)="switchViewMode('team')">
-                Par Équipe
+            <button
+              class="btn"
+              [class.btn-primary]="viewMode === 'team'"
+              [class.btn-secondary]="viewMode !== 'team'"
+              (click)="switchViewMode('team')"
+            >
+              Par Équipe
             </button>
-           </div>
-           <button class="btn btn-secondary" (click)="goToToday()">Aujourd'hui</button>
+          </div>
+          <button class="btn btn-secondary" (click)="goToToday()">Aujourd'hui</button>
         </div>
       </div>
 
@@ -68,7 +70,7 @@ interface ParentRow {
           <button class="btn btn-sm btn-primary" (click)="goToToday()">Aujourd'hui</button>
           <button class="btn btn-sm" (click)="goToNextMonth()">Mois suivant →</button>
         </div>
-        
+
         <!-- Filters bar -->
         <div class="filters-bar" #filtersContainer>
           <div class="filter-pill" (click)="toggleDropdown('equipe', $event)">
@@ -99,7 +101,13 @@ interface ParentRow {
           <div class="filters-dropdown" *ngIf="openEquipeDropdown" (click)="$event.stopPropagation()">
             <div class="dropdown-list">
               <label *ngFor="let e of allEquipes" class="dropdown-item">
-                <input type="checkbox" [value]="e.id" (change)="onEquipeToggle(e.id, $event)" [checked]="filterEquipeIds.includes(e.id!)"> {{ e.nom }}
+                <input
+                  type="checkbox"
+                  [value]="e.id"
+                  (change)="onEquipeToggle(e.id, $event)"
+                  [checked]="filterEquipeIds.includes(e.id!)"
+                />
+                {{ e.nom }}
               </label>
             </div>
           </div>
@@ -107,7 +115,13 @@ interface ParentRow {
           <div class="filters-dropdown" *ngIf="openProjetDropdown" (click)="$event.stopPropagation()">
             <div class="dropdown-list">
               <label *ngFor="let p of allProjects" class="dropdown-item">
-                <input type="checkbox" [value]="p.id" (change)="onProjetToggle(p.id, $event)" [checked]="filterProjetIds.includes(p.id!)"> {{ p.code_projet }} — {{ p.nom_projet }}
+                <input
+                  type="checkbox"
+                  [value]="p.id"
+                  (change)="onProjetToggle(p.id, $event)"
+                  [checked]="filterProjetIds.includes(p.id!)"
+                />
+                {{ p.code_projet }} — {{ p.nom_projet }}
               </label>
             </div>
           </div>
@@ -116,11 +130,23 @@ interface ParentRow {
             <div class="dropdown-list">
               <div class="dropdown-group">Rôles</div>
               <label *ngFor="let r of availableRoles" class="dropdown-item">
-                <input type="checkbox" [value]="'role:' + r.id" (change)="onResourceToggle('role:' + r.id, $event)" [checked]="filterResourceIds.includes('role:' + r.id)"> {{ r.nom }}
+                <input
+                  type="checkbox"
+                  [value]="'role:' + r.id"
+                  (change)="onResourceToggle('role:' + r.id, $event)"
+                  [checked]="filterResourceIds.includes('role:' + r.id)"
+                />
+                {{ r.nom }}
               </label>
               <div class="dropdown-group">Personnes</div>
               <label *ngFor="let p of availablePersonnes" class="dropdown-item">
-                <input type="checkbox" [value]="'personne:' + p.id" (change)="onResourceToggle('personne:' + p.id, $event)" [checked]="filterResourceIds.includes('personne:' + p.id)"> {{ p.prenom }} {{ p.nom }}
+                <input
+                  type="checkbox"
+                  [value]="'personne:' + p.id"
+                  (change)="onResourceToggle('personne:' + p.id, $event)"
+                  [checked]="filterResourceIds.includes('personne:' + p.id)"
+                />
+                {{ p.prenom }} {{ p.nom }}
               </label>
             </div>
           </div>
@@ -132,7 +158,9 @@ interface ParentRow {
         <!-- Header row with sticky positioning -->
         <div class="calendar-header-wrapper">
           <div class="row-label fixed-column header-fixed">
-            <span style="font-weight:600;">{{ viewMode === 'project' ? 'Projets / Équipes' : 'Équipes / Projets' }}</span>
+            <span style="font-weight:600;">{{
+              viewMode === "project" ? "Projets / Équipes" : "Équipes / Projets"
+            }}</span>
           </div>
           <div class="header-scroll-container" #headerScroll>
             <div class="row-cells scrollable-column">
@@ -146,118 +174,115 @@ interface ParentRow {
 
         <!-- Data rows - single scroll container -->
         <div class="calendar-grid" #dataScroll (scroll)="onGridScroll($event)">
-
-        <ng-container *ngFor="let row of rows">
-          <!-- Parent Row -->
-          <div class="calendar-row-wrapper">
-            <div class="row-label fixed-column">
-              <div class="team-label" (click)="toggleRow(row)">
-                <span class="expand-icon">{{ row.expanded ? "▼" : "▶" }}</span>
-                <strong>{{ row.label }}</strong>
-              </div>
-              <button 
+          <ng-container *ngFor="let row of rows">
+            <!-- Parent Row -->
+            <div class="calendar-row-wrapper">
+              <div class="row-label fixed-column">
+                <div class="team-label" (click)="toggleRow(row)">
+                  <span class="expand-icon">{{ row.expanded ? "▼" : "▶" }}</span>
+                  <strong>{{ row.label }}</strong>
+                </div>
+                <button
                   class="btn btn-xs btn-add"
                   (click)="openLinkModal(row); $event.stopPropagation()"
                   style="margin-left:auto;"
-              >
+                >
                   <lucide-icon [img]="Plus" [size]="16"></lucide-icon>
-              </button>
-            </div>
-            <div class="row-cells scrollable-column">
-              <div *ngFor="let week of displayedWeeks" class="week-cell team-cell">
-                <div class="team-summary" *ngIf="getParentTotal(row, week) > 0">
-                  <div class="capacity-value">
-                    {{ getParentTotal(row, week) | number : "1.0-1" }}
+                </button>
+              </div>
+              <div class="row-cells scrollable-column">
+                <div *ngFor="let week of displayedWeeks" class="week-cell team-cell">
+                  <div class="team-summary" *ngIf="getParentTotal(row, week) > 0">
+                    <div class="capacity-value">
+                      {{ getParentTotal(row, week) | number : "1.0-1" }}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- Children Rows -->
-          <ng-container *ngIf="row.expanded">
-            <ng-container *ngFor="let child of row.children">
-              <!-- Child Row (2nd level) -->
-              <div class="calendar-row-wrapper">
-                <div class="row-label fixed-column">
-                  <div class="resource-label" (click)="toggleChild(child)" style="padding-left:32px;">
-                    <span class="expand-icon">{{ child.expanded ? "▼" : "▶" }}</span>
-                    <span class="resource-name">{{ child.label }}</span>
-                  </div>
-                  <button 
+            <!-- Children Rows -->
+            <ng-container *ngIf="row.expanded">
+              <ng-container *ngFor="let child of row.children">
+                <!-- Child Row (2nd level) -->
+                <div class="calendar-row-wrapper">
+                  <div class="row-label fixed-column">
+                    <div class="resource-label" (click)="toggleChild(child)" style="padding-left:32px;">
+                      <span class="expand-icon">{{ child.expanded ? "▼" : "▶" }}</span>
+                      <span class="resource-name">{{ child.label }}</span>
+                    </div>
+                    <button
                       class="btn btn-xs btn-add"
                       (click)="openAddResourceModal(child, row); $event.stopPropagation()"
                       style="margin-left:auto;"
-                  >
+                    >
                       <lucide-icon [img]="Plus" [size]="14"></lucide-icon>
-                  </button>
-                </div>
-                <div class="row-cells scrollable-column">
-                  <div
-                    *ngFor="let week of displayedWeeks"
-                    class="week-cell resource-cell"
-                    [class.has-capacity]="getChildValue(child, week) > 0"
-                  >
-                    <div class="cell-content" *ngIf="getChildValue(child, week) > 0">
-                      <div class="capacity-value">{{ getChildValue(child, week) | number : "1.0-1" }}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Resource Rows (3rd level) -->
-              <ng-container *ngIf="child.expanded">
-                <div 
-                  *ngFor="let resource of child.resources" 
-                  class="calendar-row-wrapper"
-                  [attr.data-resource-id]="getResourceUniqueId(resource, child, row)"
-                  (mousedown)="onMouseDown($event, resource, child, row)"
-                  (mousemove)="onMouseMove($event, resource, child, row)"
-                  (mouseup)="onMouseUp()"
-                  (mouseleave)="onMouseUp()"
-                >
-                  <div class="row-label fixed-column">
-                    <div class="resource-detail-label" style="padding-left:50px;">
-                      <span class="resource-detail-name">{{ resource.label }}</span>
-                    </div>
+                    </button>
                   </div>
                   <div class="row-cells scrollable-column">
                     <div
-                      *ngFor="let week of displayedWeeks; let i = index"
-                      class="week-cell resource-detail-cell"
-                      [class.selected]="isCellSelected(resource, week)"
-                      [class.has-capacity]="getResourceValue(resource, week) > 0"
-                      [attr.data-week-index]="i"
+                      *ngFor="let week of displayedWeeks"
+                      class="week-cell resource-cell"
+                      [class.has-capacity]="getChildValue(child, week) > 0"
                     >
-                      <div class="cell-content" *ngIf="getResourceValue(resource, week) > 0">
-                        <div class="capacity-value">{{ getResourceValue(resource, week) | number : "1.0-1" }}</div>
+                      <div class="cell-content" *ngIf="getChildValue(child, week) > 0">
+                        <div class="capacity-value">{{ getChildValue(child, week) | number : "1.0-1" }}</div>
                       </div>
                     </div>
                   </div>
                 </div>
+
+                <!-- Resource Rows (3rd level) -->
+                <ng-container *ngIf="child.expanded">
+                  <div
+                    *ngFor="let resource of child.resources"
+                    class="calendar-row-wrapper"
+                    [attr.data-resource-id]="getResourceUniqueId(resource, child, row)"
+                    (mousedown)="onMouseDown($event, resource, child, row)"
+                    (mousemove)="onMouseMove($event, resource, child, row)"
+                    (mouseup)="onMouseUp()"
+                    (mouseleave)="onMouseUp()"
+                  >
+                    <div class="row-label fixed-column">
+                      <div class="resource-detail-label" style="padding-left:50px;">
+                        <span class="resource-detail-name">{{ resource.label }}</span>
+                      </div>
+                    </div>
+                    <div class="row-cells scrollable-column">
+                      <div
+                        *ngFor="let week of displayedWeeks; let i = index"
+                        class="week-cell resource-detail-cell"
+                        [class.selected]="isCellSelected(resource, week)"
+                        [class.has-capacity]="getResourceValue(resource, week) > 0"
+                        [attr.data-week-index]="i"
+                      >
+                        <div class="cell-content" *ngIf="getResourceValue(resource, week) > 0">
+                          <div class="capacity-value">{{ getResourceValue(resource, week) | number : "1.0-1" }}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </ng-container>
               </ng-container>
             </ng-container>
           </ng-container>
-        </ng-container>
 
-        <div *ngIf="rows.length === 0" class="empty-state">
-          <p>Aucune donnée</p>
+          <div *ngIf="rows.length === 0" class="empty-state">
+            <p>Aucune donnée</p>
+          </div>
         </div>
-      </div>
       </div>
 
       <!-- Selection Toolbar -->
-      <div 
-        *ngIf="selectedCells.length > 0 && isSelectionFinished" 
+      <div
+        *ngIf="selectedCells.length > 0 && isSelectionFinished"
         class="selection-toolbar"
         [style.top.px]="toolbarPosition?.top"
         [style.left.px]="toolbarPosition?.left"
         [style.transform]="'translate(-50%, 10px)'"
         [style.opacity]="toolbarVisible ? 1 : 0"
       >
-        <div class="selection-info">
-          {{ selectedCells.length }} semaine(s) sélectionnée(s)
-        </div>
+        <div class="selection-info">{{ selectedCells.length }} semaine(s) sélectionnée(s)</div>
         <div class="selection-input-row">
           <input
             #bulkChargeInput
@@ -281,24 +306,26 @@ interface ParentRow {
     <div *ngIf="showLinkModal" class="modal-overlay" (click)="closeLinkModal()">
       <div class="modal" (click)="$event.stopPropagation()">
         <div class="modal-header">
-          <h2>{{ viewMode === 'project' ? 'Ajouter une équipe' : 'Ajouter un projet' }} à {{ selectedParentRow?.label }}</h2>
+          <h2>
+            {{ viewMode === "project" ? "Ajouter une équipe" : "Ajouter un projet" }} à {{ selectedParentRow?.label }}
+          </h2>
           <button class="modal-close" (click)="closeLinkModal()">×</button>
         </div>
         <div class="modal-body">
-            <div class="form-group">
-                <label>{{ viewMode === 'project' ? 'Sélectionner une équipe' : 'Sélectionner un projet' }}</label>
-                <select [(ngModel)]="selectedIdToLink" class="form-control">
-                    <option value="">-- Choisir --</option>
-                    <option *ngFor="let item of linkableItems" [value]="item.id">
-                        {{ item.label }}
-                    </option>
-                </select>
-            </div>
-            
-            <div class="modal-actions">
-                <button class="btn btn-primary" (click)="linkItem()" [disabled]="!selectedIdToLink">Ajouter</button>
-                <button class="btn btn-secondary" (click)="closeLinkModal()">Annuler</button>
-            </div>
+          <div class="form-group">
+            <label>{{ viewMode === "project" ? "Sélectionner une équipe" : "Sélectionner un projet" }}</label>
+            <select [(ngModel)]="selectedIdToLink" class="form-control">
+              <option value="">-- Choisir --</option>
+              <option *ngFor="let item of linkableItems" [value]="item.id">
+                {{ item.label }}
+              </option>
+            </select>
+          </div>
+
+          <div class="modal-actions">
+            <button class="btn btn-primary" (click)="linkItem()" [disabled]="!selectedIdToLink">Ajouter</button>
+            <button class="btn btn-secondary" (click)="closeLinkModal()">Annuler</button>
+          </div>
         </div>
       </div>
     </div>
@@ -340,13 +367,14 @@ interface ParentRow {
           </div>
 
           <div class="modal-actions">
-            <button class="btn btn-primary" (click)="addResourceToCharge()" [disabled]="!selectedResourceId">Ajouter</button>
+            <button class="btn btn-primary" (click)="addResourceToCharge()" [disabled]="!selectedResourceId">
+              Ajouter
+            </button>
             <button class="btn btn-secondary" (click)="closeAddResourceModal()">Annuler</button>
           </div>
         </div>
       </div>
     </div>
-
   `,
   styles: [
     `
@@ -371,7 +399,7 @@ interface ParentRow {
         gap: 12px;
         align-items: center;
       }
-      
+
       .view-mode-toggle {
         display: flex;
         background: #e2e8f0;
@@ -380,7 +408,7 @@ interface ParentRow {
         gap: 4px;
         margin-right: 16px;
       }
-      
+
       .view-mode-toggle .btn {
         padding: 6px 12px;
         font-size: 14px;
@@ -388,11 +416,11 @@ interface ParentRow {
         border-radius: 6px;
         cursor: pointer;
       }
-      
+
       .view-mode-toggle .btn-primary {
         background: white;
         color: #1e293b;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         font-weight: 600;
       }
 
@@ -433,7 +461,7 @@ interface ParentRow {
         border: 1px solid #e5e7eb;
         border-radius: 999px;
         cursor: pointer;
-        box-shadow: 0 1px 2px rgba(16,24,40,0.03);
+        box-shadow: 0 1px 2px rgba(16, 24, 40, 0.03);
         min-width: 140px;
       }
 
@@ -443,9 +471,22 @@ interface ParentRow {
         font-size: 13px;
       }
 
-      .chip-list { display:flex; gap:6px; flex-wrap:wrap; }
-      .chip { background:#eef2ff; color:#3730a3; padding:4px 8px; border-radius:999px; font-size:12px; }
-      .chip.placeholder { background: transparent; color:#94a3b8; }
+      .chip-list {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .chip {
+        background: #eef2ff;
+        color: #3730a3;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+      }
+      .chip.placeholder {
+        background: transparent;
+        color: #94a3b8;
+      }
 
       .filters-dropdown {
         position: absolute;
@@ -454,7 +495,7 @@ interface ParentRow {
         background: white;
         border: 1px solid #e5e7eb;
         border-radius: 8px;
-        box-shadow: 0 6px 20px rgba(2,6,23,0.08);
+        box-shadow: 0 6px 20px rgba(2, 6, 23, 0.08);
         padding: 8px;
         z-index: 1200;
         max-height: 320px;
@@ -462,10 +503,28 @@ interface ParentRow {
         min-width: 260px;
       }
 
-      .dropdown-list { display:flex; flex-direction:column; gap:6px; padding:4px; }
-      .dropdown-item { display:flex; align-items:center; gap:8px; font-size:13px; padding:6px; border-radius:6px; }
-      .dropdown-item:hover { background:#f8fafc; }
-      .dropdown-group { font-size:12px; color:#6b7280; padding:8px 4px 2px; }
+      .dropdown-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 4px;
+      }
+      .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        padding: 6px;
+        border-radius: 6px;
+      }
+      .dropdown-item:hover {
+        background: #f8fafc;
+      }
+      .dropdown-group {
+        font-size: 12px;
+        color: #6b7280;
+        padding: 8px 4px 2px;
+      }
 
       .btn {
         padding: 8px 16px;
@@ -485,7 +544,7 @@ interface ParentRow {
         padding: 2px 4px;
         font-size: 11px;
       }
-      
+
       .btn-add {
         margin-left: auto;
         display: flex;
@@ -495,7 +554,7 @@ interface ParentRow {
         border: 1px solid #e5e7eb;
         background: white;
       }
-      
+
       .btn-add:hover {
         background: #f3f4f6;
         color: #374151;
@@ -582,6 +641,9 @@ interface ParentRow {
         flex-shrink: 0;
         border-right: 2px solid #e2e8f0;
         background: #f9fafb;
+        position: sticky;
+        left: 0;
+        z-index: 5;
       }
 
       .row-cells {
@@ -659,12 +721,12 @@ interface ParentRow {
       .resource-cell {
         transition: background 0.15s ease;
       }
-      
+
       .resource-cell.has-capacity {
         background: #d1fae5;
         font-weight: 600;
         color: #059669;
-       }
+      }
 
       .cell-content {
         display: flex;
@@ -716,7 +778,7 @@ interface ParentRow {
         max-height: 90vh;
         overflow: auto;
       }
-      
+
       .modal-header {
         padding: 20px 24px;
         border-bottom: 1px solid #e2e8f0;
@@ -744,12 +806,12 @@ interface ParentRow {
         justify-content: center;
         border-radius: 4px;
       }
-      
+
       .modal-close:hover {
         background: #f3f4f6;
       }
-      
-       .modal-body {
+
+      .modal-body {
         padding: 24px;
       }
 
@@ -771,7 +833,7 @@ interface ParentRow {
         border-radius: 6px;
         font-size: 14px;
       }
-      
+
       .modal-actions {
         display: flex;
         gap: 12px;
@@ -848,7 +910,7 @@ interface ParentRow {
   ],
 })
 export class PlanViewComponent implements OnInit {
-  viewMode: 'project' | 'team' = 'project';
+  viewMode: "project" | "team" = "project";
 
   displayedWeeks: Date[] = [];
   currentDate: Date = new Date();
@@ -875,14 +937,14 @@ export class PlanViewComponent implements OnInit {
   showLinkModal = false;
   selectedParentRow: ParentRow | null = null;
   linkableItems: { id: string; label: string }[] = [];
-  selectedIdToLink: string = '';
+  selectedIdToLink: string = "";
 
   // Resource Modal State
   showAddResourceModal = false;
   selectedChildRow: ChildRow | null = null;
   selectedParentForResource: ParentRow | null = null;
-  resourceTypeToAdd: 'role' | 'personne' = 'role';
-  selectedResourceId: string = '';
+  resourceTypeToAdd: "role" | "personne" = "role";
+  selectedResourceId: string = "";
   availableRoles: Role[] = [];
   availablePersonnes: Personne[] = [];
 
@@ -898,9 +960,9 @@ export class PlanViewComponent implements OnInit {
 
   bulkChargeValue: number | null = null;
 
-  @ViewChild('bulkChargeInput') bulkChargeInput?: ElementRef<HTMLInputElement>;
-  @ViewChild('headerScroll') headerScroll?: ElementRef<HTMLDivElement>;
-  @ViewChild('dataScroll') dataScroll?: ElementRef<HTMLDivElement>;
+  @ViewChild("bulkChargeInput") bulkChargeInput?: ElementRef<HTMLInputElement>;
+  @ViewChild("headerScroll") headerScroll?: ElementRef<HTMLDivElement>;
+  @ViewChild("dataScroll") dataScroll?: ElementRef<HTMLDivElement>;
 
   // Icons
   Plus = Plus;
@@ -910,7 +972,7 @@ export class PlanViewComponent implements OnInit {
     private projetService: ProjetService,
     private chargeService: ChargeService,
     private calendarService: CalendarService
-  ) { }
+  ) {}
 
   async ngOnInit() {
     this.generateWeeks();
@@ -944,7 +1006,7 @@ export class PlanViewComponent implements OnInit {
     this.buildTree();
   }
 
-  switchViewMode(mode: 'project' | 'team') {
+  switchViewMode(mode: "project" | "team") {
     this.viewMode = mode;
     this.buildTree();
   }
@@ -954,53 +1016,53 @@ export class PlanViewComponent implements OnInit {
     // Restore expanded state if re-building (optional, good UX)
     // For now reset to closed or keep simple.
 
-    if (this.viewMode === 'project') {
+    if (this.viewMode === "project") {
       // Parent = Project, Child = Team, GrandChild = Resource
       // Sort projects alphabetically
       const sortedProjects = [...this.allProjects].sort((a, b) => a.nom_projet.localeCompare(b.nom_projet));
 
       for (const project of sortedProjects) {
-        const projectCharges = this.allCharges.filter(c => c.projet_id === project.id);
+        const projectCharges = this.allCharges.filter((c) => c.projet_id === project.id);
 
         // Find all teams involved in this project (via charges OR links)
-        const chargeTeamIds = projectCharges.map(c => c.equipe_id).filter(id => !!id);
-        const linkedTeamIds = this.allLinks.filter(l => l.projet_id === project.id).map(l => l.equipe_id);
+        const chargeTeamIds = projectCharges.map((c) => c.equipe_id).filter((id) => !!id);
+        const linkedTeamIds = this.allLinks.filter((l) => l.projet_id === project.id).map((l) => l.equipe_id);
 
         const involvedTeamIds = new Set([...chargeTeamIds, ...linkedTeamIds]);
 
         const children: ChildRow[] = [];
         const parentTotal = new Map<string, number>();
 
-        involvedTeamIds.forEach(teamId => {
-          const team = this.allEquipes.find(e => e.id === teamId);
-          const label = team ? team.nom : 'No Team';
+        involvedTeamIds.forEach((teamId) => {
+          const team = this.allEquipes.find((e) => e.id === teamId);
+          const label = team ? team.nom : "No Team";
           const teamCharges = new Map<string, number>();
 
           // Get charges for this team on this project
-          const teamProjectCharges = projectCharges.filter(c => c.equipe_id === teamId);
+          const teamProjectCharges = projectCharges.filter((c) => c.equipe_id === teamId);
 
           // Build resources for this team
           const resources: ResourceRow[] = [];
           const resourceMap = new Map<string, ResourceRow>();
 
-          teamProjectCharges.forEach(charge => {
+          teamProjectCharges.forEach((charge) => {
             let resourceKey: string;
             let resourceLabel: string;
-            let resourceType: 'role' | 'personne';
+            let resourceType: "role" | "personne";
             let joursParSemaine = 0;
 
             if (charge.role_id) {
               resourceKey = `role_${charge.role_id}`;
-              const role = this.availableRoles.find(r => r.id === charge.role_id);
-              resourceLabel = role ? role.nom : 'Unknown Role';
+              const role = this.availableRoles.find((r) => r.id === charge.role_id);
+              resourceLabel = role ? role.nom : "Unknown Role";
               joursParSemaine = role?.jours_par_semaine || 0;
-              resourceType = 'role';
+              resourceType = "role";
             } else if (charge.personne_id) {
               resourceKey = `personne_${charge.personne_id}`;
-              const personne = this.availablePersonnes.find(p => p.id === charge.personne_id);
-              resourceLabel = personne ? `${personne.prenom} ${personne.nom}` : 'Unknown Person';
+              const personne = this.availablePersonnes.find((p) => p.id === charge.personne_id);
+              resourceLabel = personne ? `${personne.prenom} ${personne.nom}` : "Unknown Person";
               joursParSemaine = personne?.jours_par_semaine || 0;
-              resourceType = 'personne';
+              resourceType = "personne";
             } else {
               return; // Skip charges without resource
             }
@@ -1008,12 +1070,12 @@ export class PlanViewComponent implements OnInit {
             if (!resourceMap.has(resourceKey)) {
               const uniqueId = `${project.id}_${teamId}_${charge.role_id || charge.personne_id}_${resourceType}`;
               resourceMap.set(resourceKey, {
-                id: charge.role_id || charge.personne_id || '',
+                id: charge.role_id || charge.personne_id || "",
                 uniqueId: uniqueId,
                 label: resourceLabel,
                 type: resourceType,
                 jours_par_semaine: joursParSemaine,
-                charges: new Map<string, number>()
+                charges: new Map<string, number>(),
               });
             }
 
@@ -1021,7 +1083,7 @@ export class PlanViewComponent implements OnInit {
 
             // Add charge to resource if it has dates
             if (charge.semaine_debut) {
-              const weekKey = charge.semaine_debut.split('T')[0];
+              const weekKey = charge.semaine_debut.split("T")[0];
               const val = resource.charges.get(weekKey) || 0;
               resource.charges.set(weekKey, val + charge.unite_ressource);
 
@@ -1042,7 +1104,7 @@ export class PlanViewComponent implements OnInit {
             label: label,
             expanded: true, // Expanded by default
             resources: resources,
-            charges: teamCharges
+            charges: teamCharges,
           });
         });
 
@@ -1050,7 +1112,7 @@ export class PlanViewComponent implements OnInit {
         children.sort((a, b) => a.label.localeCompare(b.label));
 
         // Sort resources within each child alphabetically
-        children.forEach(child => {
+        children.forEach((child) => {
           child.resources.sort((a, b) => a.label.localeCompare(b.label));
         });
 
@@ -1059,56 +1121,56 @@ export class PlanViewComponent implements OnInit {
           label: project.nom_projet,
           expanded: true, // Expanded by default
           children: children,
-          totalCharges: parentTotal
+          totalCharges: parentTotal,
         });
       }
-  } else {
+    } else {
       // Parent = Team, Child = Project, GrandChild = Resource
       // Sort teams alphabetically
       const sortedTeams = [...this.allEquipes].sort((a, b) => a.nom.localeCompare(b.nom));
 
       for (const team of sortedTeams) {
-        const teamCharges = this.allCharges.filter(c => c.equipe_id === team.id);
+        const teamCharges = this.allCharges.filter((c) => c.equipe_id === team.id);
 
         // Find all projects this team is working on (via charges OR links)
-        const chargeProjectIds = teamCharges.map(c => c.projet_id).filter(id => !!id);
-        const linkedProjectIds = this.allLinks.filter(l => l.equipe_id === team.id).map(l => l.projet_id);
+        const chargeProjectIds = teamCharges.map((c) => c.projet_id).filter((id) => !!id);
+        const linkedProjectIds = this.allLinks.filter((l) => l.equipe_id === team.id).map((l) => l.projet_id);
 
         const involvedProjectIds = new Set([...chargeProjectIds, ...linkedProjectIds]);
 
         const children: ChildRow[] = [];
         const parentTotal = new Map<string, number>();
 
-        involvedProjectIds.forEach(projectId => {
-          const project = this.allProjects.find(p => p.id === projectId);
-          const label = project ? project.nom_projet : 'Unknown Project';
+        involvedProjectIds.forEach((projectId) => {
+          const project = this.allProjects.find((p) => p.id === projectId);
+          const label = project ? project.nom_projet : "Unknown Project";
           const projectCharges = new Map<string, number>();
 
           // Get charges for this project on this team
-          const teamProjectCharges = teamCharges.filter(c => c.projet_id === projectId);
+          const teamProjectCharges = teamCharges.filter((c) => c.projet_id === projectId);
 
           // Build resources for this project
           const resources: ResourceRow[] = [];
           const resourceMap = new Map<string, ResourceRow>();
 
-          teamProjectCharges.forEach(charge => {
+          teamProjectCharges.forEach((charge) => {
             let resourceKey: string;
             let resourceLabel: string;
-            let resourceType: 'role' | 'personne';
+            let resourceType: "role" | "personne";
             let joursParSemaine = 0;
 
             if (charge.role_id) {
               resourceKey = `role_${charge.role_id}`;
-              const role = this.availableRoles.find(r => r.id === charge.role_id);
-              resourceLabel = role ? role.nom : 'Unknown Role';
+              const role = this.availableRoles.find((r) => r.id === charge.role_id);
+              resourceLabel = role ? role.nom : "Unknown Role";
               joursParSemaine = role?.jours_par_semaine || 0;
-              resourceType = 'role';
+              resourceType = "role";
             } else if (charge.personne_id) {
               resourceKey = `personne_${charge.personne_id}`;
-              const personne = this.availablePersonnes.find(p => p.id === charge.personne_id);
-              resourceLabel = personne ? `${personne.prenom} ${personne.nom}` : 'Unknown Person';
+              const personne = this.availablePersonnes.find((p) => p.id === charge.personne_id);
+              resourceLabel = personne ? `${personne.prenom} ${personne.nom}` : "Unknown Person";
               joursParSemaine = personne?.jours_par_semaine || 0;
-              resourceType = 'personne';
+              resourceType = "personne";
             } else {
               return; // Skip charges without resource
             }
@@ -1116,12 +1178,12 @@ export class PlanViewComponent implements OnInit {
             if (!resourceMap.has(resourceKey)) {
               const uniqueId = `${team.id}_${projectId}_${charge.role_id || charge.personne_id}_${resourceType}`;
               resourceMap.set(resourceKey, {
-                id: charge.role_id || charge.personne_id || '',
+                id: charge.role_id || charge.personne_id || "",
                 uniqueId: uniqueId,
                 label: resourceLabel,
                 type: resourceType,
                 jours_par_semaine: joursParSemaine,
-                charges: new Map<string, number>()
+                charges: new Map<string, number>(),
               });
             }
 
@@ -1129,7 +1191,7 @@ export class PlanViewComponent implements OnInit {
 
             // Add charge to resource if it has dates
             if (charge.semaine_debut) {
-              const weekKey = charge.semaine_debut.split('T')[0];
+              const weekKey = charge.semaine_debut.split("T")[0];
               const val = resource.charges.get(weekKey) || 0;
               resource.charges.set(weekKey, val + charge.unite_ressource);
 
@@ -1150,7 +1212,7 @@ export class PlanViewComponent implements OnInit {
             label: label,
             expanded: true, // Expanded by default
             resources: resources,
-            charges: projectCharges
+            charges: projectCharges,
           });
         });
 
@@ -1158,7 +1220,7 @@ export class PlanViewComponent implements OnInit {
         children.sort((a, b) => a.label.localeCompare(b.label));
 
         // Sort resources within each child alphabetically
-        children.forEach(child => {
+        children.forEach((child) => {
           child.resources.sort((a, b) => a.label.localeCompare(b.label));
         });
 
@@ -1167,7 +1229,7 @@ export class PlanViewComponent implements OnInit {
           label: team.nom,
           expanded: true, // Expanded by default
           children: children,
-          totalCharges: parentTotal
+          totalCharges: parentTotal,
         });
       }
     }
@@ -1212,17 +1274,17 @@ export class PlanViewComponent implements OnInit {
   }
 
   getParentTotal(row: ParentRow, week: Date): number {
-    const weekKey = week.toISOString().split('T')[0];
+    const weekKey = week.toISOString().split("T")[0];
     return row.totalCharges.get(weekKey) || 0;
   }
 
   getChildValue(child: ChildRow, week: Date): number {
-    const weekKey = week.toISOString().split('T')[0];
+    const weekKey = week.toISOString().split("T")[0];
     return child.charges.get(weekKey) || 0;
   }
 
   getResourceValue(resource: ResourceRow, week: Date): number {
-    const weekKey = week.toISOString().split('T')[0];
+    const weekKey = week.toISOString().split("T")[0];
     return resource.charges.get(weekKey) || 0;
   }
 
@@ -1230,7 +1292,7 @@ export class PlanViewComponent implements OnInit {
     // Synchronize horizontal scroll between header and data
     const target = event.target as HTMLElement;
     const scrollLeft = target.scrollLeft;
-    
+
     if (this.headerScroll) {
       this.headerScroll.nativeElement.scrollLeft = scrollLeft;
     }
@@ -1239,21 +1301,21 @@ export class PlanViewComponent implements OnInit {
   // Modal & Linking Logic
   openLinkModal(row: ParentRow) {
     this.selectedParentRow = row;
-    this.selectedIdToLink = '';
+    this.selectedIdToLink = "";
 
-    const existingChildIds = new Set(row.children.map(c => c.id));
+    const existingChildIds = new Set(row.children.map((c) => c.id));
 
-    if (this.viewMode === 'project') {
+    if (this.viewMode === "project") {
       // Parent is Project, we want to add Teams
       // Filter out teams that are already attached (via charges or existing link)
       this.linkableItems = this.allEquipes
-        .filter(e => !existingChildIds.has(e.id!))
-        .map(e => ({ id: e.id!, label: e.nom }));
+        .filter((e) => !existingChildIds.has(e.id!))
+        .map((e) => ({ id: e.id!, label: e.nom }));
     } else {
       // Parent is Team, we want to add Projects
       this.linkableItems = this.allProjects
-        .filter(p => !existingChildIds.has(p.id!))
-        .map(p => ({ id: p.id!, label: p.nom_projet }));
+        .filter((p) => !existingChildIds.has(p.id!))
+        .map((p) => ({ id: p.id!, label: p.nom_projet }));
     }
 
     this.showLinkModal = true;
@@ -1262,14 +1324,14 @@ export class PlanViewComponent implements OnInit {
   closeLinkModal() {
     this.showLinkModal = false;
     this.selectedParentRow = null;
-    this.selectedIdToLink = '';
+    this.selectedIdToLink = "";
   }
 
   async linkItem() {
     if (!this.selectedParentRow || !this.selectedIdToLink) return;
 
     try {
-      if (this.viewMode === 'project') {
+      if (this.viewMode === "project") {
         // Linking Team to Project
         await this.projetService.linkProjectToTeam(this.selectedParentRow.id, this.selectedIdToLink);
       } else {
@@ -1289,8 +1351,8 @@ export class PlanViewComponent implements OnInit {
   async openAddResourceModal(child: ChildRow, parent: ParentRow) {
     this.selectedChildRow = child;
     this.selectedParentForResource = parent;
-    this.resourceTypeToAdd = 'role';
-    this.selectedResourceId = '';
+    this.resourceTypeToAdd = "role";
+    this.selectedResourceId = "";
     this.showAddResourceModal = true;
 
     // Load available roles and personnes
@@ -1302,7 +1364,7 @@ export class PlanViewComponent implements OnInit {
     this.showAddResourceModal = false;
     this.selectedChildRow = null;
     this.selectedParentForResource = null;
-    this.selectedResourceId = '';
+    this.selectedResourceId = "";
   }
 
   async addResourceToCharge() {
@@ -1312,7 +1374,7 @@ export class PlanViewComponent implements OnInit {
       let projetId: string;
       let equipeId: string;
 
-      if (this.viewMode === 'project') {
+      if (this.viewMode === "project") {
         // Parent is Project, Child is Team
         projetId = this.selectedParentForResource.id;
         equipeId = this.selectedChildRow.id;
@@ -1322,15 +1384,10 @@ export class PlanViewComponent implements OnInit {
         projetId = this.selectedChildRow.id;
       }
 
-      const roleId = this.resourceTypeToAdd === 'role' ? this.selectedResourceId : undefined;
-      const personneId = this.resourceTypeToAdd === 'personne' ? this.selectedResourceId : undefined;
+      const roleId = this.resourceTypeToAdd === "role" ? this.selectedResourceId : undefined;
+      const personneId = this.resourceTypeToAdd === "personne" ? this.selectedResourceId : undefined;
 
-      await this.chargeService.createChargeWithoutDates(
-        projetId,
-        equipeId,
-        roleId,
-        personneId
-      );
+      await this.chargeService.createChargeWithoutDates(projetId, equipeId, roleId, personneId);
 
       await this.loadData(); // Reload to refresh tree
       this.closeAddResourceModal();
@@ -1396,9 +1453,11 @@ export class PlanViewComponent implements OnInit {
       const firstCell = this.selectedCells[0];
       if (!firstCell) return;
 
-      const uniqueId = this.getResourceUniqueId(firstCell.resource,
+      const uniqueId = this.getResourceUniqueId(
+        firstCell.resource,
         { id: firstCell.childId } as ChildRow,
-        { id: firstCell.parentId } as ParentRow);
+        { id: firstCell.parentId } as ParentRow
+      );
 
       const rowSelector = `[data-resource-id="${uniqueId}"]`;
       const rowElement = document.querySelector(rowSelector);
@@ -1411,7 +1470,7 @@ export class PlanViewComponent implements OnInit {
           const rect = cellElement.getBoundingClientRect();
           this.toolbarPosition = {
             top: rect.bottom,
-            left: rect.left + (rect.width / 2)
+            left: rect.left + rect.width / 2,
           };
 
           // Make toolbar visible now that position is set
@@ -1438,15 +1497,14 @@ export class PlanViewComponent implements OnInit {
         resource: this.dragStartResource,
         week: this.displayedWeeks[i],
         childId: child.id,
-        parentId: parent.id
+        parentId: parent.id,
       });
     }
   }
 
   isCellSelected(resource: ResourceRow, week: Date): boolean {
     return this.selectedCells.some(
-      (s) => s.resource.uniqueId === resource.uniqueId &&
-        s.week.getTime() === week.getTime()
+      (s) => s.resource.uniqueId === resource.uniqueId && s.week.getTime() === week.getTime()
     );
   }
 
@@ -1466,12 +1524,12 @@ export class PlanViewComponent implements OnInit {
 
     try {
       for (const cell of this.selectedCells) {
-        const weekKey = cell.week.toISOString().split('T')[0];
+        const weekKey = cell.week.toISOString().split("T")[0];
 
         let projetId: string;
         let equipeId: string;
 
-        if (this.viewMode === 'project') {
+        if (this.viewMode === "project") {
           // Parent is Project, Child is Team
           projetId = cell.parentId;
           equipeId = cell.childId;
@@ -1481,8 +1539,8 @@ export class PlanViewComponent implements OnInit {
           projetId = cell.childId;
         }
 
-        const roleId = cell.resource.type === 'role' ? cell.resource.id : undefined;
-        const personneId = cell.resource.type === 'personne' ? cell.resource.id : undefined;
+        const roleId = cell.resource.type === "role" ? cell.resource.id : undefined;
+        const personneId = cell.resource.type === "personne" ? cell.resource.id : undefined;
 
         // Create or update charge
         await this.chargeService.createOrUpdateCharge(
@@ -1505,25 +1563,25 @@ export class PlanViewComponent implements OnInit {
   }
 
   // --- Filter helpers ---
-  @HostListener('document:click', ['$event'])
+  @HostListener("document:click", ["$event"])
   onDocumentClick(event: Event) {
     // Close any open dropdown if clicking outside
     const target = event.target as HTMLElement;
     // if click is outside filters-bar, close dropdowns
-    if (!target.closest('.filters-bar')) {
+    if (!target.closest(".filters-bar")) {
       this.openEquipeDropdown = false;
       this.openProjetDropdown = false;
       this.openResourceDropdown = false;
     }
   }
 
-  toggleDropdown(name: 'equipe' | 'projet' | 'resource', event: MouseEvent) {
+  toggleDropdown(name: "equipe" | "projet" | "resource", event: MouseEvent) {
     event.stopPropagation();
-    if (name === 'equipe') {
+    if (name === "equipe") {
       this.openEquipeDropdown = !this.openEquipeDropdown;
       this.openProjetDropdown = false;
       this.openResourceDropdown = false;
-    } else if (name === 'projet') {
+    } else if (name === "projet") {
       this.openProjetDropdown = !this.openProjetDropdown;
       this.openEquipeDropdown = false;
       this.openResourceDropdown = false;
@@ -1538,7 +1596,7 @@ export class PlanViewComponent implements OnInit {
     if (!id) return;
     const checked = (event.target as HTMLInputElement).checked;
     if (checked) this.filterEquipeIds.push(id);
-    else this.filterEquipeIds = this.filterEquipeIds.filter(x => x !== id);
+    else this.filterEquipeIds = this.filterEquipeIds.filter((x) => x !== id);
     this.applyFilters();
   }
 
@@ -1546,35 +1604,35 @@ export class PlanViewComponent implements OnInit {
     if (!id) return;
     const checked = (event.target as HTMLInputElement).checked;
     if (checked) this.filterProjetIds.push(id);
-    else this.filterProjetIds = this.filterProjetIds.filter(x => x !== id);
+    else this.filterProjetIds = this.filterProjetIds.filter((x) => x !== id);
     this.applyFilters();
   }
 
   onResourceToggle(sel: string, event: Event) {
     const checked = (event.target as HTMLInputElement).checked;
     if (checked) this.filterResourceIds.push(sel);
-    else this.filterResourceIds = this.filterResourceIds.filter(x => x !== sel);
+    else this.filterResourceIds = this.filterResourceIds.filter((x) => x !== sel);
     this.applyFilters();
   }
 
   getEquipeName(id: string) {
-    const e = this.allEquipes.find(x => x.id === id);
-    return e ? e.nom : '—';
+    const e = this.allEquipes.find((x) => x.id === id);
+    return e ? e.nom : "—";
   }
 
   getProjetLabel(id: string) {
-    const p = this.allProjects.find(x => x.id === id);
-    return p ? `${p.code_projet} — ${p.nom_projet}` : '—';
+    const p = this.allProjects.find((x) => x.id === id);
+    return p ? `${p.code_projet} — ${p.nom_projet}` : "—";
   }
 
   getResourceLabel(sel: string) {
-    const [type, id] = sel.split(':');
-    if (type === 'role') {
-      const r = this.availableRoles.find(x => x.id === id);
-      return r ? `Role: ${r.nom}` : 'Role: —';
+    const [type, id] = sel.split(":");
+    if (type === "role") {
+      const r = this.availableRoles.find((x) => x.id === id);
+      return r ? `Role: ${r.nom}` : "Role: —";
     }
-    const p = this.availablePersonnes.find(x => x.id === id);
-    return p ? `${p.prenom} ${p.nom}` : 'Pers: —';
+    const p = this.availablePersonnes.find((x) => x.id === id);
+    return p ? `${p.prenom} ${p.nom}` : "Pers: —";
   }
 
   applyFilters() {
@@ -1592,7 +1650,7 @@ export class PlanViewComponent implements OnInit {
         label: parent.label,
         expanded: parent.expanded,
         children: [],
-        totalCharges: parent.totalCharges
+        totalCharges: parent.totalCharges,
       };
 
       // Process each child and apply child/resource-level filters
@@ -1600,10 +1658,13 @@ export class PlanViewComponent implements OnInit {
         // Start with child's resources, then apply resource filter
         let resourcesMatch: ResourceRow[] = child.resources;
         if (this.filterResourceIds.length) {
-          resourcesMatch = child.resources.filter(r =>
-            this.filterResourceIds.some(sel => {
+          resourcesMatch = child.resources.filter((r) =>
+            this.filterResourceIds.some((sel) => {
               const [t, id] = sel.split(":");
-              return (t === 'role' && r.type === 'role' && r.id === id) || (t === 'personne' && r.type === 'personne' && r.id === id);
+              return (
+                (t === "role" && r.type === "role" && r.id === id) ||
+                (t === "personne" && r.type === "personne" && r.id === id)
+              );
             })
           );
         }
@@ -1613,7 +1674,7 @@ export class PlanViewComponent implements OnInit {
         let childPassesProjet = true;
 
         if (this.filterEquipeIds.length) {
-          if (this.viewMode === 'project') {
+          if (this.viewMode === "project") {
             // child.id is equipe id
             childPassesEquipe = this.filterEquipeIds.includes(child.id);
           } else {
@@ -1623,7 +1684,7 @@ export class PlanViewComponent implements OnInit {
         }
 
         if (this.filterProjetIds.length) {
-          if (this.viewMode === 'team') {
+          if (this.viewMode === "team") {
             // child.id is projet id
             childPassesProjet = this.filterProjetIds.includes(child.id);
           } else {
@@ -1642,7 +1703,7 @@ export class PlanViewComponent implements OnInit {
             label: child.label,
             expanded: child.expanded,
             resources: resourcesMatch,
-            charges: child.charges
+            charges: child.charges,
           });
         }
       }
@@ -1653,7 +1714,7 @@ export class PlanViewComponent implements OnInit {
       let parentPassesProjet = true;
 
       if (this.filterEquipeIds.length) {
-        if (this.viewMode === 'team') {
+        if (this.viewMode === "team") {
           // parent.id is equipe id
           parentPassesEquipe = this.filterEquipeIds.includes(parent.id);
         } else {
@@ -1663,7 +1724,7 @@ export class PlanViewComponent implements OnInit {
       }
 
       if (this.filterProjetIds.length) {
-        if (this.viewMode === 'project') {
+        if (this.viewMode === "project") {
           // parent.id is projet id
           parentPassesProjet = this.filterProjetIds.includes(parent.id);
         } else {
