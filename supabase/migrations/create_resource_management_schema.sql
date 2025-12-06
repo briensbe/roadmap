@@ -223,8 +223,8 @@ CREATE TABLE IF NOT EXISTS capacites (
 CREATE TABLE IF NOT EXISTS charges (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   projet_id uuid NOT NULL REFERENCES projets(id) ON DELETE CASCADE,
-  semaine_debut date NOT NULL,
-  semaine_fin date NOT NULL,
+  semaine_debut date ,
+  semaine_fin date ,
   unite_ressource numeric NOT NULL DEFAULT 1,
   role_id uuid REFERENCES roles(id) ON DELETE SET NULL,
   personne_id uuid REFERENCES personnes(id) ON DELETE SET NULL,

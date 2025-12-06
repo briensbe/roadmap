@@ -39,4 +39,36 @@ export class ChargeService {
         if (error) throw error;
         return data || [];
     }
+
+    async createChargeWithoutDates(
+        projetId: string,
+        equipeId: string,
+        roleId?: string,
+        personneId?: string,
+        uniteRessource: number = 1
+    ): Promise<Charge> {
+        const chargeData: any = {
+            projet_id: projetId,
+            equipe_id: equipeId,
+            unite_ressource: uniteRessource,
+            semaine_debut: null,
+            semaine_fin: null
+        };
+
+        if (roleId) {
+            chargeData.role_id = roleId;
+        }
+        if (personneId) {
+            chargeData.personne_id = personneId;
+        }
+
+        const { data, error } = await this.supabase.client
+            .from('charges')
+            .insert([chargeData])
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    }
 }

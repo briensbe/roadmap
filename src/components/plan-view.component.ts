@@ -4,13 +4,23 @@ import { FormsModule } from "@angular/forms";
 import { TeamService } from "../services/team.service";
 import { ProjetService } from "../services/projet.service";
 import { ChargeService } from "../services/charge.service";
-import { Equipe, Projet, Charge } from "../models/types";
+import { Equipe, Projet, Charge, Role, Personne } from "../models/types";
 import { CalendarService } from "../services/calendar.service";
 import { LucideAngularModule, Plus } from "lucide-angular";
+
+interface ResourceRow {
+  id: string;
+  label: string;
+  type: 'role' | 'personne';
+  jours_par_semaine: number;
+  charges: Map<string, number>; // week string -> amount
+}
 
 interface ChildRow {
   id: string;
   label: string;
+  expanded: boolean;
+  resources: ResourceRow[];
   charges: Map<string, number>; // week string -> amount
 }
 
@@ -82,9 +92,25 @@ interface ParentRow {
 
             <ng-container *ngIf="row.expanded">
               <div *ngFor="let child of row.children" class="resource-label-row">
-                <div class="resource-label">
-                   <span class="resource-name" style="padding-left: 20px;">{{ child.label }}</span>
+                <div class="resource-label" (click)="toggleChild(child)">
+                   <span class="expand-icon" style="padding-left: 10px;">{{ child.expanded ? "▼" : "▶" }}</span>
+                   <span class="resource-name" style="padding-left: 10px;">{{ child.label }}</span>
+                   <button 
+                       class="btn btn-xs btn-add"
+                       (click)="openAddResourceModal(child, row); $event.stopPropagation()"
+                   >
+                       <lucide-icon [img]="Plus" [size]="14"></lucide-icon>
+                   </button>
                 </div>
+                
+                <!-- Third level: Resources -->
+                <ng-container *ngIf="child.expanded">
+                  <div *ngFor="let resource of child.resources" class="resource-detail-row">
+                    <div class="resource-detail-label">
+                      <span class="resource-detail-name" style="padding-left: 50px;">{{ resource.label }}</span>
+                    </div>
+                  </div>
+                </ng-container>
               </div>
             </ng-container>
           </ng-container>
@@ -117,7 +143,7 @@ interface ParentRow {
 
             <!-- Children Rows -->
             <ng-container *ngIf="row.expanded">
-                <div *ngFor="let child of row.children" class="resource-weeks-row">
+              <div *ngFor="let child of row.children" class="resource-weeks-row">
                 <div
                   *ngFor="let week of displayedWeeks"
                   class="week-cell resource-cell"
@@ -128,6 +154,23 @@ interface ParentRow {
                   </div>
                 </div>
               </div>
+              
+              <!-- Resource Rows (Third Level) -->
+              <ng-container *ngFor="let child of row.children">
+                <ng-container *ngIf="child.expanded">
+                  <div *ngFor="let resource of child.resources" class="resource-detail-weeks-row">
+                    <div
+                      *ngFor="let week of displayedWeeks"
+                      class="week-cell resource-detail-cell"
+                      [class.has-capacity]="getResourceValue(resource, week) > 0"
+                    >
+                      <div class="cell-content" *ngIf="getResourceValue(resource, week) > 0">
+                        <div class="capacity-value">{{ getResourceValue(resource, week) | number : "1.0-1" }}</div>
+                      </div>
+                    </div>
+                  </div>
+                </ng-container>
+              </ng-container>
             </ng-container>
           </ng-container>
 
@@ -160,6 +203,50 @@ interface ParentRow {
                 <button class="btn btn-primary" (click)="linkItem()" [disabled]="!selectedIdToLink">Ajouter</button>
                 <button class="btn btn-secondary" (click)="closeLinkModal()">Annuler</button>
             </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal for adding resource -->
+    <div *ngIf="showAddResourceModal" class="modal-overlay" (click)="closeAddResourceModal()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>Ajouter une Ressource à {{ selectedChildRow?.label }}</h2>
+          <button class="modal-close" (click)="closeAddResourceModal()">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Type de ressource</label>
+            <select [(ngModel)]="resourceTypeToAdd" class="form-control">
+              <option value="role">Rôle</option>
+              <option value="personne">Personne</option>
+            </select>
+          </div>
+
+          <div class="form-group" *ngIf="resourceTypeToAdd === 'role'">
+            <label>Sélectionner un rôle</label>
+            <select [(ngModel)]="selectedResourceId" class="form-control">
+              <option value="">-- Choisir un rôle --</option>
+              <option *ngFor="let role of availableRoles" [value]="role.id">
+                {{ role.nom }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group" *ngIf="resourceTypeToAdd === 'personne'">
+            <label>Sélectionner une personne</label>
+            <select [(ngModel)]="selectedResourceId" class="form-control">
+              <option value="">-- Choisir une personne --</option>
+              <option *ngFor="let personne of availablePersonnes" [value]="personne.id">
+                {{ personne.prenom }} {{ personne.nom }}
+              </option>
+            </select>
+          </div>
+
+          <div class="modal-actions">
+            <button class="btn btn-primary" (click)="addResourceToCharge()" [disabled]="!selectedResourceId">Ajouter</button>
+            <button class="btn btn-secondary" (click)="closeAddResourceModal()">Annuler</button>
+          </div>
         </div>
       </div>
     </div>
@@ -437,6 +524,54 @@ interface ParentRow {
         background: #f9fafb;
       }
 
+      .resource-detail-row {
+        border-bottom: 1px solid #e2e8f0;
+        background: #fafbfc;
+      }
+
+      .resource-detail-row:hover {
+        background: #f3f4f6;
+      }
+
+      .resource-detail-label {
+        padding: 10px 16px 10px 50px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 40px;
+        font-size: 13px;
+        color: #6b7280;
+      }
+
+      .resource-detail-name {
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .resource-detail-weeks-row {
+        display: flex;
+        border-bottom: 1px solid #e2e8f0;
+        background: #fafbfc;
+        min-height: 40px;
+        user-select: none;
+      }
+
+      .resource-detail-weeks-row:hover {
+        background: #f3f4f6;
+      }
+
+      .resource-detail-cell {
+        background: #fafbfc;
+      }
+
+      .resource-detail-cell.has-capacity {
+        background: #e0f2fe;
+        font-weight: 600;
+        color: #0369a1;
+      }
+
       .week-cell {
         min-width: 80px;
         width: 80px;
@@ -591,11 +726,20 @@ export class PlanViewComponent implements OnInit {
   allCharges: Charge[] = [];
   allLinks: { equipe_id: string; projet_id: string }[] = [];
 
-  // Modal State
+  // Link Modal State
   showLinkModal = false;
   selectedParentRow: ParentRow | null = null;
   linkableItems: { id: string; label: string }[] = [];
   selectedIdToLink: string = '';
+
+  // Resource Modal State
+  showAddResourceModal = false;
+  selectedChildRow: ChildRow | null = null;
+  selectedParentForResource: ParentRow | null = null;
+  resourceTypeToAdd: 'role' | 'personne' = 'role';
+  selectedResourceId: string = '';
+  availableRoles: Role[] = [];
+  availablePersonnes: Personne[] = [];
 
   // Icons
   Plus = Plus;
@@ -632,6 +776,10 @@ export class PlanViewComponent implements OnInit {
     this.allCharges = await this.chargeService.getAllCharges();
     this.allLinks = await this.projetService.getAllEquipeProjetLinks();
 
+    // Load roles and persons for resource display
+    this.availableRoles = await this.teamService.getAllRoles();
+    this.availablePersonnes = await this.teamService.getAllPersonnes();
+
     this.buildTree();
   }
 
@@ -646,7 +794,7 @@ export class PlanViewComponent implements OnInit {
     // For now reset to closed or keep simple.
 
     if (this.viewMode === 'project') {
-      // Parent = Project, Child = Team
+      // Parent = Project, Child = Team, GrandChild = Resource
       for (const project of this.allProjects) {
         const projectCharges = this.allCharges.filter(c => c.projet_id === project.id);
 
@@ -662,35 +810,86 @@ export class PlanViewComponent implements OnInit {
         involvedTeamIds.forEach(teamId => {
           const team = this.allEquipes.find(e => e.id === teamId);
           const label = team ? team.nom : 'No Team';
-          const charges = new Map<string, number>();
+          const teamCharges = new Map<string, number>();
 
-          // Sum charges for this team on this project per week
-          projectCharges.filter(c => c.equipe_id === teamId).forEach(c => {
-            const weekKey = c.semaine_debut.split('T')[0];
-            const val = charges.get(weekKey) || 0;
-            charges.set(weekKey, val + c.unite_ressource);
+          // Get charges for this team on this project
+          const teamProjectCharges = projectCharges.filter(c => c.equipe_id === teamId);
 
-            const pVal = parentTotal.get(weekKey) || 0;
-            parentTotal.set(weekKey, pVal + c.unite_ressource);
+          // Build resources for this team
+          const resources: ResourceRow[] = [];
+          const resourceMap = new Map<string, ResourceRow>();
+
+          teamProjectCharges.forEach(charge => {
+            let resourceKey: string;
+            let resourceLabel: string;
+            let resourceType: 'role' | 'personne';
+            let joursParSemaine = 0;
+
+            if (charge.role_id) {
+              resourceKey = `role_${charge.role_id}`;
+              const role = this.availableRoles.find(r => r.id === charge.role_id);
+              resourceLabel = role ? role.nom : 'Unknown Role';
+              joursParSemaine = role?.jours_par_semaine || 0;
+              resourceType = 'role';
+            } else if (charge.personne_id) {
+              resourceKey = `personne_${charge.personne_id}`;
+              const personne = this.availablePersonnes.find(p => p.id === charge.personne_id);
+              resourceLabel = personne ? `${personne.prenom} ${personne.nom}` : 'Unknown Person';
+              joursParSemaine = personne?.jours_par_semaine || 0;
+              resourceType = 'personne';
+            } else {
+              return; // Skip charges without resource
+            }
+
+            if (!resourceMap.has(resourceKey)) {
+              resourceMap.set(resourceKey, {
+                id: charge.role_id || charge.personne_id || '',
+                label: resourceLabel,
+                type: resourceType,
+                jours_par_semaine: joursParSemaine,
+                charges: new Map<string, number>()
+              });
+            }
+
+            const resource = resourceMap.get(resourceKey)!;
+
+            // Add charge to resource if it has dates
+            if (charge.semaine_debut) {
+              const weekKey = charge.semaine_debut.split('T')[0];
+              const val = resource.charges.get(weekKey) || 0;
+              resource.charges.set(weekKey, val + charge.unite_ressource);
+
+              // Add to team total
+              const teamVal = teamCharges.get(weekKey) || 0;
+              teamCharges.set(weekKey, teamVal + charge.unite_ressource);
+
+              // Add to parent total
+              const pVal = parentTotal.get(weekKey) || 0;
+              parentTotal.set(weekKey, pVal + charge.unite_ressource);
+            }
           });
+
+          resources.push(...resourceMap.values());
 
           children.push({
             id: teamId!,
             label: label,
-            charges: charges
+            expanded: true, // Expanded by default
+            resources: resources,
+            charges: teamCharges
           });
         });
 
         this.rows.push({
           id: project.id!,
           label: project.nom_projet,
-          expanded: false,
+          expanded: true, // Expanded by default
           children: children,
           totalCharges: parentTotal
         });
       }
     } else {
-      // Parent = Team, Child = Project
+      // Parent = Team, Child = Project, GrandChild = Resource
       for (const team of this.allEquipes) {
         const teamCharges = this.allCharges.filter(c => c.equipe_id === team.id);
 
@@ -706,28 +905,80 @@ export class PlanViewComponent implements OnInit {
         involvedProjectIds.forEach(projectId => {
           const project = this.allProjects.find(p => p.id === projectId);
           const label = project ? project.nom_projet : 'Unknown Project';
-          const charges = new Map<string, number>();
+          const projectCharges = new Map<string, number>();
 
-          teamCharges.filter(c => c.projet_id === projectId).forEach(c => {
-            const weekKey = c.semaine_debut.split('T')[0];
-            const val = charges.get(weekKey) || 0;
-            charges.set(weekKey, val + c.unite_ressource);
+          // Get charges for this project on this team
+          const teamProjectCharges = teamCharges.filter(c => c.projet_id === projectId);
 
-            const pVal = parentTotal.get(weekKey) || 0;
-            parentTotal.set(weekKey, pVal + c.unite_ressource);
+          // Build resources for this project
+          const resources: ResourceRow[] = [];
+          const resourceMap = new Map<string, ResourceRow>();
+
+          teamProjectCharges.forEach(charge => {
+            let resourceKey: string;
+            let resourceLabel: string;
+            let resourceType: 'role' | 'personne';
+            let joursParSemaine = 0;
+
+            if (charge.role_id) {
+              resourceKey = `role_${charge.role_id}`;
+              const role = this.availableRoles.find(r => r.id === charge.role_id);
+              resourceLabel = role ? role.nom : 'Unknown Role';
+              joursParSemaine = role?.jours_par_semaine || 0;
+              resourceType = 'role';
+            } else if (charge.personne_id) {
+              resourceKey = `personne_${charge.personne_id}`;
+              const personne = this.availablePersonnes.find(p => p.id === charge.personne_id);
+              resourceLabel = personne ? `${personne.prenom} ${personne.nom}` : 'Unknown Person';
+              joursParSemaine = personne?.jours_par_semaine || 0;
+              resourceType = 'personne';
+            } else {
+              return; // Skip charges without resource
+            }
+
+            if (!resourceMap.has(resourceKey)) {
+              resourceMap.set(resourceKey, {
+                id: charge.role_id || charge.personne_id || '',
+                label: resourceLabel,
+                type: resourceType,
+                jours_par_semaine: joursParSemaine,
+                charges: new Map<string, number>()
+              });
+            }
+
+            const resource = resourceMap.get(resourceKey)!;
+
+            // Add charge to resource if it has dates
+            if (charge.semaine_debut) {
+              const weekKey = charge.semaine_debut.split('T')[0];
+              const val = resource.charges.get(weekKey) || 0;
+              resource.charges.set(weekKey, val + charge.unite_ressource);
+
+              // Add to project total
+              const projVal = projectCharges.get(weekKey) || 0;
+              projectCharges.set(weekKey, projVal + charge.unite_ressource);
+
+              // Add to parent total
+              const pVal = parentTotal.get(weekKey) || 0;
+              parentTotal.set(weekKey, pVal + charge.unite_ressource);
+            }
           });
+
+          resources.push(...resourceMap.values());
 
           children.push({
             id: projectId!,
             label: label,
-            charges: charges
+            expanded: true, // Expanded by default
+            resources: resources,
+            charges: projectCharges
           });
         });
 
         this.rows.push({
           id: team.id!,
           label: team.nom,
-          expanded: false,
+          expanded: true, // Expanded by default
           children: children,
           totalCharges: parentTotal
         });
@@ -754,6 +1005,10 @@ export class PlanViewComponent implements OnInit {
     row.expanded = !row.expanded;
   }
 
+  toggleChild(child: ChildRow) {
+    child.expanded = !child.expanded;
+  }
+
   formatWeekHeader(date: Date): string {
     return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
   }
@@ -774,6 +1029,11 @@ export class PlanViewComponent implements OnInit {
   getChildValue(child: ChildRow, week: Date): number {
     const weekKey = week.toISOString().split('T')[0];
     return child.charges.get(weekKey) || 0;
+  }
+
+  getResourceValue(resource: ResourceRow, week: Date): number {
+    const weekKey = week.toISOString().split('T')[0];
+    return resource.charges.get(weekKey) || 0;
   }
 
   // Modal & Linking Logic
@@ -822,6 +1082,61 @@ export class PlanViewComponent implements OnInit {
     } catch (error) {
       console.error("Error linking item:", error);
       alert("Erreur lors de l'ajout du lien.");
+    }
+  }
+
+  // Resource Addition Modal Methods
+  async openAddResourceModal(child: ChildRow, parent: ParentRow) {
+    this.selectedChildRow = child;
+    this.selectedParentForResource = parent;
+    this.resourceTypeToAdd = 'role';
+    this.selectedResourceId = '';
+    this.showAddResourceModal = true;
+
+    // Load available roles and personnes
+    this.availableRoles = await this.teamService.getAllRoles();
+    this.availablePersonnes = await this.teamService.getAllPersonnes();
+  }
+
+  closeAddResourceModal() {
+    this.showAddResourceModal = false;
+    this.selectedChildRow = null;
+    this.selectedParentForResource = null;
+    this.selectedResourceId = '';
+  }
+
+  async addResourceToCharge() {
+    if (!this.selectedChildRow || !this.selectedParentForResource || !this.selectedResourceId) return;
+
+    try {
+      let projetId: string;
+      let equipeId: string;
+
+      if (this.viewMode === 'project') {
+        // Parent is Project, Child is Team
+        projetId = this.selectedParentForResource.id;
+        equipeId = this.selectedChildRow.id;
+      } else {
+        // Parent is Team, Child is Project
+        equipeId = this.selectedParentForResource.id;
+        projetId = this.selectedChildRow.id;
+      }
+
+      const roleId = this.resourceTypeToAdd === 'role' ? this.selectedResourceId : undefined;
+      const personneId = this.resourceTypeToAdd === 'personne' ? this.selectedResourceId : undefined;
+
+      await this.chargeService.createChargeWithoutDates(
+        projetId,
+        equipeId,
+        roleId,
+        personneId
+      );
+
+      await this.loadData(); // Reload to refresh tree
+      this.closeAddResourceModal();
+    } catch (error) {
+      console.error("Error adding resource:", error);
+      alert("Erreur lors de l'ajout de la ressource.");
     }
   }
 }
