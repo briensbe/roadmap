@@ -149,7 +149,8 @@ interface TeamRow {
         class="selection-toolbar"
         [style.top.px]="toolbarPosition?.top"
         [style.left.px]="toolbarPosition?.left"
-        [style.transform]="'translate(-50%, 10px)'">
+        [style.transform]="'translate(-50%, 10px)'"
+        [style.opacity]="toolbarVisible ? 1 : 0">
         <div class="selection-info">
           {{ selectedCells.length }} semaine(s) sélectionnée(s)
           <div class="selection-total">
@@ -764,6 +765,7 @@ export class CapacityViewComponent implements OnInit {
   selectedCells: Array<{ resource: ResourceRow; week: Date }> = [];
   isSelectionFinished: boolean = false;
   toolbarPosition: { top: number; left: number } | null = null;
+  toolbarVisible: boolean = false; // Controls opacity to prevent flash
 
   bulkCapaciteValue: number | null = null;
 
@@ -979,6 +981,9 @@ export class CapacityViewComponent implements OnInit {
             left: rect.left + (rect.width / 2)
           };
 
+          // Make toolbar visible now that position is set
+          this.toolbarVisible = true;
+
           // Focus the input after the toolbar is displayed
           setTimeout(() => {
             this.bulkCapaciteInput?.nativeElement.focus();
@@ -1013,6 +1018,7 @@ export class CapacityViewComponent implements OnInit {
     this.selectedCells = [];
     this.isSelectionFinished = false;
     this.toolbarPosition = null;
+    this.toolbarVisible = false;
     this.dragStartResource = null;
     this.dragStartWeekIndex = -1;
     this.dragEndWeekIndex = -1;
