@@ -127,84 +127,72 @@ interface ParentRow {
         </div>
       </div>
 
-      <div class="calendar-wrapper">
-        <!-- Fixed Left Column: Labels -->
-        <div class="labels-column">
-          <div class="labels-header">
-            <span>{{ viewMode === 'project' ? 'Projets / Équipes' : 'Équipes / Projets' }}</span>
+      <!-- Main calendar container with sticky header -->
+      <div class="calendar-container">
+        <!-- Header row with sticky positioning -->
+        <div class="calendar-header-wrapper">
+          <div class="row-label fixed-column header-fixed">
+            <span style="font-weight:600;">{{ viewMode === 'project' ? 'Projets / Équipes' : 'Équipes / Projets' }}</span>
           </div>
-
-          <ng-container *ngFor="let row of rows">
-            <div class="team-label-row">
-              <div class="team-label" (click)="toggleRow(row)">
-                <span class="expand-icon">{{ row.expanded ? "▼" : "▶" }}</span>
-                <strong>{{ row.label }}</strong>
-                <button 
-                    class="btn btn-xs btn-add"
-                    (click)="openLinkModal(row); $event.stopPropagation()"
-                >
-                    <lucide-icon [img]="Plus" [size]="16"></lucide-icon>
-                </button>
+          <div class="header-scroll-container" #headerScroll>
+            <div class="row-cells scrollable-column">
+              <div *ngFor="let week of displayedWeeks" class="week-header" [class.current-week]="isCurrentWeek(week)">
+                <div class="week-date">{{ formatWeekHeader(week) }}</div>
+                <div class="week-number">S{{ getWeekNumber(week) }}</div>
               </div>
             </div>
-
-            <ng-container *ngIf="row.expanded">
-              <div *ngFor="let child of row.children" class="resource-label-row">
-                <div class="resource-label" (click)="toggleChild(child)">
-                   <span class="expand-icon" style="padding-left: 10px;">{{ child.expanded ? "▼" : "▶" }}</span>
-                   <span class="resource-name" style="padding-left: 10px;">{{ child.label }}</span>
-                   <button 
-                       class="btn btn-xs btn-add"
-                       (click)="openAddResourceModal(child, row); $event.stopPropagation()"
-                   >
-                       <lucide-icon [img]="Plus" [size]="14"></lucide-icon>
-                   </button>
-                </div>
-                
-                <!-- Third level: Resources -->
-                <ng-container *ngIf="child.expanded">
-                  <div *ngFor="let resource of child.resources" class="resource-detail-row">
-                    <div class="resource-detail-label">
-                      <span class="resource-detail-name" style="padding-left: 50px;">{{ resource.label }}</span>
-                    </div>
-                  </div>
-                </ng-container>
-              </div>
-            </ng-container>
-          </ng-container>
-
-          <div *ngIf="rows.length === 0" class="empty-state-label">
-            <p>Aucune donnée</p>
           </div>
         </div>
 
-        <!-- Scrollable Right Column: Weeks -->
-        <div class="weeks-column">
-          <div class="weeks-header">
-            <div *ngFor="let week of displayedWeeks" class="week-header" [class.current-week]="isCurrentWeek(week)">
-              <div class="week-date">{{ formatWeekHeader(week) }}</div>
-              <div class="week-number">S{{ getWeekNumber(week) }}</div>
-            </div>
-          </div>
+        <!-- Data rows - single scroll container -->
+        <div class="calendar-grid" #dataScroll (scroll)="onGridScroll($event)">
 
-          <ng-container *ngFor="let row of rows">
-            <!-- Parent Row Totals -->
-            <div class="team-weeks-row">
+        <ng-container *ngFor="let row of rows">
+          <!-- Parent Row -->
+          <div class="calendar-row-wrapper">
+            <div class="row-label fixed-column">
+              <div class="team-label" (click)="toggleRow(row)">
+                <span class="expand-icon">{{ row.expanded ? "▼" : "▶" }}</span>
+                <strong>{{ row.label }}</strong>
+              </div>
+              <button 
+                  class="btn btn-xs btn-add"
+                  (click)="openLinkModal(row); $event.stopPropagation()"
+                  style="margin-left:auto;"
+              >
+                  <lucide-icon [img]="Plus" [size]="16"></lucide-icon>
+              </button>
+            </div>
+            <div class="row-cells scrollable-column">
               <div *ngFor="let week of displayedWeeks" class="week-cell team-cell">
-                 <div class="team-summary" *ngIf="getParentTotal(row, week) > 0">
+                <div class="team-summary" *ngIf="getParentTotal(row, week) > 0">
                   <div class="capacity-value">
                     {{ getParentTotal(row, week) | number : "1.0-1" }}
                   </div>
                 </div>
               </div>
             </div>
+          </div>
 
-
-            <!-- Children Rows -->
-            <ng-container *ngIf="row.expanded">
-              <ng-container *ngFor="let child of row.children">
-                <!-- Child Row (2nd level) -->
-                <div class="resource-weeks-row">
+          <!-- Children Rows -->
+          <ng-container *ngIf="row.expanded">
+            <ng-container *ngFor="let child of row.children">
+              <!-- Child Row (2nd level) -->
+              <div class="calendar-row-wrapper">
+                <div class="row-label fixed-column">
+                  <div class="resource-label" (click)="toggleChild(child)" style="padding-left:32px;">
+                    <span class="expand-icon">{{ child.expanded ? "▼" : "▶" }}</span>
+                    <span class="resource-name">{{ child.label }}</span>
+                  </div>
+                  <button 
+                      class="btn btn-xs btn-add"
+                      (click)="openAddResourceModal(child, row); $event.stopPropagation()"
+                      style="margin-left:auto;"
+                  >
+                      <lucide-icon [img]="Plus" [size]="14"></lucide-icon>
+                  </button>
+                </div>
+                <div class="row-cells scrollable-column">
                   <div
                     *ngFor="let week of displayedWeeks"
                     class="week-cell resource-cell"
@@ -215,18 +203,25 @@ interface ParentRow {
                     </div>
                   </div>
                 </div>
-              
-                <!-- Resource Rows (Third Level) for this child -->
-                <ng-container *ngIf="child.expanded">
-                  <div 
-                    *ngFor="let resource of child.resources" 
-                    class="resource-detail-weeks-row"
-                    [attr.data-resource-id]="getResourceUniqueId(resource, child, row)"
-                    (mousedown)="onMouseDown($event, resource, child, row)"
-                    (mousemove)="onMouseMove($event, resource, child, row)"
-                    (mouseup)="onMouseUp()"
-                    (mouseleave)="onMouseUp()"
-                  >
+              </div>
+
+              <!-- Resource Rows (3rd level) -->
+              <ng-container *ngIf="child.expanded">
+                <div 
+                  *ngFor="let resource of child.resources" 
+                  class="calendar-row-wrapper"
+                  [attr.data-resource-id]="getResourceUniqueId(resource, child, row)"
+                  (mousedown)="onMouseDown($event, resource, child, row)"
+                  (mousemove)="onMouseMove($event, resource, child, row)"
+                  (mouseup)="onMouseUp()"
+                  (mouseleave)="onMouseUp()"
+                >
+                  <div class="row-label fixed-column">
+                    <div class="resource-detail-label" style="padding-left:50px;">
+                      <span class="resource-detail-name">{{ resource.label }}</span>
+                    </div>
+                  </div>
+                  <div class="row-cells scrollable-column">
                     <div
                       *ngFor="let week of displayedWeeks; let i = index"
                       class="week-cell resource-detail-cell"
@@ -239,15 +234,16 @@ interface ParentRow {
                       </div>
                     </div>
                   </div>
-                </ng-container>
+                </div>
               </ng-container>
             </ng-container>
           </ng-container>
+        </ng-container>
 
-          <div *ngIf="rows.length === 0" class="empty-state-weeks">
-            <p>Aucune donnée</p>
-          </div>
+        <div *ngIf="rows.length === 0" class="empty-state">
+          <p>Aucune donnée</p>
         </div>
+      </div>
       </div>
 
       <!-- Selection Toolbar -->
@@ -530,196 +526,118 @@ interface ParentRow {
         border-radius: 8px;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         overflow: hidden;
-        max-height: calc(100vh - 200px);
+        max-height: calc(100vh - 250px);
         position: relative;
       }
 
-      .labels-column {
+      .calendar-container {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        max-height: calc(100vh - 250px);
+      }
+
+      .calendar-header-wrapper {
+        display: flex;
+        border-bottom: 2px solid #e2e8f0;
+        min-height: 60px;
+        background: #f9fafb;
+        flex-shrink: 0;
+      }
+
+      .header-fixed {
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+        background: #f9fafb;
+        border-right: 2px solid #e2e8f0;
+        z-index: 10;
+      }
+
+      .header-scroll-container {
+        flex: 1;
+        overflow-x: hidden;
+        overflow-y: hidden;
+        display: flex;
+      }
+
+      .calendar-row-wrapper {
+        display: flex;
+        border-bottom: 1px solid #e2e8f0;
+        min-height: 48px;
+      }
+
+      .row-label {
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+      }
+
+      .fixed-column {
         width: 300px;
         flex-shrink: 0;
         border-right: 2px solid #e2e8f0;
-        overflow-y: auto;
-        overflow-x: hidden;
-      }
-
-      .labels-header {
-        padding: 12px 16px;
-        background: #f8fafc;
-        border-bottom: 2px solid #e2e8f0;
-        font-weight: 600;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        min-height: 60px;
-        display: flex;
-        align-items: center;
-      }
-
-      .team-label-row {
-        border-bottom: 1px solid #e2e8f0;
         background: #f9fafb;
       }
 
-      .team-label {
-        padding: 12px 16px;
+      .row-cells {
         display: flex;
-        align-items: center;
-        gap: 8px;
-        cursor: pointer;
-        font-weight: 600;
-        user-select: none;
-        min-height: 48px;
-      }
-
-      .team-label:hover {
-        background: #f3f4f6;
-      }
-
-      .expand-icon {
-        font-size: 12px;
-        color: #6b7280;
-      }
-
-      .resource-label-row {
-        border-bottom: 1px solid #e2e8f0;
-        background: white;
-      }
-
-      .resource-label-row:hover {
-        background: #f9fafb;
-      }
-
-      .resource-label {
-        padding: 12px 16px 12px 32px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        min-height: 48px;
-      }
-
-      .resource-name {
         flex: 1;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
       }
 
-      .empty-state-label {
-        padding: 40px 20px;
-        text-align: center;
-        color: #6b7280;
+      .scrollable-column {
+        position: relative;
       }
 
-      .weeks-column {
+      .calendar-grid {
+        display: flex;
+        flex-direction: column;
         flex: 1;
         overflow-x: auto;
         overflow-y: auto;
       }
 
-      .weeks-header {
-        display: flex;
-        background: #f8fafc;
-        border-bottom: 2px solid #e2e8f0;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        min-height: 60px;
+      .calendar-row-wrapper:nth-child(odd) .fixed-column {
+        background: #f9fafb;
+      }
+
+      .calendar-row-wrapper:nth-child(even) .fixed-column {
+        background: white;
       }
 
       .week-header {
         min-width: 80px;
         width: 80px;
         padding: 8px;
-        text-align: center;
         border-right: 1px solid #e2e8f0;
-        font-size: 12px;
+        text-align: center;
         display: flex;
         flex-direction: column;
+        align-items: center;
         justify-content: center;
         flex-shrink: 0;
+        font-weight: 600;
+        background: #f9fafb;
+      }
+
+      .week-date {
+        font-size: 12px;
+        color: #6b7280;
+      }
+
+      .week-number {
+        font-size: 13px;
+        font-weight: 700;
+        color: #374151;
       }
 
       .week-header.current-week {
         background: #dbeafe;
-        border-left: 2px solid #3b82f6;
-        border-right: 2px solid #3b82f6;
-      }
-
-      .week-date {
-        font-weight: 600;
-        margin-bottom: 4px;
-      }
-
-      .week-number {
-        font-size: 11px;
-        color: #6b7280;
-      }
-
-      .team-weeks-row {
-        display: flex;
-        border-bottom: 1px solid #e2e8f0;
-        background: #f9fafb;
-        min-height: 48px;
-      }
-
-      .resource-weeks-row {
-        display: flex;
-        border-bottom: 1px solid #e2e8f0;
-        background: white;
-        min-height: 48px;
-        user-select: none;
-      }
-
-      .resource-weeks-row:hover {
-        background: #f9fafb;
-      }
-
-      .resource-detail-row {
-        border-bottom: 1px solid #e2e8f0;
-        background: #fafbfc;
-      }
-
-      .resource-detail-row:hover {
-        background: #f3f4f6;
-      }
-
-      .resource-detail-label {
-        padding: 10px 16px 10px 50px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        min-height: 40px;
-        font-size: 13px;
-        color: #6b7280;
-      }
-
-      .resource-detail-name {
-        flex: 1;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .resource-detail-weeks-row {
-        display: flex;
-        border-bottom: 1px solid #e2e8f0;
-        background: #fafbfc;
-        min-height: 40px;
-        user-select: none;
-      }
-
-      .resource-detail-weeks-row:hover {
-        background: #f3f4f6;
-      }
-
-      .resource-detail-cell {
-        background: #fafbfc;
-      }
-
-      .resource-detail-cell.has-capacity {
-        background: #e0f2fe;
-        font-weight: 600;
-        color: #0369a1;
+        border-left: 3px solid #3b82f6;
       }
 
       .week-cell {
@@ -981,6 +899,8 @@ export class PlanViewComponent implements OnInit {
   bulkChargeValue: number | null = null;
 
   @ViewChild('bulkChargeInput') bulkChargeInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('headerScroll') headerScroll?: ElementRef<HTMLDivElement>;
+  @ViewChild('dataScroll') dataScroll?: ElementRef<HTMLDivElement>;
 
   // Icons
   Plus = Plus;
@@ -1304,6 +1224,16 @@ export class PlanViewComponent implements OnInit {
   getResourceValue(resource: ResourceRow, week: Date): number {
     const weekKey = week.toISOString().split('T')[0];
     return resource.charges.get(weekKey) || 0;
+  }
+
+  onGridScroll(event: Event): void {
+    // Synchronize horizontal scroll between header and data
+    const target = event.target as HTMLElement;
+    const scrollLeft = target.scrollLeft;
+    
+    if (this.headerScroll) {
+      this.headerScroll.nativeElement.scrollLeft = scrollLeft;
+    }
   }
 
   // Modal & Linking Logic
