@@ -10,6 +10,7 @@ import { LucideAngularModule, Plus } from "lucide-angular";
 
 interface ResourceRow {
   id: string;
+  uniqueId: string; // Unique identifier combining parent, child, and resource context
   label: string;
   type: 'role' | 'personne';
   jours_par_semaine: number;
@@ -141,28 +142,40 @@ interface ParentRow {
               </div>
             </div>
 
+
             <!-- Children Rows -->
             <ng-container *ngIf="row.expanded">
-              <div *ngFor="let child of row.children" class="resource-weeks-row">
-                <div
-                  *ngFor="let week of displayedWeeks"
-                  class="week-cell resource-cell"
-                  [class.has-capacity]="getChildValue(child, week) > 0"
-                >
-                  <div class="cell-content" *ngIf="getChildValue(child, week) > 0">
-                    <div class="capacity-value">{{ getChildValue(child, week) | number : "1.0-1" }}</div>
+              <ng-container *ngFor="let child of row.children">
+                <!-- Child Row (2nd level) -->
+                <div class="resource-weeks-row">
+                  <div
+                    *ngFor="let week of displayedWeeks"
+                    class="week-cell resource-cell"
+                    [class.has-capacity]="getChildValue(child, week) > 0"
+                  >
+                    <div class="cell-content" *ngIf="getChildValue(child, week) > 0">
+                      <div class="capacity-value">{{ getChildValue(child, week) | number : "1.0-1" }}</div>
+                    </div>
                   </div>
                 </div>
-              </div>
               
-              <!-- Resource Rows (Third Level) -->
-              <ng-container *ngFor="let child of row.children">
+                <!-- Resource Rows (Third Level) for this child -->
                 <ng-container *ngIf="child.expanded">
-                  <div *ngFor="let resource of child.resources" class="resource-detail-weeks-row">
+                  <div 
+                    *ngFor="let resource of child.resources" 
+                    class="resource-detail-weeks-row"
+                    [attr.data-resource-id]="getResourceUniqueId(resource, child, row)"
+                    (mousedown)="onMouseDown($event, resource, child, row)"
+                    (mousemove)="onMouseMove($event, resource, child, row)"
+                    (mouseup)="onMouseUp()"
+                    (mouseleave)="onMouseUp()"
+                  >
                     <div
-                      *ngFor="let week of displayedWeeks"
+                      *ngFor="let week of displayedWeeks; let i = index"
                       class="week-cell resource-detail-cell"
+                      [class.selected]="isCellSelected(resource, week)"
                       [class.has-capacity]="getResourceValue(resource, week) > 0"
+                      [attr.data-week-index]="i"
                     >
                       <div class="cell-content" *ngIf="getResourceValue(resource, week) > 0">
                         <div class="capacity-value">{{ getResourceValue(resource, week) | number : "1.0-1" }}</div>
@@ -177,6 +190,34 @@ interface ParentRow {
           <div *ngIf="rows.length === 0" class="empty-state-weeks">
             <p>Aucune donnée</p>
           </div>
+        </div>
+      </div>
+
+      <!-- Selection Toolbar -->
+      <div 
+        *ngIf="selectedCells.length > 0 && isSelectionFinished" 
+        class="selection-toolbar"
+        [style.top.px]="toolbarPosition?.top"
+        [style.left.px]="toolbarPosition?.left"
+        [style.transform]="'translate(-50%, 10px)'"
+      >
+        <div class="selection-info">
+          {{ selectedCells.length }} semaine(s) sélectionnée(s)
+        </div>
+        <div class="selection-input-row">
+          <input
+            type="number"
+            [(ngModel)]="bulkChargeValue"
+            placeholder="Charge (unités)"
+            step="0.5"
+            min="0"
+            class="bulk-input"
+            (keydown.enter)="applyBulkCharge()"
+          />
+        </div>
+        <div class="selection-actions">
+          <button class="btn btn-sm btn-secondary" (click)="clearSelection()">Annuler</button>
+          <button class="btn btn-sm btn-primary" (click)="applyBulkCharge()">Appliquer</button>
         </div>
       </div>
     </div>
@@ -710,6 +751,72 @@ interface ParentRow {
         margin-top: 24px;
         justify-content: flex-end;
       }
+
+      /* Selection Styles */
+      .resource-detail-cell {
+        cursor: pointer;
+        transition: background 0.15s ease;
+        position: relative;
+      }
+
+      .resource-detail-cell:hover {
+        background: #f3f4f6;
+      }
+
+      .resource-detail-cell.selected {
+        background: #dbeafe;
+        border: 2px solid #3b82f6;
+      }
+
+      .resource-detail-cell.has-capacity.selected {
+        background: #bfdbfe;
+        border: 2px solid #3b82f6;
+      }
+
+      .selection-toolbar {
+        position: fixed;
+        background: white;
+        padding: 16px 24px;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        align-items: center;
+        gap: 16px;
+        z-index: 1000;
+        transition: top 0.2s ease, left 0.2s ease;
+        min-width: 260px;
+      }
+
+      .selection-info {
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 8px;
+      }
+
+      .selection-input-row {
+        margin-bottom: 12px;
+      }
+
+      .selection-input-row input {
+        width: 100%;
+      }
+
+      .selection-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .selection-actions button {
+        flex: 1;
+      }
+
+      .bulk-input {
+        width: 100%;
+        padding: 6px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+      }
     `,
   ],
 })
@@ -740,6 +847,17 @@ export class PlanViewComponent implements OnInit {
   selectedResourceId: string = '';
   availableRoles: Role[] = [];
   availablePersonnes: Personne[] = [];
+
+  // Drag selection
+  isDragging = false;
+  dragStartResource: ResourceRow | null = null;
+  dragStartWeekIndex: number = -1;
+  dragEndWeekIndex: number = -1;
+  selectedCells: Array<{ resource: ResourceRow; week: Date; childId: string; parentId: string }> = [];
+  isSelectionFinished: boolean = false;
+  toolbarPosition: { top: number; left: number } | null = null;
+
+  bulkChargeValue: number | null = null;
 
   // Icons
   Plus = Plus;
@@ -842,8 +960,10 @@ export class PlanViewComponent implements OnInit {
             }
 
             if (!resourceMap.has(resourceKey)) {
+              const uniqueId = `${project.id}_${teamId}_${charge.role_id || charge.personne_id}_${resourceType}`;
               resourceMap.set(resourceKey, {
                 id: charge.role_id || charge.personne_id || '',
+                uniqueId: uniqueId,
                 label: resourceLabel,
                 type: resourceType,
                 jours_par_semaine: joursParSemaine,
@@ -937,8 +1057,10 @@ export class PlanViewComponent implements OnInit {
             }
 
             if (!resourceMap.has(resourceKey)) {
+              const uniqueId = `${team.id}_${projectId}_${charge.role_id || charge.personne_id}_${resourceType}`;
               resourceMap.set(resourceKey, {
                 id: charge.role_id || charge.personne_id || '',
+                uniqueId: uniqueId,
                 label: resourceLabel,
                 type: resourceType,
                 jours_par_semaine: joursParSemaine,
@@ -1137,6 +1259,161 @@ export class PlanViewComponent implements OnInit {
     } catch (error) {
       console.error("Error adding resource:", error);
       alert("Erreur lors de l'ajout de la ressource.");
+    }
+  }
+
+  // Drag Selection Methods
+  getResourceUniqueId(resource: ResourceRow, child: ChildRow, parent: ParentRow): string {
+    return `${parent.id}_${child.id}_${resource.id}_${resource.type}`;
+  }
+
+  onMouseDown(event: MouseEvent, resource: ResourceRow, child: ChildRow, parent: ParentRow) {
+    this.isDragging = true;
+    this.isSelectionFinished = false;
+    this.dragStartResource = resource;
+
+    const target = event.target as HTMLElement;
+    const cell = target.closest(".week-cell");
+    if (cell) {
+      const indexStr = cell.getAttribute("data-week-index");
+      if (indexStr) {
+        this.dragStartWeekIndex = parseInt(indexStr, 10);
+        this.dragEndWeekIndex = this.dragStartWeekIndex;
+        this.updateSelection(child, parent);
+      }
+    }
+  }
+
+  onMouseMove(event: MouseEvent, resource: ResourceRow, child: ChildRow, parent: ParentRow) {
+    if (!this.isDragging || !this.dragStartResource) return;
+
+    if (resource.uniqueId !== this.dragStartResource.uniqueId) return;
+
+    const target = event.target as HTMLElement;
+    const cell = target.closest(".week-cell");
+    if (cell) {
+      const indexStr = cell.getAttribute("data-week-index");
+      if (indexStr) {
+        const newIndex = parseInt(indexStr, 10);
+        if (newIndex !== this.dragEndWeekIndex) {
+          this.dragEndWeekIndex = newIndex;
+          this.updateSelection(child, parent);
+        }
+      }
+    }
+  }
+
+  onMouseUp() {
+    this.isDragging = false;
+    if (this.selectedCells.length > 0) {
+      this.isSelectionFinished = true;
+      this.updateToolbarPosition();
+    }
+  }
+
+  updateToolbarPosition() {
+    if (!this.dragStartResource || this.dragEndWeekIndex < 0) return;
+
+    setTimeout(() => {
+      const firstCell = this.selectedCells[0];
+      if (!firstCell) return;
+
+      const uniqueId = this.getResourceUniqueId(firstCell.resource,
+        { id: firstCell.childId } as ChildRow,
+        { id: firstCell.parentId } as ParentRow);
+
+      const rowSelector = `[data-resource-id="${uniqueId}"]`;
+      const rowElement = document.querySelector(rowSelector);
+
+      if (rowElement) {
+        const cellSelector = `[data-week-index="${this.dragEndWeekIndex}"]`;
+        const cellElement = rowElement.querySelector(cellSelector);
+
+        if (cellElement) {
+          const rect = cellElement.getBoundingClientRect();
+          this.toolbarPosition = {
+            top: rect.bottom,
+            left: rect.left + (rect.width / 2)
+          };
+        }
+      }
+    }, 0);
+  }
+
+  updateSelection(child: ChildRow, parent: ParentRow) {
+    if (!this.dragStartResource || this.dragStartWeekIndex < 0 || this.dragEndWeekIndex < 0) return;
+
+    this.selectedCells = [];
+    const startIndex = Math.min(this.dragStartWeekIndex, this.dragEndWeekIndex);
+    const endIndex = Math.max(this.dragStartWeekIndex, this.dragEndWeekIndex);
+
+    for (let i = startIndex; i <= endIndex; i++) {
+      this.selectedCells.push({
+        resource: this.dragStartResource,
+        week: this.displayedWeeks[i],
+        childId: child.id,
+        parentId: parent.id
+      });
+    }
+  }
+
+  isCellSelected(resource: ResourceRow, week: Date): boolean {
+    return this.selectedCells.some(
+      (s) => s.resource.uniqueId === resource.uniqueId &&
+        s.week.getTime() === week.getTime()
+    );
+  }
+
+  clearSelection() {
+    this.selectedCells = [];
+    this.isSelectionFinished = false;
+    this.toolbarPosition = null;
+    this.dragStartResource = null;
+    this.dragStartWeekIndex = -1;
+    this.dragEndWeekIndex = -1;
+    this.bulkChargeValue = null;
+  }
+
+  async applyBulkCharge() {
+    if (this.selectedCells.length === 0 || this.bulkChargeValue == null) return;
+
+    try {
+      for (const cell of this.selectedCells) {
+        const weekKey = cell.week.toISOString().split('T')[0];
+
+        let projetId: string;
+        let equipeId: string;
+
+        if (this.viewMode === 'project') {
+          // Parent is Project, Child is Team
+          projetId = cell.parentId;
+          equipeId = cell.childId;
+        } else {
+          // Parent is Team, Child is Project
+          equipeId = cell.parentId;
+          projetId = cell.childId;
+        }
+
+        const roleId = cell.resource.type === 'role' ? cell.resource.id : undefined;
+        const personneId = cell.resource.type === 'personne' ? cell.resource.id : undefined;
+
+        // Create or update charge
+        await this.chargeService.createOrUpdateCharge(
+          projetId,
+          equipeId,
+          weekKey,
+          this.bulkChargeValue,
+          roleId,
+          personneId
+        );
+      }
+
+      // Reload data to refresh the view
+      await this.loadData();
+      this.clearSelection();
+    } catch (error) {
+      console.error("Error applying bulk charge:", error);
+      alert("Erreur lors de l'application des charges.");
     }
   }
 }
