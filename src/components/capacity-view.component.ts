@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, ViewChild, ElementRef } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { TeamService, EquipeResource } from "../services/team.service";
@@ -160,6 +160,7 @@ interface TeamRow {
         </div>
         <div class="selection-input-row">
           <input
+            #bulkCapaciteInput
             type="number"
             [(ngModel)]="bulkCapaciteValue"
             placeholder="Capacité (unités)"
@@ -765,6 +766,9 @@ export class CapacityViewComponent implements OnInit {
   toolbarPosition: { top: number; left: number } | null = null;
 
   bulkCapaciteValue: number | null = null;
+
+  @ViewChild('bulkCapaciteInput') bulkCapaciteInput?: ElementRef<HTMLInputElement>;
+
   // Toggle to show/hide the computed days inside cells. Default: hidden (user activates toggle to show)
   showDaysInCells: boolean = false;
 
@@ -974,6 +978,11 @@ export class CapacityViewComponent implements OnInit {
             top: rect.bottom,
             left: rect.left + (rect.width / 2)
           };
+
+          // Focus the input after the toolbar is displayed
+          setTimeout(() => {
+            this.bulkCapaciteInput?.nativeElement.focus();
+          }, 50);
         }
       }
     }, 0);

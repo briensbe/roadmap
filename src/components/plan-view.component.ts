@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, ViewChild, ElementRef } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { TeamService } from "../services/team.service";
@@ -206,6 +206,7 @@ interface ParentRow {
         </div>
         <div class="selection-input-row">
           <input
+            #bulkChargeInput
             type="number"
             [(ngModel)]="bulkChargeValue"
             placeholder="Charge (unités)"
@@ -859,6 +860,8 @@ export class PlanViewComponent implements OnInit {
 
   bulkChargeValue: number | null = null;
 
+  @ViewChild('bulkChargeInput') bulkChargeInput?: ElementRef<HTMLInputElement>;
+
   // Icons
   Plus = Plus;
 
@@ -1357,6 +1360,11 @@ export class PlanViewComponent implements OnInit {
             top: rect.bottom,
             left: rect.left + (rect.width / 2)
           };
+
+          // Focus the input after the toolbar is displayed
+          setTimeout(() => {
+            this.bulkChargeInput?.nativeElement.focus();
+          }, 50);
         }
       }
     }, 0);
