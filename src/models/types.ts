@@ -123,3 +123,10 @@ export interface WeekData {
   charge?: number;
   disponible?: number;
 }
+
+export interface EquipeProjet {
+  equipe_id: string;
+  projet_id: string;
+  created_at?: string;
+  updated_at?: string;
+}

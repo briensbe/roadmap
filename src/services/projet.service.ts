@@ -6,7 +6,7 @@ import { Projet } from '../models/types';
   providedIn: 'root'
 })
 export class ProjetService {
-  constructor(private supabase: SupabaseService) {}
+  constructor(private supabase: SupabaseService) { }
 
   async getAllProjets(): Promise<Projet[]> {
     const { data, error } = await this.supabase.client
@@ -63,5 +63,32 @@ export class ProjetService {
 
   calculateRAF(projet: Projet): number {
     return projet.chiffrage_previsionnel - projet.temps_consomme;
+  }
+
+  async getAllEquipeProjetLinks(): Promise<{ equipe_id: string; projet_id: string }[]> {
+    const { data, error } = await this.supabase.client
+      .from('equipes_projets')
+      .select('*');
+
+    if (error) throw error;
+    return data || [];
+  }
+
+  async linkProjectToTeam(projetId: string, equipeId: string): Promise<void> {
+    const { error } = await this.supabase.client
+      .from('equipes_projets')
+      .insert({ projet_id: projetId, equipe_id: equipeId });
+
+    if (error) throw error;
+  }
+
+  async unlinkProjectFromTeam(projetId: string, equipeId: string): Promise<void> {
+    const { error } = await this.supabase.client
+      .from('equipes_projets')
+      .delete()
+      .eq('projet_id', projetId)
+      .eq('equipe_id', equipeId);
+
+    if (error) throw error;
   }
 }

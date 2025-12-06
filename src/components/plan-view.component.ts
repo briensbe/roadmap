@@ -6,26 +6,27 @@ import { ProjetService } from "../services/projet.service";
 import { ChargeService } from "../services/charge.service";
 import { Equipe, Projet, Charge } from "../models/types";
 import { CalendarService } from "../services/calendar.service";
+import { LucideAngularModule, Plus } from "lucide-angular";
 
 interface ChildRow {
-    id: string;
-    label: string;
-    charges: Map<string, number>; // week string -> amount
+  id: string;
+  label: string;
+  charges: Map<string, number>; // week string -> amount
 }
 
 interface ParentRow {
-    id: string;
-    label: string;
-    expanded: boolean;
-    children: ChildRow[];
-    totalCharges: Map<string, number>; // week string -> amount
+  id: string;
+  label: string;
+  expanded: boolean;
+  children: ChildRow[];
+  totalCharges: Map<string, number>; // week string -> amount
 }
 
 @Component({
-    selector: "app-plan-view",
-    standalone: true,
-    imports: [CommonModule, FormsModule],
-    template: `
+  selector: "app-plan-view",
+  standalone: true,
+  imports: [CommonModule, FormsModule, LucideAngularModule],
+  template: `
     <div class="capacity-container">
       <div class="capacity-header">
         <h1>Vue Planification</h1>
@@ -70,6 +71,12 @@ interface ParentRow {
               <div class="team-label" (click)="toggleRow(row)">
                 <span class="expand-icon">{{ row.expanded ? "▼" : "▶" }}</span>
                 <strong>{{ row.label }}</strong>
+                <button 
+                    class="btn btn-xs btn-add"
+                    (click)="openLinkModal(row); $event.stopPropagation()"
+                >
+                    <lucide-icon [img]="Plus" [size]="16"></lucide-icon>
+                </button>
               </div>
             </div>
 
@@ -130,9 +137,36 @@ interface ParentRow {
         </div>
       </div>
     </div>
+
+    <!-- Modal for linking -->
+    <div *ngIf="showLinkModal" class="modal-overlay" (click)="closeLinkModal()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>{{ viewMode === 'project' ? 'Ajouter une équipe' : 'Ajouter un projet' }} à {{ selectedParentRow?.label }}</h2>
+          <button class="modal-close" (click)="closeLinkModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>{{ viewMode === 'project' ? 'Sélectionner une équipe' : 'Sélectionner un projet' }}</label>
+                <select [(ngModel)]="selectedIdToLink" class="form-control">
+                    <option value="">-- Choisir --</option>
+                    <option *ngFor="let item of linkableItems" [value]="item.id">
+                        {{ item.label }}
+                    </option>
+                </select>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-primary" (click)="linkItem()" [disabled]="!selectedIdToLink">Ajouter</button>
+                <button class="btn btn-secondary" (click)="closeLinkModal()">Annuler</button>
+            </div>
+        </div>
+      </div>
+    </div>
+
   `,
-    styles: [
-        `
+  styles: [
+    `
       .capacity-container {
         padding: 20px;
         background: #f5f7fa;
@@ -212,6 +246,26 @@ interface ParentRow {
       .btn-sm {
         padding: 6px 12px;
         font-size: 13px;
+      }
+
+      .btn-xs {
+        padding: 2px 4px;
+        font-size: 11px;
+      }
+      
+      .btn-add {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6b7280;
+        border: 1px solid #e5e7eb;
+        background: white;
+      }
+      
+      .btn-add:hover {
+        background: #f3f4f6;
+        color: #374151;
       }
 
       .btn-primary {
@@ -436,191 +490,338 @@ interface ParentRow {
         text-align: center;
         color: #6b7280;
       }
+
+      /* Modal Styles */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+      }
+
+      .modal {
+        background: white;
+        border-radius: 12px;
+        min-width: 400px;
+        max-width: 90vw;
+        max-height: 90vh;
+        overflow: auto;
+      }
+      
+      .modal-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .modal-header h2 {
+        margin: 0;
+        font-size: 18px;
+      }
+
+      .modal-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #6b7280;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+      }
+      
+      .modal-close:hover {
+        background: #f3f4f6;
+      }
+      
+       .modal-body {
+        padding: 24px;
+      }
+
+      .form-group {
+        margin-bottom: 16px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #374151;
+      }
+
+      .form-control {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+      }
+      
+      .modal-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+        justify-content: flex-end;
+      }
     `,
-    ],
+  ],
 })
 export class PlanViewComponent implements OnInit {
-    viewMode: 'project' | 'team' = 'project';
+  viewMode: 'project' | 'team' = 'project';
 
-    displayedWeeks: Date[] = [];
-    currentDate: Date = new Date();
+  displayedWeeks: Date[] = [];
+  currentDate: Date = new Date();
 
-    rows: ParentRow[] = [];
+  rows: ParentRow[] = [];
 
-    allProjects: Projet[] = [];
-    allEquipes: Equipe[] = [];
-    allCharges: Charge[] = [];
+  allProjects: Projet[] = [];
+  allEquipes: Equipe[] = [];
+  allCharges: Charge[] = [];
+  allLinks: { equipe_id: string; projet_id: string }[] = [];
 
-    constructor(
-        private teamService: TeamService,
-        private projetService: ProjetService,
-        private chargeService: ChargeService,
-        private calendarService: CalendarService
-    ) { }
+  // Modal State
+  showLinkModal = false;
+  selectedParentRow: ParentRow | null = null;
+  linkableItems: { id: string; label: string }[] = [];
+  selectedIdToLink: string = '';
 
-    async ngOnInit() {
-        this.generateWeeks();
-        await this.loadData();
+  // Icons
+  Plus = Plus;
+
+  constructor(
+    private teamService: TeamService,
+    private projetService: ProjetService,
+    private chargeService: ChargeService,
+    private calendarService: CalendarService
+  ) { }
+
+  async ngOnInit() {
+    this.generateWeeks();
+    await this.loadData();
+  }
+
+  generateWeeks() {
+    this.displayedWeeks = [];
+    const startDate = new Date(this.currentDate);
+    startDate.setDate(1);
+
+    const firstWeek = this.calendarService.getWeekStart(startDate);
+
+    for (let i = 0; i < 32; i++) {
+      const week = new Date(firstWeek);
+      week.setDate(week.getDate() + i * 7);
+      this.displayedWeeks.push(week);
+    }
+  }
+
+  async loadData() {
+    this.allProjects = await this.projetService.getAllProjets();
+    this.allEquipes = await this.teamService.getAllEquipes();
+    this.allCharges = await this.chargeService.getAllCharges();
+    this.allLinks = await this.projetService.getAllEquipeProjetLinks();
+
+    this.buildTree();
+  }
+
+  switchViewMode(mode: 'project' | 'team') {
+    this.viewMode = mode;
+    this.buildTree();
+  }
+
+  buildTree() {
+    this.rows = [];
+    // Restore expanded state if re-building (optional, good UX)
+    // For now reset to closed or keep simple.
+
+    if (this.viewMode === 'project') {
+      // Parent = Project, Child = Team
+      for (const project of this.allProjects) {
+        const projectCharges = this.allCharges.filter(c => c.projet_id === project.id);
+
+        // Find all teams involved in this project (via charges OR links)
+        const chargeTeamIds = projectCharges.map(c => c.equipe_id).filter(id => !!id);
+        const linkedTeamIds = this.allLinks.filter(l => l.projet_id === project.id).map(l => l.equipe_id);
+
+        const involvedTeamIds = new Set([...chargeTeamIds, ...linkedTeamIds]);
+
+        const children: ChildRow[] = [];
+        const parentTotal = new Map<string, number>();
+
+        involvedTeamIds.forEach(teamId => {
+          const team = this.allEquipes.find(e => e.id === teamId);
+          const label = team ? team.nom : 'No Team';
+          const charges = new Map<string, number>();
+
+          // Sum charges for this team on this project per week
+          projectCharges.filter(c => c.equipe_id === teamId).forEach(c => {
+            const weekKey = c.semaine_debut.split('T')[0];
+            const val = charges.get(weekKey) || 0;
+            charges.set(weekKey, val + c.unite_ressource);
+
+            const pVal = parentTotal.get(weekKey) || 0;
+            parentTotal.set(weekKey, pVal + c.unite_ressource);
+          });
+
+          children.push({
+            id: teamId!,
+            label: label,
+            charges: charges
+          });
+        });
+
+        this.rows.push({
+          id: project.id!,
+          label: project.nom_projet,
+          expanded: false,
+          children: children,
+          totalCharges: parentTotal
+        });
+      }
+    } else {
+      // Parent = Team, Child = Project
+      for (const team of this.allEquipes) {
+        const teamCharges = this.allCharges.filter(c => c.equipe_id === team.id);
+
+        // Find all projects this team is working on (via charges OR links)
+        const chargeProjectIds = teamCharges.map(c => c.projet_id).filter(id => !!id);
+        const linkedProjectIds = this.allLinks.filter(l => l.equipe_id === team.id).map(l => l.projet_id);
+
+        const involvedProjectIds = new Set([...chargeProjectIds, ...linkedProjectIds]);
+
+        const children: ChildRow[] = [];
+        const parentTotal = new Map<string, number>();
+
+        involvedProjectIds.forEach(projectId => {
+          const project = this.allProjects.find(p => p.id === projectId);
+          const label = project ? project.nom_projet : 'Unknown Project';
+          const charges = new Map<string, number>();
+
+          teamCharges.filter(c => c.projet_id === projectId).forEach(c => {
+            const weekKey = c.semaine_debut.split('T')[0];
+            const val = charges.get(weekKey) || 0;
+            charges.set(weekKey, val + c.unite_ressource);
+
+            const pVal = parentTotal.get(weekKey) || 0;
+            parentTotal.set(weekKey, pVal + c.unite_ressource);
+          });
+
+          children.push({
+            id: projectId!,
+            label: label,
+            charges: charges
+          });
+        });
+
+        this.rows.push({
+          id: team.id!,
+          label: team.nom,
+          expanded: false,
+          children: children,
+          totalCharges: parentTotal
+        });
+      }
+    }
+  }
+
+  goToToday() {
+    this.currentDate = new Date();
+    this.generateWeeks();
+  }
+
+  goToPreviousMonth() {
+    this.currentDate.setMonth(this.currentDate.getMonth() - 1);
+    this.generateWeeks();
+  }
+
+  goToNextMonth() {
+    this.currentDate.setMonth(this.currentDate.getMonth() + 1);
+    this.generateWeeks();
+  }
+
+  toggleRow(row: ParentRow) {
+    row.expanded = !row.expanded;
+  }
+
+  formatWeekHeader(date: Date): string {
+    return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
+  }
+
+  getWeekNumber(date: Date): number {
+    return this.calendarService.getWeekNumber(date);
+  }
+
+  isCurrentWeek(date: Date): boolean {
+    return this.calendarService.isCurrentWeek(date);
+  }
+
+  getParentTotal(row: ParentRow, week: Date): number {
+    const weekKey = week.toISOString().split('T')[0];
+    return row.totalCharges.get(weekKey) || 0;
+  }
+
+  getChildValue(child: ChildRow, week: Date): number {
+    const weekKey = week.toISOString().split('T')[0];
+    return child.charges.get(weekKey) || 0;
+  }
+
+  // Modal & Linking Logic
+  openLinkModal(row: ParentRow) {
+    this.selectedParentRow = row;
+    this.selectedIdToLink = '';
+
+    const existingChildIds = new Set(row.children.map(c => c.id));
+
+    if (this.viewMode === 'project') {
+      // Parent is Project, we want to add Teams
+      // Filter out teams that are already attached (via charges or existing link)
+      this.linkableItems = this.allEquipes
+        .filter(e => !existingChildIds.has(e.id!))
+        .map(e => ({ id: e.id!, label: e.nom }));
+    } else {
+      // Parent is Team, we want to add Projects
+      this.linkableItems = this.allProjects
+        .filter(p => !existingChildIds.has(p.id!))
+        .map(p => ({ id: p.id!, label: p.nom_projet }));
     }
 
-    generateWeeks() {
-        this.displayedWeeks = [];
-        const startDate = new Date(this.currentDate);
-        startDate.setDate(1);
+    this.showLinkModal = true;
+  }
 
-        const firstWeek = this.calendarService.getWeekStart(startDate);
+  closeLinkModal() {
+    this.showLinkModal = false;
+    this.selectedParentRow = null;
+    this.selectedIdToLink = '';
+  }
 
-        for (let i = 0; i < 32; i++) {
-            const week = new Date(firstWeek);
-            week.setDate(week.getDate() + i * 7);
-            this.displayedWeeks.push(week);
-        }
+  async linkItem() {
+    if (!this.selectedParentRow || !this.selectedIdToLink) return;
+
+    try {
+      if (this.viewMode === 'project') {
+        // Linking Team to Project
+        await this.projetService.linkProjectToTeam(this.selectedParentRow.id, this.selectedIdToLink);
+      } else {
+        // Linking Project to Team
+        await this.projetService.linkProjectToTeam(this.selectedIdToLink, this.selectedParentRow.id);
+      }
+
+      await this.loadData(); // Reload to refresh tree
+      this.closeLinkModal();
+    } catch (error) {
+      console.error("Error linking item:", error);
+      alert("Erreur lors de l'ajout du lien.");
     }
-
-    async loadData() {
-        this.allProjects = await this.projetService.getAllProjets();
-        this.allEquipes = await this.teamService.getAllEquipes();
-        this.allCharges = await this.chargeService.getAllCharges();
-
-        this.buildTree();
-    }
-
-    switchViewMode(mode: 'project' | 'team') {
-        this.viewMode = mode;
-        this.buildTree();
-    }
-
-    buildTree() {
-        this.rows = [];
-
-        if (this.viewMode === 'project') {
-            // Parent = Project, Child = Team
-            for (const project of this.allProjects) {
-                const projectCharges = this.allCharges.filter(c => c.projet_id === project.id);
-                // if (projectCharges.length === 0) continue; // Show all projects
-
-                // Find all teams involved in this project
-                const involvedTeamIds = new Set(projectCharges.map(c => c.equipe_id).filter(id => !!id));
-
-                const children: ChildRow[] = [];
-                const parentTotal = new Map<string, number>();
-
-                involvedTeamIds.forEach(teamId => {
-                    const team = this.allEquipes.find(e => e.id === teamId);
-                    const label = team ? team.nom : 'No Team';
-                    const charges = new Map<string, number>();
-
-                    // Sum charges for this team on this project per week
-                    projectCharges.filter(c => c.equipe_id === teamId).forEach(c => {
-                        const weekKey = c.semaine_debut.split('T')[0]; // simple date part check
-                        const val = charges.get(weekKey) || 0;
-                        charges.set(weekKey, val + c.unite_ressource);
-
-                        const pVal = parentTotal.get(weekKey) || 0;
-                        parentTotal.set(weekKey, pVal + c.unite_ressource);
-                    });
-
-                    children.push({
-                        id: teamId!,
-                        label: label,
-                        charges: charges
-                    });
-                });
-
-                // Always add the project row
-                this.rows.push({
-                    id: project.id!,
-                    label: project.nom_projet,
-                    expanded: false,
-                    children: children,
-                    totalCharges: parentTotal
-                });
-            }
-        } else {
-            // Parent = Team, Child = Project
-            for (const team of this.allEquipes) {
-                const teamCharges = this.allCharges.filter(c => c.equipe_id === team.id);
-                // Show all teams
-
-                // Find all projects this team is working on
-                const involvedProjectIds = new Set(teamCharges.map(c => c.projet_id).filter(id => !!id));
-
-                const children: ChildRow[] = [];
-                const parentTotal = new Map<string, number>();
-
-                involvedProjectIds.forEach(projectId => {
-                    const project = this.allProjects.find(p => p.id === projectId);
-                    const label = project ? project.nom_projet : 'Unknown Project';
-                    const charges = new Map<string, number>();
-
-                    teamCharges.filter(c => c.projet_id === projectId).forEach(c => {
-                        const weekKey = c.semaine_debut.split('T')[0];
-                        const val = charges.get(weekKey) || 0;
-                        charges.set(weekKey, val + c.unite_ressource);
-
-                        const pVal = parentTotal.get(weekKey) || 0;
-                        parentTotal.set(weekKey, pVal + c.unite_ressource);
-                    });
-
-                    children.push({
-                        id: projectId!,
-                        label: label,
-                        charges: charges
-                    });
-                });
-
-                // Always add the team row
-                this.rows.push({
-                    id: team.id!,
-                    label: team.nom,
-                    expanded: false,
-                    children: children,
-                    totalCharges: parentTotal
-                });
-            }
-        }
-    }
-
-    goToToday() {
-        this.currentDate = new Date();
-        this.generateWeeks();
-    }
-
-    goToPreviousMonth() {
-        this.currentDate.setMonth(this.currentDate.getMonth() - 1);
-        this.generateWeeks();
-    }
-
-    goToNextMonth() {
-        this.currentDate.setMonth(this.currentDate.getMonth() + 1);
-        this.generateWeeks();
-    }
-
-    toggleRow(row: ParentRow) {
-        row.expanded = !row.expanded;
-    }
-
-    formatWeekHeader(date: Date): string {
-        return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
-    }
-
-    getWeekNumber(date: Date): number {
-        return this.calendarService.getWeekNumber(date);
-    }
-
-    isCurrentWeek(date: Date): boolean {
-        return this.calendarService.isCurrentWeek(date);
-    }
-
-    getParentTotal(row: ParentRow, week: Date): number {
-        const weekKey = week.toISOString().split('T')[0];
-        // We might need fuzzy matching if the dates aren't perfectly aligned strings
-        // But assuming service returns standard start-of-week dates
-        return row.totalCharges.get(weekKey) || 0;
-    }
-
-    getChildValue(child: ChildRow, week: Date): number {
-        const weekKey = week.toISOString().split('T')[0];
-        return child.charges.get(weekKey) || 0;
-    }
+  }
 }
