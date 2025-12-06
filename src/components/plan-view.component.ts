@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef } from "@angular/core";
+import { Component, OnInit, ViewChild, ElementRef, HostListener } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { TeamService } from "../services/team.service";
@@ -67,6 +67,63 @@ interface ParentRow {
           <button class="btn btn-sm" (click)="goToPreviousMonth()">← Mois précédent</button>
           <button class="btn btn-sm btn-primary" (click)="goToToday()">Aujourd'hui</button>
           <button class="btn btn-sm" (click)="goToNextMonth()">Mois suivant →</button>
+        </div>
+        
+        <!-- Filters bar -->
+        <div class="filters-bar" #filtersContainer>
+          <div class="filter-pill" (click)="toggleDropdown('equipe', $event)">
+            <span class="filter-title">Équipes</span>
+            <span class="chip-list">
+              <span *ngFor="let id of filterEquipeIds" class="chip">{{ getEquipeName(id) }}</span>
+              <span *ngIf="filterEquipeIds.length === 0" class="chip placeholder">Tous</span>
+            </span>
+          </div>
+
+          <div class="filter-pill" (click)="toggleDropdown('projet', $event)">
+            <span class="filter-title">Projets</span>
+            <span class="chip-list">
+              <span *ngFor="let id of filterProjetIds" class="chip">{{ getProjetLabel(id) }}</span>
+              <span *ngIf="filterProjetIds.length === 0" class="chip placeholder">Tous</span>
+            </span>
+          </div>
+
+          <div class="filter-pill" (click)="toggleDropdown('resource', $event)">
+            <span class="filter-title">Rôle / Personne</span>
+            <span class="chip-list">
+              <span *ngFor="let sel of filterResourceIds" class="chip">{{ getResourceLabel(sel) }}</span>
+              <span *ngIf="filterResourceIds.length === 0" class="chip placeholder">Tous</span>
+            </span>
+          </div>
+
+          <!-- Dropdowns -->
+          <div class="filters-dropdown" *ngIf="openEquipeDropdown" (click)="$event.stopPropagation()">
+            <div class="dropdown-list">
+              <label *ngFor="let e of allEquipes" class="dropdown-item">
+                <input type="checkbox" [value]="e.id" (change)="onEquipeToggle(e.id, $event)" [checked]="filterEquipeIds.includes(e.id!)"> {{ e.nom }}
+              </label>
+            </div>
+          </div>
+
+          <div class="filters-dropdown" *ngIf="openProjetDropdown" (click)="$event.stopPropagation()">
+            <div class="dropdown-list">
+              <label *ngFor="let p of allProjects" class="dropdown-item">
+                <input type="checkbox" [value]="p.id" (change)="onProjetToggle(p.id, $event)" [checked]="filterProjetIds.includes(p.id!)"> {{ p.code_projet }} — {{ p.nom_projet }}
+              </label>
+            </div>
+          </div>
+
+          <div class="filters-dropdown" *ngIf="openResourceDropdown" (click)="$event.stopPropagation()">
+            <div class="dropdown-list">
+              <div class="dropdown-group">Rôles</div>
+              <label *ngFor="let r of availableRoles" class="dropdown-item">
+                <input type="checkbox" [value]="'role:' + r.id" (change)="onResourceToggle('role:' + r.id, $event)" [checked]="filterResourceIds.includes('role:' + r.id)"> {{ r.nom }}
+              </label>
+              <div class="dropdown-group">Personnes</div>
+              <label *ngFor="let p of availablePersonnes" class="dropdown-item">
+                <input type="checkbox" [value]="'personne:' + p.id" (change)="onResourceToggle('personne:' + p.id, $event)" [checked]="filterResourceIds.includes('personne:' + p.id)"> {{ p.prenom }} {{ p.nom }}
+              </label>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -363,6 +420,56 @@ interface ParentRow {
         display: flex;
         gap: 8px;
       }
+
+      .filters-bar {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        position: relative;
+      }
+
+      .filter-pill {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 999px;
+        cursor: pointer;
+        box-shadow: 0 1px 2px rgba(16,24,40,0.03);
+        min-width: 140px;
+      }
+
+      .filter-title {
+        font-weight: 600;
+        color: #374151;
+        font-size: 13px;
+      }
+
+      .chip-list { display:flex; gap:6px; flex-wrap:wrap; }
+      .chip { background:#eef2ff; color:#3730a3; padding:4px 8px; border-radius:999px; font-size:12px; }
+      .chip.placeholder { background: transparent; color:#94a3b8; }
+
+      .filters-dropdown {
+        position: absolute;
+        top: 48px;
+        left: 0;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        box-shadow: 0 6px 20px rgba(2,6,23,0.08);
+        padding: 8px;
+        z-index: 1200;
+        max-height: 320px;
+        overflow: auto;
+        min-width: 260px;
+      }
+
+      .dropdown-list { display:flex; flex-direction:column; gap:6px; padding:4px; }
+      .dropdown-item { display:flex; align-items:center; gap:8px; font-size:13px; padding:6px; border-radius:6px; }
+      .dropdown-item:hover { background:#f8fafc; }
+      .dropdown-group { font-size:12px; color:#6b7280; padding:8px 4px 2px; }
 
       .btn {
         padding: 8px 16px;
@@ -835,6 +942,17 @@ export class PlanViewComponent implements OnInit {
   allCharges: Charge[] = [];
   allLinks: { equipe_id: string; projet_id: string }[] = [];
 
+  // Filters
+  rowsAll: ParentRow[] = [];
+  filterEquipeIds: string[] = [];
+  filterProjetIds: string[] = [];
+  filterResourceIds: string[] = []; // values like 'role:<id>' or 'personne:<id>'
+
+  // Dropdown states
+  openEquipeDropdown = false;
+  openProjetDropdown = false;
+  openResourceDropdown = false;
+
   // Link Modal State
   showLinkModal = false;
   selectedParentRow: ParentRow | null = null;
@@ -1024,7 +1142,7 @@ export class PlanViewComponent implements OnInit {
           totalCharges: parentTotal
         });
       }
-    } else {
+  } else {
       // Parent = Team, Child = Project, GrandChild = Resource
       // Sort teams alphabetically
       const sortedTeams = [...this.allEquipes].sort((a, b) => a.nom.localeCompare(b.nom));
@@ -1133,6 +1251,9 @@ export class PlanViewComponent implements OnInit {
         });
       }
     }
+    // Keep a copy of unfiltered rows and apply active filters
+    this.rowsAll = [...this.rows];
+    this.applyFilters();
   }
 
   goToToday() {
@@ -1451,5 +1572,183 @@ export class PlanViewComponent implements OnInit {
       console.error("Error applying bulk charge:", error);
       alert("Erreur lors de l'application des charges.");
     }
+  }
+
+  // --- Filter helpers ---
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event) {
+    // Close any open dropdown if clicking outside
+    const target = event.target as HTMLElement;
+    // if click is outside filters-bar, close dropdowns
+    if (!target.closest('.filters-bar')) {
+      this.openEquipeDropdown = false;
+      this.openProjetDropdown = false;
+      this.openResourceDropdown = false;
+    }
+  }
+
+  toggleDropdown(name: 'equipe' | 'projet' | 'resource', event: MouseEvent) {
+    event.stopPropagation();
+    if (name === 'equipe') {
+      this.openEquipeDropdown = !this.openEquipeDropdown;
+      this.openProjetDropdown = false;
+      this.openResourceDropdown = false;
+    } else if (name === 'projet') {
+      this.openProjetDropdown = !this.openProjetDropdown;
+      this.openEquipeDropdown = false;
+      this.openResourceDropdown = false;
+    } else {
+      this.openResourceDropdown = !this.openResourceDropdown;
+      this.openEquipeDropdown = false;
+      this.openProjetDropdown = false;
+    }
+  }
+
+  onEquipeToggle(id: string | undefined, event: Event) {
+    if (!id) return;
+    const checked = (event.target as HTMLInputElement).checked;
+    if (checked) this.filterEquipeIds.push(id);
+    else this.filterEquipeIds = this.filterEquipeIds.filter(x => x !== id);
+    this.applyFilters();
+  }
+
+  onProjetToggle(id: string | undefined, event: Event) {
+    if (!id) return;
+    const checked = (event.target as HTMLInputElement).checked;
+    if (checked) this.filterProjetIds.push(id);
+    else this.filterProjetIds = this.filterProjetIds.filter(x => x !== id);
+    this.applyFilters();
+  }
+
+  onResourceToggle(sel: string, event: Event) {
+    const checked = (event.target as HTMLInputElement).checked;
+    if (checked) this.filterResourceIds.push(sel);
+    else this.filterResourceIds = this.filterResourceIds.filter(x => x !== sel);
+    this.applyFilters();
+  }
+
+  getEquipeName(id: string) {
+    const e = this.allEquipes.find(x => x.id === id);
+    return e ? e.nom : '—';
+  }
+
+  getProjetLabel(id: string) {
+    const p = this.allProjects.find(x => x.id === id);
+    return p ? `${p.code_projet} — ${p.nom_projet}` : '—';
+  }
+
+  getResourceLabel(sel: string) {
+    const [type, id] = sel.split(':');
+    if (type === 'role') {
+      const r = this.availableRoles.find(x => x.id === id);
+      return r ? `Role: ${r.nom}` : 'Role: —';
+    }
+    const p = this.availablePersonnes.find(x => x.id === id);
+    return p ? `${p.prenom} ${p.nom}` : 'Pers: —';
+  }
+
+  applyFilters() {
+    // If no active filters, show original rows
+    if (!this.filterEquipeIds.length && !this.filterProjetIds.length && !this.filterResourceIds.length) {
+      this.rows = [...this.rowsAll];
+      return;
+    }
+
+    const filteredParents: ParentRow[] = [];
+
+    for (const parent of this.rowsAll) {
+      const newParent: ParentRow = {
+        id: parent.id,
+        label: parent.label,
+        expanded: parent.expanded,
+        children: [],
+        totalCharges: parent.totalCharges
+      };
+
+      // Process each child and apply child/resource-level filters
+      for (const child of parent.children) {
+        // Start with child's resources, then apply resource filter
+        let resourcesMatch: ResourceRow[] = child.resources;
+        if (this.filterResourceIds.length) {
+          resourcesMatch = child.resources.filter(r =>
+            this.filterResourceIds.some(sel => {
+              const [t, id] = sel.split(":");
+              return (t === 'role' && r.type === 'role' && r.id === id) || (t === 'personne' && r.type === 'personne' && r.id === id);
+            })
+          );
+        }
+
+        // Child-level filters for equipe/projet depend on viewMode
+        let childPassesEquipe = true;
+        let childPassesProjet = true;
+
+        if (this.filterEquipeIds.length) {
+          if (this.viewMode === 'project') {
+            // child.id is equipe id
+            childPassesEquipe = this.filterEquipeIds.includes(child.id);
+          } else {
+            // viewMode === 'team' -> parent is equipe; equipe filter applies to parent level
+            childPassesEquipe = true;
+          }
+        }
+
+        if (this.filterProjetIds.length) {
+          if (this.viewMode === 'team') {
+            // child.id is projet id
+            childPassesProjet = this.filterProjetIds.includes(child.id);
+          } else {
+            // viewMode === 'project' -> parent is projet; project filter applies at parent level
+            childPassesProjet = true;
+          }
+        }
+
+        // A child is included only if it passes child-level equipe/project filters AND has at least one matching resource (if resource filters set)
+        const hasResourceMatch = this.filterResourceIds.length ? resourcesMatch.length > 0 : true;
+        const includeChild = childPassesEquipe && childPassesProjet && hasResourceMatch;
+
+        if (includeChild) {
+          newParent.children.push({
+            id: child.id,
+            label: child.label,
+            expanded: child.expanded,
+            resources: resourcesMatch,
+            charges: child.charges
+          });
+        }
+      }
+
+      // Now decide whether to include parent
+      // Parent must pass parent-level filter (if any) and have at least one child after filtering
+      let parentPassesEquipe = true;
+      let parentPassesProjet = true;
+
+      if (this.filterEquipeIds.length) {
+        if (this.viewMode === 'team') {
+          // parent.id is equipe id
+          parentPassesEquipe = this.filterEquipeIds.includes(parent.id);
+        } else {
+          // viewMode === 'project' -> equipes filter applied on children only; parent passes if it has children matching the equipe
+          parentPassesEquipe = true;
+        }
+      }
+
+      if (this.filterProjetIds.length) {
+        if (this.viewMode === 'project') {
+          // parent.id is projet id
+          parentPassesProjet = this.filterProjetIds.includes(parent.id);
+        } else {
+          // viewMode === 'team' -> projet filter applied on children
+          parentPassesProjet = true;
+        }
+      }
+
+      const hasChildren = newParent.children.length > 0;
+
+      if (parentPassesEquipe && parentPassesProjet && hasChildren) {
+        filteredParents.push(newParent);
+      }
+    }
+
+    this.rows = filteredParents;
   }
 }
