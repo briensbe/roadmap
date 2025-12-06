@@ -6,7 +6,7 @@ import { Capacite, Charge, Jalon, WeekData } from '../models/types';
   providedIn: 'root'
 })
 export class CalendarService {
-  constructor(private supabase: SupabaseService) {}
+  constructor(private supabase: SupabaseService) { }
 
   getWeekStart(date: Date): Date {
     const d = new Date(date);
@@ -21,6 +21,13 @@ export class CalendarService {
     d.setUTCDate(d.getUTCDate() + 4 - dayNum);
     const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
     return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+  }
+
+  //TODO: move to utils et surtout à réutiliser dans les autres services et components
+  isCurrentWeek(date: Date): boolean {
+    const now = new Date();
+    const currentWeekStart = this.getWeekStart(now);
+    return this.formatWeekStart(date) === this.formatWeekStart(currentWeekStart);
   }
 
   formatWeekStart(date: Date): string {

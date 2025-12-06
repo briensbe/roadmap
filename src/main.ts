@@ -8,6 +8,7 @@ import { ResourceManagerComponent } from './components/resource-manager.componen
 import { SidebarNavigationComponent } from './components/sidebar-navigation.component';
 import { SidebarService } from './services/sidebar.service';
 import { ProjectsViewComponent } from './components/projects-view.component';
+import { PlanViewComponent } from './components/plan-view.component';
 
 import { CapacityViewComponent } from './components/capacity-view.component';
 
@@ -17,7 +18,8 @@ const routes: Routes = [
   { path: 'organisation', component: OrganizationViewComponent },
   { path: 'ressources', component: ResourceManagerComponent },
   { path: 'capacite', component: CapacityViewComponent },
-  { path: 'projets', component: ProjectsViewComponent }
+  { path: 'projets', component: ProjectsViewComponent },
+  { path: 'plan-globale', component: PlanViewComponent }
 ];
 
 @Component({

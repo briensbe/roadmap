@@ -11,7 +11,8 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Gauge
+  Gauge,
+  Layers
 } from 'lucide-angular';
 import { SidebarService } from '../services/sidebar.service';
 
@@ -225,11 +226,13 @@ export class SidebarNavigationComponent {
   ChevronLeft = ChevronLeft;
   ChevronRight = ChevronRight;
   Gauge = Gauge;
+  Layers = Layers;
 
   navigationItems: NavigationItem[] = [
     { label: 'Tableau de bord', icon: this.LayoutDashboard },
     { label: 'Planification', icon: this.Calendar, route: '/planification' },
     { label: 'Capacité', icon: this.Gauge, route: '/capacite' },
+    { label: 'Plan Global', icon: this.Layers, route: '/plan-globale' },
     { label: 'Projets', icon: this.FolderKanban, route: '/projets' },
     { label: 'Ressources', icon: this.Users, route: '/ressources' },
     { label: 'Organisation', icon: this.Building2, route: '/organisation' },
