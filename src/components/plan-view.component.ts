@@ -913,7 +913,10 @@ export class PlanViewComponent implements OnInit {
 
     if (this.viewMode === 'project') {
       // Parent = Project, Child = Team, GrandChild = Resource
-      for (const project of this.allProjects) {
+      // Sort projects alphabetically
+      const sortedProjects = [...this.allProjects].sort((a, b) => a.nom_projet.localeCompare(b.nom_projet));
+
+      for (const project of sortedProjects) {
         const projectCharges = this.allCharges.filter(c => c.projet_id === project.id);
 
         // Find all teams involved in this project (via charges OR links)
@@ -1000,6 +1003,14 @@ export class PlanViewComponent implements OnInit {
           });
         });
 
+        // Sort children (teams) alphabetically
+        children.sort((a, b) => a.label.localeCompare(b.label));
+
+        // Sort resources within each child alphabetically
+        children.forEach(child => {
+          child.resources.sort((a, b) => a.label.localeCompare(b.label));
+        });
+
         this.rows.push({
           id: project.id!,
           label: project.nom_projet,
@@ -1010,7 +1021,10 @@ export class PlanViewComponent implements OnInit {
       }
     } else {
       // Parent = Team, Child = Project, GrandChild = Resource
-      for (const team of this.allEquipes) {
+      // Sort teams alphabetically
+      const sortedTeams = [...this.allEquipes].sort((a, b) => a.nom.localeCompare(b.nom));
+
+      for (const team of sortedTeams) {
         const teamCharges = this.allCharges.filter(c => c.equipe_id === team.id);
 
         // Find all projects this team is working on (via charges OR links)
@@ -1095,6 +1109,14 @@ export class PlanViewComponent implements OnInit {
             resources: resources,
             charges: projectCharges
           });
+        });
+
+        // Sort children (projects) alphabetically
+        children.sort((a, b) => a.label.localeCompare(b.label));
+
+        // Sort resources within each child alphabetically
+        children.forEach(child => {
+          child.resources.sort((a, b) => a.label.localeCompare(b.label));
         });
 
         this.rows.push({
