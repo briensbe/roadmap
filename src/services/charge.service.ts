@@ -6,19 +6,34 @@ import { Charge } from '../models/types';
     providedIn: 'root'
 })
 export class ChargeService {
+    // Simple cache for charges
+    private _chargesCache: Charge[] | null = null;
+
     constructor(private supabase: SupabaseService) { }
 
+    private clearCache() {
+        this._chargesCache = null;
+    }
+
     async getAllCharges(): Promise<Charge[]> {
+        if (this._chargesCache) return this._chargesCache;
+
         const { data, error } = await this.supabase.client
             .from('charges')
             .select('*')
             .order('semaine_debut');
 
         if (error) throw error;
-        return data || [];
+        this._chargesCache = data || [];
+        return this._chargesCache;
     }
 
     async getChargesByProject(projectId: string): Promise<Charge[]> {
+        // If we have full cache, filter locally to avoid extra query
+        if (this._chargesCache) {
+            return this._chargesCache.filter(c => c.projet_id === projectId);
+        }
+
         const { data, error } = await this.supabase.client
             .from('charges')
             .select('*')
@@ -30,6 +45,10 @@ export class ChargeService {
     }
 
     async getChargesByTeam(teamId: string): Promise<Charge[]> {
+        if (this._chargesCache) {
+            return this._chargesCache.filter(c => c.equipe_id === teamId);
+        }
+
         const { data, error } = await this.supabase.client
             .from('charges')
             .select('*')
@@ -69,6 +88,8 @@ export class ChargeService {
             .single();
 
         if (error) throw error;
+        // Invalidate cache
+        this.clearCache();
         return data;
     }
 
@@ -129,6 +150,7 @@ export class ChargeService {
                 .single();
 
             if (error) throw error;
+            this.clearCache();
             return data;
         } else {
             // Create new charge
@@ -139,6 +161,7 @@ export class ChargeService {
                 .single();
 
             if (error) throw error;
+            this.clearCache();
             return data;
         }
     }
