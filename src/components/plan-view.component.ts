@@ -1305,7 +1305,7 @@ interface FlatRow {
 export class PlanViewComponent implements OnInit {
   viewMode: "project" | "team" = "project";
   displayFormat: "tree" | "flat" = "tree";
-  showAvailability: boolean = true;
+  showAvailability: boolean = false;
 
   flatRows: FlatRow[] = [];
 
