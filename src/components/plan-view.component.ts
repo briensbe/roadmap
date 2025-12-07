@@ -4,7 +4,7 @@ import { FormsModule } from "@angular/forms";
 import { TeamService } from "../services/team.service";
 import { ProjetService } from "../services/projet.service";
 import { ChargeService } from "../services/charge.service";
-import { Equipe, Projet, Charge, Role, Personne } from "../models/types";
+import { Equipe, Projet, Charge, Role, Personne, Capacite } from "../models/types";
 import { CalendarService } from "../services/calendar.service";
 import { LucideAngularModule, Plus } from "lucide-angular";
 
@@ -278,17 +278,32 @@ interface FlatRow {
                         </div>
                       </div>
                       <div class="row-cells scrollable-column">
-                        <div
-                          *ngFor="let week of displayedWeeks; let i = index"
-                          class="week-cell resource-detail-cell"
-                          [class.selected]="isCellSelected(resource, week)"
-                          [class.has-capacity]="getResourceValue(resource, week) > 0"
-                          [attr.data-week-index]="i"
-                        >
-                          <div class="cell-content" *ngIf="getResourceValue(resource, week) > 0">
-                            <div class="capacity-value">{{ getResourceValue(resource, week) | number : "1.0-1" }}</div>
+                      <div
+                        *ngFor="let week of displayedWeeks; let i = index"
+                        class="week-cell resource-detail-cell"
+                        [class.selected]="isCellSelected(resource, week)"
+                        [class.has-capacity]="getResourceValue(resource, week) > 0"
+                        [class.cell-positive]="getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) > 0"
+                        [class.cell-zero]="getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) === 0"
+                        [class.cell-negative]="getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) < 0"
+                        [attr.data-week-index]="i"
+                      >
+                        <div class="cell-content">
+                          <div *ngIf="getResourceValue(resource, week) > 0" class="capacity-value">
+                            {{ getResourceValue(resource, week) | number : "1.0-1" }}
+                          </div>
+                          <div
+                            class="availability-indicator"
+                            [ngClass]="{
+                              'availability-positive': getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) > 0,
+                              'availability-zero': getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) === 0,
+                              'availability-negative': getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) < 0
+                            }"
+                          >
+                            {{ getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) > 0 ? '+' : '' }}{{ getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) | number : "1.0-1" }}
                           </div>
                         </div>
+                      </div>
                       </div>
                     </div>
                   </ng-container>
@@ -322,8 +337,20 @@ interface FlatRow {
                    [class.has-capacity]="getResourceValue(row.resource, week) > 0"
                    [attr.data-week-index]="i"
                  >
-                   <div class="cell-content" *ngIf="getResourceValue(row.resource, week) > 0">
-                     <div class="capacity-value">{{ getResourceValue(row.resource, week) | number : "1.0-1" }}</div>
+                   <div class="cell-content">
+                     <div *ngIf="getResourceValue(row.resource, week) > 0" class="capacity-value">
+                       {{ getResourceValue(row.resource, week) | number : "1.0-1" }}
+                     </div>
+                     <div
+                        class="availability-indicator"
+                        [ngClass]="{
+                          'availability-positive': getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) > 0,
+                          'availability-zero': getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) === 0,
+                          'availability-negative': getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) < 0
+                        }"
+                      >
+                        {{ getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) > 0 ? '+' : '' }}{{ getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) | number : "1.0-1" }}
+                      </div>
                    </div>
                  </div>
                </div>
@@ -925,6 +952,44 @@ interface FlatRow {
         border: 2px solid #3b82f6;
       }
 
+      /* Availability Styles */
+      .availability-indicator {
+        font-size: 11px;
+        margin-top: 2px;
+        font-weight: 500;
+      }
+
+      .availability-positive {
+        color: #059669; /* Green text */
+      }
+      /* To color the cell background based on availability, we need to target the parent cell. 
+         However, Angular's style encapsulation or structure might make it easier to just color the cell contents 
+         or use ::ng-deep if needed, but cleaner is better. 
+         Let's try to pass the class to the cell itself in the template if possible, 
+         or just style the indicator heavily. 
+         The user request says "la couleur de la cellule dépendrait de la disponibilité". 
+         So I should move the [ngClass] logic to the cell div in the template in a future step if this isn't enough.
+         For now, I'll style the indicator text as requested and perhaps background of the cell?
+         Actually, let's update the template in the next step to apply the class to the cell itself 
+         so we can change the background color of the WHOLE cell.
+      */
+      
+      /* New attempt: classes on the CELL itself */
+      .cell-positive {
+        background: #d1fae5 !important; /* Light Green */
+      }
+      .cell-zero {
+        background: #fef3c7 !important; /* Light Yellow */
+      }
+      .cell-negative {
+        background: #fee2e2 !important; /* Light Red */
+      }
+      
+      /* Text colors specific to availability */
+      .text-positive { color: #059669; }
+      .text-zero { color: #d97706; }
+      .text-negative { color: #dc2626; }
+
       .selection-toolbar {
         position: fixed;
         background: white;
@@ -978,6 +1043,8 @@ export class PlanViewComponent implements OnInit {
 
   flatRows: FlatRow[] = [];
 
+  // Usage Map
+  usageMap: Map<string, number> = new Map();
 
   displayedWeeks: Date[] = [];
   currentDate: Date = new Date();
@@ -986,7 +1053,10 @@ export class PlanViewComponent implements OnInit {
 
   allProjects: Projet[] = [];
   allEquipes: Equipe[] = [];
+  // Duplicate removed
+
   allCharges: Charge[] = [];
+  allCapacities: Capacite[] = [];
   allLinks: { equipe_id: string; projet_id: string }[] = [];
 
   // Filters
@@ -1062,15 +1132,68 @@ export class PlanViewComponent implements OnInit {
 
   async loadData() {
     this.allProjects = await this.projetService.getAllProjets();
+    // Duplicate removed
+
     this.allEquipes = await this.teamService.getAllEquipes();
     this.allCharges = await this.chargeService.getAllCharges();
+    this.allCapacities = await this.teamService.getAllCapacities();
     this.allLinks = await this.projetService.getAllEquipeProjetLinks();
 
     // Load roles and persons for resource display
     this.availableRoles = await this.teamService.getAllRoles();
     this.availablePersonnes = await this.teamService.getAllPersonnes();
 
+
+    // Note: Lines below were duplicated, valid ones are at 1070-1071
+
+
+    this.calculateUsage();
     this.buildTree();
+  }
+
+  calculateUsage() {
+    this.usageMap.clear();
+
+    for (const charge of this.allCharges) {
+      if (!charge.semaine_debut || !charge.equipe_id) continue;
+
+      const weekKey = charge.semaine_debut.split("T")[0];
+      const teamId = charge.equipe_id;
+
+      let resourceKey = "";
+      if (charge.role_id) {
+        resourceKey = `role_${charge.role_id}`;
+      } else if (charge.personne_id) {
+        resourceKey = `personne_${charge.personne_id}`;
+      } else {
+        continue;
+      }
+
+      const mapKey = `${teamId}_${resourceKey}_${weekKey}`;
+      const currentVal = this.usageMap.get(mapKey) || 0;
+      this.usageMap.set(mapKey, currentVal + charge.unite_ressource);
+    }
+  }
+
+  getAvailability(resource: ResourceRow, week: Date, teamId: string): number {
+    const weekKey = week.toISOString().split("T")[0];
+    // resource.id contains the ID, resource.type contains "role" or "personne"
+    const resourceKey = `${resource.type}_${resource.id}`;
+    const mapKey = `${teamId}_${resourceKey}_${weekKey}`;
+
+    const usage = this.usageMap.get(mapKey) || 0;
+
+    // Find custom capacity if exists
+    // We look for a capacity record for this resource, this team, this week
+    const customCap = this.allCapacities.find(c =>
+      c.equipe_id === teamId &&
+      c.semaine_debut.startsWith(weekKey) &&
+      (resource.type === 'role' ? c.role_id === resource.id : c.personne_id === resource.id)
+    );
+
+    const totalCapacity = customCap ? customCap.capacite : 0;
+
+    return totalCapacity - usage;
   }
 
   switchViewMode(mode: "project" | "team") {
@@ -1658,6 +1781,7 @@ export class PlanViewComponent implements OnInit {
 
       // Reload data to refresh the view
       await this.loadData();
+      // calculateUsage is called within loadData
       this.clearSelection();
     } catch (error) {
       console.error("Error applying bulk charge:", error);

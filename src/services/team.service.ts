@@ -21,6 +21,7 @@ export class TeamService {
     private _personnesCache: Personne[] | null = null;
     private _equipeResourcesCache = new Map<string, EquipeResource[]>();
     private _capacitesCache = new Map<string, Capacite[]>();
+    private _allCapacitiesCache: Capacite[] | null = null;
 
     constructor(private supabase: SupabaseService) { }
 
@@ -30,6 +31,7 @@ export class TeamService {
         this._personnesCache = null;
         this._equipeResourcesCache.clear();
         this._capacitesCache.clear();
+        this._allCapacitiesCache = null;
     }
 
     async getAllEquipes(): Promise<Equipe[]> {
@@ -315,5 +317,18 @@ export class TeamService {
         const { error } = await query;
         if (error) throw error;
         this.clearCache();
+    }
+    async getAllCapacities(): Promise<Capacite[]> {
+        if (this._allCapacitiesCache) {
+            return this._allCapacitiesCache;
+        }
+
+        const { data, error } = await this.supabase.client
+            .from('capacites')
+            .select('*');
+
+        if (error) throw error;
+        this._allCapacitiesCache = data || [];
+        return this._allCapacitiesCache;
     }
 }
