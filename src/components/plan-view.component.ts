@@ -33,6 +33,14 @@ interface ParentRow {
   totalCharges: Map<string, number>; // week string -> amount
 }
 
+interface FlatRow {
+  uniqueId: string;
+  fullLabel: string; // "Project > Team > Resource"
+  resource: ResourceRow;
+  child: ChildRow;
+  parent: ParentRow;
+}
+
 @Component({
   selector: "app-plan-view",
   standalone: true,
@@ -58,6 +66,25 @@ interface ParentRow {
               (click)="switchViewMode('team')"
             >
               Par Équipe
+            </button>
+          </div>
+
+          <div class="view-mode-toggle">
+            <button
+              class="btn"
+              [class.btn-primary]="displayFormat === 'tree'"
+              [class.btn-secondary]="displayFormat !== 'tree'"
+              (click)="toggleDisplayFormat('tree')"
+            >
+              Arborescence
+            </button>
+            <button
+              class="btn"
+              [class.btn-primary]="displayFormat === 'flat'"
+              [class.btn-secondary]="displayFormat !== 'flat'"
+              (click)="toggleDisplayFormat('flat')"
+            >
+              À plat
             </button>
           </div>
           <button class="btn btn-secondary" (click)="goToToday()">Aujourd'hui</button>
@@ -174,97 +201,133 @@ interface ParentRow {
 
         <!-- Data rows - single scroll container -->
         <div class="calendar-grid" #dataScroll (scroll)="onGridScroll($event)">
-          <ng-container *ngFor="let row of rows">
-            <!-- Parent Row -->
-            <div class="calendar-row-wrapper">
-              <div class="row-label fixed-column">
-                <div class="team-label" (click)="toggleRow(row)">
-                  <span class="expand-icon">{{ row.expanded ? "▼" : "▶" }}</span>
-                  <strong>{{ row.label }}</strong>
-                </div>
-                <button
-                  class="btn btn-xs btn-add"
-                  (click)="openLinkModal(row); $event.stopPropagation()"
-                  style="margin-left:auto;"
-                >
-                  <lucide-icon [img]="Plus" [size]="16"></lucide-icon>
-                </button>
-              </div>
-              <div class="row-cells scrollable-column">
-                <div *ngFor="let week of displayedWeeks" class="week-cell team-cell">
-                  <div class="team-summary" *ngIf="getParentTotal(row, week) > 0">
-                    <div class="capacity-value">
-                      {{ getParentTotal(row, week) | number : "1.0-1" }}
-                    </div>
+          <!-- Tree View -->
+          <ng-container *ngIf="displayFormat === 'tree'">
+            <ng-container *ngFor="let row of rows">
+              <!-- Parent Row -->
+              <div class="calendar-row-wrapper">
+                <div class="row-label fixed-column">
+                  <div class="team-label" (click)="toggleRow(row)">
+                    <span class="expand-icon">{{ row.expanded ? "▼" : "▶" }}</span>
+                    <strong>{{ row.label }}</strong>
                   </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Children Rows -->
-            <ng-container *ngIf="row.expanded">
-              <ng-container *ngFor="let child of row.children">
-                <!-- Child Row (2nd level) -->
-                <div class="calendar-row-wrapper">
-                  <div class="row-label fixed-column">
-                    <div class="resource-label" (click)="toggleChild(child)" style="padding-left:32px;">
-                      <span class="expand-icon">{{ child.expanded ? "▼" : "▶" }}</span>
-                      <span class="resource-name">{{ child.label }}</span>
-                    </div>
-                    <button
-                      class="btn btn-xs btn-add"
-                      (click)="openAddResourceModal(child, row); $event.stopPropagation()"
-                      style="margin-left:auto;"
-                    >
-                      <lucide-icon [img]="Plus" [size]="14"></lucide-icon>
-                    </button>
-                  </div>
-                  <div class="row-cells scrollable-column">
-                    <div
-                      *ngFor="let week of displayedWeeks"
-                      class="week-cell resource-cell"
-                      [class.has-capacity]="getChildValue(child, week) > 0"
-                    >
-                      <div class="cell-content" *ngIf="getChildValue(child, week) > 0">
-                        <div class="capacity-value">{{ getChildValue(child, week) | number : "1.0-1" }}</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Resource Rows (3rd level) -->
-                <ng-container *ngIf="child.expanded">
-                  <div
-                    *ngFor="let resource of child.resources"
-                    class="calendar-row-wrapper"
-                    [attr.data-resource-id]="getResourceUniqueId(resource, child, row)"
-                    (mousedown)="onMouseDown($event, resource, child, row)"
-                    (mousemove)="onMouseMove($event, resource, child, row)"
-                    (mouseup)="onMouseUp()"
-                    (mouseleave)="onMouseUp()"
+                  <button
+                    class="btn btn-xs btn-add"
+                    (click)="openLinkModal(row); $event.stopPropagation()"
+                    style="margin-left:auto;"
                   >
-                    <div class="row-label fixed-column">
-                      <div class="resource-detail-label" style="padding-left:50px;">
-                        <span class="resource-detail-name">{{ resource.label }}</span>
+                    <lucide-icon [img]="Plus" [size]="16"></lucide-icon>
+                  </button>
+                </div>
+                <div class="row-cells scrollable-column">
+                  <div *ngFor="let week of displayedWeeks" class="week-cell team-cell">
+                    <div class="team-summary" *ngIf="getParentTotal(row, week) > 0">
+                      <div class="capacity-value">
+                        {{ getParentTotal(row, week) | number : "1.0-1" }}
                       </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Children Rows -->
+              <ng-container *ngIf="row.expanded">
+                <ng-container *ngFor="let child of row.children">
+                  <!-- Child Row (2nd level) -->
+                  <div class="calendar-row-wrapper">
+                    <div class="row-label fixed-column">
+                      <div class="resource-label" (click)="toggleChild(child)" style="padding-left:32px;">
+                        <span class="expand-icon">{{ child.expanded ? "▼" : "▶" }}</span>
+                        <span class="resource-name">{{ child.label }}</span>
+                      </div>
+                      <button
+                        class="btn btn-xs btn-add"
+                        (click)="openAddResourceModal(child, row); $event.stopPropagation()"
+                        style="margin-left:auto;"
+                      >
+                        <lucide-icon [img]="Plus" [size]="14"></lucide-icon>
+                      </button>
                     </div>
                     <div class="row-cells scrollable-column">
                       <div
-                        *ngFor="let week of displayedWeeks; let i = index"
-                        class="week-cell resource-detail-cell"
-                        [class.selected]="isCellSelected(resource, week)"
-                        [class.has-capacity]="getResourceValue(resource, week) > 0"
-                        [attr.data-week-index]="i"
+                        *ngFor="let week of displayedWeeks"
+                        class="week-cell resource-cell"
+                        [class.has-capacity]="getChildValue(child, week) > 0"
                       >
-                        <div class="cell-content" *ngIf="getResourceValue(resource, week) > 0">
-                          <div class="capacity-value">{{ getResourceValue(resource, week) | number : "1.0-1" }}</div>
+                        <div class="cell-content" *ngIf="getChildValue(child, week) > 0">
+                          <div class="capacity-value">{{ getChildValue(child, week) | number : "1.0-1" }}</div>
                         </div>
                       </div>
                     </div>
                   </div>
+
+                  <!-- Resource Rows (3rd level) -->
+                  <ng-container *ngIf="child.expanded">
+                    <div
+                      *ngFor="let resource of child.resources"
+                      class="calendar-row-wrapper"
+                      [attr.data-resource-id]="getResourceUniqueId(resource, child, row)"
+                      (mousedown)="onMouseDown($event, resource, child, row)"
+                      (mousemove)="onMouseMove($event, resource, child, row)"
+                      (mouseup)="onMouseUp()"
+                      (mouseleave)="onMouseUp()"
+                    >
+                      <div class="row-label fixed-column">
+                        <div class="resource-detail-label" style="padding-left:50px;">
+                          <span class="resource-detail-name">{{ resource.label }}</span>
+                        </div>
+                      </div>
+                      <div class="row-cells scrollable-column">
+                        <div
+                          *ngFor="let week of displayedWeeks; let i = index"
+                          class="week-cell resource-detail-cell"
+                          [class.selected]="isCellSelected(resource, week)"
+                          [class.has-capacity]="getResourceValue(resource, week) > 0"
+                          [attr.data-week-index]="i"
+                        >
+                          <div class="cell-content" *ngIf="getResourceValue(resource, week) > 0">
+                            <div class="capacity-value">{{ getResourceValue(resource, week) | number : "1.0-1" }}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </ng-container>
                 </ng-container>
               </ng-container>
             </ng-container>
+          </ng-container>
+
+          <!-- Flat View -->
+          <ng-container *ngIf="displayFormat === 'flat'">
+             <div
+               *ngFor="let row of flatRows"
+               class="calendar-row-wrapper"
+               [attr.data-resource-id]="getResourceUniqueId(row.resource, row.child, row.parent)"
+               (mousedown)="onMouseDown($event, row.resource, row.child, row.parent)"
+               (mousemove)="onMouseMove($event, row.resource, row.child, row.parent)"
+               (mouseup)="onMouseUp()"
+               (mouseleave)="onMouseUp()"
+             >
+               <div class="row-label fixed-column">
+                 <!-- No expansion toggles, no add buttons, just the full label -->
+                 <div style="padding: 0 16px; font-weight: 500; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ row.fullLabel }}">
+                   {{ row.fullLabel }}
+                 </div>
+               </div>
+               <div class="row-cells scrollable-column">
+                 <div
+                   *ngFor="let week of displayedWeeks; let i = index"
+                   class="week-cell resource-detail-cell"
+                   [class.selected]="isCellSelected(row.resource, week)"
+                   [class.has-capacity]="getResourceValue(row.resource, week) > 0"
+                   [attr.data-week-index]="i"
+                 >
+                   <div class="cell-content" *ngIf="getResourceValue(row.resource, week) > 0">
+                     <div class="capacity-value">{{ getResourceValue(row.resource, week) | number : "1.0-1" }}</div>
+                   </div>
+                 </div>
+               </div>
+             </div>
           </ng-container>
 
           <div *ngIf="rows.length === 0" class="empty-state">
@@ -911,6 +974,10 @@ interface ParentRow {
 })
 export class PlanViewComponent implements OnInit {
   viewMode: "project" | "team" = "project";
+  displayFormat: "tree" | "flat" = "tree";
+
+  flatRows: FlatRow[] = [];
+
 
   displayedWeeks: Date[] = [];
   currentDate: Date = new Date();
@@ -972,7 +1039,7 @@ export class PlanViewComponent implements OnInit {
     private projetService: ProjetService,
     private chargeService: ChargeService,
     private calendarService: CalendarService
-  ) {}
+  ) { }
 
   async ngOnInit() {
     this.generateWeeks();
@@ -1236,6 +1303,42 @@ export class PlanViewComponent implements OnInit {
     // Keep a copy of unfiltered rows and apply active filters
     this.rowsAll = [...this.rows];
     this.applyFilters();
+  }
+
+  toggleDisplayFormat(format: "tree" | "flat") {
+    this.displayFormat = format;
+  }
+
+  buildFlatList() {
+    this.flatRows = [];
+
+    // Iterate over the currently filtered rows (this.rows)
+    for (const parent of this.rows) {
+      for (const child of parent.children) {
+        for (const resource of child.resources) {
+          let label = "";
+          if (this.viewMode === "project") {
+            // Project > Team > Resource
+            label = `${parent.label} / ${child.label} / ${resource.label}`;
+          } else {
+            // Team > Project > Resource
+            label = `${parent.label} / ${child.label} / ${resource.label}`;
+          }
+
+          this.flatRows.push({
+            uniqueId: resource.uniqueId,
+            fullLabel: label,
+            resource: resource,
+            child: child,
+            parent: parent
+          });
+        }
+      }
+    }
+
+    // Sort flattened rows alphabetically by full label
+    this.flatRows.sort((a, b) => a.fullLabel.localeCompare(b.fullLabel));
+    console.log(this.flatRows);
   }
 
   goToToday() {
@@ -1639,6 +1742,7 @@ export class PlanViewComponent implements OnInit {
     // If no active filters, show original rows
     if (!this.filterEquipeIds.length && !this.filterProjetIds.length && !this.filterResourceIds.length) {
       this.rows = [...this.rowsAll];
+      this.buildFlatList();
       return;
     }
 
@@ -1741,5 +1845,6 @@ export class PlanViewComponent implements OnInit {
     }
 
     this.rows = filteredParents;
+    this.buildFlatList();
   }
 }
