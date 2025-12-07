@@ -313,6 +313,14 @@ interface FlatRow {
                         <div class="resource-detail-label" style="padding-left:50px;">
                           <span class="resource-detail-name">{{ resource.label }}</span>
                         </div>
+                        <button
+                          class="btn btn-xs btn-danger"
+                          (click)="removeResource(resource, child, row); $event.stopPropagation()"
+                          title="Supprimer cette ressource"
+                          style="margin-left:auto;"
+                        >
+                          ×
+                        </button>
                       </div>
                       <div class="row-cells scrollable-column">
                       <div
@@ -719,6 +727,26 @@ interface FlatRow {
       .btn-add:hover {
         background: #f3f4f6;
         color: #374151;
+      }
+
+      .btn-danger {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fecaca;
+        color: #991b1b;
+        border: 1px solid #fca5a5;
+        padding: 2px 6px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        line-height: 1;
+        transition: all 0.15s ease;
+      }
+
+      .btn-danger:hover {
+        background: #fca5a5;
+        color: #7f1d1d;
       }
 
       .btn-primary {
@@ -2230,6 +2258,34 @@ export class PlanViewComponent implements OnInit {
       total += charge * jours;
     }
     return total;
+  }
+
+  // Remove a resource from charges
+  async removeResource(resource: ResourceRow, child: ChildRow, parent: ParentRow) {
+    const confirmMsg = `Êtes-vous sûr de vouloir supprimer "${resource.label}" ?
+Cela supprimera toutes les charges associées à cette ressource.`;
+
+    if (!confirm(confirmMsg)) {
+      return;
+    }
+
+    try {
+      // Filter out all charges associated with this resource
+      this.allCharges = this.allCharges.filter(
+        (charge) =>
+          !(
+            (charge.role_id === resource.id && resource.type === 'role') ||
+            (charge.personne_id === resource.id && resource.type === 'personne')
+          )
+      );
+
+      // Rebuild tree to reflect changes
+      this.calculateUsage();
+      this.buildTree();
+    } catch (error) {
+      console.error('Error removing resource:', error);
+      alert('Erreur lors de la suppression de la ressource.');
+    }
   }
 }
 
