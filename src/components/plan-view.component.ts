@@ -8,6 +8,7 @@ import { JalonService } from "../services/jalon.service";
 import { Equipe, Projet, Charge, Role, Personne, Capacite, Jalon } from "../models/types";
 import { CalendarService } from "../services/calendar.service";
 import { LucideAngularModule, Plus } from "lucide-angular";
+import { MilestoneModalComponent } from './milestone-modal.component';
 
 interface ResourceRow {
   id: string;
@@ -45,7 +46,7 @@ interface FlatRow {
 @Component({
   selector: "app-plan-view",
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule, MilestoneModalComponent],
   template: `
     <div class="capacity-container">
       <div class="capacity-header">
@@ -226,7 +227,8 @@ interface FlatRow {
                          class="jalon-item"
                          [style.background-color]="getJalonColor(jalon.type)"
                          [style.color]="getJalonTextColor(jalon.type)"
-                         [title]="jalon.date_jalon">
+                         [title]="jalon.date_jalon"
+                         (click)="openMilestoneModal(jalon, $event)">
                          {{ jalon.nom || '★' }}
                     </div>
                  </div>
@@ -583,6 +585,13 @@ interface FlatRow {
         </div>
       </div>
     </div>
+    
+    <app-milestone-modal
+        [(visible)]="showMilestoneModal"
+        [jalon]="selectedJalon"
+        [projets]="allProjects"
+        (saved)="onMilestoneSaved()">
+    </app-milestone-modal>
   `,
   styles: [
     `
@@ -1380,6 +1389,20 @@ interface FlatRow {
   ],
 })
 export class PlanViewComponent implements OnInit {
+  // Milestone Modal props
+  showMilestoneModal = false;
+  selectedJalon: Jalon | null = null;
+
+  openMilestoneModal(jalon: Jalon, event: Event) {
+    event.stopPropagation();
+    this.selectedJalon = jalon;
+    this.showMilestoneModal = true;
+  }
+
+  async onMilestoneSaved() {
+    await this.loadData();
+  }
+
   viewMode: "project" | "team" = "project";
   displayFormat: "tree" | "flat" = "tree";
   showAvailability: boolean = false;
