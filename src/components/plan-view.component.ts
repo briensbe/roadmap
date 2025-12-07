@@ -517,26 +517,40 @@ interface FlatRow {
 
           <div class="form-group" *ngIf="resourceTypeToAdd === 'role'">
             <label>Sélectionner un rôle</label>
-            <select [(ngModel)]="selectedResourceId" class="form-control">
+            <div *ngIf="availableRoles.length === 0" class="no-roles-message">
+              <p>Aucun rôle disponible. Tous les rôles sont déjà utilisés pour cette combinaison.</p>
+            </div>
+            <select *ngIf="availableRoles.length > 0" [(ngModel)]="selectedResourceId" class="form-control">
               <option value="">-- Choisir un rôle --</option>
               <option *ngFor="let role of availableRoles" [value]="role.id">
-                {{ role.nom }}
+                {{ role.nom }} ({{ role.jours_par_semaine }}j/sem)
               </option>
             </select>
           </div>
 
           <div class="form-group" *ngIf="resourceTypeToAdd === 'personne'">
             <label>Sélectionner une personne</label>
-            <select [(ngModel)]="selectedResourceId" class="form-control">
+            <div *ngIf="availablePersonnes.length === 0" class="no-roles-message">
+              <p>Aucune personne disponible. Tous les personnes sont déjà utilisées pour cette combinaison.</p>
+            </div>
+            <select *ngIf="availablePersonnes.length > 0" [(ngModel)]="selectedResourceId" class="form-control">
               <option value="">-- Choisir une personne --</option>
               <option *ngFor="let personne of availablePersonnes" [value]="personne.id">
-                {{ personne.prenom }} {{ personne.nom }}
+                {{ personne.prenom }} {{ personne.nom }} ({{ personne.jours_par_semaine }}j/sem)
               </option>
             </select>
           </div>
 
           <div class="modal-actions">
-            <button class="btn btn-primary" (click)="addResourceToCharge()" [disabled]="!selectedResourceId">
+            <button
+              class="btn btn-primary"
+              (click)="addResourceToCharge()"
+              [disabled]="
+                !selectedResourceId ||
+                (resourceTypeToAdd === 'role' && availableRoles.length === 0) ||
+                (resourceTypeToAdd === 'personne' && availablePersonnes.length === 0)
+              "
+            >
               Ajouter
             </button>
             <button class="btn btn-secondary" (click)="closeAddResourceModal()">Annuler</button>
@@ -1087,6 +1101,20 @@ interface FlatRow {
         gap: 12px;
         margin-top: 24px;
         justify-content: flex-end;
+      }
+
+      .no-roles-message {
+        padding: 9px;
+        background: #fef3c7;
+        border: 1px solid #f59e0b;
+        border-radius: 6px;
+        color: #92400e;
+        text-align: center;
+      }
+
+      .no-roles-message p {
+        margin: 0;
+        font-size: 14px;
       }
 
       /* Selection Styles */
@@ -1825,9 +1853,31 @@ export class PlanViewComponent implements OnInit {
     this.selectedResourceId = "";
     this.showAddResourceModal = true;
 
-    // Load available roles and personnes
-    this.availableRoles = await this.teamService.getAllRoles();
-    this.availablePersonnes = await this.teamService.getAllPersonnes();
+    // Determine projetId and equipeId based on view mode
+    let projetId: string;
+    let equipeId: string;
+
+    if (this.viewMode === "project") {
+      // Parent is Project, Child is Team
+      projetId = parent.id;
+      equipeId = child.id;
+    } else {
+      // Parent is Team, Child is Project
+      equipeId = parent.id;
+      projetId = child.id;
+    }
+
+    try {
+      // Load only available roles for this project+team combination
+      this.availableRoles = await this.chargeService.getAvailableRolesForProjectTeam(projetId, equipeId);
+
+      // Load only available persons for this project+team combination
+      this.availablePersonnes = await this.chargeService.getAvailablePersonnesForProjectTeam(projetId, equipeId);
+    } catch (error) {
+      console.error("Error loading available resources:", error);
+      this.availableRoles = [];
+      this.availablePersonnes = [];
+    }
   }
 
   closeAddResourceModal() {

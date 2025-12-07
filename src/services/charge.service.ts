@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
-import { Charge } from '../models/types';
+import { Charge, Role, Personne } from '../models/types';
+import { TeamService } from './team.service';
 
 @Injectable({
     providedIn: 'root'
@@ -9,7 +10,7 @@ export class ChargeService {
     // Simple cache for charges
     private _chargesCache: Charge[] | null = null;
 
-    constructor(private supabase: SupabaseService) { }
+    constructor(private supabase: SupabaseService, private teamService: TeamService) { }
 
     private clearCache() {
         this._chargesCache = null;
@@ -164,5 +165,61 @@ export class ChargeService {
             this.clearCache();
             return data;
         }
+    }
+
+    /**
+     * Get available roles for a project + team combination
+     * (roles not already in a charge for this project+team)
+     */
+    async getAvailableRolesForProjectTeam(projetId: string, equipeId: string): Promise<Role[]> {
+        // Get all roles
+        const allRoles = await this.teamService.getAllRoles();
+
+        // Get all charges for this project+team
+        const chargesInCombination = await this.supabase.client
+            .from('charges')
+            .select('role_id')
+            .eq('projet_id', projetId)
+            .eq('equipe_id', equipeId);
+
+        if (chargesInCombination.error) throw chargesInCombination.error;
+
+        // Extract role IDs already in charges for this project+team
+        const usedRoleIds = new Set(
+            (chargesInCombination.data || [])
+                .filter(c => c.role_id)
+                .map(c => c.role_id)
+        );
+
+        // Filter out roles that are already used in this project+team
+        return allRoles.filter(role => !usedRoleIds.has(role.id!));
+    }
+
+    /**
+     * Get available persons for a project + team combination
+     * (persons not already in a charge for this project+team)
+     */
+    async getAvailablePersonnesForProjectTeam(projetId: string, equipeId: string): Promise<Personne[]> {
+        // Get all persons
+        const allPersonnes = await this.teamService.getAllPersonnes();
+
+        // Get all charges for this project+team
+        const chargesInCombination = await this.supabase.client
+            .from('charges')
+            .select('personne_id')
+            .eq('projet_id', projetId)
+            .eq('equipe_id', equipeId);
+
+        if (chargesInCombination.error) throw chargesInCombination.error;
+
+        // Extract person IDs already in charges for this project+team
+        const usedPersonneIds = new Set(
+            (chargesInCombination.data || [])
+                .filter(c => c.personne_id)
+                .map(c => c.personne_id)
+        );
+
+        // Filter out persons that are already used in this project+team
+        return allPersonnes.filter(personne => !usedPersonneIds.has(personne.id!));
     }
 }
