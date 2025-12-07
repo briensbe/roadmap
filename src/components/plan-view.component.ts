@@ -726,7 +726,6 @@ interface FlatRow {
 
       .calendar-row-wrapper {
         display: flex;
-        border-bottom: 1px solid #e2e8f0;
         min-height: 48px;
       }
 
@@ -749,6 +748,7 @@ interface FlatRow {
       .row-cells {
         display: flex;
         flex: 1;
+        border-bottom: 1px solid #e2e8f0;  /* bordure sur chaque cellule */
       }
 
       .scrollable-column {
