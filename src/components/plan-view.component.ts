@@ -438,7 +438,12 @@ interface FlatRow {
         [style.transform]="'translate(-50%, 10px)'"
         [style.opacity]="toolbarVisible ? 1 : 0"
       >
-        <div class="selection-info">{{ selectedCells.length }} semaine(s) sélectionnée(s)</div>
+        <div class="selection-info">
+          {{ selectedCells.length }} semaine(s) sélectionnée(s)
+          <div class="selection-total">
+            Total jours sélectionnés: {{ totalSelectedDays | number : "1.1-1" }}j
+          </div>
+        </div>
         <div class="selection-input-row">
           <input
             #bulkChargeInput
@@ -1132,6 +1137,14 @@ interface FlatRow {
         font-weight: 600;
         color: #374151;
         margin-bottom: 8px;
+      }
+
+      .selection-total {
+        font-weight: 500;
+        font-size: 13px;
+        margin-top: 6px;
+        margin-bottom: 10px;
+        color: #065f46;
       }
 
       .selection-input-row {
@@ -2206,6 +2219,17 @@ export class PlanViewComponent implements OnInit {
 
   getFlatRowMetricsYear(row: FlatRow, year: number): number {
     return this.getResourceMetricsYear(row.resource, year);
+  }
+
+  // Sum of days (charge * jours_par_semaine) for currently selected cells
+  get totalSelectedDays(): number {
+    let total = 0;
+    for (const cell of this.selectedCells) {
+      const charge = this.getResourceValue(cell.resource, cell.week) || 0;
+      const jours = cell.resource.jours_par_semaine || 0;
+      total += charge * jours;
+    }
+    return total;
   }
 }
 
