@@ -11,6 +11,7 @@ import { ProjectsViewComponent } from './components/projects-view.component';
 import { PlanViewComponent } from './components/plan-view.component';
 
 import { CapacityViewComponent } from './components/capacity-view.component';
+import { MilestonesViewComponent } from './components/milestones-view.component';
 
 const routes: Routes = [
   { path: '', redirectTo: '/planification', pathMatch: 'full' },
@@ -19,7 +20,8 @@ const routes: Routes = [
   { path: 'ressources', component: ResourceManagerComponent },
   { path: 'capacite', component: CapacityViewComponent },
   { path: 'projets', component: ProjectsViewComponent },
-  { path: 'plan-globale', component: PlanViewComponent }
+  { path: 'plan-globale', component: PlanViewComponent },
+  { path: 'jalons', component: MilestonesViewComponent }
 ];
 
 @Component({

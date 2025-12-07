@@ -12,7 +12,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Gauge,
-  Layers
+  Layers,
+  Flag
 } from 'lucide-angular';
 import { SidebarService } from '../services/sidebar.service';
 
@@ -227,6 +228,7 @@ export class SidebarNavigationComponent {
   ChevronRight = ChevronRight;
   Gauge = Gauge;
   Layers = Layers;
+  Flag = Flag;
 
   navigationItems: NavigationItem[] = [
     { label: 'Tableau de bord', icon: this.LayoutDashboard },
@@ -234,6 +236,7 @@ export class SidebarNavigationComponent {
     { label: 'Capacité', icon: this.Gauge, route: '/capacite' },
     { label: 'Plan Global', icon: this.Layers, route: '/plan-globale' },
     { label: 'Projets', icon: this.FolderKanban, route: '/projets' },
+    { label: 'Jalons', icon: this.Flag, route: '/jalons' },
     { label: 'Ressources', icon: this.Users, route: '/ressources' },
     { label: 'Organisation', icon: this.Building2, route: '/organisation' },
     { label: 'Paramètres', icon: this.Settings }
