@@ -4,12 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { JalonService } from '../services/jalon.service';
 import { ProjetService } from '../services/projet.service';
 import { Jalon, Projet } from '../models/types';
+import { MilestoneModalComponent } from './milestone-modal.component';
 
 @Component({
-    selector: 'app-milestones-view',
-    standalone: true,
-    imports: [CommonModule, FormsModule],
-    template: `
+  selector: 'app-milestones-view',
+  standalone: true,
+  imports: [CommonModule, FormsModule, MilestoneModalComponent],
+  template: `
     <div class="milestones-container">
       <div class="milestones-header">
         <div>
@@ -70,51 +71,14 @@ import { Jalon, Projet } from '../models/types';
       </div>
     </div>
 
-    <!-- Modal -->
-    <div *ngIf="showModal" class="modal-overlay" (click)="closeModal()">
-      <div class="modal" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h2>{{ editingJalonId ? 'Modifier le jalon' : 'Nouveau Jalon' }}</h2>
-          <button class="modal-close" (click)="closeModal()">×</button>
-        </div>
-        <form (ngSubmit)="saveJalon()" class="form">
-          <div class="form-group">
-            <label>Nom du jalon *</label>
-            <input [(ngModel)]="currentJalon.nom" name="nom" required placeholder="Ex: Livraison V1">
-          </div>
-          
-          <div class="form-group">
-            <label>Date *</label>
-            <input type="date" [(ngModel)]="currentJalon.date_jalon" name="date_jalon" required>
-          </div>
-
-          <div class="form-group">
-            <label>Projet</label>
-            <select [(ngModel)]="currentJalon.projet_id" name="projet_id">
-              <option [ngValue]="undefined">-- Aucun projet --</option>
-              <option *ngFor="let p of projets" [value]="p.id">{{ p.nom_projet }}</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Type</label>
-            <select [(ngModel)]="currentJalon.type" name="type">
-              <option value="">Autre</option>
-              <option value="LV">Livraison (LV)</option>
-              <option value="MEP">Mise en production (MEP)</option>
-              <option value="SP">Sprint (SP)</option>
-            </select>
-          </div>
-
-          <div class="modal-actions">
-            <button type="button" class="btn btn-secondary" (click)="closeModal()">Annuler</button>
-            <button type="submit" class="btn btn-primary">{{ editingJalonId ? 'Mettre à jour' : 'Créer' }}</button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <app-milestone-modal
+        [(visible)]="showModal"
+        [jalon]="currentJalon"
+        [projets]="projets"
+        (saved)="onJalonSaved()">
+    </app-milestone-modal>
   `,
-    styles: [`
+  styles: [`
     .milestones-container {
       padding: 32px;
       background: #f5f7fa;
@@ -157,15 +121,6 @@ import { Jalon, Projet } from '../models/types';
 
     .btn-primary:hover {
       background: #4338ca;
-    }
-
-    .btn-secondary {
-      background: #e5e7eb;
-      color: #374151;
-    }
-
-    .btn-secondary:hover {
-      background: #d1d5db;
     }
 
     .milestones-list {
@@ -293,175 +248,64 @@ import { Jalon, Projet } from '../models/types';
       color: #9ca3af;
       padding: 40px !important;
     }
-
-    /* Modal Styles */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-
-    .modal {
-      background: white;
-      border-radius: 12px;
-      width: 100%;
-      max-width: 500px;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-      padding: 24px;
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-    }
-
-    .modal-header h2 {
-      margin: 0;
-      font-size: 20px;
-      font-weight: 600;
-      color: #111827;
-    }
-
-    .modal-close {
-      background: transparent;
-      border: none;
-      font-size: 24px;
-      color: #9ca3af;
-      cursor: pointer;
-    }
-
-    .form-group {
-      margin-bottom: 20px;
-    }
-
-    .form-group label {
-      display: block;
-      margin-bottom: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      color: #374151;
-    }
-
-    .form-group input,
-    .form-group select {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid #d1d5db;
-      border-radius: 6px;
-      font-size: 14px;
-      color: #111827;
-      transition: all 0.2s;
-    }
-
-    .form-group input:focus,
-    .form-group select:focus {
-      outline: none;
-      border-color: #4f46e5;
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-    }
-
-    .modal-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 12px;
-      margin-top: 32px;
-    }
   `]
 })
 export class MilestonesViewComponent implements OnInit {
-    jalons: Jalon[] = [];
-    projets: Projet[] = [];
+  jalons: Jalon[] = [];
+  projets: Projet[] = [];
 
-    showModal = false;
-    editingJalonId: string | undefined = undefined;
+  showModal = false;
+  currentJalon: Partial<Jalon> | null = null;
 
-    currentJalon: Partial<Jalon> = {
-        nom: '',
-        date_jalon: '',
-        type: ''
-    };
+  constructor(
+    private jalonService: JalonService,
+    private projetService: ProjetService
+  ) { }
 
-    constructor(
-        private jalonService: JalonService,
-        private projetService: ProjetService
-    ) { }
+  async ngOnInit() {
+    await this.loadData();
+  }
 
-    async ngOnInit() {
-        await this.loadData();
+  async loadData() {
+    try {
+      const [jalonsData, projetsData] = await Promise.all([
+        this.jalonService.getAllJalons(),
+        this.projetService.getAllProjets()
+      ]);
+      this.jalons = jalonsData;
+      this.projets = projetsData;
+    } catch (error) {
+      console.error('Error loading data:', error);
     }
+  }
 
-    async loadData() {
-        try {
-            const [jalonsData, projetsData] = await Promise.all([
-                this.jalonService.getAllJalons(),
-                this.projetService.getAllProjets()
-            ]);
-            this.jalons = jalonsData;
-            this.projets = projetsData;
-        } catch (error) {
-            console.error('Error loading data:', error);
-        }
+  getProject(id?: string): Projet | undefined {
+    if (!id) return undefined;
+    return this.projets.find(p => p.id === id);
+  }
+
+  openCreateModal() {
+    this.currentJalon = null; // null indicates new jalon default logic in modal
+    this.showModal = true;
+  }
+
+  openEditModal(jalon: Jalon) {
+    this.currentJalon = jalon;
+    this.showModal = true;
+  }
+
+  async onJalonSaved() {
+    await this.loadData();
+  }
+
+  async deleteJalon(jalon: Jalon) {
+    if (!jalon.id || !confirm('Êtes-vous sûr de vouloir supprimer ce jalon ?')) return;
+
+    try {
+      await this.jalonService.deleteJalon(jalon.id);
+      await this.loadData();
+    } catch (error) {
+      console.error('Error deleting jalon:', error);
     }
-
-    getProject(id?: string): Projet | undefined {
-        if (!id) return undefined;
-        return this.projets.find(p => p.id === id);
-    }
-
-    openCreateModal() {
-        this.editingJalonId = undefined;
-        this.currentJalon = {
-            nom: '',
-            date_jalon: new Date().toISOString().split('T')[0],
-            type: ''
-        };
-        this.showModal = true;
-    }
-
-    openEditModal(jalon: Jalon) {
-        this.editingJalonId = jalon.id;
-        this.currentJalon = { ...jalon };
-        this.showModal = true;
-    }
-
-    closeModal() {
-        this.showModal = false;
-        this.editingJalonId = undefined;
-    }
-
-    async saveJalon() {
-        if (!this.currentJalon.nom || !this.currentJalon.date_jalon) return;
-
-        try {
-            if (this.editingJalonId) {
-                await this.jalonService.updateJalon(this.editingJalonId, this.currentJalon);
-            } else {
-                await this.jalonService.createJalon(this.currentJalon);
-            }
-            this.closeModal();
-            await this.loadData();
-        } catch (error) {
-            console.error('Error saving jalon:', error);
-        }
-    }
-
-    async deleteJalon(jalon: Jalon) {
-        if (!jalon.id || !confirm('Êtes-vous sûr de vouloir supprimer ce jalon ?')) return;
-
-        try {
-            await this.jalonService.deleteJalon(jalon.id);
-            await this.loadData();
-        } catch (error) {
-            console.error('Error deleting jalon:', error);
-        }
-    }
+  }
 }
