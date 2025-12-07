@@ -226,7 +226,7 @@ interface FlatRow {
                          class="jalon-item"
                          [style.background-color]="getJalonColor(jalon.type)"
                          [style.color]="getJalonTextColor(jalon.type)"
-                         [title]="jalon.nom">
+                         [title]="jalon.date_jalon">
                          {{ jalon.nom || '★' }}
                     </div>
                  </div>
