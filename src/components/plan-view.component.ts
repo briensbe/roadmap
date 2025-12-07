@@ -4,7 +4,8 @@ import { FormsModule } from "@angular/forms";
 import { TeamService } from "../services/team.service";
 import { ProjetService } from "../services/projet.service";
 import { ChargeService } from "../services/charge.service";
-import { Equipe, Projet, Charge, Role, Personne, Capacite } from "../models/types";
+import { JalonService } from "../services/jalon.service";
+import { Equipe, Projet, Charge, Role, Personne, Capacite, Jalon } from "../models/types";
 import { CalendarService } from "../services/calendar.service";
 import { LucideAngularModule, Plus } from "lucide-angular";
 
@@ -209,6 +210,30 @@ interface FlatRow {
           <div class="metrics-header-fixed">
             <div style="font-weight:600; font-size: 12px;">Métriques</div>
           </div>
+        </div>
+
+        
+        <!-- Milestones Header -->
+        <div class="milestones-header-wrapper">
+          <div class="row-label fixed-column header-fixed milestones-fixed-col">
+            <span style="font-weight:600; font-size: 13px;">Jalons</span>
+          </div>
+          <div class="header-scroll-container" #milestonesScroll>
+             <div class="row-cells scrollable-column">
+               <div *ngFor="let week of displayedWeeks" class="week-cell milestone-week-cell" [class.current-week]="isCurrentWeek(week)">
+                 <div class="milestones-container">
+                    <div *ngFor="let jalon of getJalonsForWeek(week)"
+                         class="jalon-item"
+                         [style.background-color]="getJalonColor(jalon.type)"
+                         [style.color]="getJalonTextColor(jalon.type)"
+                         [title]="jalon.nom">
+                         {{ jalon.nom || '★' }}
+                    </div>
+                 </div>
+               </div>
+             </div>
+          </div>
+          <div class="metrics-header-fixed milestones-metrics-fixed"></div>
         </div>
 
         <!-- Data rows - single scroll container with metrics panel -->
@@ -811,6 +836,58 @@ interface FlatRow {
         flex-shrink: 0;
       }
 
+      .milestones-header-wrapper {
+        display: flex;
+        border-bottom: 2px solid #e2e8f0;
+        min-height: 40px;
+        background: #ffffff;
+        flex-shrink: 0;
+      }
+
+      .milestones-fixed-col {
+        background: #ffffff;
+      }
+
+      .milestones-metrics-fixed {
+        background: #ffffff;
+        border-left: 2px solid #e2e8f0;
+        width: 200px;
+        flex-shrink: 0;
+      }
+
+      .milestone-week-cell {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2px;
+        background: #ffffff;
+        border-right: 1px solid #e2e8f0;
+      }
+
+      .milestones-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px;
+        justify-content: center;
+        width: 100%;
+      }
+
+      .jalon-item {
+        font-size: 10px;
+        font-weight: 700;
+        padding: 3px 6px;
+        border-radius: 12px;
+        cursor: help;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 20px;
+        line-height: 1.2;
+        text-align: center;
+        white-space: nowrap;
+      }
+
       .header-fixed {
         display: flex;
         align-items: center;
@@ -1367,6 +1444,9 @@ export class PlanViewComponent implements OnInit {
   @ViewChild("headerScroll") headerScroll?: ElementRef<HTMLDivElement>;
   @ViewChild("dataScroll") dataScroll?: ElementRef<HTMLDivElement>;
 
+  jalons: Jalon[] = [];
+  @ViewChild("milestonesScroll") milestonesScroll!: ElementRef;
+
   // Icons
   Plus = Plus;
 
@@ -1374,7 +1454,8 @@ export class PlanViewComponent implements OnInit {
     private teamService: TeamService,
     private projetService: ProjetService,
     private chargeService: ChargeService,
-    private calendarService: CalendarService
+    private calendarService: CalendarService,
+    private jalonService: JalonService
   ) { }
 
   async ngOnInit() {
@@ -1397,24 +1478,64 @@ export class PlanViewComponent implements OnInit {
   }
 
   async loadData() {
-    this.allProjects = await this.projetService.getAllProjets();
-    // Duplicate removed
+    try {
+      const [projects, equipes, charges, capacities, links, roles, personnes, jalons] = await Promise.all([
+        this.projetService.getAllProjets(),
+        this.teamService.getAllEquipes(),
+        this.chargeService.getAllCharges(),
+        this.teamService.getAllCapacities(),
+        this.projetService.getAllEquipeProjetLinks(),
+        this.teamService.getAllRoles(),
+        this.teamService.getAllPersonnes(),
+        this.jalonService.getAllJalons()
+      ]);
 
-    this.allEquipes = await this.teamService.getAllEquipes();
-    this.allCharges = await this.chargeService.getAllCharges();
-    this.allCapacities = await this.teamService.getAllCapacities();
-    this.allLinks = await this.projetService.getAllEquipeProjetLinks();
+      this.allProjects = projects;
+      this.allEquipes = equipes;
+      this.allCharges = charges;
+      this.allCapacities = capacities;
+      this.allLinks = links;
+      this.availableRoles = roles;
+      this.availablePersonnes = personnes;
+      this.jalons = jalons;
 
-    // Load roles and persons for resource display
-    this.availableRoles = await this.teamService.getAllRoles();
-    this.availablePersonnes = await this.teamService.getAllPersonnes();
+      this.calculateUsage();
+      this.buildTree();
+    } catch (error) {
+      console.error("Error loading data", error);
+    }
+  }
 
 
-    // Note: Lines below were duplicated, valid ones are at 1070-1071
+  getJalonsForWeek(week: Date): Jalon[] {
+    const startOfWeek = new Date(week);
+    startOfWeek.setHours(0, 0, 0, 0);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
 
+    return this.jalons.filter(j => {
+      const jDate = new Date(j.date_jalon);
+      return jDate >= startOfWeek && jDate <= endOfWeek;
+    });
+  }
 
-    this.calculateUsage();
-    this.buildTree();
+  getJalonColor(type: string): string {
+    switch (type) {
+      case 'LV': return '#d1fae5'; // Green
+      case 'MEP': return '#dbeafe'; // Blue
+      case 'SP': return '#fef3c7'; // Amber
+      default: return '#f3f4f6'; // Gray
+    }
+  }
+
+  getJalonTextColor(type: string): string {
+    switch (type) {
+      case 'LV': return '#065f46';
+      case 'MEP': return '#1e40af';
+      case 'SP': return '#92400e';
+      default: return '#4b5563';
+    }
   }
 
   calculateUsage() {
@@ -1793,6 +1914,9 @@ export class PlanViewComponent implements OnInit {
 
     if (this.headerScroll) {
       this.headerScroll.nativeElement.scrollLeft = scrollLeft;
+    }
+    if (this.milestonesScroll) {
+      this.milestonesScroll.nativeElement.scrollLeft = scrollLeft;
     }
   }
 
