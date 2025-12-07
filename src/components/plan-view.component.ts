@@ -343,24 +343,28 @@ interface FlatRow {
                  <div
                    *ngFor="let week of displayedWeeks; let i = index"
                    class="week-cell resource-detail-cell"
-                   [class.selected]="isCellSelected(row.resource, week)"
-                   [class.has-capacity]="getResourceValue(row.resource, week) > 0"
-                   [attr.data-week-index]="i"
+                  [class.selected]="isCellSelected(row.resource, week)"
+                  [class.has-capacity]="getResourceValue(row.resource, week) > 0"
+                  [class.cell-positive]="shouldShowAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) && getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) > 0"
+                  [class.cell-zero]="shouldShowAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) && getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) === 0"
+                  [class.cell-negative]="shouldShowAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) && getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) < 0"
+                  [attr.data-week-index]="i"
                  >
                    <div class="cell-content">
                      <div *ngIf="getResourceValue(row.resource, week) > 0" class="capacity-value">
                        {{ getResourceValue(row.resource, week) | number : "1.0-1" }}
                      </div>
-                     <div
-                        class="availability-indicator"
-                        [ngClass]="{
-                          'availability-positive': getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) > 0,
-                          'availability-zero': getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) === 0,
-                          'availability-negative': getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) < 0
-                        }"
-                      >
-                        {{ getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) > 0 ? '+' : '' }}{{ getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) | number : "1.0-1" }}
-                      </div>
+                    <div
+                      class="availability-indicator"
+                      *ngIf="shouldShowAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id)"
+                      [ngClass]="{
+                        'availability-positive': getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) > 0,
+                        'availability-zero': getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) === 0,
+                        'availability-negative': getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) < 0
+                      }"
+                    >
+                      {{ getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) > 0 ? '+' : '' }}{{ getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) | number : "1.0-1" }}
+                    </div>
                    </div>
                  </div>
                </div>
