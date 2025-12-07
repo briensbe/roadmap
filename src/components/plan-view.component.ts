@@ -87,6 +87,15 @@ interface FlatRow {
               À plat
             </button>
           </div>
+
+          <div class="toggle-container">
+            <span class="toggle-label">Dispo.</span>
+            <label class="switch">
+              <input type="checkbox" [(ngModel)]="showAvailability">
+              <span class="slider round"></span>
+            </label>
+          </div>
+
           <button class="btn btn-secondary" (click)="goToToday()">Aujourd'hui</button>
         </div>
       </div>
@@ -283,9 +292,9 @@ interface FlatRow {
                         class="week-cell resource-detail-cell"
                         [class.selected]="isCellSelected(resource, week)"
                         [class.has-capacity]="getResourceValue(resource, week) > 0"
-                        [class.cell-positive]="getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) > 0"
-                        [class.cell-zero]="getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) === 0"
-                        [class.cell-negative]="getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) < 0"
+                        [class.cell-positive]="shouldShowAvailability(resource, week, viewMode === 'project' ? child.id : row.id) && getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) > 0"
+                        [class.cell-zero]="shouldShowAvailability(resource, week, viewMode === 'project' ? child.id : row.id) && getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) === 0"
+                        [class.cell-negative]="shouldShowAvailability(resource, week, viewMode === 'project' ? child.id : row.id) && getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) < 0"
                         [attr.data-week-index]="i"
                       >
                         <div class="cell-content">
@@ -294,6 +303,7 @@ interface FlatRow {
                           </div>
                           <div
                             class="availability-indicator"
+                            *ngIf="shouldShowAvailability(resource, week, viewMode === 'project' ? child.id : row.id)"
                             [ngClass]="{
                               'availability-positive': getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) > 0,
                               'availability-zero': getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) === 0,
@@ -1034,12 +1044,84 @@ interface FlatRow {
         border: 1px solid #d1d5db;
         border-radius: 6px;
       }
+
+      /* Toggle Switch Styles */
+      .toggle-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: white;
+        padding: 4px 12px;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        height: 38px;
+      }
+      
+      .toggle-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: #374151;
+      }
+
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 32px;
+        height: 18px;
+      }
+
+      .switch input { 
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        -webkit-transition: .4s;
+        transition: .4s;
+        border-radius: 34px;
+      }
+
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 14px;
+        width: 14px;
+        left: 2px;
+        bottom: 2px;
+        background-color: white;
+        -webkit-transition: .4s;
+        transition: .4s;
+        border-radius: 50%;
+      }
+
+      input:checked + .slider {
+        background-color: #3b82f6;
+      }
+
+      input:focus + .slider {
+        box-shadow: 0 0 1px #3b82f6;
+      }
+
+      input:checked + .slider:before {
+        -webkit-transform: translateX(14px);
+        -ms-transform: translateX(14px);
+        transform: translateX(14px);
+      }
     `,
   ],
 })
 export class PlanViewComponent implements OnInit {
   viewMode: "project" | "team" = "project";
   displayFormat: "tree" | "flat" = "tree";
+  showAvailability: boolean = true;
 
   flatRows: FlatRow[] = [];
 
@@ -1194,6 +1276,12 @@ export class PlanViewComponent implements OnInit {
     const totalCapacity = customCap ? customCap.capacite : 0;
 
     return totalCapacity - usage;
+  }
+
+  shouldShowAvailability(resource: ResourceRow, week: Date, teamId: string): boolean {
+    const charge = this.getResourceValue(resource, week);
+    const availability = this.getAvailability(resource, week, teamId);
+    return charge > 0 || (this.showAvailability && availability !== 0);
   }
 
   switchViewMode(mode: "project" | "team") {
