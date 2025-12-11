@@ -1,0 +1,135 @@
+.container {
+  max-width: 400px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+h2 {
+  text-align: center;
+  color: #1e293b;
+  margin-bottom: 2rem;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+input {
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+button[type="submit"] {
+  padding: 0.75rem;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+button[type="submit"]:hover {
+  background: #1d4ed8;
+}
+
+button[type="submit"]:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+p {
+  text-align: center;
+  margin-top: 1.5rem;
+  color: #64748b;
+}
+
+a {
+  color: #2563eb;
+  text-decoration: none;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Password Toggle Styles */
+.password-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  color: #64748b;
+}
+
+.toggle-password:hover {
+  color: #1e293b;
+}
+
+/* Dark Mode Overrides */
+:host-context(body.dark-mode) .container {
+  background: #1e293b;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.5);
+}
+
+:host-context(body.dark-mode) h2 {
+  color: #f8fafc;
+}
+
+:host-context(body.dark-mode) input {
+  background: #334155;
+  border-color: #475569;
+  color: #f8fafc;
+}
+
+:host-context(body.dark-mode) input:focus {
+  border-color: #3b82f6;
+}
+
+:host-context(body.dark-mode) .toggle-password {
+  color: #94a3b8;
+}
+
+:host-context(body.dark-mode) .toggle-password:hover {
+  color: #f8fafc;
+}
+
+:host-context(body.dark-mode) p {
+  color: #cbd5e1;
+}
+
+:host-context(body.dark-mode) a {
+  color: #60a5fa;
+}
+
+:host-context(body.dark-mode) input:-webkit-autofill,
+:host-context(body.dark-mode) input:-webkit-autofill:hover,
+:host-context(body.dark-mode) input:-webkit-autofill:focus,
+:host-context(body.dark-mode) input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px #334155 inset !important;
+  -webkit-text-fill-color: #f8fafc !important;
+  caret-color: #f8fafc;
+}
