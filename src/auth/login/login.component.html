@@ -1,0 +1,24 @@
+<div class="container">
+  <h2>Login</h2>
+  <form (ngSubmit)="signInWithEmail()">
+    <input type="email" [(ngModel)]="email" name="email" placeholder="Email" required autocomplete="email" />
+    <div class="password-container">
+      <input
+        [type]="showPassword() ? 'text' : 'password'"
+        [(ngModel)]="password"
+        name="password"
+        placeholder="Password"
+        required
+        autocomplete="current-password"
+      />
+      <button type="button" class="toggle-password" (click)="togglePasswordVisibility()">
+        <lucide-icon [img]="showPassword() ? EyeOff : Eye" size="20"></lucide-icon>
+      </button>
+    </div>
+    <button type="submit" [disabled]="loading">
+      {{ loading ? "Loading..." : "Sign In" }}
+    </button>
+  </form>
+  <p>Don't have an account? <a (click)="navigateToSignup()">Sign Up</a></p>
+  <p>Forgot your password ? <a (click)="navigateToForgot()">Send me a link</a></p>
+</div>

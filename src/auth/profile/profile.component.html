@@ -1,0 +1,37 @@
+<div class="container">
+  <h2>User Profile</h2>
+  <p>Congratulations! Welcome to secure auth with Angular + Supabase is running. 🎉</p>
+  <button class="btn btn-primary" (click)="toggleUserInfo()" [disabled]="loading">
+    {{ loading ? "Chargement..." : showInfo ? "Masquer les informations" : "Afficher les informations personnelles" }}
+  </button>
+
+  @if (showInfo && user) {
+  <div class="user-info">
+    <p>User ID: {{ user.id }}</p>
+    <p>Email: {{ user.email }}</p>
+    <p>Display Name: {{ user.user_metadata.displayName }}</p>
+  </div>
+  }
+
+  <!-- <div data-tour="darkmode-1" class="theme-selector">
+    <label>Thème:</label>
+    <div class="theme-buttons">
+      @for (theme of themeOptions; track theme.value) {
+        <button
+          class="theme-btn"
+          [class.active]="getCurrentTheme() === theme.value"
+          (click)="setTheme(theme.value)"
+          [title]="theme.label"
+        >
+          <lucide-icon [name]="theme.icon" size="20"></lucide-icon>
+          <span>{{ theme.label }}</span>
+        </button>
+      }
+    </div>
+  </div> -->
+
+  <button class="btn btn-secondary" (click)="updatePassword()">Modifier le mot de passe</button>
+
+  <button class="btn" (click)="signOut()">Sign Out</button>
+  <!-- <button class="help-button" (click)="replayTutorial()">?</button> -->
+</div>

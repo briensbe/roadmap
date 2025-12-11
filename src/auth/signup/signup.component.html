@@ -1,0 +1,50 @@
+<div class="container">
+  <h2>Sign Up</h2>
+  <form>
+    <input type="text" [(ngModel)]="name" name="name" placeholder="Full Name" required autocomplete="name" />
+    <input type="email" [(ngModel)]="email" name="email" placeholder="Email" required autocomplete="email" />
+    <div class="password-container">
+      <input
+        [type]="showPassword() ? 'text' : 'password'"
+        [ngModel]="password()"
+        (ngModelChange)="password.set($event)"
+        name="password"
+        minlength="6"
+        placeholder="Mot de passe (Minimum 6 caractères)"
+        required
+        autocomplete="new-password"
+      />
+      <button type="button" class="toggle-password" (click)="togglePasswordVisibility()">
+        <lucide-icon [name]="showPassword() ? 'eye-off' : 'eye'" size="20"></lucide-icon>
+      </button>
+    </div>
+    <div class="password-container">
+      <input
+        [type]="showConfirmPassword() ? 'text' : 'password'"
+        id="confirmPassword"
+        [ngModel]="confirmPassword()"
+        (ngModelChange)="confirmPassword.set($event)"
+        name="confirmPassword"
+        placeholder="Confirmez votre mot de passe"
+        minlength="6"
+        required
+        autocomplete="new-password"
+      />
+      <button type="button" class="toggle-password" (click)="toggleConfirmPasswordVisibility()">
+        <lucide-icon [name]="showConfirmPassword() ? 'eye-off' : 'eye'" size="20"></lucide-icon>
+      </button>
+    </div>
+
+    <button type="button" (click)="signUp()">Sign Up</button>
+  </form>
+
+  <div *ngIf="error()" class="message error">
+    {{ error() }}
+  </div>
+
+  <div *ngIf="message()" class="message success">
+    {{ message() }}
+  </div>
+
+  <p>Already have an account? <a (click)="navigateToLogin()">Log In</a></p>
+</div>
