@@ -14,3 +14,10 @@ CREATE INDEX idx_equipes_projets_equipe ON equipes_projets(equipe_id);
 -- Index pour retrouver rapidement toutes les équipes d’un projet
 CREATE INDEX idx_equipes_projets_projet ON equipes_projets(projet_id);
 
+ALTER TABLE equipes_projets ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow all operations for authenticated users on equipes_projets"
+  ON equipes_projets FOR ALL
+  TO authenticated
+  USING (true)
+  WITH CHECK (true);
