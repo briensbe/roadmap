@@ -32,7 +32,7 @@ interface NavigationItem {
     <nav class="sidebar" [class.collapsed]="isCollapsed">
       <div class="sidebar-header">
         <div class="logo-container">
-          <div class="logo-icon">
+          <div class="logo-icon" *ngIf="!isCollapsed">
             <lucide-icon [img]="Building2" [size]="24"></lucide-icon>
           </div>
           <span class="logo-text" *ngIf="!isCollapsed">ResourceFlow</span>
