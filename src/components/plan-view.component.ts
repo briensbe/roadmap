@@ -470,7 +470,7 @@ interface FlatRow {
         class="selection-toolbar"
         [style.top.px]="toolbarPosition?.top"
         [style.left.px]="toolbarPosition?.left"
-        [style.transform]="'translate(-50%, 10px)'"
+        [style.transform]="toolbarTransform"
         [style.opacity]="toolbarVisible ? 1 : 0"
       >
         <div class="selection-info">
@@ -1459,6 +1459,7 @@ export class PlanViewComponent implements OnInit {
   selectedCells: Array<{ resource: ResourceRow; week: Date; childId: string; parentId: string }> = [];
   isSelectionFinished: boolean = false;
   toolbarPosition: { top: number; left: number } | null = null;
+  toolbarTransform: string = 'translate(-50%, 10px)';
   toolbarVisible: boolean = false; // Controls opacity to prevent flash
 
   bulkChargeValue: number | null = null;
@@ -2135,10 +2136,51 @@ export class PlanViewComponent implements OnInit {
 
         if (cellElement) {
           const rect = cellElement.getBoundingClientRect();
+          const viewportHeight = window.innerHeight;
+          const viewportWidth = window.innerWidth;
+
+          // Estimated toolbar dimensions (safe buffer)
+          const bottomSafetyMargin = 150; // Height of toolbar + some padding
+          const rightSafetyMargin = 320; // Width of toolbar + padding
+
+          const spaceBelow = viewportHeight - rect.bottom;
+
+          let top = rect.bottom;
+          let left = rect.left + rect.width / 2;
+          let transform = 'translate(-50%, 10px)'; // Default: centered below
+
+          // Check if we are too close to the bottom
+          if (spaceBelow < bottomSafetyMargin) {
+            const spaceRight = viewportWidth - rect.right;
+            const spaceLeft = rect.left;
+
+            if (spaceRight > rightSafetyMargin) {
+              // Position to the RIGHT
+              top = rect.top + rect.height / 2;
+              left = rect.right;
+              transform = 'translate(10px, -50%)';
+            } else if (spaceLeft > rightSafetyMargin) {
+              // Position to the LEFT
+              top = rect.top + rect.height / 2;
+              left = rect.left;
+              transform = 'translate(calc(-100% - 10px), -50%)';
+            } else {
+              // Fallback: Stick to bottom but maybe push it up slightly if possible? 
+              // Or just show above?
+              // Let's try showing ABOVE if all else fails
+              if (rect.top > bottomSafetyMargin) {
+                top = rect.top;
+                left = rect.left + rect.width / 2;
+                transform = 'translate(-50%, calc(-100% - 10px))';
+              }
+            }
+          }
+
           this.toolbarPosition = {
-            top: rect.bottom,
-            left: rect.left + rect.width / 2,
+            top: top,
+            left: left,
           };
+          this.toolbarTransform = transform;
 
           // Make toolbar visible now that position is set
           this.toolbarVisible = true;
