@@ -46,10 +46,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "development": {
-              "buildTarget": "demo:build:development"
+              "buildTarget": "roadmap:build:development"
             },
             "production": {
-              "buildTarget": "demo:build:production"
+              "buildTarget": "roadmap:build:production"
             }
           },
           "defaultConfiguration": "development"
