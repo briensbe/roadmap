@@ -1205,7 +1205,7 @@ interface FlatRow {
 
       /* Selection Styles */
       .resource-detail-cell {
-        cursor: pointer;
+        cursor: crosshair;
         transition: background 0.15s ease;
         position: relative;
       }
