@@ -2154,26 +2154,8 @@ export class PlanViewComponent implements OnInit {
             const spaceRight = viewportWidth - rect.right;
             const spaceLeft = rect.left;
 
-            if (spaceRight > rightSafetyMargin) {
-              // Position to the RIGHT
-              top = rect.top + rect.height / 2;
-              left = rect.right;
-              transform = 'translate(10px, -50%)';
-            } else if (spaceLeft > rightSafetyMargin) {
-              // Position to the LEFT
-              top = rect.top + rect.height / 2;
-              left = rect.left;
-              transform = 'translate(calc(-100% - 10px), -50%)';
-            } else {
-              // Fallback: Stick to bottom but maybe push it up slightly if possible? 
-              // Or just show above?
-              // Let's try showing ABOVE if all else fails
-              if (rect.top > bottomSafetyMargin) {
-                top = rect.top;
-                left = rect.left + rect.width / 2;
-                transform = 'translate(-50%, calc(-100% - 10px))';
-              }
-            }
+            ({ top, left, transform } = this.calculateBestPosition(spaceRight, rightSafetyMargin, spaceLeft, top, rect, left, transform, bottomSafetyMargin));
+
           }
 
           this.toolbarPosition = {
@@ -2192,6 +2174,52 @@ export class PlanViewComponent implements OnInit {
         }
       }
     }, 0);
+  }
+
+  /**
+   * Calculate the best position for the toolbar based on the available space.
+   * @param spaceRight The available space to the right of the cell.
+   * @param rightSafetyMargin The safety margin to the right of the cell.
+   * @param spaceLeft The available space to the left of the cell.
+   * @param top The current top position of the toolbar.
+   * @param rect The bounding rectangle of the cell.
+   * @param left The current left position of the toolbar.
+   * @param transform The current transform of the toolbar.
+   * @param bottomSafetyMargin The safety margin to the bottom of the cell.
+   * @returns The best position for the toolbar.
+   */
+  private calculateBestPosition(spaceRight: number, rightSafetyMargin: number, spaceLeft: number, top: number, rect: DOMRect, left: number, transform: string, bottomSafetyMargin: number) {
+    const preferRight = this.dragStartWeekIndex - this.dragEndWeekIndex <= 0;
+
+    let side: 'RIGHT' | 'LEFT' | null = null;
+
+    // Choix du côté
+    if (preferRight) {
+      if (spaceRight > rightSafetyMargin) side = 'RIGHT';
+      else if (spaceLeft > rightSafetyMargin) side = 'LEFT';
+    } else {
+      if (spaceLeft > rightSafetyMargin) side = 'LEFT';
+      else if (spaceRight > rightSafetyMargin) side = 'RIGHT';
+    }
+
+    // Application du positionnement
+    if (side === 'RIGHT') {
+      top = rect.top + rect.height / 2;
+      left = rect.right;
+      transform = 'translate(10px, -50%)';
+
+    } else if (side === 'LEFT') {
+      top = rect.top + rect.height / 2;
+      left = rect.left;
+      transform = 'translate(calc(-100% - 10px), -50%)';
+
+    } else if (rect.top > bottomSafetyMargin) {
+      // Fallback ABOVE
+      top = rect.top;
+      left = rect.left + rect.width / 2;
+      transform = 'translate(-50%, calc(-100% - 10px))';
+    }
+    return { top, left, transform };
   }
 
   updateSelection(child: ChildRow, parent: ParentRow) {
