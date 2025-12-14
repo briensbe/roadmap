@@ -59,7 +59,7 @@ export class SupabaseService {
   async signUpWithEmail(payload: SignupPayload) {
     // Récupère l'URL de base de l'app (inclut le repo path)
     const baseUrl = document.querySelector("base")?.href || window.location.origin;
-    // console.log("1- signup baseUrl = " + baseUrl);
+    console.log("1- signup baseUrl = " + baseUrl);
 
     return await this.supabase.auth.signUp({
       email: payload.email,
