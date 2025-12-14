@@ -11,7 +11,7 @@
         required
         autocomplete="current-password"
       />
-      <button type="button" class="toggle-password" (click)="togglePasswordVisibility()">
+      <button type="button" class="toggle-password" tabindex="-1" (click)="togglePasswordVisibility()">
         <lucide-icon [img]="showPassword() ? EyeOff : Eye" size="20"></lucide-icon>
       </button>
     </div>
