@@ -15,7 +15,7 @@
         autocomplete="new-password"
       />
       <button type="button" class="toggle-password" (click)="togglePasswordVisibility()">
-        <lucide-icon [name]="showPassword() ? 'eye-off' : 'eye'" size="20"></lucide-icon>
+        <lucide-icon [img]="showPassword() ? EyeOff : Eye" size="20"></lucide-icon>
       </button>
     </div>
     <div class="password-container">
@@ -31,7 +31,7 @@
         autocomplete="new-password"
       />
       <button type="button" class="toggle-password" (click)="toggleConfirmPasswordVisibility()">
-        <lucide-icon [name]="showConfirmPassword() ? 'eye-off' : 'eye'" size="20"></lucide-icon>
+        <lucide-icon [img]="showConfirmPassword() ? EyeOff : Eye" size="20"></lucide-icon>
       </button>
     </div>
 

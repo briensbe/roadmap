@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../services/supabase.service';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule } from 'lucide-angular';
+import { LucideAngularModule, Eye, EyeOff } from 'lucide-angular';
 
 @Component({
   selector: 'app-signup',
@@ -21,6 +21,10 @@ export class SignupComponent {
   loading = false;
   error = signal<string | null>(null);
   message = signal<string | null>(null);
+
+  // Expose icons for template usage
+  readonly Eye = Eye;
+  readonly EyeOff = EyeOff;
 
   togglePasswordVisibility() {
     this.showPassword.update((value) => !value);
