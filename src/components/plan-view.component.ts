@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewChild, ElementRef, HostListener } from "@angular/core";
-import { CommonModule } from "@angular/common";
+import { CommonModule, NgIf, NgFor } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { TeamService } from "../services/team.service";
 import { ProjetService } from "../services/projet.service";
@@ -46,7 +46,7 @@ interface FlatRow {
 @Component({
   selector: "app-plan-view",
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, MilestoneModalComponent],
+  imports: [CommonModule, NgIf, NgFor, FormsModule, LucideAngularModule, MilestoneModalComponent],
   template: `
     <div class="capacity-container">
       <div class="capacity-header">
