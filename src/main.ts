@@ -14,17 +14,6 @@ import { CapacityViewComponent } from "./components/capacity-view.component";
 import { MilestonesViewComponent } from "./components/milestones-view.component";
 import { routes } from "../src/app.routes";
 
-// const routes: Routes = [
-//   { path: '', redirectTo: '/planification', pathMatch: 'full' },
-//   { path: 'planification', component: CalendarViewComponent },
-//   { path: 'organisation', component: OrganizationViewComponent },
-//   { path: 'ressources', component: ResourceManagerComponent },
-//   { path: 'capacite', component: CapacityViewComponent },
-//   { path: 'projets', component: ProjectsViewComponent },
-//   { path: 'plan-globale', component: PlanViewComponent },
-//   { path: 'jalons', component: MilestonesViewComponent }
-// ];
-
 @Component({
   selector: "app-root",
   standalone: true,
@@ -61,7 +50,7 @@ import { routes } from "../src/app.routes";
 export class App implements OnInit {
   sidebarCollapsed = false;
 
-  constructor(private sidebarService: SidebarService) {}
+  constructor(private sidebarService: SidebarService) { }
 
   ngOnInit() {
     this.sidebarService.collapsed$.subscribe((collapsed) => {
