@@ -1082,6 +1082,7 @@ interface FlatRow {
         align-items: center;
         justify-content: center;
         line-height: 1.1;
+        user-select: none; /* Prevent text selection */
       }
 
       .capacity-value {
@@ -1096,6 +1097,7 @@ interface FlatRow {
         align-items: center;
         justify-content: center;
         line-height: 1.1;
+        user-select: none; /* Prevent text selection */
       }
 
       .empty-state-weeks {
@@ -1205,7 +1207,7 @@ interface FlatRow {
 
       /* Selection Styles */
       .resource-detail-cell {
-        cursor: crosshair;
+        cursor: crosshair; /* pointer ou crosshair */
         transition: background 0.15s ease;
         position: relative;
       }
