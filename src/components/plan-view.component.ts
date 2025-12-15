@@ -944,6 +944,7 @@ interface FlatRow {
         display: flex;
         align-items: center;
         padding: 0 16px;
+        border-bottom: 1px solid #e2e8f0;
       }
 
       .fixed-column {
