@@ -262,9 +262,9 @@ interface FlatRow {
                 <div class="row-cells scrollable-column">
                   <div *ngFor="let week of displayedWeeks" class="week-cell team-cell">
                     <div class="team-summary" *ngIf="getParentTotal(row, week) > 0">
-                      <div class="capacity-value">
+                      <!-- <div class="capacity-value">
                         {{ getParentTotal(row, week) | number : "1.0-1" }}
-                      </div>
+                      </div> -->
                     </div>
                   </div>
                 </div>
@@ -304,11 +304,13 @@ interface FlatRow {
                       <div
                         *ngFor="let week of displayedWeeks"
                         class="week-cell resource-cell"
-                        [class.has-capacity]="getChildValue(child, week) > 0"
                       >
+                        <!-- 
+                      [class.has-capacity]="getChildValue(child, week) > 0"
+                      
                         <div class="cell-content" *ngIf="getChildValue(child, week) > 0">
                           <div class="capacity-value">{{ getChildValue(child, week) | number : "1.0-1" }}</div>
-                        </div>
+                        </div> -->
                       </div>
                     </div>
                     <div class="metrics-cell">
@@ -336,7 +338,7 @@ interface FlatRow {
                       (mouseup)="onMouseUp()"
                       (mouseleave)="onMouseUp()"
                     >
-                      <div class="row-label fixed-column">
+                      <div class="row-label fixed-column row-detail">
                         <div class="resource-detail-label" style="padding-left:50px;">
                           <span class="resource-detail-name">{{ resource.label }}</span>
                         </div>
@@ -408,7 +410,7 @@ interface FlatRow {
                (mouseup)="onMouseUp()"
                (mouseleave)="onMouseUp()"
              >
-               <div class="row-label fixed-column">
+               <div class="row-label fixed-column row-detail">
                  <!-- No expansion toggles, no add buttons, just the full label -->
                  <div style="padding: 0 16px; font-weight: 500; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ row.fullLabel }}">
                    {{ row.fullLabel }}
@@ -954,6 +956,11 @@ interface FlatRow {
         z-index: 5;
       }
 
+      /* pour un fond blanc sur le label de détail */
+      .calendar-row-wrapper .row-label.fixed-column.row-detail {
+        background: white;
+      }
+
       .row-cells {
         display: flex;
         flex: 1;
@@ -1011,14 +1018,20 @@ interface FlatRow {
         overflow-y: auto;
       }
 
+      .calendar-row-wrapper .fixed-column {
+        background: #f9fafb; 
+        /* background: white; */ 
+      }
+/*
       .calendar-row-wrapper:nth-child(odd) .fixed-column {
-        background: #f9fafb;
+        background: #f9fafb; 
+        background: white;
       }
 
       .calendar-row-wrapper:nth-child(even) .fixed-column {
         background: white;
       }
-
+*/
       .week-header {
         min-width: 80px;
         width: 80px;
@@ -1067,6 +1080,7 @@ interface FlatRow {
       }
 
       .resource-cell {
+        background: #f9fafb;
         transition: background 0.15s ease;
       }
 
