@@ -134,11 +134,11 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
     return service.id_service || 0;
   }
 
-  calculateTotal(field: 'initial' | 'revise' | 'previsionnel' | 'consomme' | 'delta' | 'restant' | 'raf'): string {
+  calculateTotal(field: keyof ChiffresFormData): string {
     let total = 0;
     for (const formData of this.chiffres.values()) {
       const value = formData[field];
-      if (value !== undefined && value !== null) {
+      if (typeof value === 'number') {
         total += value;
       }
     }
@@ -191,35 +191,86 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
     }
   }
 
-  async handlePaste(event: ClipboardEvent, startingIdService: number) {
+  async handlePaste(event: ClipboardEvent, serviceId: number, fieldName?: string) {
     event.preventDefault();
-    const text = event.clipboardData?.getData('text/plain') || '';
-    const lines = text.split('\n').filter(line => line.trim());
 
-    let serviceIndex = this.services.findIndex(s => s.id === startingIdService.toString());
-    if (serviceIndex === -1) return;
+    const pastedText = event.clipboardData?.getData('text') || '';
+    const lines = pastedText.trim().split('\n');
 
-    for (const line of lines) {
-      const values = line.split('\t');
-      if (serviceIndex >= this.services.length) break;
+    // Les champs disponibles dans l'ordre
+    const allFields = ['initial', 'revise', 'previsionnel', 'consomme'];
 
-      const service = this.services[serviceIndex];
-      const idService = parseInt(service.id || '0');
-      const formData = this.chiffres.get(idService);
+    console.log('fieldName', fieldName);
+    // Trouvez l'index du champ où commence le paste
+    const startFieldIndex = fieldName ? allFields.indexOf(fieldName) : 0;
 
-      if (formData) {
-        // Assuming order: initial, revise, previsionnel, consomme
-        if (values[0]) formData.initial = this.parseNumber(values[0]);
-        if (values[1]) formData.revise = this.parseNumber(values[1]);
-        if (values[2]) formData.previsionnel = this.parseNumber(values[2]);
-        if (values[3]) formData.consomme = this.parseNumber(values[3]);
+    console.log('startFieldIndex', startFieldIndex);
+    if (startFieldIndex === -1) return;
 
-        this.updateCalculatedFields(formData);
-      }
+    // Si c'est une seule ligne avec plusieurs colonnes (tabulation)
+    if (lines.length === 1) {
+      const values = lines[0].split('\t').map(v => v.trim());
+      this.fillRowWithValues(serviceId, values, startFieldIndex);
+    }
 
-      serviceIndex++;
+    // Si c'est plusieurs lignes
+    else if (lines.length > 1) {
+      console.log('multiline paste not yet implemented -just first line');
+      const values = lines[0].split('\t').map(v => v.trim());
+      this.fillRowWithValues(serviceId, values, startFieldIndex);
+      /*
+      let currentServiceIndex = this.services.findIndex(
+        s => this.getNumericId(s) === serviceId
+      );
+
+      lines.forEach((line, lineIndex) => {
+        const values = line.split('\t').map(v => v.trim());
+
+        if (currentServiceIndex + lineIndex < this.services.length) {
+          const id = this.getNumericId(this.services[currentServiceIndex + lineIndex]);
+
+          // Pour la première ligne, on démarre au champ cliqué
+          // Pour les lignes suivantes, on redémarre toujours depuis 'initial'
+          const fieldIndex = lineIndex === 0 ? startFieldIndex : 0;
+          this.fillRowWithValues(id, values, fieldIndex);
+        }
+      });
+      */
     }
   }
+
+  private fillRowWithValues(serviceId: number, values: string[], startFieldIndex: number) {
+    const chiffres = this.getChiffresData(serviceId);
+    if (!chiffres) return;
+
+    const allFields: (keyof ChiffresFormData)[] = ['initial', 'revise', 'previsionnel', 'consomme'];
+
+    values.forEach((value, index) => {
+      const fieldIndex = startFieldIndex + index;
+      // console.log('fieldIndex', fieldIndex);
+      // console.log('startFieldIndex', startFieldIndex);
+      // Ne remplissez que les champs valides
+      if (fieldIndex < allFields.length && value) {
+        const fieldName = allFields[fieldIndex];
+        const numValue = parseFloat(value.replace(',', '.'));
+
+        if (!isNaN(numValue)) {
+          const field = allFields[fieldIndex];
+          (chiffres as any)[field] = numValue; // Use any cast if direct assignment still complains, or satisfy TS better
+          // Better way without any:
+          if (field === 'initial' || field === 'revise' || field === 'previsionnel' || field === 'consomme') {
+            chiffres[field] = numValue;
+            // console.log('chiffres[field]', chiffres[field]);
+          }
+        }
+
+      }
+    });
+
+    // Déclenchez les calculs
+    this.onValueChange(serviceId, allFields[startFieldIndex]);
+  }
+
 
   private parseNumber(value: string): number {
     const parsed = parseFloat(value.trim().replace(',', '.'));
