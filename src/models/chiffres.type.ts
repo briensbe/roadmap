@@ -13,6 +13,7 @@ export interface Chiffre {
 
 export interface ChiffresFormData {
   id_chiffres?: number;
+  id_service?: number;
   initial?: number;
   revise?: number;
   previsionnel?: number;
