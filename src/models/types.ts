@@ -13,6 +13,7 @@ export interface Departement {
 
 export interface Service {
   id?: string;
+  id_service?: number;
   nom: string;
   departement_id: string;
   created_at?: string;
@@ -46,8 +47,8 @@ export interface Personne {
 }
 
 export interface Projet {
-id_projet: any;
   id?: string;
+  id_projet: number;
   code_projet: string;
   nom_projet: string;
   chef_projet?: string;
@@ -115,7 +116,7 @@ export interface CustomFieldValue {
   created_at?: string;
 }
 
-export type ResourceType = 'societe' | 'departement' | 'service' | 'equipe' | 'role' | 'personne';
+export type ResourceType = "societe" | "departement" | "service" | "equipe" | "role" | "personne";
 
 export interface WeekData {
   weekStart: Date;

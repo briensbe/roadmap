@@ -109,17 +109,36 @@ export class ChiffresService {
   }
 
   async getRAFByDate(idProjet: number, idService: number, fromDate: string): Promise<number> {
+    // 1. Récupérer l'id_projet à partir de la table projets
+    const { data: projetData, error: projetError } = await this.supabase.client
+      .from('projets')
+      .select('id')
+      .eq('id_projet', idProjet)
+      .single(); // On s'attend à un seul résultat
+
+    if (projetError) {
+      throw projetError;
+    }
+
+    if (!projetData) {
+      throw new Error('Projet non trouvé');
+    }
+
+    const id = projetData.id;
+
+    console.log(id + " vs " + idProjet);
+
     // RAF = sum of charges after the specified date
     // Note: charges table uses 'projet_id' and we need to match service via equipe_id
     // For now, we'll sum all charges from the project after the date
     const { data, error } = await this.supabase.client
       .from('charges')
       .select('unite_ressource')
-      .eq('projet_id', idProjet)
+      .eq('projet_id', id)
       .gte('semaine_debut', fromDate);
 
     if (error) throw error;
-    
+
     const total = (data || []).reduce((sum, charge) => sum + (charge.unite_ressource || 0), 0);
     return total;
   }

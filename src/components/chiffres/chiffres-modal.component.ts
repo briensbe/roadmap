@@ -1,10 +1,10 @@
 import { Component, EventEmitter, Input, Output, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Chiffre, ChiffresFormData } from '../models/chiffres.type';
-import { ChiffresService } from '../services/chiffres.service';
-import { Service } from '../models/types';
-import { ResourceService } from '../services/resource.service';
+import { Chiffre, ChiffresFormData } from '../../models/chiffres.type';
+import { ChiffresService } from '../../services/chiffres.service';
+import { Service } from '../../models/types';
+import { ResourceService } from '../../services/resource.service';
 
 @Component({
   selector: 'app-chiffres-modal',
@@ -28,7 +28,7 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
   constructor(
     private chiffresService: ChiffresService,
     private resourceService: ResourceService
-  ) {}
+  ) { }
 
   ngOnInit() {
     this.loadServices();
@@ -36,6 +36,7 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['visible'] && changes['visible'].currentValue && this.idProjet) {
+      console.log('Loading chiffres for project:', this.idProjet);
       this.loadChiffres();
     }
   }
@@ -51,30 +52,39 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
 
   async loadChiffres() {
     if (!this.idProjet) return;
-    
+
     try {
       this.isLoading = true;
       const chiffresData = await this.chiffresService.getChiffresByProject(this.idProjet);
-      
+
       // Initialize form data for each service
       this.chiffres.clear();
-      
+
       // Create entries for all services
       for (const service of this.services) {
-        const chiffre = chiffresData.find(c => c.id_service === parseInt(service.id || '0'));
+        const chiffre = chiffresData.find(c => c.id_service === service.id_service);
         const formData: ChiffresFormData = {
           id_chiffres: chiffre?.id_chiffres,
+          id_service: chiffre?.id_service,
           initial: chiffre?.initial || undefined,
           revise: chiffre?.revise || undefined,
           previsionnel: chiffre?.previsionnel || undefined,
           consomme: chiffre?.consomme || undefined,
           date_mise_a_jour: chiffre?.date_mise_a_jour ? chiffre.date_mise_a_jour.split('T')[0] : new Date().toISOString().split('T')[0]
         };
-        
+
         this.updateCalculatedFields(formData);
-        this.chiffres.set(parseInt(service.id || '0'), formData);
+        // this.chiffres.set(service.id_service!, formData);
+
+        // Vérifier que id_service existe avant de l'utiliser comme clé
+        if (service.id_service !== undefined && service.id_service !== null) {
+          this.chiffres.set(service.id_service, formData);
+        } else {
+          console.error("Le service n'a pas d'id_service !");
+        }
+
       }
-      
+
       this.isLoading = false;
     } catch (err) {
       this.error = 'Erreur lors du chargement des chiffres';
@@ -83,12 +93,42 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
     }
   }
 
+  // getChiffresData(idService: number): ChiffresFormData | undefined {
+  //   return this.chiffres.get(idService);
+  // }
+
+  getChiffresData(idService: number): ChiffresFormData {
+    const data = this.chiffres.get(idService);
+
+    if (data) {
+      return data;
+    }
+
+    // Retourner une structure par défaut avec des 0 et la date du jour
+    return {
+      id_service: idService,
+      initial: 0,
+      revise: 0,
+      previsionnel: 0,
+      consomme: 0,
+      date_mise_a_jour: new Date().toISOString().split('T')[0],
+      delta: 0,
+      restant: 0,
+      raf: 0,
+      raf_date: new Date().toISOString().split('T')[0]
+    };
+  }
+
   getServiceName(idService: number): string {
     return this.services.find(s => s.id === idService.toString())?.nom || `Service ${idService}`;
   }
 
   getNumericId(service: Service): number {
-    return parseInt(service.id || '0', 10);
+    if (!service) {
+      console.error("Le service est undefined !");
+      return 0; // ou lance une erreur
+    }
+    return service.id_service || 0;
   }
 
   calculateTotal(field: 'initial' | 'revise' | 'previsionnel' | 'consomme' | 'delta' | 'restant' | 'raf'): string {
@@ -107,7 +147,7 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
     if (formData.previsionnel !== undefined && formData.revise !== undefined) {
       formData.delta = formData.previsionnel - formData.revise;
     }
-    
+
     // Restant = previsionnel - consomme
     if (formData.previsionnel !== undefined && formData.consomme !== undefined) {
       formData.restant = formData.previsionnel - formData.consomme;
@@ -116,14 +156,14 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
 
   async updateRAF(idService: number) {
     if (!this.idProjet) return;
-    
+
     try {
       const raf = await this.chiffresService.getRAFByDate(
         this.idProjet,
         idService,
         this.rafDate + 'T00:00:00'
       );
-      
+
       const formData = this.chiffres.get(idService);
       if (formData) {
         formData.raf = raf;
@@ -152,7 +192,7 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
     event.preventDefault();
     const text = event.clipboardData?.getData('text/plain') || '';
     const lines = text.split('\n').filter(line => line.trim());
-    
+
     let serviceIndex = this.services.findIndex(s => s.id === startingIdService.toString());
     if (serviceIndex === -1) return;
 
@@ -170,10 +210,10 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
         if (values[1]) formData.revise = this.parseNumber(values[1]);
         if (values[2]) formData.previsionnel = this.parseNumber(values[2]);
         if (values[3]) formData.consomme = this.parseNumber(values[3]);
-        
+
         this.updateCalculatedFields(formData);
       }
-      
+
       serviceIndex++;
     }
   }

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Projet } from '../models/types';
 import { ProjetService } from '../services/projet.service';
-import { ChiffresModalComponent } from './chiffres-modal.component';
+import { ChiffresModalComponent } from './chiffres/chiffres-modal.component';
 import { Chiffre } from '../models/chiffres.type';
 
 /**
@@ -100,7 +100,7 @@ export class ProjectsViewWithChiffresComponent implements OnInit {
   selectedProjetId: number | null = null;
   isLoading: boolean = false;
 
-  constructor(private projetService: ProjetService) {}
+  constructor(private projetService: ProjetService) { }
 
   ngOnInit() {
     this.loadProjets();
@@ -122,7 +122,7 @@ export class ProjectsViewWithChiffresComponent implements OnInit {
 
   openChiffresModal(projetId: string | undefined) {
     if (!projetId) return;
-    
+
     // Convertissez l'ID du projet au format approprié si nécessaire
     // Par exemple, si vous avez une colonne id_projet numérique dans la table projets
     this.selectedProjetId = parseInt(projetId);

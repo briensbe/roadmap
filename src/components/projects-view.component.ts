@@ -3,7 +3,7 @@ import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { ProjetService } from "../services/projet.service";
 import { Projet } from "../models/types";
-import { ChiffresModalComponent } from "./chiffres-modal.component";
+import { ChiffresModalComponent } from "./chiffres/chiffres-modal.component";
 import { Chiffre } from "../models/chiffres.type";
 
 @Component({
@@ -1086,7 +1086,7 @@ export class ProjectsViewComponent implements OnInit {
     temps_consomme: 0,
   };
 
-  constructor(private projetService: ProjetService) {}
+  constructor(private projetService: ProjetService) { }
 
   @HostListener("document:click", ["$event"])
   onDocumentClick(event: MouseEvent) {

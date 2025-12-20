@@ -16,6 +16,7 @@ export class SupabaseService {
         lock: (name, acquireTimeout, acquireFn) => this.safeLock(name, acquireFn),
       },
     });
+
   }
 
   private async safeLock<T>(name: string, acquireFn: () => Promise<T>, retries = 5, delayMs = 50): Promise<T> {
