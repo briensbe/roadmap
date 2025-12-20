@@ -46,6 +46,7 @@ export interface Personne {
 }
 
 export interface Projet {
+id_projet: any;
   id?: string;
   code_projet: string;
   nom_projet: string;
