@@ -5,11 +5,12 @@ import { ProjetService } from "../services/projet.service";
 import { Projet } from "../models/types";
 import { ChiffresModalComponent } from "./chiffres/chiffres-modal.component";
 import { Chiffre } from "../models/chiffres.type";
+import { LucideAngularModule, Plus, LucideCalculator } from "lucide-angular";
 
 @Component({
   selector: "app-projects-view",
   standalone: true,
-  imports: [CommonModule, FormsModule, ChiffresModalComponent],
+  imports: [CommonModule, FormsModule, ChiffresModalComponent, LucideAngularModule],
   template: `
     <div class="projects-container">
       <div class="projects-header">
@@ -102,6 +103,10 @@ import { Chiffre } from "../models/chiffres.type";
                       </svg>
                       Modifier
                     </button>
+                    <button class="dropdown-item" (click)="openChiffresModal(projet.id_projet)">
+                      <lucide-icon [img]="LucideCalculator" [size]="14"></lucide-icon>
+                      Gérer les chiffres
+                    </button>
                     <button class="dropdown-item" (click)="duplicateProjet(projet)">
                       <svg
                         width="14"
@@ -130,7 +135,6 @@ import { Chiffre } from "../models/chiffres.type";
                       </svg>
                       Supprimer
                     </button>
-                    <button (click)="openChiffresModal(projet.id_projet)">Gérer les chiffres</button>
                   </div>
                 </div>
               </div>
@@ -254,6 +258,10 @@ import { Chiffre } from "../models/chiffres.type";
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                       </svg>
                       Modifier
+                    </button>
+                    <button class="dropdown-item" (click)="openChiffresModal(projet.id_projet)">
+                      <lucide-icon [img]="LucideCalculator" [size]="14"></lucide-icon>
+                      Gérer les chiffres
                     </button>
                     <button class="dropdown-item" (click)="duplicateProjet(projet)">
                       <svg
@@ -1063,6 +1071,8 @@ export class ProjectsViewComponent implements OnInit {
   viewMode: "list" | "card" = "list";
   searchQuery = "";
   statusFilter = "";
+
+  LucideCalculator = LucideCalculator; // Expose l'icône au template
 
   projets: Projet[] = [];
   filteredProjects: Projet[] = [];
