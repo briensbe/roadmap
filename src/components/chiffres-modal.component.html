@@ -1,0 +1,162 @@
+<div *ngIf="visible" class="modal-overlay" (click)="onClose()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Chiffrage par service</h2>
+      <button class="modal-close" (click)="onClose()">×</button>
+    </div>
+
+    <div *ngIf="error" class="error-message">
+      {{ error }}
+    </div>
+
+    <div class="modal-content">
+      <!-- RAF Date Selector -->
+      <div class="raf-date-section">
+        <label for="rafDate">RAF au</label>
+        <input 
+          type="date" 
+          id="rafDate"
+          [(ngModel)]="rafDate" 
+          (change)="onRAFDateChange()"
+          class="raf-date-input"
+        >
+      </div>
+
+      <!-- Services Table -->
+      <div class="table-container">
+        <table class="chiffres-table">
+          <thead>
+            <tr>
+              <th>SERVICE</th>
+              <th>INITIAL</th>
+              <th>RÉVISÉ</th>
+              <th>PRÉVISIONNEL</th>
+              <th>CONSOMMÉ</th>
+              <th>DELTA</th>
+              <th>RESTANT</th>
+              <th>RAF</th>
+              <th>DATE MAJ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let service of services" class="service-row">
+              <td class="service-name">
+                {{ service.nom }}
+              </td>
+              <td>
+                <input 
+                  type="number" 
+                  step="0.001"
+                  [(ngModel)]="chiffres.get(getNumericId(service))!.initial"
+                  (change)="onValueChange(getNumericId(service), 'initial')"
+                  (paste)="handlePaste($event, getNumericId(service))"
+                  class="input-field"
+                  placeholder="0"
+                >
+              </td>
+              <td>
+                <input 
+                  type="number" 
+                  step="0.001"
+                  [(ngModel)]="chiffres.get(getNumericId(service))!.revise"
+                  (change)="onValueChange(getNumericId(service), 'revise')"
+                  class="input-field"
+                  placeholder="0"
+                >
+              </td>
+              <td>
+                <input 
+                  type="number" 
+                  step="0.001"
+                  [(ngModel)]="chiffres.get(getNumericId(service))!.previsionnel"
+                  (change)="onValueChange(getNumericId(service), 'previsionnel')"
+                  class="input-field"
+                  placeholder="0"
+                >
+              </td>
+              <td>
+                <input 
+                  type="number" 
+                  step="0.001"
+                  [(ngModel)]="chiffres.get(getNumericId(service))!.consomme"
+                  (change)="onValueChange(getNumericId(service), 'consomme')"
+                  class="input-field"
+                  placeholder="0"
+                >
+              </td>
+              <td class="calculated-field">
+                {{ chiffres.get(getNumericId(service))!.delta?.toFixed(3) || '0.000' }}
+              </td>
+              <td class="calculated-field">
+                {{ chiffres.get(getNumericId(service))!.restant?.toFixed(3) || '0.000' }}
+              </td>
+              <td class="calculated-field">
+                {{ chiffres.get(getNumericId(service))!.raf?.toFixed(3) || '0.000' }}
+              </td>
+              <td>
+                <input 
+                  type="date"
+                  [(ngModel)]="chiffres.get(getNumericId(service))!.date_mise_a_jour"
+                  class="input-field"
+                >
+              </td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr class="total-row">
+              <td class="total-label">TOTAL</td>
+              <td class="total-value">
+                {{ calculateTotal('initial') }}
+              </td>
+              <td class="total-value">
+                {{ calculateTotal('revise') }}
+              </td>
+              <td class="total-value">
+                {{ calculateTotal('previsionnel') }}
+              </td>
+              <td class="total-value">
+                {{ calculateTotal('consomme') }}
+              </td>
+              <td class="total-value">
+                {{ calculateTotal('delta') }}
+              </td>
+              <td class="total-value">
+                {{ calculateTotal('restant') }}
+              </td>
+              <td class="total-value">
+                {{ calculateTotal('raf') }}
+              </td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="help-text">
+        <p><strong>Delta:</strong> Prévisionnel - Révisé</p>
+        <p><strong>Restant:</strong> Prévisionnel - Consommé</p>
+        <p><strong>RAF:</strong> Ressources affectées à partir de la date sélectionnée</p>
+        <p><strong>Copier-coller:</strong> Vous pouvez copier des cellules Excel (Initial, Révisé, Prévisionnel, Consommé) et les coller pour remplir automatiquement.</p>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button 
+        type="button" 
+        class="btn btn-secondary" 
+        (click)="onClose()"
+        [disabled]="isLoading"
+      >
+        Annuler
+      </button>
+      <button 
+        type="button" 
+        class="btn btn-primary" 
+        (click)="save()"
+        [disabled]="isLoading"
+      >
+        {{ isLoading ? 'Enregistrement...' : 'Enregistrer' }}
+      </button>
+    </div>
+  </div>
+</div>
