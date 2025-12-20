@@ -5,11 +5,12 @@ import { Chiffre, ChiffresFormData } from '../../models/chiffres.type';
 import { ChiffresService } from '../../services/chiffres.service';
 import { Service } from '../../models/types';
 import { ResourceService } from '../../services/resource.service';
+import { LucideAngularModule, LucideCalculator } from 'lucide-angular';
 
 @Component({
   selector: 'app-chiffres-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './chiffres-modal.component.html',
   styleUrl: './chiffres-modal.component.css'
 })
@@ -18,6 +19,8 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
   @Input() idProjet: number | null = null;
   @Output() close = new EventEmitter<void>();
   @Output() saved = new EventEmitter<Chiffre[]>();
+
+  LucideCalculator = LucideCalculator; // Expose l'icône au template
 
   services: Service[] = [];
   chiffres: Map<number, ChiffresFormData> = new Map();
