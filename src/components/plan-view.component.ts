@@ -1305,7 +1305,6 @@ interface FlatRow {
         margin-bottom: 10px;
         color: #065f46;
       }
-
       .selection-input-row {
         margin-bottom: 12px;
       }
@@ -1895,7 +1894,7 @@ export class PlanViewComponent implements OnInit {
 
     // Sort flattened rows alphabetically by full label
     this.flatRows.sort((a, b) => a.fullLabel.localeCompare(b.fullLabel));
-    console.log(this.flatRows);
+    // console.log(this.flatRows);
   }
 
   goToToday() {
