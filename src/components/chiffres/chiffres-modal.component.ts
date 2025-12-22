@@ -28,7 +28,7 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
   isLoading: boolean = false;
   error: string = "";
 
-  constructor(private chiffresService: ChiffresService, private resourceService: ResourceService) {}
+  constructor(private chiffresService: ChiffresService, private resourceService: ResourceService) { }
 
   ngOnInit() {
     this.loadServices();
