@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { ChiffresModalComponent } from "./chiffres-modal.component";
-import { ChiffresService } from "../services/chiffres.service";
-import { ResourceService } from "../services/resource.service";
-import { Chiffre } from "../models/chiffres.type";
-import { Service } from "../models/types";
+import { ChiffresService } from "../../services/chiffres.service";
+import { ResourceService } from "../../services/resource.service";
+import { Chiffre } from "../../models/chiffres.type";
+import { Service } from "../../models/types";
 
 describe("ChiffresModalComponent", () => {
   let component: ChiffresModalComponent;
