@@ -222,4 +222,5 @@ export class ChargeService {
         // Filter out persons that are already used in this project+team
         return allPersonnes.filter(personne => !usedPersonneIds.has(personne.id!));
     }
+
 }
