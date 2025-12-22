@@ -42,6 +42,14 @@ export class ServicesService {
     }
 
     /**
+     * Trouve un service spécifique par son id_service (Serial/Number)
+     */
+    async getServiceByServiceId(id_service: number): Promise<Service | null> {
+        const services = await this.getAllServices();
+        return services.find(s => s.id_service === id_service) || null;
+    }
+
+    /**
      * Trouve l'id_service (Serial/Number) à partir de l'ID (UUID)
      */
     async getServiceIdById(id: string): Promise<number | null> {

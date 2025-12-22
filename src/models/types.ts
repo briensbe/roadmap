@@ -33,6 +33,17 @@ export interface Role {
   created_at?: string;
 }
 
+export interface RoleAttachment {
+  id?: string;
+  role_id: string;
+  societe_id?: string;
+  departement_id?: string;
+  service_id?: string;
+  equipe_id?: string;
+  created_at?: string;
+  id_service?: number;
+}
+
 export interface Personne {
   id?: string;
   nom: string;
@@ -43,6 +54,7 @@ export interface Personne {
   departement_id?: string;
   service_id?: string;
   equipe_id?: string;
+  id_service?: number;
   created_at?: string;
 }
 
