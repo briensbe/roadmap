@@ -1,14 +1,14 @@
-import { Injectable } from '@angular/core';
-import { SupabaseService } from './supabase.service';
-import { Chiffre } from '../models/chiffres.type';
+import { Injectable } from "@angular/core";
+import { SupabaseService } from "./supabase.service";
+import { Chiffre } from "../models/chiffres.type";
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: "root",
 })
 export class ChiffresService {
   private _chiffresCache: Chiffre[] | null = null;
 
-  constructor(private supabase: SupabaseService) { }
+  constructor(private supabase: SupabaseService) {}
 
   private clearCache() {
     this._chiffresCache = null;
@@ -20,9 +20,9 @@ export class ChiffresService {
     }
 
     const { data, error } = await this.supabase.client
-      .from('chiffres')
-      .select('*')
-      .order('date_mise_a_jour', { ascending: false });
+      .from("chiffres")
+      .select("*")
+      .order("date_mise_a_jour", { ascending: false });
 
     if (error) throw error;
     this._chiffresCache = data || [];
@@ -31,14 +31,14 @@ export class ChiffresService {
 
   async getChiffresByProject(idProjet: number): Promise<Chiffre[]> {
     if (this._chiffresCache) {
-      return this._chiffresCache.filter(c => c.id_projet === idProjet);
+      return this._chiffresCache.filter((c) => c.id_projet === idProjet);
     }
 
     const { data, error } = await this.supabase.client
-      .from('chiffres')
-      .select('*')
-      .eq('id_projet', idProjet)
-      .order('id_service');
+      .from("chiffres")
+      .select("*")
+      .eq("id_projet", idProjet)
+      .order("id_service");
 
     if (error) throw error;
     return data || [];
@@ -46,10 +46,10 @@ export class ChiffresService {
 
   async getChiffre(idProjet: number, idService: number): Promise<Chiffre | null> {
     const { data, error } = await this.supabase.client
-      .from('chiffres')
-      .select('*')
-      .eq('id_projet', idProjet)
-      .eq('id_service', idService)
+      .from("chiffres")
+      .select("*")
+      .eq("id_projet", idProjet)
+      .eq("id_service", idService)
       .maybeSingle();
 
     if (error) throw error;
@@ -58,16 +58,18 @@ export class ChiffresService {
 
   async createChiffre(chiffre: Chiffre): Promise<Chiffre> {
     const { data, error } = await this.supabase.client
-      .from('chiffres')
-      .insert([{
-        id_projet: chiffre.id_projet,
-        id_service: chiffre.id_service,
-        initial: chiffre.initial || 0,
-        revise: chiffre.revise || 0,
-        previsionnel: chiffre.previsionnel || 0,
-        consomme: chiffre.consomme || 0,
-        date_mise_a_jour: chiffre.date_mise_a_jour || new Date().toISOString()
-      }])
+      .from("chiffres")
+      .insert([
+        {
+          id_projet: chiffre.id_projet,
+          id_service: chiffre.id_service,
+          initial: chiffre.initial || 0,
+          revise: chiffre.revise || 0,
+          previsionnel: chiffre.previsionnel || 0,
+          consomme: chiffre.consomme || 0,
+          date_mise_a_jour: chiffre.date_mise_a_jour || new Date().toISOString(),
+        },
+      ])
       .select()
       .single();
 
@@ -87,9 +89,9 @@ export class ChiffresService {
     updateData.updated_at = new Date().toISOString();
 
     const { data, error } = await this.supabase.client
-      .from('chiffres')
+      .from("chiffres")
       .update(updateData)
-      .eq('id_chiffres', idChiffres)
+      .eq("id_chiffres", idChiffres)
       .select()
       .single();
 
@@ -99,10 +101,7 @@ export class ChiffresService {
   }
 
   async deleteChiffre(idChiffres: number): Promise<void> {
-    const { error } = await this.supabase.client
-      .from('chiffres')
-      .delete()
-      .eq('id_chiffres', idChiffres);
+    const { error } = await this.supabase.client.from("chiffres").delete().eq("id_chiffres", idChiffres);
 
     if (error) throw error;
     this.clearCache();
@@ -111,9 +110,9 @@ export class ChiffresService {
   async getRAFByDate(idProjet: number, idService: number, fromDate: string): Promise<number> {
     // 1. Récupérer l'id_projet à partir de la table projets
     const { data: projetData, error: projetError } = await this.supabase.client
-      .from('projets')
-      .select('id')
-      .eq('id_projet', idProjet)
+      .from("projets")
+      .select("id")
+      .eq("id_projet", idProjet)
       .single(); // On s'attend à un seul résultat
 
     if (projetError) {
@@ -121,21 +120,23 @@ export class ChiffresService {
     }
 
     if (!projetData) {
-      throw new Error('Projet non trouvé');
+      throw new Error("Projet non trouvé");
     }
 
     const id = projetData.id;
 
     console.log(id + " vs " + idProjet);
+    console.log("service : " + idService);
 
     // RAF = sum of charges after the specified date
     // Note: charges table uses 'projet_id' and we need to match service via equipe_id
     // For now, we'll sum all charges from the project after the date
     const { data, error } = await this.supabase.client
-      .from('charges')
-      .select('unite_ressource')
-      .eq('projet_id', id)
-      .gte('semaine_debut', fromDate);
+      .from("charges")
+      .select("unite_ressource")
+      .eq("projet_id", id)
+      .eq("id_service", idService)
+      .gte("semaine_debut", fromDate);
 
     if (error) throw error;
 
