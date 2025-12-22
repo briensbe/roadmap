@@ -1,9 +1,9 @@
-import { Injectable } from '@angular/core';
-import { SupabaseService } from './supabase.service';
-import { Projet } from '../models/types';
+import { Injectable } from "@angular/core";
+import { SupabaseService } from "./supabase.service";
+import { Projet } from "../models/types";
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: "root"
 })
 export class ProjetService {
   // Simple in-memory caches
@@ -23,9 +23,9 @@ export class ProjetService {
     }
 
     const { data, error } = await this.supabase.client
-      .from('projets')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .from("projets")
+      .select("*")
+      .order("created_at", { ascending: false });
 
     if (error) throw error;
     this._projetsCache = data || [];
@@ -40,9 +40,9 @@ export class ProjetService {
     }
 
     const { data, error } = await this.supabase.client
-      .from('projets')
-      .select('*')
-      .eq('id', id)
+      .from("projets")
+      .select("*")
+      .eq("id", id)
       .maybeSingle();
 
     if (error) throw error;
@@ -51,7 +51,7 @@ export class ProjetService {
 
   async createProjet(projet: Partial<Projet>): Promise<Projet> {
     const { data, error } = await this.supabase.client
-      .from('projets')
+      .from("projets")
       .insert([projet])
       .select()
       .single();
@@ -64,9 +64,9 @@ export class ProjetService {
 
   async updateProjet(id: string, projet: Partial<Projet>): Promise<Projet> {
     const { data, error } = await this.supabase.client
-      .from('projets')
+      .from("projets")
       .update({ ...projet, updated_at: new Date().toISOString() })
-      .eq('id', id)
+      .eq("id", id)
       .select()
       .single();
 
@@ -78,9 +78,9 @@ export class ProjetService {
 
   async deleteProjet(id: string): Promise<void> {
     const { error } = await this.supabase.client
-      .from('projets')
+      .from("projets")
       .delete()
-      .eq('id', id);
+      .eq("id", id);
 
     if (error) throw error;
     // Invalidate cache
@@ -97,8 +97,8 @@ export class ProjetService {
     }
 
     const { data, error } = await this.supabase.client
-      .from('equipes_projets')
-      .select('*');
+      .from("equipes_projets")
+      .select("*");
 
     if (error) throw error;
     this._equipeProjetLinksCache = data || [];
@@ -107,7 +107,7 @@ export class ProjetService {
 
   async linkProjectToTeam(projetId: string, equipeId: string): Promise<void> {
     const { error } = await this.supabase.client
-      .from('equipes_projets')
+      .from("equipes_projets")
       .insert({ projet_id: projetId, equipe_id: equipeId });
 
     if (error) throw error;
@@ -116,10 +116,10 @@ export class ProjetService {
 
   async unlinkProjectFromTeam(projetId: string, equipeId: string): Promise<void> {
     const { error } = await this.supabase.client
-      .from('equipes_projets')
+      .from("equipes_projets")
       .delete()
-      .eq('projet_id', projetId)
-      .eq('equipe_id', equipeId);
+      .eq("projet_id", projetId)
+      .eq("equipe_id", equipeId);
 
     if (error) throw error;
     this.clearCache();
