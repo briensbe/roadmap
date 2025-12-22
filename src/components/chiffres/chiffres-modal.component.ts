@@ -76,7 +76,6 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
         };
 
         this.updateCalculatedFields(formData);
-        // this.chiffres.set(service.id_service!, formData);
 
         // Vérifier que id_service existe avant de l'utiliser comme clé
         if (service.id_service !== undefined && service.id_service !== null) {
