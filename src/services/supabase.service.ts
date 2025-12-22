@@ -1,10 +1,10 @@
-import { Injectable } from '@angular/core';
+import { Injectable } from "@angular/core";
 import { AuthTokenResponse, createClient, SupabaseClient, UserResponse } from "@supabase/supabase-js";
 import { LoginPayload, SignupPayload } from "../auth/types/user.type";
-import { environment } from '../environments/environment';
+import { environment } from "../environments/environment";
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: "root"
 })
 export class SupabaseService {
   private supabase: SupabaseClient;
@@ -81,12 +81,12 @@ export class SupabaseService {
     return await this.supabase.auth.getUser();
     // pb sur l'ajout en sessionStorage -> les pages sont accessibles sans connexion 
     /*
-    const user = sessionStorage.getItem('releaseflowUser');
+    const user = sessionStorage.getItem("releaseflowUser");
     if (user) {
       return JSON.parse(user);
     } else {
       const { data: { user: currentUser } } = await this.supabase.auth.getUser();
-      sessionStorage.setItem('releaseflowUser', JSON.stringify(currentUser));
+      sessionStorage.setItem("releaseflowUser", JSON.stringify(currentUser));
       return currentUser;
     }
       */
@@ -97,7 +97,7 @@ export class SupabaseService {
    */
   async signOut() {
     await this.supabase.auth.signOut();
-    sessionStorage.removeItem('releaseflowUser');
+    sessionStorage.removeItem("releaseflowUser");
   }
 
   /**
