@@ -94,6 +94,7 @@ export interface Charge {
   semaine_debut: string;
   semaine_fin: string;
   unite_ressource: number;
+  jours_par_semaine: number; // !!  à récupérer du role ou de la personne et pas de la table !! 
   role_id?: string;
   personne_id?: string;
   societe_id?: string;

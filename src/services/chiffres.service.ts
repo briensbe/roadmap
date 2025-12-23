@@ -139,19 +139,28 @@ export class ChiffresService {
         const serviceIds = await this.rolesService.getIdServiceListFromRoleId(charge.role_id);
         if (serviceIds.includes(idService)) {
           filteredData.push(charge);
+          const role = await this.rolesService.getRole(charge.role_id);
+          if (role) {
+            charge.jours_par_semaine = role.jours_par_semaine;
+          }
         }
       }
       if (charge.personne_id) {
         const serviceIds = await this.personnesService.getServiceIdsByPersonneId(charge.personne_id);
         if (serviceIds.id_service === idService) {
           filteredData.push(charge);
+          const personne = await this.personnesService.getPersonne(charge.personne_id);
+          if (personne) {
+            charge.jours_par_semaine = personne.jours_par_semaine;
+          }
         }
       }
     }
 
+
     console.log("filteredData : " + filteredData);
     //on ajoute les charges des roles et des personnes qui sont associées au service
-    const total = filteredData.reduce((sum, charge) => sum + (charge.unite_ressource || 0), 0);
+    const total = filteredData.reduce((sum, charge) => sum + (charge.unite_ressource || 0) * (charge.jours_par_semaine || 0), 0);
     return total;
   }
 
