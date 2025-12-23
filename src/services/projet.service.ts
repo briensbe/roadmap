@@ -49,6 +49,25 @@ export class ProjetService {
     return data;
   }
 
+  //récupérer l'id UUID à partir de la table projets et de l'id_projet
+  async getProjetIdUUID(idProjet: number): Promise<string> {
+    // Try to resolve from cache first
+    if (this._projetsCache) {
+      const found = this._projetsCache.find(p => p.id_projet === idProjet) || null;
+      if (found) return found.id!;
+    }
+
+    const { data, error } = await this.supabase.client
+      .from("projets")
+      .select("id")
+      .eq("id_projet", idProjet)
+      .single();
+
+    if (error) throw error;
+    return data.id;
+  }
+
+
   async createProjet(projet: Partial<Projet>): Promise<Projet> {
     const { data, error } = await this.supabase.client
       .from("projets")

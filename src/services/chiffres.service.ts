@@ -4,6 +4,8 @@ import { Chiffre } from "../models/chiffres.type";
 import { ServicesService } from "./services.service";
 import { RolesService } from "./roles.service";
 import { PersonnesService } from "./personnes.service";
+import { ChargeService } from "./charge.service";
+import { ProjetService } from "./projet.service";
 
 @Injectable({
   providedIn: "root",
@@ -16,6 +18,8 @@ export class ChiffresService {
     private servicesService: ServicesService,
     private rolesService: RolesService,
     private personnesService: PersonnesService,
+    private chargeService: ChargeService,
+    private projetService: ProjetService
   ) { }
 
   private clearCache() {
@@ -116,55 +120,29 @@ export class ChiffresService {
   }
 
   async getRAFByDate(idProjet: number, idService: number, fromDate: string): Promise<number> {
-    // 1. Récupérer l'id_projet à partir de la table projets
-    const { data: projetData, error: projetError } = await this.supabase.client
-      .from("projets")
-      .select("id")
-      .eq("id_projet", idProjet)
-      .single(); // On s'attend à un seul résultat
 
-    if (projetError) {
-      throw projetError;
-    }
-
-    if (!projetData) {
-      throw new Error("Projet non trouvé");
-    }
-
-    const id = projetData.id;
+    const id = await this.projetService.getProjetIdUUID(idProjet);
 
     // RAF = sum of charges after the specified date
     // Note: charges table uses 'projet_id' and we need to match service via equipe_id
     // For now, we'll sum all charges from the project after the date
-    const { data, error } = await this.supabase.client
-      .from("charges")
-      .select("*")
-      .eq("projet_id", id)
-      .gte("semaine_debut", fromDate);
-
+    const data = await this.chargeService.getChargesByProjectIdAndDate(id, fromDate);
 
     console.log(data);
-    if (error) throw error;
-
-    //je voudrais filtrer dans les résultats de data pour lesquels 
-    // role_id n'est pas null et pour lequel ce role est attaché au service correspondant à internalIdService
-    // en passant par roles.service.getServiceIdFromRoleId()
 
     // dans data je veux filtrer à la fois sur les role_id ou les personne_id non nulls
-    //maintenant je veux filtrer sur le service correspondant à internalIdService
+    //maintenant je veux filtrer sur le service correspondant 
     const filteredData = [];
 
     for (const charge of data) {
-      if (charge.role_id !== null) {
+      if (charge.role_id) {
         const serviceIds = await this.rolesService.getIdServiceListFromRoleId(charge.role_id);
-        console.log(serviceIds + " vs " + idService + " pour role_id " + charge.role_id);
         if (serviceIds.includes(idService)) {
           filteredData.push(charge);
         }
       }
-      if (charge.personne_id !== null) {
+      if (charge.personne_id) {
         const serviceIds = await this.personnesService.getServiceIdsByPersonneId(charge.personne_id);
-        console.log(serviceIds.id_service + " vs " + idService + "pour personne_id " + charge.personne_id);
         if (serviceIds.id_service === idService) {
           filteredData.push(charge);
         }
@@ -178,3 +156,5 @@ export class ChiffresService {
   }
 
 }
+
+
