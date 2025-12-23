@@ -226,13 +226,34 @@ export class ChargeService {
     async getChargesByProjectIdAndDate(id: any, fromDate: string): Promise<Charge[]> {
         // pour l'instant pas de gestion de cache
 
+        const formattedFirstDay = this.getFirstDayOfWeek(fromDate);
+
         const { data, error } = await this.supabase.client
             .from("charges")
             .select("*")
             .eq("projet_id", id)
-            .gte("semaine_debut", fromDate);
+            .gte("semaine_debut", formattedFirstDay);
 
         if (error) throw error;
         return data || [];
+    }
+
+    private getFirstDayOfWeek(fromDate: string) {
+        // console.log("fromDate : " + fromDate);
+
+        // 1. Convertir la string en objet Date
+        const inputDate = new Date(fromDate);
+
+        // 2. Calculer le premier jour de la semaine (lundi)
+        const firstDayOfWeek = new Date(inputDate);
+        firstDayOfWeek.setDate(
+            inputDate.getDate() - inputDate.getDay() + (inputDate.getDay() === 0 ? -6 : 1)
+        );
+
+        // 3. Formater le résultat en YYYY-MM-DD
+        const formattedFirstDay = firstDayOfWeek.toISOString().split('T')[0];
+
+        // console.log("formattedFirstDay" + formattedFirstDay); 
+        return formattedFirstDay;
     }
 }
