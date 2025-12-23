@@ -223,4 +223,16 @@ export class ChargeService {
         return allPersonnes.filter(personne => !usedPersonneIds.has(personne.id!));
     }
 
+    async getChargesByProjectIdAndDate(id: any, fromDate: string): Promise<Charge[]> {
+        // pour l'instant pas de gestion de cache
+
+        const { data, error } = await this.supabase.client
+            .from("charges")
+            .select("*")
+            .eq("projet_id", id)
+            .gte("semaine_debut", fromDate);
+
+        if (error) throw error;
+        return data || [];
+    }
 }
