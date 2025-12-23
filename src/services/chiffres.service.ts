@@ -133,13 +133,6 @@ export class ChiffresService {
 
     const id = projetData.id;
 
-    console.log(id + " vs " + idProjet);
-    console.log("service : " + idService);
-
-    const serviceData = await this.servicesService.getServiceByServiceId(idService);
-    if (!serviceData) throw new Error("Service non trouvé");
-    const internalIdService = serviceData.id;
-
     // RAF = sum of charges after the specified date
     // Note: charges table uses 'projet_id' and we need to match service via equipe_id
     // For now, we'll sum all charges from the project after the date
@@ -163,9 +156,9 @@ export class ChiffresService {
 
     for (const charge of data) {
       if (charge.role_id !== null) {
-        const serviceId = await this.rolesService.getIdServiceFromRoleId(charge.role_id);
-        console.log(serviceId + " vs " + idService + "pour role_id " + charge.role_id);
-        if (serviceId === idService) {
+        const serviceIds = await this.rolesService.getIdServiceListFromRoleId(charge.role_id);
+        console.log(serviceIds + " vs " + idService + " pour role_id " + charge.role_id);
+        if (serviceIds.includes(idService)) {
           filteredData.push(charge);
         }
       }
@@ -184,9 +177,4 @@ export class ChiffresService {
     return total;
   }
 
-  // private async filterChargesByService(charges: any[], targetServiceId: number): Promise<any[]> {
-  //   if (charges.role_id !== null && charges !== undefined) {
-  //     charges.filter(charges => this.rolesService.getIdServiceFromRoleId(charge.role_id) === targetServiceId)
-  //   return charges.filter(charge => charge.role_id !== null && this.rolesService.getIdServiceFromRoleId(charge.role_id) === targetServiceId);
-  // }
 }

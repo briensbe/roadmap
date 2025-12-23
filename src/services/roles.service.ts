@@ -60,20 +60,22 @@ export class RolesService {
     }
 
     /**
-     * Récupère l'id_service à partir d'un role_id
+     * Récupère la liste des id_service à partir d'un role_id
      * Utilise le cache des attachements pour une performance optimale
      */
-    async getIdServiceFromRoleId(roleId: string): Promise<number | null> {
+    async getIdServiceListFromRoleId(roleId: string): Promise<number[]> {
         const attachments = await this.getAllRoleAttachments();
-        const attachment = attachments.find(a => a.role_id === roleId);
-        return attachment?.id_service || null;
+        return attachments
+            .filter(a => a.role_id === roleId && a.id_service !== undefined && a.id_service !== null)
+            .map(a => a.id_service as number);
     }
 
-    //récupère le service_id (UUID) à partir d'un role_id
-    async getServiceIdUUIDFromRoleId(roleId: string): Promise<string | null> {
+    //récupère la liste des service_id (UUID) à partir d'un role_id
+    async getServiceIdUUIDListFromRoleId(roleId: string): Promise<string[]> {
         const attachments = await this.getAllRoleAttachments();
-        const attachment = attachments.find(a => a.role_id === roleId);
-        return attachment?.service_id || null;
+        return attachments
+            .filter(a => a.role_id === roleId && a.service_id !== undefined && a.service_id !== null)
+            .map(a => a.service_id as string);
     }
 
     /**
