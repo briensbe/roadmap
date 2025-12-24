@@ -29,6 +29,7 @@ export interface Equipe {
   id?: string;
   nom: string;
   service_id: string;
+  departement_id: string;
   created_at?: string;
   code?: string;
   color?: string;
