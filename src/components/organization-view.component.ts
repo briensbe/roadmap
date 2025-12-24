@@ -199,11 +199,11 @@ interface OrgNode {
  
       <!-- Recursive Node Template -->
       <ng-template #nodeTemplate let-node>
-        <div class="tree-node" [style.padding-left.px]="node.level * 32">
+        <div class="tree-node" [style.padding-left.px]="node.level * 32" (click)="toggleNode(node)">
           
           <!-- Expand/Collapse Icon -->
           @if (node.children.length > 0) {
-            <div class="toggle-icon" (click)="toggleNode(node)">
+            <div class="toggle-icon">
               <lucide-icon [name]="node.expanded ? 'chevron-down' : 'chevron-right'" [size]="20"></lucide-icon>
             </div>
           } @else {
@@ -282,6 +282,7 @@ interface OrgNode {
     .tree-node { 
       display: flex; align-items: center; padding: 8px 12px; background: white; border-radius: 8px; 
       border: 1px solid transparent; transition: all 0.2s; position: relative;
+      cursor: pointer;
     }
     .tree-node:hover { background: #f9fafb; border-color: #e5e7eb; }
     
