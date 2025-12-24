@@ -2,6 +2,8 @@ export interface Societe {
   id?: string;
   nom: string;
   created_at?: string;
+  code?: string;
+  color?: string;
 }
 
 export interface Departement {
@@ -9,6 +11,8 @@ export interface Departement {
   nom: string;
   societe_id: string;
   created_at?: string;
+  code?: string;
+  color?: string;
 }
 
 export interface Service {
@@ -17,6 +21,8 @@ export interface Service {
   nom: string;
   departement_id: string;
   created_at?: string;
+  code?: string;
+  color?: string;
 }
 
 export interface Equipe {
@@ -24,6 +30,19 @@ export interface Equipe {
   nom: string;
   service_id: string;
   created_at?: string;
+  code?: string;
+  color?: string;
+}
+
+export interface EquipeResource {
+  type: 'role' | 'personne';
+  id: string;
+  uniqueId: string;
+  nom: string;
+  prenom?: string;
+  jours_par_semaine: number;
+  code?: string;
+  color?: string;
 }
 
 export interface Role {
@@ -31,6 +50,8 @@ export interface Role {
   nom: string;
   jours_par_semaine: number;
   created_at?: string;
+  code?: string;
+  color?: string;
 }
 
 export interface RoleAttachment {
@@ -56,6 +77,8 @@ export interface Personne {
   equipe_id?: string;
   id_service?: number;
   created_at?: string;
+  code?: string;
+  color?: string;
 }
 
 export interface Projet {

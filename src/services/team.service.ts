@@ -1,15 +1,6 @@
 import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
-import { Equipe, Role, Personne, Capacite } from '../models/types';
-
-export interface EquipeResource {
-    type: 'role' | 'personne';
-    id: string;
-    uniqueId: string;
-    nom: string;
-    prenom?: string;
-    jours_par_semaine: number;
-}
+import { Equipe, Role, Personne, Capacite, EquipeResource } from '../models/types';
 
 @Injectable({
     providedIn: 'root'
