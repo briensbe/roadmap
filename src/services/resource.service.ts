@@ -105,6 +105,24 @@ export class ResourceService {
     return data;
   }
 
+  async updateRole(id: string, role: Partial<Role>): Promise<Role> {
+    const { data, error } = await this.supabase.client
+      .from("roles")
+      .update(role)
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw error;
+    this.clearCache();
+    return data;
+  }
+
+  async deleteRole(id: string): Promise<void> {
+    const { error } = await this.supabase.client.from("roles").delete().eq("id", id);
+    if (error) throw error;
+    this.clearCache();
+  }
+
   async getAllPersonnes(): Promise<Personne[]> {
     if (this._personnesCache) return this._personnesCache;
     const { data, error } = await this.supabase.client.from("personnes").select("*").order("nom");
@@ -119,6 +137,12 @@ export class ResourceService {
     if (error) throw error;
     this.clearCache();
     return data;
+  }
+
+  async deletePersonne(id: string): Promise<void> {
+    const { error } = await this.supabase.client.from("personnes").delete().eq("id", id);
+    if (error) throw error;
+    this.clearCache();
   }
 
   async updatePersonne(id: string, personne: Partial<Personne>): Promise<Personne> {
