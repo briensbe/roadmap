@@ -1,8 +1,16 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { LucideAngularModule, Building2, Layers, Box, Users, ChevronRight, ChevronDown, MoreVertical } from 'lucide-angular';
 import { ResourceService } from '../services/resource.service';
 import { Societe, Departement, Service, Equipe } from '../models/types';
+
+
+@NgModule({
+  imports: [LucideAngularModule.pick({ Building2, Layers, Box, Users, ChevronRight, ChevronDown, MoreVertical })],
+  exports: [LucideAngularModule]
+})
+export class LucideIconsModule { }
 
 interface OrgNode {
   type: 'societe' | 'departement' | 'service' | 'equipe';
@@ -20,7 +28,11 @@ interface OrgNode {
 @Component({
   selector: 'app-organization-view',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    LucideIconsModule,
+  ],
   template: `
     <div class="organization-view">
       <!-- Header -->
@@ -36,39 +48,19 @@ interface OrgNode {
         </div>
         <div class="header-right">
           <button class="header-btn" (click)="openCreateModal('societe')">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/>
-              <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
-              <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
-              <path d="M10 6h4"/>
-              <path d="M10 10h4"/>
-              <path d="M10 14h4"/>
-              <path d="M10 18h4"/>
-            </svg>
+            <lucide-icon name="building-2" [size]="20"></lucide-icon>
             Société
           </button>
           <button class="header-btn" (click)="openCreateModal('departement')">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="m12.83 2.12 6 3.06a3.5 3.5 0 0 1 0 6.33l-6 3.05a3.5 3.5 0 0 1-3.66 0l-6-3.05a3.5 3.5 0 0 1 0-6.33l6-3.06a3.5 3.5 0 0 1 1.66 0Z"/>
-              <path d="m22 12-7.44 3.78c-1.6.8-4.52.8-6.12 0L1 12"/>
-              <path d="m22 17-7.44 3.78c-1.6.8-4.52.8-6.12 0L1 17"/>
-            </svg>
+            <lucide-icon name="layers" [size]="20"></lucide-icon>
             Département
           </button>
           <button class="header-btn" (click)="openCreateModal('service')">
-             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/>
-            </svg>
+            <lucide-icon name="box" [size]="20"></lucide-icon>
             Service
           </button>
           <button class="header-btn" (click)="openCreateModal('equipe')">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
+            <lucide-icon name="users" [size]="20"></lucide-icon>
             Équipe
           </button>
         </div>
@@ -163,49 +155,17 @@ interface OrgNode {
           
           <!-- Expand/Collapse Icon -->
           <div class="toggle-icon" (click)="toggleNode(node)" [class.hidden]="node.children.length === 0">
-            <svg *ngIf="!node.expanded" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="m9 18 6-6-6-6"/>
-            </svg>
-            <svg *ngIf="node.expanded" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="m6 9 6 6 6-6"/>
-            </svg>
+            <lucide-icon [name]="node.expanded ? 'chevron-down' : 'chevron-right'" [size]="20"></lucide-icon>
           </div>
            <!-- Spacer for leaves -->
            <div class="toggle-placeholder" *ngIf="node.children.length === 0"></div>
 
           <!-- Type Icon -->
-          <div class="node-icon" [ngClass]="node.type" [style.background-color]="node.type === 'societe' ? node.color : ''" [style.color]="node.type === 'societe' ? '#fff' : ''">
-             <!-- Building for Societe -->
-             <svg *ngIf="node.type === 'societe'" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-               <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/>
-               <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
-               <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
-               <path d="M10 6h4"/>
-               <path d="M10 10h4"/>
-               <path d="M10 14h4"/>
-               <path d="M10 18h4"/>
-             </svg>
-
-             <!-- Layers for Department -->
-             <svg *ngIf="node.type === 'departement'" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="m12.83 2.12 6 3.06a3.5 3.5 0 0 1 0 6.33l-6 3.05a3.5 3.5 0 0 1-3.66 0l-6-3.05a3.5 3.5 0 0 1 0-6.33l6-3.06a3.5 3.5 0 0 1 1.66 0Z"/>
-              <path d="m22 12-7.44 3.78c-1.6.8-4.52.8-6.12 0L1 12"/>
-              <path d="m22 17-7.44 3.78c-1.6.8-4.52.8-6.12 0L1 17"/>
-             </svg>
-
-             <!-- Settings/Cog for Service -->
-              <svg *ngIf="node.type === 'service'" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-               <circle cx="12" cy="12" r="3"/>
-               <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/>
-             </svg>
-
-             <!-- Users for Team -->
-             <svg *ngIf="node.type === 'equipe'" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-             </svg>
+          <div class="node-icon" [ngClass]="node.type" [style.background-color]="node.color || '#e5e7eb'" [style.color]="'#fff'">
+             <lucide-icon *ngIf="node.type === 'societe'" name="building-2" [size]="18"></lucide-icon>
+             <lucide-icon *ngIf="node.type === 'departement'" name="layers" [size]="18"></lucide-icon>
+             <lucide-icon *ngIf="node.type === 'service'" name="box" [size]="18"></lucide-icon>
+             <lucide-icon *ngIf="node.type === 'equipe'" name="users" [size]="18"></lucide-icon>
           </div>
 
           <div class="node-info">
@@ -216,11 +176,7 @@ interface OrgNode {
           <!-- Kebab Menu -->
           <div class="kebab-menu-container" (click)="$event.stopPropagation()">
             <button class="kebab-btn" (click)="toggleMenu(node, $event)">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="1"/>
-                <circle cx="12" cy="5" r="1"/>
-                <circle cx="12" cy="19" r="1"/>
-              </svg>
+              <lucide-icon name="more-vertical" [size]="16"></lucide-icon>
             </button>
             <div class="menu-dropdown" *ngIf="activeMenuId === node.id">
               <button (click)="openEditModal(node)">Modifier</button>
