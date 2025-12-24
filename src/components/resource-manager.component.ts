@@ -331,7 +331,7 @@ export class ResourceManagerComponent implements OnInit {
     return (p.prenom.charAt(0) + p.nom.charAt(0)).toUpperCase();
   }
 
-  getServiceName(id?: string) {
+  getServiceName(id?: string | null) {
     if (!id) return '';
     return this.services.find(s => s.id === id)?.nom || '';
   }
@@ -386,7 +386,8 @@ export class ResourceManagerComponent implements OnInit {
   async handleSave() {
     try {
       const selectedService = this.services.find(s => s.id === this.formData.service_id);
-      const idService = selectedService?.id_service;
+      const idService = selectedService?.id_service || null;
+      const serviceId = this.formData.service_id || null;
 
       if (this.activeTab === 'role') {
         const payload: Partial<Role> = {
@@ -405,15 +406,14 @@ export class ResourceManagerComponent implements OnInit {
 
         // Handle attachment
         const existingAttachment = this.roleAttachments.find(a => a.role_id === savedRole.id);
-        if (this.formData.service_id) {
+        if (serviceId) {
           const attachmentPayload: Partial<RoleAttachment> = {
             role_id: savedRole.id!,
-            service_id: this.formData.service_id,
+            service_id: serviceId,
             id_service: idService,
-            societe_id: selectedService?.societe_id,
-            departement_id: selectedService?.departement_id
+            societe_id: selectedService?.societe_id || null,
+            departement_id: selectedService?.departement_id || null
           };
-
 
           if (existingAttachment) {
             await this.rolesService.updateRoleAttachment(existingAttachment.id!, attachmentPayload);
@@ -421,7 +421,15 @@ export class ResourceManagerComponent implements OnInit {
             await this.rolesService.createRoleAttachment(attachmentPayload);
           }
         } else if (existingAttachment) {
-          await this.rolesService.deleteRoleAttachment(existingAttachment.id!);
+          // Explicitly nullify or delete based on previous behavior, but here nullifying is requested
+          // However for attachments, if no service/team/etc remains, we usually delete.
+          // The user specifically asked to "remettre à null les champs"
+          await this.rolesService.updateRoleAttachment(existingAttachment.id!, {
+            service_id: null,
+            id_service: null,
+            societe_id: null,
+            departement_id: null
+          });
         }
       } else {
         const payload: Partial<Personne> = {
@@ -430,7 +438,7 @@ export class ResourceManagerComponent implements OnInit {
           email: this.formData.email,
           jours_par_semaine: this.formData.jours_par_semaine,
           color: this.formData.color,
-          service_id: this.formData.service_id || undefined,
+          service_id: serviceId,
           id_service: idService
         };
         if (this.isEditing && this.editingId) {
