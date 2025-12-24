@@ -1,13 +1,13 @@
 import { Component, OnInit, NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, Building2, Layers, Box, Users, ChevronRight, ChevronDown, MoreVertical } from 'lucide-angular';
+import { LucideAngularModule, Building2, Layers, Box, Users, ChevronRight, ChevronDown, MoreVertical, Plus } from 'lucide-angular';
 import { ResourceService } from '../services/resource.service';
 import { Societe, Departement, Service, Equipe } from '../models/types';
 
 
 @NgModule({
-  imports: [LucideAngularModule.pick({ Building2, Layers, Box, Users, ChevronRight, ChevronDown, MoreVertical })],
+  imports: [LucideAngularModule.pick({ Building2, Layers, Box, Users, ChevronRight, ChevronDown, MoreVertical, Plus })],
   exports: [LucideAngularModule]
 })
 export class LucideIconsModule { }
@@ -102,7 +102,29 @@ interface OrgNode {
 
           <div class="form-group">
             <label>Couleur</label>
-            <input type="color" [(ngModel)]="formData.color" class="color-input">
+            <div class="color-palette">
+              <div 
+                *ngFor="let color of predefinedColors" 
+                class="color-swatch" 
+                [style.background-color]="color"
+                [class.active]="formData.color === color && !isCustomColor"
+                (click)="selectColor(color)"
+              ></div>
+              <div 
+                class="color-swatch custom-trigger" 
+                [class.active]="isCustomColor"
+                (click)="isCustomColor = !isCustomColor"
+                title="Couleur personnalisée"
+              >
+                <lucide-icon name="plus" [size]="16" *ngIf="!isCustomColor"></lucide-icon>
+                <div class="custom-preview" *ngIf="isCustomColor" [style.background-color]="formData.color"></div>
+              </div>
+            </div>
+            
+            <div class="custom-color-input-wrapper" *ngIf="isCustomColor">
+              <input type="color" [(ngModel)]="formData.color" class="color-input">
+              <input type="text" [(ngModel)]="formData.color" placeholder="#000000" class="color-hex-input">
+            </div>
           </div>
 
           <!-- Parent Selectors based on type -->
@@ -275,12 +297,30 @@ interface OrgNode {
     }
     .form-group input:focus, .form-group select:focus { border-color: #3b82f6; outline: none; ring: 2px solid #fee2e2; }
     
-    .color-input { width: 100%; height: 40px; padding: 2px; cursor: pointer; }
+    .color-input { width: 60px; height: 36px; padding: 2px; cursor: pointer; border-radius: 6px; border: 1px solid #d1d5db; }
+    .color-hex-input { flex: 1; text-transform: uppercase; }
+
+    .color-palette { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+    .color-swatch { 
+      width: 28px; height: 28px; border-radius: 8px; cursor: pointer; transition: all 0.2s; 
+      border: 2px solid transparent; 
+    }
+    .color-swatch:hover { transform: scale(1.1); }
+    .color-swatch.active { border-color: #111827; box-shadow: 0 0 0 2px white, 0 0 0 4px #111827; }
+    
+    .custom-trigger { 
+      background: #f3f4f6; border: 1px dashed #d1d5db; display: flex; align-items: center; justify-content: center; color: #6b7280; 
+    }
+    .custom-trigger.active { border: 2px solid #111827; background: white; }
+    .custom-preview { width: 100%; height: 100%; border-radius: 6px; }
+
+    .custom-color-input-wrapper { display: flex; gap: 12px; align-items: center; margin-top: 12px; padding: 12px; background: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb; }
 
     .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px; }
     .btn-cancel { padding: 10px 20px; background: white; border: 1px solid #d1d5db; border-radius: 8px; font-weight: 500; color: #374151; cursor: pointer; }
     .btn-confirm { padding: 10px 20px; background: #3b82f6; border: none; border-radius: 8px; font-weight: 500; color: white; cursor: pointer; }
     .btn-confirm:hover { background: #2563eb; }
+    .btn-confirm:active { transform: translateY(1px); }
   `]
 })
 export class OrganizationViewComponent implements OnInit {
@@ -307,6 +347,20 @@ export class OrganizationViewComponent implements OnInit {
     parentType: 'service', // for equipe
     parentId: ''         // for equipe
   };
+
+  predefinedColors = [
+    '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16',
+    '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9',
+    '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef',
+    '#ec4899', '#f43f5e'
+  ];
+
+  isCustomColor = false;
+
+  selectColor(color: string) {
+    this.formData.color = color;
+    this.isCustomColor = false;
+  }
 
   constructor(private resourceService: ResourceService) {
     // click outside to close menu
@@ -451,6 +505,7 @@ export class OrganizationViewComponent implements OnInit {
     this.activeMenuId = null; // close menu
 
     this.formData = { ...node.originalData };
+    this.isCustomColor = !this.predefinedColors.includes(this.formData.color);
 
     // Special handling for Equipe parent
     if (node.type === 'equipe') {
