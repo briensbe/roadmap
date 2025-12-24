@@ -53,6 +53,7 @@ export interface Role {
   created_at?: string;
   code?: string;
   color?: string;
+  service_id?: string;
 }
 
 export interface RoleAttachment {
