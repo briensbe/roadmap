@@ -29,15 +29,22 @@ interface ResourceFormData {
   imports: [CommonModule, FormsModule, LucideIconsModule],
   template: `
     <div class="resource-manager">
-      <div class="header-actions">
-        <div class="search-container">
-          <lucide-icon name="search" [size]="18" class="search-icon"></lucide-icon>
-          <input type="text" [(ngModel)]="searchQuery" placeholder="Rechercher par nom ou code..." class="search-input" />
+      <div class="view-header">
+        <div class="title-group">
+          <h1 class="view-title">Ressources</h1>
+          <p class="view-subtitle">Gérez vos équipes et collaborateurs</p>
         </div>
-        <button class="btn-create" (click)="openCreateModal()">
-          <lucide-icon name="plus" [size]="18"></lucide-icon>
-          Ajouter {{ activeTab === 'role' ? 'un Rôle' : 'une Personne' }}
-        </button>
+        
+        <div class="header-actions">
+          <div class="search-container">
+            <lucide-icon name="search" [size]="18" class="search-icon"></lucide-icon>
+            <input type="text" [(ngModel)]="searchQuery" placeholder="Rechercher par nom ou code..." class="search-input" />
+          </div>
+          <button class="btn-create" (click)="openCreateModal()">
+            <lucide-icon name="plus" [size]="18"></lucide-icon>
+            Ajouter {{ activeTab === 'role' ? 'un Rôle' : 'une Personne' }}
+          </button>
+        </div>
       </div>
 
       <div class="tabs">
@@ -207,13 +214,37 @@ interface ResourceFormData {
     </div>
   `,
   styles: [`
-    .resource-manager { max-width: 1000px; margin: 0 auto; border-radius: 16px; font-family: 'Inter', sans-serif; }
-    .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; gap: 24px; }
-    .search-container { position: relative; flex: 1; max-width: 480px; }
-    .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none; }
-    .search-input { width: 100%; padding: 12px 16px 12px 42px; border: 1px solid #e5e7eb; border-radius: 12px; font-size: 15px; transition: all 0.2s; background: white; }
-    .search-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
-    .btn-create { display: flex; align-items: center; gap: 8px; padding: 12px 20px; background: #3b82f6; color: white; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+    .resource-manager { 
+      padding: 20px;
+      background: #f5f7fa;
+      min-height: 100vh;
+      font-family: 'Inter', sans-serif; 
+    }
+
+    .view-header { 
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 32px;
+      gap: 24px;
+    }
+
+    .view-title { font-size: 28px; font-weight: 700; color: #1e293b; margin: 0; }
+    .view-subtitle { font-size: 14px; color: #64748b; margin: 4px 0 0 0; font-weight: 500; }
+
+    .header-actions { display: flex; align-items: center; gap: 12px; }
+    .search-container { position: relative; width: 320px; }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none; }
+    .search-input { 
+      width: 100%; padding: 8px 12px 8px 36px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; 
+      transition: all 0.2s; background: white; color: #1e293b;
+    }
+    .search-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+
+    .btn-create { 
+      display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: #3b82f6; color: white; border: none; 
+      border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; font-size: 14px;
+    }
     .btn-create:hover { background: #2563eb; transform: translateY(-1px); }
     .btn-create:active { transform: translateY(0); }
     .tabs { display: flex; gap: 8px; margin-bottom: 24px; background: #f3f4f6; padding: 6px; border-radius: 14px; width: fit-content; }
