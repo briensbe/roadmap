@@ -142,4 +142,17 @@ export class RolesService {
         if (error) throw error;
         this.clearCache();
     }
+
+    async updateRoleAttachment(id: string, attachment: Partial<RoleAttachment>): Promise<RoleAttachment> {
+        const { data, error } = await this.supabase.client
+            .from("role_attachments")
+            .update(attachment)
+            .eq("id", id)
+            .select()
+            .single();
+
+        if (error) throw error;
+        this.clearCache();
+        return data;
+    }
 }
