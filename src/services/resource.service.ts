@@ -14,7 +14,7 @@ export class ResourceService {
   private _rolesCache: Role[] | null = null;
   private _personnesCache: Personne[] | null = null;
 
-  constructor(private supabase: SupabaseService) {}
+  constructor(private supabase: SupabaseService) { }
 
   private clearCache() {
     this._societesCache = null;
@@ -137,6 +137,82 @@ export class ResourceService {
     const { error } = await this.supabase.client
       .from("personne_roles")
       .insert([{ personne_id: personneId, role_id: roleId }]);
+    if (error) throw error;
+    this.clearCache();
+  }
+
+  // Societes
+  async updateSociete(id: string, societe: Partial<Societe>): Promise<Societe> {
+    const { data, error } = await this.supabase.client
+      .from("societes")
+      .update(societe)
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw error;
+    this.clearCache();
+    return data;
+  }
+
+  async deleteSociete(id: string): Promise<void> {
+    const { error } = await this.supabase.client.from("societes").delete().eq("id", id);
+    if (error) throw error;
+    this.clearCache();
+  }
+
+  // Departements
+  async updateDepartement(id: string, departement: Partial<Departement>): Promise<Departement> {
+    const { data, error } = await this.supabase.client
+      .from("departements")
+      .update(departement)
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw error;
+    this.clearCache();
+    return data;
+  }
+
+  async deleteDepartement(id: string): Promise<void> {
+    const { error } = await this.supabase.client.from("departements").delete().eq("id", id);
+    if (error) throw error;
+    this.clearCache();
+  }
+
+  // Services
+  async updateService(id: string, service: Partial<Service>): Promise<Service> {
+    const { data, error } = await this.supabase.client
+      .from("services")
+      .update(service)
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw error;
+    this.clearCache();
+    return data;
+  }
+
+  async deleteService(id: string): Promise<void> {
+    const { error } = await this.supabase.client.from("services").delete().eq("id", id);
+    if (error) throw error;
+    this.clearCache();
+  }
+
+  // Equipes
+  async updateEquipe(id: string, equipe: Partial<Equipe>): Promise<Equipe> {
+    const { data, error } = await this.supabase.client
+      .from("equipes")
+      .update(equipe)
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw error;
+    this.clearCache();
+    return data;
+  }
+
+  async deleteEquipe(id: string): Promise<void> {
+    const { error } = await this.supabase.client.from("equipes").delete().eq("id", id);
     if (error) throw error;
     this.clearCache();
   }

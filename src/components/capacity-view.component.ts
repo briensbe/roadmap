@@ -1,9 +1,9 @@
 import { Component, OnInit, ViewChild, ElementRef } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
-import { TeamService, EquipeResource } from "../services/team.service";
+import { TeamService } from "../services/team.service";
 import { CalendarService } from "../services/calendar.service";
-import { Equipe, Role, Personne, Capacite } from "../models/types";
+import { Equipe, Role, Personne, Capacite, EquipeResource } from "../models/types";
 
 interface ResourceRow {
   type: "role" | "personne";
