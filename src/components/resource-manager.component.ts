@@ -2,7 +2,8 @@ import { Component, OnInit, Output, EventEmitter, NgModule } from "@angular/core
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { ResourceService } from "../services/resource.service";
-import { Service, Role, Personne } from "../models/types";
+import { RolesService } from "../services/roles.service";
+import { Service, Role, Personne, RoleAttachment } from "../models/types";
 import { LucideAngularModule, Building2, Layers, Box, Users, MoreVertical, Plus, Edit, Trash2, Search, Check, X, ChevronDown, User } from 'lucide-angular';
 
 @NgModule({
@@ -19,7 +20,7 @@ interface ResourceFormData {
   jours_par_semaine: number;
   code?: string;
   color: string;
-  service_id: string;
+  service_id: string; // Used for the select dropdown (UUID)
 }
 
 @Component({
@@ -63,7 +64,7 @@ interface ResourceFormData {
                   <div class="resource-meta">
                     @if (role.code) { <span>{{ role.code }}</span> • }
                     <span>{{ role.jours_par_semaine }}j/sem</span>
-                    @if (getServiceName(role.service_id)) { • <span>{{ getServiceName(role.service_id) }}</span> }
+                    @if (getRoleServiceName(role.id!)) { • <span>{{ getRoleServiceName(role.id!) }}</span> }
                   </div>
                 </div>
               </div>
@@ -207,110 +208,54 @@ interface ResourceFormData {
   `,
   styles: [`
     .resource-manager { max-width: 1000px; margin: 0 auto; border-radius: 16px; font-family: 'Inter', sans-serif; }
-
     .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; gap: 24px; }
-    
     .search-container { position: relative; flex: 1; max-width: 480px; }
     .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none; }
-    .search-input { 
-      width: 100%; padding: 12px 16px 12px 42px; border: 1px solid #e5e7eb; border-radius: 12px; font-size: 15px; 
-      transition: all 0.2s; background: white;
-    }
+    .search-input { width: 100%; padding: 12px 16px 12px 42px; border: 1px solid #e5e7eb; border-radius: 12px; font-size: 15px; transition: all 0.2s; background: white; }
     .search-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
-
-    .btn-create { 
-      display: flex; align-items: center; gap: 8px; padding: 12px 20px; background: #3b82f6; color: white; border: none; 
-      border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap;
-    }
+    .btn-create { display: flex; align-items: center; gap: 8px; padding: 12px 20px; background: #3b82f6; color: white; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
     .btn-create:hover { background: #2563eb; transform: translateY(-1px); }
     .btn-create:active { transform: translateY(0); }
-
     .tabs { display: flex; gap: 8px; margin-bottom: 24px; background: #f3f4f6; padding: 6px; border-radius: 14px; width: fit-content; }
-    .tab-btn { 
-      padding: 10px 24px; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px;
-      color: #6b7280; display: flex; align-items: center; gap: 8px; transition: all 0.2s; background: transparent;
-    }
+    .tab-btn { padding: 10px 24px; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; color: #6b7280; display: flex; align-items: center; gap: 8px; transition: all 0.2s; background: transparent; }
     .tab-btn.active { background: white; color: #111827; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     .tab-btn:hover:not(.active) { color: #374151; }
-
     .resource-list { display: grid; gap: 16px; }
-    .resource-card { 
-      background: white; border: 1px solid #e5e7eb; border-radius: 16px; padding: 16px 20px; 
-      display: flex; justify-content: space-between; align-items: center; transition: all 0.2s;
-    }
+    .resource-card { background: white; border: 1px solid #e5e7eb; border-radius: 16px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s; }
     .resource-card:hover { border-color: #3b82f6; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-
     .card-left { display: flex; align-items: center; gap: 16px; }
-    .avatar { 
-      width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; 
-      color: white; font-weight: 700; font-size: 18px; flex-shrink: 0;
-    }
+    .avatar { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 18px; flex-shrink: 0; }
     .resource-info { display: flex; flex-direction: column; gap: 2px; }
     .resource-name { font-weight: 700; color: #111827; font-size: 16px; }
     .resource-meta { font-size: 13px; color: #6b7280; font-weight: 500; }
-
-    /* Kebab Menu */
     .kebab-menu-container { position: relative; }
-    .kebab-btn { 
-      background: transparent; border: none; cursor: pointer; padding: 8px; border-radius: 8px; color: #9ca3af; display: flex;
-      transition: all 0.2s;
-    }
+    .kebab-btn { background: transparent; border: none; cursor: pointer; padding: 8px; border-radius: 8px; color: #9ca3af; display: flex; transition: all 0.2s; }
     .kebab-btn:hover { background: #f3f4f6; color: #374151; }
-    
-    .menu-dropdown {
-      position: absolute; right: 0; top: 100%; background: white; border: 1px solid #e5e7eb; border-radius: 12px; 
-      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); padding: 6px; min-width: 160px; z-index: 50;
-      display: flex; flex-direction: column; gap: 2px; margin-top: 4px;
-    }
-    .menu-dropdown button {
-      background: none; border: none; padding: 10px 12px; text-align: left; cursor: pointer; font-size: 14px; 
-      color: #374151; width: 100%; display: flex; align-items: center; gap: 10px; border-radius: 8px; font-weight: 500;
-    }
+    .menu-dropdown { position: absolute; right: 0; top: 100%; background: white; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); padding: 6px; min-width: 160px; z-index: 50; display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
+    .menu-dropdown button { background: none; border: none; padding: 10px 12px; text-align: left; cursor: pointer; font-size: 14px; color: #374151; width: 100%; display: flex; align-items: center; gap: 10px; border-radius: 8px; font-weight: 500; }
     .menu-dropdown button:hover { background: #f3f4f6; }
     .menu-dropdown button.delete-btn { color: #ef4444; }
     .menu-dropdown button.delete-btn:hover { background: #fee2e2; }
-
     .empty-state { padding: 48px; text-align: center; color: #9ca3af; font-size: 15px; background: white; border-radius: 16px; border: 2px dashed #e5e7eb; }
-
-    /* Modal */
-    .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 100;
-      backdrop-filter: blur(4px); padding: 20px;
-    }
-    .modal-content {
-      background: white; border-radius: 20px; padding: 32px; width: 100%; max-width: 540px; 
-      max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
-    }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(4px); padding: 20px; }
+    .modal-content { background: white; border-radius: 20px; padding: 32px; width: 100%; max-width: 540px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
     .modal-title { font-size: 24px; font-weight: 800; color: #111827; margin-bottom: 24px; }
-    
     .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
     .form-group { display: flex; flex-direction: column; gap: 8px; }
     .form-group.full-width { grid-column: span 2; }
     .form-group label { font-size: 14px; font-weight: 600; color: #374151; }
-    .form-group input, .form-group select {
-      padding: 12px 14px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 15px; color: #111827;
-      transition: all 0.2s;
-    }
+    .form-group input, .form-group select { padding: 12px 14px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 15px; color: #111827; transition: all 0.2s; }
     .form-group input:focus, .form-group select:focus { border-color: #3b82f6; outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
-    
     .color-palette { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
-    .color-swatch { 
-      width: 32px; height: 32px; border-radius: 8px; cursor: pointer; transition: all 0.2s; 
-      border: 2px solid transparent; 
-    }
+    .color-swatch { width: 32px; height: 32px; border-radius: 8px; cursor: pointer; transition: all 0.2s; border: 2px solid transparent; }
     .color-swatch:hover { transform: scale(1.1); }
     .color-swatch.active { border-color: #111827; box-shadow: 0 0 0 2px white, 0 0 0 4px #111827; }
-
     .color-input { width: 60px; height: 40px; padding: 2px; cursor: pointer; border-radius: 8px; border: 1px solid #d1d5db; }
     .color-hex-input { flex: 1; text-transform: uppercase; }
-
-    .custom-trigger { 
-      background: #f3f4f6; border: 2px dashed #d1d5db; display: flex; align-items: center; justify-content: center; color: #6b7280; 
-    }
+    .custom-trigger { background: #f3f4f6; border: 2px dashed #d1d5db; display: flex; align-items: center; justify-content: center; color: #6b7280; }
     .custom-trigger.active { border: 2px solid #111827; background: white; color: #111827; }
     .custom-preview { width: 100%; height: 100%; border-radius: 6px; }
     .custom-color-input-wrapper { display: flex; gap: 12px; align-items: center; margin-top: 16px; padding: 12px; background: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb; }
-
     .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px; }
     .btn-cancel { padding: 12px 24px; background: white; border: 1px solid #d1d5db; border-radius: 12px; font-weight: 600; color: #374151; cursor: pointer; }
     .btn-confirm { padding: 12px 24px; background: #3b82f6; border: none; border-radius: 12px; font-weight: 600; color: white; cursor: pointer; }
@@ -327,6 +272,7 @@ export class ResourceManagerComponent implements OnInit {
   roles: Role[] = [];
   personnes: Personne[] = [];
   services: Service[] = [];
+  roleAttachments: RoleAttachment[] = [];
 
   showModal = false;
   isEditing = false;
@@ -341,7 +287,7 @@ export class ResourceManagerComponent implements OnInit {
   ];
   isCustomColor = false;
 
-  constructor(private resourceService: ResourceService) {
+  constructor(private resourceService: ResourceService, private rolesService: RolesService) {
     window.addEventListener('click', () => this.activeMenuId = null);
   }
 
@@ -351,9 +297,10 @@ export class ResourceManagerComponent implements OnInit {
 
   async loadData() {
     try {
-      this.roles = await this.resourceService.getAllRoles();
+      this.roles = await this.rolesService.getAllRoles();
       this.personnes = await this.resourceService.getAllPersonnes();
       this.services = await this.resourceService.getAllServices();
+      this.roleAttachments = await this.rolesService.getAllRoleAttachments();
     } catch (error) {
       console.error("Error loading resources:", error);
     }
@@ -389,6 +336,12 @@ export class ResourceManagerComponent implements OnInit {
     return this.services.find(s => s.id === id)?.nom || '';
   }
 
+  getRoleServiceName(roleId: string) {
+    const attachment = this.roleAttachments.find(a => a.role_id === roleId);
+    if (!attachment) return '';
+    return this.getServiceName(attachment.service_id);
+  }
+
   toggleMenu(id: string, event: Event) {
     event.stopPropagation();
     this.activeMenuId = this.activeMenuId === id ? null : id;
@@ -402,10 +355,20 @@ export class ResourceManagerComponent implements OnInit {
     this.showModal = true;
   }
 
-  openEditModal(type: 'role' | 'personne', resource: any) {
+  async openEditModal(type: 'role' | 'personne', resource: any) {
     this.isEditing = true;
     this.editingId = resource.id;
-    this.formData = { ...resource, service_id: resource.service_id || '' };
+    this.formData = { ...resource, service_id: '' };
+
+    if (type === 'role') {
+      const attachment = this.roleAttachments.find(a => a.role_id === resource.id);
+      if (attachment) {
+        this.formData.service_id = attachment.service_id || '';
+      }
+    } else {
+      this.formData.service_id = resource.service_id || '';
+    }
+
     this.isCustomColor = !this.predefinedColors.includes(this.formData.color);
     this.showModal = true;
     this.activeMenuId = null;
@@ -422,18 +385,43 @@ export class ResourceManagerComponent implements OnInit {
 
   async handleSave() {
     try {
+      const selectedService = this.services.find(s => s.id === this.formData.service_id);
+      const idService = selectedService?.id_service;
+
       if (this.activeTab === 'role') {
         const payload: Partial<Role> = {
           nom: this.formData.nom,
           code: this.formData.code,
           jours_par_semaine: this.formData.jours_par_semaine,
-          color: this.formData.color,
-          service_id: this.formData.service_id || undefined
+          color: this.formData.color
         };
+
+        let savedRole: Role;
         if (this.isEditing && this.editingId) {
-          await this.resourceService.updateRole(this.editingId, payload);
+          savedRole = await this.rolesService.updateRole(this.editingId, payload);
         } else {
-          await this.resourceService.createRole(payload);
+          savedRole = await this.rolesService.createRole(payload);
+        }
+
+        // Handle attachment
+        const existingAttachment = this.roleAttachments.find(a => a.role_id === savedRole.id);
+        if (this.formData.service_id) {
+          const attachmentPayload: Partial<RoleAttachment> = {
+            role_id: savedRole.id!,
+            service_id: this.formData.service_id,
+            id_service: idService,
+            societe_id: selectedService?.societe_id,
+            departement_id: selectedService?.departement_id
+          };
+
+
+          if (existingAttachment) {
+            await this.rolesService.updateRoleAttachment(existingAttachment.id!, attachmentPayload);
+          } else {
+            await this.rolesService.createRoleAttachment(attachmentPayload);
+          }
+        } else if (existingAttachment) {
+          await this.rolesService.deleteRoleAttachment(existingAttachment.id!);
         }
       } else {
         const payload: Partial<Personne> = {
@@ -442,7 +430,8 @@ export class ResourceManagerComponent implements OnInit {
           email: this.formData.email,
           jours_par_semaine: this.formData.jours_par_semaine,
           color: this.formData.color,
-          service_id: this.formData.service_id || undefined
+          service_id: this.formData.service_id || undefined,
+          id_service: idService
         };
         if (this.isEditing && this.editingId) {
           await this.resourceService.updatePersonne(this.editingId, payload);
@@ -462,7 +451,7 @@ export class ResourceManagerComponent implements OnInit {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cette ressource ?')) return;
     try {
       if (type === 'role') {
-        await this.resourceService.deleteRole(id);
+        await this.rolesService.deleteRole(id);
       } else {
         await this.resourceService.deletePersonne(id);
       }

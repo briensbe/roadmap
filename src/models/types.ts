@@ -20,6 +20,7 @@ export interface Service {
   id_service?: number;
   nom: string;
   departement_id: string;
+  societe_id?: string;
   created_at?: string;
   code?: string;
   color?: string;
