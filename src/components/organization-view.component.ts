@@ -12,6 +12,17 @@ import { Societe, Departement, Service, Equipe } from '../models/types';
 })
 export class LucideIconsModule { }
 
+interface FormData {
+  nom: string;
+  code: string;
+  color: string;
+  societe_id: string;
+  departement_id: string;
+  service_id: string;
+  parentType: 'service' | 'departement';
+  parentId: string;
+}
+
 interface OrgNode {
   type: 'societe' | 'departement' | 'service' | 'equipe';
   id: string;
@@ -71,6 +82,30 @@ interface OrgNode {
         <h1 class="page-title">Organisation</h1>
         <p class="page-subtitle">Structurez votre organisation</p>
  
+        <!-- Summary Stats Section -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon societe"><lucide-icon name="building-2" [size]="24"></lucide-icon></div>
+            <div class="stat-value">{{ societes.length }}</div>
+            <div class="stat-label">Sociétés</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon departement"><lucide-icon name="layers" [size]="24"></lucide-icon></div>
+            <div class="stat-value">{{ departements.length }}</div>
+            <div class="stat-label">Départements</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon service"><lucide-icon name="box" [size]="24"></lucide-icon></div>
+            <div class="stat-value">{{ services.length }}</div>
+            <div class="stat-label">Services</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon equipe"><lucide-icon name="users" [size]="24"></lucide-icon></div>
+            <div class="stat-value">{{ equipes.length }}</div>
+            <div class="stat-label">Équipes</div>
+          </div>
+        </div>
+
         <!-- Organization Structure Section -->
         <section class="org-structure">
           <div class="tree-container">
@@ -274,6 +309,40 @@ interface OrgNode {
     .main-content { max-width: 1200px; margin: 0 auto; padding: 32px; }
     .page-title { font-size: 28px; font-weight: 700; color: #111827; margin: 0 0 4px 0; }
     .page-subtitle { font-size: 14px; color: #6b7280; margin: 0 0 32px 0; }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+    .stat-card {
+      background: white;
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: all 0.2s;
+      border: 1px solid #f3f4f6;
+    }
+    .stat-card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+    .stat-icon {
+      margin-bottom: 12px;
+      padding: 12px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .stat-icon.societe { color: #3b82f6; background: #eff6ff; }
+    .stat-icon.departement { color: #8b5cf6; background: #f5f3ff; }
+    .stat-icon.service { color: #10b981; background: #ecfdf5; }
+    .stat-icon.equipe { color: #f97316; background: #fff7ed; }
+    .stat-value { font-size: 24px; font-weight: 700; color: #111827; line-height: 1; margin-bottom: 4px; }
+    .stat-label { font-size: 14px; color: #6b7280; font-weight: 500; }
     
     /* Organization Tree */
     .org-structure { background: transparent; }
@@ -379,15 +448,15 @@ export class OrganizationViewComponent implements OnInit {
   editingNode: OrgNode | null = null;
   activeMenuId: string | null = null;
 
-  formData: any = {
+  formData: FormData = {
     nom: '',
     code: '',
     color: '#3b82f6',
     societe_id: '',
     departement_id: '',
     service_id: '',
-    parentType: 'service', // for equipe
-    parentId: ''         // for equipe
+    parentType: 'service',
+    parentId: ''
   };
 
   predefinedColors = [
@@ -526,15 +595,15 @@ export class OrganizationViewComponent implements OnInit {
     this.formData = { nom: '', code: '', color: '#3b82f6', societe_id: '', departement_id: '', service_id: '', parentType: 'service', parentId: '' };
 
     // Set default parents if possible (e.g. first one)
-    if (type === 'departement' && this.societes.length > 0) this.formData.societe_id = this.societes[0].id;
-    if (type === 'service' && this.departements.length > 0) this.formData.departement_id = this.departements[0].id;
+    if (type === 'departement' && this.societes.length > 0) this.formData.societe_id = this.societes[0].id ?? '';
+    if (type === 'service' && this.departements.length > 0) this.formData.departement_id = this.departements[0].id ?? '';
     if (type === 'equipe') {
       if (this.services.length > 0) {
         this.formData.parentType = 'service';
-        this.formData.parentId = this.services[0].id;
+        this.formData.parentId = this.services[0].id ?? '';
       } else if (this.departements.length > 0) {
         this.formData.parentType = 'departement';
-        this.formData.parentId = this.departements[0].id;
+        this.formData.parentId = this.departements[0].id ?? '';
       }
     }
   }
@@ -554,10 +623,10 @@ export class OrganizationViewComponent implements OnInit {
       console.log(node);
       if (node.originalData.service_id) {
         this.formData.parentType = 'service';
-        this.formData.parentId = node.originalData.service_id;
+        this.formData.parentId = node.originalData.service_id ?? '';
       } else if (node.originalData.departement_id) {
         this.formData.parentType = 'departement';
-        this.formData.parentId = node.originalData.departement_id;
+        this.formData.parentId = node.originalData.departement_id ?? '';
       }
     }
   }
