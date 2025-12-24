@@ -54,18 +54,18 @@ export interface Role {
   created_at?: string;
   code?: string;
   color?: string;
-  service_id?: string;
+  service_id?: string | null;
 }
 
 export interface RoleAttachment {
   id?: string;
   role_id: string;
-  societe_id?: string;
-  departement_id?: string;
-  service_id?: string;
-  equipe_id?: string;
+  societe_id?: string | null;
+  departement_id?: string | null;
+  service_id?: string | null;
+  equipe_id?: string | null;
   created_at?: string;
-  id_service?: number;
+  id_service?: number | null;
 }
 
 export interface Personne {
@@ -74,11 +74,11 @@ export interface Personne {
   prenom: string;
   email?: string;
   jours_par_semaine: number;
-  societe_id?: string;
-  departement_id?: string;
-  service_id?: string;
-  equipe_id?: string;
-  id_service?: number;
+  societe_id?: string | null;
+  departement_id?: string | null;
+  service_id?: string | null;
+  equipe_id?: string | null;
+  id_service?: number | null;
   created_at?: string;
   code?: string;
   color?: string;
