@@ -70,149 +70,190 @@ interface OrgNode {
       <main class="main-content">
         <h1 class="page-title">Organisation</h1>
         <p class="page-subtitle">Structurez votre organisation</p>
-
+ 
         <!-- Organization Structure Section -->
         <section class="org-structure">
           <div class="tree-container">
             <!-- Recursive Tree Rendering -->
-            <ng-container *ngFor="let node of orgTree">
+            @for (node of orgTree; track node.id) {
               <ng-container *ngTemplateOutlet="nodeTemplate; context: { $implicit: node }"></ng-container>
-            </ng-container>
+            }
           </div>
         </section>
       </main>
-
+ 
       <!-- Modal Overlay -->
-      <div class="modal-overlay" *ngIf="showCreateModal || showEditModal" (click)="closeModals()">
-        <div class="modal-content" (click)="$event.stopPropagation()">
-          <h2 class="modal-title">
-            {{ showEditModal ? 'Modifier' : 'Créer' }}
-            {{ getModalTitleType() }}
-          </h2>
-
-          <div class="form-group">
-            <label>Nom</label>
-            <input type="text" [(ngModel)]="formData.nom" placeholder="Nom">
-          </div>
-
-          <div class="form-group">
-            <label>Code</label>
-            <input type="text" [(ngModel)]="formData.code" placeholder="Code (e.g. CAT)">
-          </div>
-
-          <div class="form-group">
-            <label>Couleur</label>
-            <div class="color-palette">
-              <div 
-                *ngFor="let color of predefinedColors" 
-                class="color-swatch" 
-                [style.background-color]="color"
-                [class.active]="formData.color === color && !isCustomColor"
-                (click)="selectColor(color)"
-              ></div>
-              <div 
-                class="color-swatch custom-trigger" 
-                [class.active]="isCustomColor"
-                (click)="isCustomColor = !isCustomColor"
-                title="Couleur personnalisée"
-              >
-                <lucide-icon name="plus" [size]="16" *ngIf="!isCustomColor"></lucide-icon>
-                <div class="custom-preview" *ngIf="isCustomColor" [style.background-color]="formData.color"></div>
+      @if (showCreateModal || showEditModal) {
+        <div class="modal-overlay" (click)="closeModals()">
+          <div class="modal-content" (click)="$event.stopPropagation()">
+            <h2 class="modal-title">
+              {{ showEditModal ? 'Modifier' : 'Créer' }}
+              {{ getModalTitleType() }}
+            </h2>
+  
+            <div class="form-group">
+              <label>Nom</label>
+              <input type="text" [(ngModel)]="formData.nom" placeholder="Nom">
+            </div>
+  
+            <div class="form-group">
+              <label>Code</label>
+              <input type="text" [(ngModel)]="formData.code" placeholder="Code (e.g. CAT)">
+            </div>
+  
+            <div class="form-group">
+              <label>Couleur</label>
+              <div class="color-palette">
+                @for (color of predefinedColors; track color) {
+                  <div 
+                    class="color-swatch" 
+                    [style.background-color]="color"
+                    [class.active]="formData.color === color && !isCustomColor"
+                    (click)="selectColor(color)"
+                  ></div>
+                }
+                <div 
+                  class="color-swatch custom-trigger" 
+                  [class.active]="isCustomColor"
+                  (click)="isCustomColor = !isCustomColor"
+                  title="Couleur personnalisée"
+                >
+                  @if (!isCustomColor) {
+                    <lucide-icon name="plus" [size]="16"></lucide-icon>
+                  } @else {
+                    <div class="custom-preview" [style.background-color]="formData.color"></div>
+                  }
+                </div>
               </div>
+              
+              @if (isCustomColor) {
+                <div class="custom-color-input-wrapper">
+                  <input type="color" [(ngModel)]="formData.color" class="color-input">
+                  <input type="text" [(ngModel)]="formData.color" placeholder="#000000" class="color-hex-input">
+                </div>
+              }
             </div>
-            
-            <div class="custom-color-input-wrapper" *ngIf="isCustomColor">
-              <input type="color" [(ngModel)]="formData.color" class="color-input">
-              <input type="text" [(ngModel)]="formData.color" placeholder="#000000" class="color-hex-input">
+  
+            <!-- Parent Selectors based on type -->
+            @if ((createModalType === 'departement') || (editingNode?.type === 'departement')) {
+              <div class="form-group">
+                <label>Société de rattachement</label>
+                <select [(ngModel)]="formData.societe_id">
+                  @for (s of societes; track s.id) {
+                    <option [value]="s.id">{{ s.nom }}</option>
+                  }
+                </select>
+              </div>
+            }
+  
+            @if ((createModalType === 'service') || (editingNode?.type === 'service')) {
+              <div class="form-group">
+                <label>Département de rattachement</label>
+                <select [(ngModel)]="formData.departement_id">
+                  @for (d of departements; track d.id) {
+                    <option [value]="d.id">{{ d.nom }}</option>
+                  }
+                </select>
+              </div>
+            }
+  
+            @if ((createModalType === 'equipe') || (editingNode?.type === 'equipe')) {
+              <div class="form-group">
+                <label>Rattachement (Service ou Département)</label>
+                <select [(ngModel)]="formData.parentType" (change)="formData.parentId = ''">
+                  <option value="service" selected>Service</option>
+                  <option value="departement">Département</option>
+                </select>
+              </div>
+            }
+  
+            @if (((createModalType === 'equipe') || (editingNode?.type === 'equipe')) && formData.parentType === 'service') {
+              <div class="form-group">
+                <label>Service</label>
+                <select [(ngModel)]="formData.parentId">
+                  @for (s of services; track s.id) {
+                    <option [value]="s.id">{{ s.nom }}</option>
+                  }
+                </select>
+              </div>
+            }
+  
+            @if (((createModalType === 'equipe') || (editingNode?.type === 'equipe')) && formData.parentType === 'departement') {
+              <div class="form-group">
+                <label>Département</label>
+                <select [(ngModel)]="formData.parentId">
+                  @for (d of departements; track d.id) {
+                    <option [value]="d.id">{{ d.nom }}</option>
+                  }
+                </select>
+              </div>
+            }
+  
+            <div class="modal-actions">
+              <button class="btn-cancel" (click)="closeModals()">Annuler</button>
+              <button class="btn-confirm" (click)="showEditModal ? handleUpdate() : handleCreate()">Enregistrer</button>
             </div>
-          </div>
-
-          <!-- Parent Selectors based on type -->
-          <div class="form-group" *ngIf="(createModalType === 'departement') || (editingNode?.type === 'departement')">
-             <label>Société de rattachement</label>
-             <select [(ngModel)]="formData.societe_id">
-               <option *ngFor="let s of societes" [value]="s.id">{{ s.nom }}</option>
-             </select>
-          </div>
-
-          <div class="form-group" *ngIf="(createModalType === 'service') || (editingNode?.type === 'service')">
-             <label>Département de rattachement</label>
-             <select [(ngModel)]="formData.departement_id">
-               <option *ngFor="let d of departements" [value]="d.id">{{ d.nom }}</option>
-             </select>
-          </div>
-
-          <div class="form-group" *ngIf="(createModalType === 'equipe') || (editingNode?.type === 'equipe')">
-             <label>Rattachement (Service ou Département)</label>
-             <select [(ngModel)]="formData.parentType" (change)="formData.parentId = ''">
-               <option value="service" selected>Service</option>
-               <option value="departement">Département</option>
-             </select>
-          </div>
-
-           <div class="form-group" *ngIf="((createModalType === 'equipe') || (editingNode?.type === 'equipe')) && formData.parentType === 'service'">
-             <label>Service</label>
-             <select [(ngModel)]="formData.parentId">
-               <option *ngFor="let s of services" [value]="s.id">{{ s.nom }}</option>
-             </select>
-          </div>
-
-          <div class="form-group" *ngIf="((createModalType === 'equipe') || (editingNode?.type === 'equipe')) && formData.parentType === 'departement'">
-             <label>Département</label>
-             <select [(ngModel)]="formData.parentId">
-               <option *ngFor="let d of departements" [value]="d.id">{{ d.nom }}</option>
-             </select>
-          </div>
-
-          <div class="modal-actions">
-            <button class="btn-cancel" (click)="closeModals()">Annuler</button>
-            <button class="btn-confirm" (click)="showEditModal ? handleUpdate() : handleCreate()">Enregistrer</button>
           </div>
         </div>
-      </div>
-
+      }
+ 
       <!-- Recursive Node Template -->
       <ng-template #nodeTemplate let-node>
         <div class="tree-node" [style.padding-left.px]="node.level * 32">
           
           <!-- Expand/Collapse Icon -->
-          <div class="toggle-icon" (click)="toggleNode(node)" [class.hidden]="node.children.length === 0">
-            <lucide-icon [name]="node.expanded ? 'chevron-down' : 'chevron-right'" [size]="20"></lucide-icon>
-          </div>
-           <!-- Spacer for leaves -->
-           <div class="toggle-placeholder" *ngIf="node.children.length === 0"></div>
-
+          @if (node.children.length > 0) {
+            <div class="toggle-icon" (click)="toggleNode(node)">
+              <lucide-icon [name]="node.expanded ? 'chevron-down' : 'chevron-right'" [size]="20"></lucide-icon>
+            </div>
+          } @else {
+            <!-- Spacer for leaves -->
+            <div class="toggle-placeholder"></div>
+          }
+ 
           <!-- Type Icon -->
           <div class="node-icon" [ngClass]="node.type" [style.background-color]="node.color || '#e5e7eb'" [style.color]="'#fff'">
-             <lucide-icon *ngIf="node.type === 'societe'" name="building-2" [size]="18"></lucide-icon>
-             <lucide-icon *ngIf="node.type === 'departement'" name="layers" [size]="18"></lucide-icon>
-             <lucide-icon *ngIf="node.type === 'service'" name="box" [size]="18"></lucide-icon>
-             <lucide-icon *ngIf="node.type === 'equipe'" name="users" [size]="18"></lucide-icon>
+             @if (node.type === 'societe') {
+               <lucide-icon name="building-2" [size]="18"></lucide-icon>
+             }
+             @if (node.type === 'departement') {
+               <lucide-icon name="layers" [size]="18"></lucide-icon>
+             }
+             @if (node.type === 'service') {
+               <lucide-icon name="box" [size]="18"></lucide-icon>
+             }
+             @if (node.type === 'equipe') {
+               <lucide-icon name="users" [size]="18"></lucide-icon>
+             }
           </div>
-
+ 
           <div class="node-info">
             <span class="node-name">{{ node.nom }}</span>
-            <span class="node-code" *ngIf="node.code">({{ node.code }})</span>
+            @if (node.code) {
+              <span class="node-code">({{ node.code }})</span>
+            }
           </div>
-
+ 
           <!-- Kebab Menu -->
           <div class="kebab-menu-container" (click)="$event.stopPropagation()">
             <button class="kebab-btn" (click)="toggleMenu(node, $event)">
               <lucide-icon name="more-vertical" [size]="16"></lucide-icon>
             </button>
-            <div class="menu-dropdown" *ngIf="activeMenuId === node.id">
-              <button (click)="openEditModal(node)">Modifier</button>
-              <button (click)="handleDelete(node)" class="delete-btn">Supprimer</button>
-            </div>
+            @if (activeMenuId === node.id) {
+              <div class="menu-dropdown">
+                <button (click)="openEditModal(node)">Modifier</button>
+                <button (click)="handleDelete(node)" class="delete-btn">Supprimer</button>
+              </div>
+            }
           </div>
         </div>
-
+ 
         <!-- Children -->
-        <ng-container *ngIf="node.expanded">
-           <ng-container *ngFor="let child of node.children">
-              <ng-container *ngTemplateOutlet="nodeTemplate; context: { $implicit: child }"></ng-container>
-           </ng-container>
-        </ng-container>
+        @if (node.expanded) {
+          @for (child of node.children; track child.id) {
+            <ng-container *ngTemplateOutlet="nodeTemplate; context: { $implicit: child }"></ng-container>
+          }
+        }
       </ng-template>
 
     </div>
