@@ -5,7 +5,7 @@ import { Chiffre, ChiffresFormData } from "../../models/chiffres.type";
 import { ChiffresService } from "../../services/chiffres.service";
 import { Service } from "../../models/types";
 import { ResourceService } from "../../services/resource.service";
-import { LucideAngularModule, LucideCalculator } from "lucide-angular";
+import { LucideAngularModule, LucideCalculator, LucideHelpCircle } from "lucide-angular";
 
 @Component({
   selector: "app-chiffres-modal",
@@ -21,11 +21,13 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
   @Output() saved = new EventEmitter<Chiffre[]>();
 
   LucideCalculator = LucideCalculator; // Expose l'icône au template
+  LucideHelpCircle = LucideHelpCircle;
 
   services: Service[] = [];
   chiffres: Map<number, ChiffresFormData> = new Map();
   rafDate: string = new Date().toISOString().split("T")[0];
   isLoading: boolean = false;
+  showHelp: boolean = false;
   error: string = "";
 
   constructor(private chiffresService: ChiffresService, private resourceService: ResourceService) { }
