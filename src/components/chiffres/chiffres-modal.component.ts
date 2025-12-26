@@ -85,6 +85,11 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
         }
       }
 
+      // Update RAF for all services after loading
+      for (const idService of this.chiffres.keys()) {
+        this.updateRAF(idService);
+      }
+
       this.isLoading = false;
     } catch (err) {
       this.error = "Erreur lors du chargement des chiffres";
