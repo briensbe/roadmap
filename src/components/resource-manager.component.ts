@@ -61,7 +61,7 @@ interface ResourceFormData {
       <div class="resource-list">
         @if (activeTab === 'role') {
           @for (role of filteredRoles(); track role.id) {
-            <div class="resource-card">
+            <div class="resource-card" (click)="openEditModal('role', role)">
               <div class="card-left">
                 <div class="avatar role" [style.background-color]="role.color || '#3b82f6'">
                   {{ role.nom.charAt(0).toUpperCase() }}
@@ -94,7 +94,7 @@ interface ResourceFormData {
           }
         } @else {
           @for (personne of filteredPersonnes(); track personne.id) {
-            <div class="resource-card">
+            <div class="resource-card" (click)="openEditModal('personne', personne)">
               <div class="card-left">
                 <div class="avatar personne" [style.background-color]="personne.color || '#10b981'">
                   {{ getPersonneInitials(personne) }}
@@ -253,7 +253,7 @@ interface ResourceFormData {
     .tab-btn.active { background: white; color: #111827; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     .tab-btn:hover:not(.active) { color: #374151; }
     .resource-list { display: grid; gap: 16px; }
-    .resource-card { background: white; border: 1px solid #e5e7eb; border-radius: 16px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s; }
+    .resource-card { background: white; border: 1px solid #e5e7eb; border-radius: 16px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s; cursor: pointer; }
     .resource-card:hover { border-color: #3b82f6; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
     .card-left { display: flex; align-items: center; gap: 16px; }
     .avatar { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 18px; flex-shrink: 0; }
