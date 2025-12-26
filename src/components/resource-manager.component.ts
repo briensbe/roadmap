@@ -160,13 +160,8 @@ interface ResourceFormData {
                     <input type="text" [(ngModel)]="formData.code" name="code" placeholder="Ex: DEV-SEN" />
                   </div>
                 }
-
+                
                 <div class="form-group">
-                  <label>Jours / Semaine</label>
-                  <input type="number" [(ngModel)]="formData.jours_par_semaine" name="jours_par_semaine" step="0.5" min="0.5" max="7" required />
-                </div>
-
-                <div class="form-group full-width">
                   <label>Service rattaché</label>
                   <select [(ngModel)]="formData.service_id" name="service_id">
                     <option value="">Aucun service</option>
@@ -175,6 +170,12 @@ interface ResourceFormData {
                     }
                   </select>
                 </div>
+
+                <div class="form-group">
+                  <label>Jours / Semaine</label>
+                  <input type="number" [(ngModel)]="formData.jours_par_semaine" name="jours_par_semaine" step="0.5" min="0.5" max="7" required />
+                </div>
+
 
                 <div class="form-group full-width">
                   <label>Couleur</label>
@@ -270,8 +271,8 @@ interface ResourceFormData {
     .empty-state { padding: 48px; text-align: center; color: #9ca3af; font-size: 15px; background: white; border-radius: 16px; border: 2px dashed #e5e7eb; }
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(4px); padding: 20px; }
     .modal-content { background: white; border-radius: 20px; padding: 32px; width: 100%; max-width: 540px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
-    .modal-title { font-size: 24px; font-weight: 800; color: #111827; margin-bottom: 24px; }
-    .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .modal-title { font-size: 24px; font-weight: 800; color: #111827; margin-bottom: 16px; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
     .form-group { display: flex; flex-direction: column; gap: 8px; }
     .form-group.full-width { grid-column: span 2; }
     .form-group label { font-size: 14px; font-weight: 600; color: #374151; }
