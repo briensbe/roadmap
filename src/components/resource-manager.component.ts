@@ -358,7 +358,10 @@ export class ResourceManagerComponent implements OnInit {
   }
 
   getPersonneInitials(p: Personne) {
-    if (!p.prenom || !p.nom) return '?';
+    //je veux retourner une initiale si il n'y a que nom ou prénom
+    if (p.prenom && !p.nom) return p.prenom.charAt(0).toUpperCase();
+    if (p.nom && !p.prenom) return p.nom.charAt(0).toUpperCase();
+    if (!p.prenom && !p.nom) return '?';
     return (p.prenom.charAt(0) + p.nom.charAt(0)).toUpperCase();
   }
 
