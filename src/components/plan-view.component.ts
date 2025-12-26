@@ -494,8 +494,19 @@ interface FlatRow {
           />
         </div>
         <div class="selection-actions">
-          <button class="btn btn-sm btn-secondary" (click)="clearSelection()">Annuler</button>
-          <button class="btn btn-sm btn-primary" (click)="applyBulkCharge()">Appliquer</button>
+          <button class="btn btn-sm btn-secondary" (click)="clearSelection()" [disabled]="isSaving">Annuler</button>
+          <button class="btn btn-sm btn-primary" (click)="applyBulkCharge()" [disabled]="isSaving">
+            <span *ngIf="isSaving" class="spinner-small"></span>
+            {{ isSaving ? 'Application...' : 'Appliquer' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading Overlay -->
+      <div class="loading-overlay" *ngIf="isSaving">
+        <div class="loading-spinner-container">
+          <div class="loading-spinner"></div>
+          <p>Mise à jour planifiée en cours...</p>
         </div>
       </div>
     </div>
@@ -1401,6 +1412,57 @@ interface FlatRow {
         -ms-transform: translateX(14px);
         transform: translateX(14px);
       }
+
+      /* Loading Overlay & Spinner */
+      .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(2px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+      }
+
+      .loading-spinner-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        background: white;
+        padding: 32px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      .spinner-small {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top: 2px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 8px;
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
     `,
   ],
 })
@@ -1479,6 +1541,7 @@ export class PlanViewComponent implements OnInit {
   toolbarVisible: boolean = false; // Controls opacity to prevent flash
 
   bulkChargeValue: number | null = null;
+  isSaving = false;
 
   @ViewChild("bulkChargeInput") bulkChargeInput?: ElementRef<HTMLInputElement>;
   @ViewChild("headerScroll") headerScroll?: ElementRef<HTMLDivElement>;
@@ -2275,6 +2338,7 @@ export class PlanViewComponent implements OnInit {
   async applyBulkCharge() {
     if (this.selectedCells.length === 0 || this.bulkChargeValue == null) return;
 
+    this.isSaving = true;
     try {
       for (const cell of this.selectedCells) {
         const weekKey = cell.week.toISOString().split("T")[0];
@@ -2313,6 +2377,8 @@ export class PlanViewComponent implements OnInit {
     } catch (error) {
       console.error("Error applying bulk charge:", error);
       alert("Erreur lors de l'application des charges.");
+    } finally {
+      this.isSaving = false;
     }
   }
 
