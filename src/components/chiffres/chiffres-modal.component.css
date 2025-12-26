@@ -82,6 +82,13 @@
   padding: 16px;
   background-color: #f9f9f9;
   border-radius: 6px;
+  justify-content: space-between;
+}
+
+.raf-date-group {
+  display: flex;
+  gap: 12px;
+  align-items: center;
 }
 
 .raf-date-section label {
@@ -167,7 +174,7 @@
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 13px;
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
   text-align: right;
   min-width: 100px;
 }
@@ -187,10 +194,32 @@
 .calculated-field {
   text-align: right;
   background-color: #f9f9f9;
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
   color: #666;
   font-weight: 500;
   min-width: 100px;
+}
+
+.help-toggle {
+  background: none;
+  border: none;
+  color: #6366f1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.2s;
+  background-color: white;
+  border: 1px solid #e0e0e0;
+}
+
+.help-toggle:hover {
+  background-color: #f0f1ff;
+  color: #4f46e5;
+  border-color: #6366f1;
+  transform: scale(1.1);
 }
 
 .total-row {
@@ -208,7 +237,7 @@
 .total-value {
   text-align: right;
   background-color: #e8e8e8;
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
   color: #000;
 }
 

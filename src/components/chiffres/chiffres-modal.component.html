@@ -12,8 +12,24 @@
     <div class="modal-content">
       <!-- RAF Date Selector -->
       <div class="raf-date-section">
-        <label for="rafDate">RAF au</label>
-        <input type="date" id="rafDate" [(ngModel)]="rafDate" (change)="onRAFDateChange()" class="raf-date-input" />
+        <div class="raf-date-group">
+          <label for="rafDate">RAF au</label>
+          <input type="date" id="rafDate" [(ngModel)]="rafDate" (change)="onRAFDateChange()" class="raf-date-input" />
+        </div>
+        <button type="button" class="help-toggle" (click)="showHelp = !showHelp" title="Besoin d'aide ?">
+          <lucide-icon [name]="LucideHelpCircle" size="20"></lucide-icon>
+        </button>
+      </div>
+      <div class="help-container">
+        <div *ngIf="showHelp" class="help-text">
+          <p><strong>Delta:</strong> Prévisionnel - Révisé</p>
+          <p><strong>Restant:</strong> Prévisionnel - Consommé</p>
+          <p><strong>RAF:</strong> Ressources affectées à partir de la date sélectionnée</p>
+          <p>
+            <strong>Copier-coller:</strong> Vous pouvez copier des cellules Excel (Initial, Révisé, Prévisionnel,
+            Consommé) et les coller pour remplir automatiquement.
+          </p>
+        </div>
       </div>
 
       <!-- Services Table -->
@@ -123,16 +139,6 @@
             </tr>
           </tfoot>
         </table>
-      </div>
-
-      <div class="help-text">
-        <p><strong>Delta:</strong> Prévisionnel - Révisé</p>
-        <p><strong>Restant:</strong> Prévisionnel - Consommé</p>
-        <p><strong>RAF:</strong> Ressources affectées à partir de la date sélectionnée</p>
-        <p>
-          <strong>Copier-coller:</strong> Vous pouvez copier des cellules Excel (Initial, Révisé, Prévisionnel,
-          Consommé) et les coller pour remplir automatiquement.
-        </p>
       </div>
     </div>
 
