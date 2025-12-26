@@ -500,13 +500,11 @@ interface FlatRow {
             {{ isSaving ? 'Application...' : 'Appliquer' }}
           </button>
         </div>
-      </div>
 
-      <!-- Loading Overlay -->
-      <div class="loading-overlay" *ngIf="isSaving">
-        <div class="loading-spinner-container">
-          <div class="loading-spinner"></div>
-          <p>Mise à jour planifiée en cours...</p>
+        <!-- Localized Loading Overlay -->
+        <div class="loading-overlay-local" *ngIf="isSaving">
+          <div class="spinner-small"></div>
+          <span>Mise à jour...</span>
         </div>
       </div>
     </div>
@@ -1413,50 +1411,32 @@ interface FlatRow {
         transform: translateX(14px);
       }
 
-      /* Loading Overlay & Spinner */
-      .loading-overlay {
-        position: fixed;
+      /* Localized Loading Overlay in Selection Toolbar */
+      .loading-overlay-local {
+        position: absolute;
         top: 0;
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(255, 255, 255, 0.7);
-        backdrop-filter: blur(2px);
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
-        z-index: 9999;
-      }
-
-      .loading-spinner-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 16px;
-        background: white;
-        padding: 32px;
-        border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-      }
-
-      .loading-spinner {
-        width: 40px;
-        height: 40px;
-        border: 4px solid #f3f3f3;
-        border-top: 4px solid #3498db;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
+        gap: 12px;
+        z-index: 10;
+        font-weight: 600;
+        color: #6366f1;
       }
 
       .spinner-small {
         display: inline-block;
-        width: 12px;
-        height: 12px;
-        border: 2px solid rgba(255, 255, 255, 0.3);
-        border-top: 2px solid white;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(99, 102, 241, 0.2);
+        border-top: 2px solid #6366f1;
         border-radius: 50%;
         animation: spin 1s linear infinite;
-        margin-right: 8px;
       }
 
       @keyframes spin {
