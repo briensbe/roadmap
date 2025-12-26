@@ -526,7 +526,7 @@ export class OrganizationViewComponent implements OnInit {
               level: 3,
               parentId: srv.id
             })),
-            expanded: true,
+            expanded: false,
             level: 2,
             parentId: d.id
           };
@@ -555,7 +555,7 @@ export class OrganizationViewComponent implements OnInit {
           color: d.color,
           originalData: d,
           children: [...serviceNodes, ...equipeNodes],
-          expanded: true,
+          expanded: false,
           level: 1,
           parentId: s.id
         };
@@ -569,7 +569,7 @@ export class OrganizationViewComponent implements OnInit {
         color: s.color || '#3b82f6',
         originalData: s,
         children: deptNodes,
-        expanded: true,
+        expanded: false,
         level: 0
       };
     });
