@@ -2,29 +2,29 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
-    LucideAngularModule,
-    Settings,
-    Plus,
-    Search,
-    Edit2,
-    Trash2,
-    X,
-    Save,
-    CheckCircle2,
-    AlertCircle,
-    Globe,
-    User,
-    Shield,
-    Type
+  LucideAngularModule,
+  Settings,
+  Plus,
+  Search,
+  Edit2,
+  Trash2,
+  X,
+  Save,
+  CheckCircle2,
+  AlertCircle,
+  Globe,
+  User,
+  Shield,
+  Type
 } from 'lucide-angular';
 import { SettingsService } from '../../services/settings.service';
 import { Setting, SettingType } from '../../models/settings.type';
 
 @Component({
-    selector: 'app-settings',
-    standalone: true,
-    imports: [CommonModule, FormsModule, LucideAngularModule],
-    template: `
+  selector: 'app-settings',
+  standalone: true,
+  imports: [CommonModule, FormsModule, LucideAngularModule],
+  template: `
     <div class="settings-container">
       <header class="settings-header">
         <div class="header-left">
@@ -168,13 +168,13 @@ import { Setting, SettingType } from '../../models/settings.type';
       </div>
     </div>
   `,
-    styles: [`
+  styles: [`
     .settings-container {
-      padding: 24px;
+      padding: 32px;
       padding-top: 80px;
       background: #f8fafc;
       min-height: 100vh;
-      margin-left: 256px;
+      margin-left: 32px;
     }
 
     .settings-header {
@@ -356,7 +356,6 @@ import { Setting, SettingType } from '../../models/settings.type';
       color: #475569;
       max-width: 200px;
       overflow: hidden;
-      text-overflow: ellipsis;
       white-space: nowrap;
     }
 
@@ -543,108 +542,108 @@ import { Setting, SettingType } from '../../models/settings.type';
   `]
 })
 export class SettingsComponent implements OnInit {
-    settings: Setting[] = [];
-    filteredSettings: Setting[] = [];
-    searchQuery = '';
+  settings: Setting[] = [];
+  filteredSettings: Setting[] = [];
+  searchQuery = '';
 
-    isModalOpen = false;
-    editingSetting: Setting | null = null;
-    currentSetting: Setting = this.getDefaultSetting();
+  isModalOpen = false;
+  editingSetting: Setting | null = null;
+  currentSetting: Setting = this.getDefaultSetting();
 
-    // Lucide icons
-    SettingsIcon = Settings;
-    PlusIcon = Plus;
-    SearchIcon = Search;
-    EditIcon = Edit2;
-    TrashIcon = Trash2;
-    XIcon = X;
-    SaveIcon = Save;
-    GlobeIcon = Globe;
-    UserIcon = User;
+  // Lucide icons
+  SettingsIcon = Settings;
+  PlusIcon = Plus;
+  SearchIcon = Search;
+  EditIcon = Edit2;
+  TrashIcon = Trash2;
+  XIcon = X;
+  SaveIcon = Save;
+  GlobeIcon = Globe;
+  UserIcon = User;
 
-    get valuePlaceholder(): string {
-        return this.currentSetting.type === 'json' ? '{ "key": "value" }' : 'Entrez la valeur...';
+  get valuePlaceholder(): string {
+    return this.currentSetting.type === 'json' ? '{ "key": "value" }' : 'Entrez la valeur...';
+  }
+
+  constructor(private settingsService: SettingsService) { }
+
+  ngOnInit() {
+    this.loadSettings();
+  }
+
+  async loadSettings() {
+    try {
+      this.settings = await this.settingsService.getAllSettings();
+      this.filterSettings();
+    } catch (error) {
+      console.error('Error loading settings:', error);
     }
+  }
 
-    constructor(private settingsService: SettingsService) { }
-
-    ngOnInit() {
-        this.loadSettings();
+  filterSettings() {
+    if (!this.searchQuery) {
+      this.filteredSettings = [...this.settings];
+    } else {
+      const query = this.searchQuery.toLowerCase();
+      this.filteredSettings = this.settings.filter(s =>
+        s.key.toLowerCase().includes(query) ||
+        s.scope.toLowerCase().includes(query) ||
+        (s.description && s.description.toLowerCase().includes(query))
+      );
     }
+  }
 
-    async loadSettings() {
-        try {
-            this.settings = await this.settingsService.getAllSettings();
-            this.filterSettings();
-        } catch (error) {
-            console.error('Error loading settings:', error);
+  getDefaultSetting(): Setting {
+    return {
+      key: '',
+      value: '',
+      type: 'string',
+      scope: 'global',
+      description: ''
+    };
+  }
+
+  openCreateModal() {
+    this.editingSetting = null;
+    this.currentSetting = this.getDefaultSetting();
+    this.isModalOpen = true;
+  }
+
+  editSetting(setting: Setting) {
+    this.editingSetting = setting;
+    this.currentSetting = { ...setting };
+    this.isModalOpen = true;
+  }
+
+  async deleteSetting(setting: Setting) {
+    if (confirm(`Êtes-vous sûr de vouloir supprimer le paramètre "${setting.key}" ?`)) {
+      try {
+        if (setting.id) {
+          await this.settingsService.deleteSetting(setting.id);
+          this.loadSettings();
         }
+      } catch (error) {
+        console.error('Error deleting setting:', error);
+      }
     }
+  }
 
-    filterSettings() {
-        if (!this.searchQuery) {
-            this.filteredSettings = [...this.settings];
-        } else {
-            const query = this.searchQuery.toLowerCase();
-            this.filteredSettings = this.settings.filter(s =>
-                s.key.toLowerCase().includes(query) ||
-                s.scope.toLowerCase().includes(query) ||
-                (s.description && s.description.toLowerCase().includes(query))
-            );
-        }
-    }
+  closeModal() {
+    this.isModalOpen = false;
+    this.editingSetting = null;
+  }
 
-    getDefaultSetting(): Setting {
-        return {
-            key: '',
-            value: '',
-            type: 'string',
-            scope: 'global',
-            description: ''
-        };
+  async saveSetting() {
+    try {
+      if (this.editingSetting?.id) {
+        await this.settingsService.updateSetting(this.editingSetting.id, this.currentSetting);
+      } else {
+        await this.settingsService.createSetting(this.currentSetting);
+      }
+      this.closeModal();
+      this.loadSettings();
+    } catch (error) {
+      console.error('Error saving setting:', error);
     }
-
-    openCreateModal() {
-        this.editingSetting = null;
-        this.currentSetting = this.getDefaultSetting();
-        this.isModalOpen = true;
-    }
-
-    editSetting(setting: Setting) {
-        this.editingSetting = setting;
-        this.currentSetting = { ...setting };
-        this.isModalOpen = true;
-    }
-
-    async deleteSetting(setting: Setting) {
-        if (confirm(`Êtes-vous sûr de vouloir supprimer le paramètre "${setting.key}" ?`)) {
-            try {
-                if (setting.id) {
-                    await this.settingsService.deleteSetting(setting.id);
-                    this.loadSettings();
-                }
-            } catch (error) {
-                console.error('Error deleting setting:', error);
-            }
-        }
-    }
-
-    closeModal() {
-        this.isModalOpen = false;
-        this.editingSetting = null;
-    }
-
-    async saveSetting() {
-        try {
-            if (this.editingSetting?.id) {
-                await this.settingsService.updateSetting(this.editingSetting.id, this.currentSetting);
-            } else {
-                await this.settingsService.createSetting(this.currentSetting);
-            }
-            this.closeModal();
-            this.loadSettings();
-        } catch (error) {
-            console.error('Error saving setting:', error);
-        }
-    }
+  }
 }
