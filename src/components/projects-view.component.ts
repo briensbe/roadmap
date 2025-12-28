@@ -2,6 +2,7 @@ import { Component, OnInit, HostListener, ElementRef } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { ProjetService } from "../services/projet.service";
+import { SettingsService } from "../services/settings.service";
 import { Projet } from "../models/types";
 import { ChiffresModalComponent } from "./chiffres/chiffres-modal.component";
 import { Chiffre } from "../models/chiffres.type";
@@ -77,7 +78,19 @@ import { LucideAngularModule, Plus, LucideCalculator } from "lucide-angular";
         <div *ngFor="let projet of filteredProjects" class="project-card" [attr.data-status]="projet.statut">
           <div class="card-header">
             <div class="card-header-top">
-              <span class="project-code">{{ projet.code_projet }}</span>
+              <div class="project-identifiers">
+                <span class="project-code">{{ projet.code_projet }}</span>
+                <span class="external-ref" *ngIf="projet.reference_externe">
+                  <ng-container *ngIf="externalReferenceUrl; else noLink">
+                    <a [href]="externalReferenceUrl + projet.reference_externe" target="_blank" class="ref-link">
+                      #{{ projet.reference_externe }}
+                    </a>
+                  </ng-container>
+                  <ng-template #noLink>
+                    #{{ projet.reference_externe }}
+                  </ng-template>
+                </span>
+              </div>
               <div class="header-actions">
                 <span class="status-badge" [attr.data-status]="projet.statut">{{ projet.statut }}</span>
                 <div class="menu-container" (click)="$event.stopPropagation()">
@@ -195,6 +208,7 @@ import { LucideAngularModule, Plus, LucideCalculator } from "lucide-angular";
           <thead>
             <tr>
               <th>Code</th>
+              <th>Réf. Ext.</th>
               <th>Nom</th>
               <th>Statut</th>
               <th>Chef de projet</th>
@@ -210,6 +224,19 @@ import { LucideAngularModule, Plus, LucideCalculator } from "lucide-angular";
           <tbody>
             <tr *ngFor="let projet of filteredProjects" class="project-row">
               <td class="project-code-cell">{{ projet.code_projet }}</td>
+              <td class="external-ref-cell">
+                <ng-container *ngIf="projet.reference_externe; else dash">
+                  <ng-container *ngIf="externalReferenceUrl; else noLinkList">
+                    <a [href]="externalReferenceUrl + projet.reference_externe" target="_blank" class="ref-link">
+                      {{ projet.reference_externe }}
+                    </a>
+                  </ng-container>
+                  <ng-template #noLinkList>
+                    {{ projet.reference_externe }}
+                  </ng-template>
+                </ng-container>
+                <ng-template #dash>-</ng-template>
+              </td>
               <td class="project-name-cell">{{ projet.nom_projet }}</td>
               <td>
                 <span class="status-badge small" [attr.data-status]="projet.statut">
@@ -320,6 +347,10 @@ import { LucideAngularModule, Plus, LucideCalculator } from "lucide-angular";
           <div class="form-group">
             <label>Code Projet *</label>
             <input [(ngModel)]="newProjet.code_projet" name="code" required />
+          </div>
+          <div class="form-group">
+            <label>Référence Externe</label>
+            <input [(ngModel)]="newProjet.reference_externe" name="ref_ext" placeholder="ex: JIRA-123" />
           </div>
           <div class="form-group">
             <label>Nom Projet *</label>
@@ -550,6 +581,32 @@ import { LucideAngularModule, Plus, LucideCalculator } from "lucide-angular";
         color: #4f46e5;
         font-size: 13px;
         letter-spacing: 0.5px;
+      }
+
+      .external-ref {
+        font-size: 11px;
+        color: #9ca3af;
+        font-weight: 500;
+        background: #f3f4f6;
+        padding: 1px 6px;
+        border-radius: 4px;
+      }
+
+      .project-identifiers {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .ref-link {
+        color: inherit;
+        text-decoration: none;
+        transition: color 0.2s;
+      }
+
+      .ref-link:hover {
+        color: #4f46e5;
+        text-decoration: underline;
       }
 
       .status-badge {
@@ -1076,6 +1133,7 @@ export class ProjectsViewComponent implements OnInit {
 
   projets: Projet[] = [];
   filteredProjects: Projet[] = [];
+  externalReferenceUrl: string | null = null;
 
   showProjectModal = false;
   editingProjetId: string | null = null;
@@ -1096,7 +1154,10 @@ export class ProjectsViewComponent implements OnInit {
     temps_consomme: 0,
   };
 
-  constructor(private projetService: ProjetService) { }
+  constructor(
+    private projetService: ProjetService,
+    private settingsService: SettingsService
+  ) { }
 
   @HostListener("document:click", ["$event"])
   onDocumentClick(event: MouseEvent) {
@@ -1117,6 +1178,7 @@ export class ProjectsViewComponent implements OnInit {
 
   async ngOnInit() {
     await this.loadProjects();
+    this.externalReferenceUrl = await this.settingsService.getSettingValue("external_reference_url", "global");
   }
 
   async loadProjects() {
@@ -1161,6 +1223,8 @@ export class ProjectsViewComponent implements OnInit {
       chiffrage_revise: 0,
       chiffrage_previsionnel: 0,
       temps_consomme: 0,
+      description: "",
+      reference_externe: "",
     };
     this.showProjectModal = true;
     this.activeMenuId = null;

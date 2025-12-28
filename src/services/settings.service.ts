@@ -41,6 +41,11 @@ export class SettingsService {
         return data;
     }
 
+    async getSettingValue(key: string, scope: string = 'global'): Promise<string | null> {
+        const setting = await this.getSettingByKey(key, scope);
+        return setting ? setting.value : null;
+    }
+
     async createSetting(setting: Setting): Promise<Setting> {
         const { data, error } = await this.supabase.client
             .from("settings")
