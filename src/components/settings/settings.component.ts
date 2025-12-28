@@ -354,9 +354,7 @@ import { Setting, SettingType } from '../../models/settings.type';
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: 12px;
       color: #475569;
-      max-width: 200px;
       overflow: hidden;
-      white-space: nowrap;
     }
 
     .type-tag {
