@@ -29,6 +29,7 @@ export const routes: Routes = [
       { path: "projets", component: ProjectsViewComponent },
       { path: "plan-globale", component: PlanViewComponent },
       { path: "jalons", component: MilestonesViewComponent },
+      { path: "settings", loadComponent: () => import('./components/settings/settings.component').then(m => m.SettingsComponent) },
       { path: "profile", component: ProfileComponent },
       { path: "update-password", component: UpdatePasswordComponent },
     ],
