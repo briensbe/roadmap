@@ -241,7 +241,7 @@ export class SidebarNavigationComponent {
     { label: 'Jalons', icon: this.Flag, route: '/jalons' },
     { label: 'Ressources', icon: this.Users, route: '/ressources' },
     { label: 'Organisation', icon: this.Building2, route: '/organisation' },
-    { label: 'Paramètres', icon: this.Settings },
+    { label: 'Paramètres', icon: this.Settings, route: '/settings' },
     { label: 'Profil', icon: this.User, route: '/profile' }
   ];
 
