@@ -306,7 +306,7 @@ interface OrgNode {
     .header-btn:hover { background: #f9fafb; border-color: #d1d5db; color: #111827; }
     
     /* Main Content */
-    .main-content { max-width: 1200px; margin: 0 auto; padding: 32px; }
+    .main-content { padding: 32px; }
     .page-title { font-size: 28px; font-weight: 700; color: #111827; margin: 0 0 4px 0; }
     .page-subtitle { font-size: 14px; color: #6b7280; margin: 0 0 32px 0; }
 
