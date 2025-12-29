@@ -4,10 +4,10 @@ import { FormsModule } from "@angular/forms";
 import { TeamService } from "../services/team.service";
 import { CalendarService } from "../services/calendar.service";
 import { Equipe, Role, Personne, Capacite, EquipeResource } from "../models/types";
-import { LucideAngularModule, ChevronDown, ChevronRight, Plus, User, Users } from "lucide-angular";
+import { LucideAngularModule, ChevronDown, ChevronRight, Plus, User, Users, Contact } from "lucide-angular";
 
 @NgModule({
-  imports: [LucideAngularModule.pick({ ChevronDown, ChevronRight, Plus, User, Users })],
+  imports: [LucideAngularModule.pick({ ChevronDown, ChevronRight, Plus, User, Users, Contact })],
   exports: [LucideAngularModule]
 })
 export class LucideIconsModule { }
@@ -20,6 +20,7 @@ interface ResourceRow {
   equipeId: string;
   weeks: Map<string, number>;
   jours_par_semaine: number;
+  color?: string;
 }
 
 interface TeamRow {
@@ -82,7 +83,9 @@ interface TeamRow {
             <ng-container *ngIf="teamRow.expanded">
               <div *ngFor="let resource of teamRow.resources" class="resource-label-row px-0">
                 <div class="row-label-content resource-row" style="padding-left:24px;">
-                  <span class="resource-type-icon">{{ resource.type === "role" ? "👤" : "👨" }}</span>
+                  <div class="resource-icon-wrapper" [style.background-color]="resource.color || '#e2e8f0'">
+                    <lucide-icon [name]="resource.type === 'role' ? 'contact' : 'user'" [size]="14" class="resource-icon"></lucide-icon>
+                  </div>
                   <span class="resource-name">{{ resource.label }}</span>
                   <button class="btn-hover-delete" (click)="removeResource(resource, teamRow.equipe)">×</button>
                 </div>
@@ -640,6 +643,36 @@ interface TeamRow {
         font-size: 18px;
       }
 
+      .resource-type-icon {
+        font-size: 16px;
+      }
+
+      .resource-icon-wrapper {
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        color: white;
+      }
+
+      .resource-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .resource-name {
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 14px;
+        color: #334155;
+      }
+      
       .modal-close {
         background: none;
         border: none;
@@ -786,6 +819,9 @@ export class CapacityViewComponent implements OnInit {
 
   bulkCapaciteValue: number | null = null;
 
+  Contact = Contact;
+  User = User;
+
   @ViewChild('bulkCapaciteInput') bulkCapaciteInput?: ElementRef<HTMLInputElement>;
 
   // Toggle to show/hide the computed days inside cells. Default: hidden (user activates toggle to show)
@@ -841,6 +877,7 @@ export class CapacityViewComponent implements OnInit {
             equipeId: equipe.id!,
             weeks,
             jours_par_semaine: resource.jours_par_semaine,
+            color: resource.color,
           });
         }
 
