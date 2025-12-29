@@ -99,6 +99,7 @@ export interface Projet {
   temps_consomme: number;
   created_at?: string;
   updated_at?: string;
+  color?: string;
 }
 
 export interface Capacite {

@@ -75,11 +75,13 @@ import { LucideAngularModule, Plus, LucideCalculator, MoreVertical, Edit, Trash2
 
       <!-- Card View -->
       <div *ngIf="viewMode === 'card'" class="projects-grid">
-        <div *ngFor="let projet of filteredProjects" class="project-card" [attr.data-status]="projet.statut">
+        <div *ngFor="let projet of filteredProjects" class="project-card" 
+             [style.border-left-color]="projet.color || '#3b82f6'"
+             (click)="openEditModal(projet)">
           <div class="card-header">
             <div class="card-header-top">
               <div class="project-identifiers">
-                <span class="project-code">{{ projet.code_projet }}</span>
+                <span class="project-code" [style.color]="projet.color || '#3b82f6'">{{ projet.code_projet }}</span>
                 <span class="external-ref-tag" *ngIf="projet.reference_externe">
                   <ng-container *ngIf="externalReferenceUrl; else noLink">
                     <a [href]="externalReferenceUrl + projet.reference_externe" target="_blank" class="ref-link" (click)="$event.stopPropagation()">
@@ -128,25 +130,10 @@ import { LucideAngularModule, Plus, LucideCalculator, MoreVertical, Edit, Trash2
             </p>
             <p class="project-description" *ngIf="projet.description">{{ projet.description }}</p>
 
-            <div class="metrics">
-              <div class="metric-row">
-                <span class="metric-label">Initial</span>
-                <span class="metric-value">{{ projet.chiffrage_initial }}j</span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-label">Révisé</span>
-                <span class="metric-value">{{ projet.chiffrage_revise }}j</span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-label">Prév.</span>
-                <span class="metric-value">{{ projet.chiffrage_previsionnel }}j</span>
-              </div>
-            </div>
-
             <div class="progress-section">
               <div class="progress-header">
-                <span class="progress-label">Consommé</span>
-                <span class="progress-value">{{ projet.temps_consomme }}j / {{ projet.chiffrage_previsionnel }}j</span>
+                <span class="progress-label">Progression</span>
+                <span class="progress-percent">{{ getProgressPercent(projet) }}%</span>
               </div>
               <div class="progress-bar">
                 <div
@@ -155,10 +142,6 @@ import { LucideAngularModule, Plus, LucideCalculator, MoreVertical, Edit, Trash2
                   [class.warning]="getProgressPercent(projet) > 80 && getProgressPercent(projet) <= 100"
                   [class.danger]="getProgressPercent(projet) > 100"
                 ></div>
-              </div>
-              <div class="raf-info">
-                <span class="raf-label">RAF:</span>
-                <span class="raf-value" [class.negative]="calculateRAF(projet) < 0"> {{ calculateRAF(projet) }}j </span>
               </div>
             </div>
           </div>
@@ -171,11 +154,10 @@ import { LucideAngularModule, Plus, LucideCalculator, MoreVertical, Edit, Trash2
 
       <!-- List View -->
       <div *ngIf="viewMode === 'list'" class="projects-list-view">
-        <div *ngFor="let projet of filteredProjects" class="project-list-card" (click)="openEditModal(projet)">
+        <div *ngFor="let projet of filteredProjects" class="project-list-card" 
+             [style.border-left-color]="projet.color || '#3b82f6'"
+             (click)="openEditModal(projet)">
           <div class="card-left">
-            <div class="avatar project" [attr.data-status]="projet.statut">
-              {{ projet.code_projet.charAt(0).toUpperCase() }}
-            </div>
             <div class="project-info">
               <div class="project-name-row">
                 <span class="project-name">{{ projet.nom_projet }}</span>
@@ -273,24 +255,43 @@ import { LucideAngularModule, Plus, LucideCalculator, MoreVertical, Edit, Trash2
               <option value="Actif">Actif</option>
             </select>
           </div>
-          <div class="grid grid-3">
-            <div class="form-group">
-              <label>Chiffrage Initial</label>
-              <input type="number" [(ngModel)]="newProjet.chiffrage_initial" name="initial" />
-            </div>
-            <div class="form-group">
-              <label>Chiffrage Révisé</label>
-              <input type="number" [(ngModel)]="newProjet.chiffrage_revise" name="revise" />
-            </div>
-            <div class="form-group">
-              <label>Chiffrage Prévisionnel</label>
-              <input type="number" [(ngModel)]="newProjet.chiffrage_previsionnel" name="prev" />
-            </div>
-          </div>
-          <div class="form-group">
+          <div class="form-group full-width">
             <label>Description</label>
             <textarea [(ngModel)]="newProjet.description" name="desc" rows="3"></textarea>
           </div>
+
+          <div class="form-group full-width">
+            <label>Couleur</label>
+            <div class="color-palette">
+              @for (color of predefinedColors; track color) {
+                <div 
+                  class="color-swatch" 
+                  [style.background-color]="color"
+                  [class.active]="newProjet.color === color"
+                  (click)="selectColor(color)"
+                ></div>
+              }
+              <div 
+                class="color-swatch custom-trigger" 
+                [class.active]="isCustomColor"
+                (click)="isCustomColor = true"
+              >
+                @if (isCustomColor) {
+                  <div class="custom-preview" [style.background-color]="newProjet.color"></div>
+                } @else {
+                  <lucide-icon [img]="Plus" [size]="16"></lucide-icon>
+                }
+              </div>
+            </div>
+
+            @if (isCustomColor) {
+              <div class="custom-color-input-wrapper">
+                <input type="color" [(ngModel)]="newProjet.color" name="customColor" class="color-input" />
+                <input type="text" [(ngModel)]="newProjet.color" name="customColorText" class="color-hex-input" placeholder="#HEXCODE" />
+              </div>
+            }
+          </div>
+
           <div class="flex gap-2 mt-4">
             <button type="submit" class="btn btn-primary">{{ editingProjetId ? "Mettre à jour" : "Créer" }}</button>
             <button type="button" class="btn btn-secondary" (click)="closeModal()">Annuler</button>
@@ -429,31 +430,12 @@ import { LucideAngularModule, Plus, LucideCalculator, MoreVertical, Edit, Trash2
 
       .project-card {
         background: white;
-        border-radius: 12px;
+        border-radius: 16px;
         overflow: hidden;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         border-left: 4px solid #4f46e5;
-      }
-
-      .project-card[data-status="Actif"] {
-        border-left-color: #10b981;
-      }
-
-      .project-card[data-status="En cours"] {
-        border-left-color: #3b82f6;
-      }
-
-      .project-card[data-status="Planifié"] {
-        border-left-color: #f59e0b;
-      }
-
-      .project-card[data-status="Terminé"] {
-        border-left-color: #6b7280;
-      }
-
-      .project-card[data-status="En pause"] {
-        border-left-color: #ef4444;
+        cursor: pointer;
       }
 
       .project-card:hover {
@@ -482,32 +464,14 @@ import { LucideAngularModule, Plus, LucideCalculator, MoreVertical, Edit, Trash2
         display: flex;
         align-items: center;
         gap: 8px;
+        margin-bottom: 4px;
       }
 
       .project-code {
         font-family: "Consolas", "Monaco", monospace;
-        color: #9ca3af;
-        font-weight: 500;
-        background: #f3f4f6;
-        padding: 1px 6px;
-        border-radius: 4px;
-      }
-
-      .project-identifiers {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-      }
-
-      .ref-link {
-        color: inherit;
-        text-decoration: none;
-        transition: color 0.2s;
-      }
-
-      .ref-link:hover {
-        color: #4f46e5;
-        text-decoration: underline;
+        font-weight: 700;
+        font-size: 13px;
+        letter-spacing: 0.5px;
       }
 
       .status-badge {
@@ -699,7 +663,8 @@ import { LucideAngularModule, Plus, LucideCalculator, MoreVertical, Edit, Trash2
       .project-list-card {
         background: white;
         border: 1px solid #e5e7eb;
-        border-radius: 16px;
+        border-left: 4px solid #4f46e5;
+        border-radius: 12px;
         padding: 16px 20px;
         display: flex;
         justify-content: space-between;
@@ -719,26 +684,6 @@ import { LucideAngularModule, Plus, LucideCalculator, MoreVertical, Edit, Trash2
         align-items: center;
         gap: 16px;
       }
-
-      .avatar.project {
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 700;
-        font-size: 18px;
-        flex-shrink: 0;
-        background: #4f46e5;
-      }
-
-      .avatar.project[data-status="Actif"] { background: #10b981; }
-      .avatar.project[data-status="En cours"] { background: #3b82f6; }
-      .avatar.project[data-status="Planifié"] { background: #f59e0b; }
-      .avatar.project[data-status="Terminé"] { background: #6b7280; }
-      .avatar.project[data-status="En pause"] { background: #ef4444; }
 
       .project-info {
         display: flex;
@@ -799,12 +744,28 @@ import { LucideAngularModule, Plus, LucideCalculator, MoreVertical, Edit, Trash2
 
       .ref-link:hover {
         color: #4338ca;
+        text-decoration: underline;
       }
 
       .ref-link lucide-icon {
         display: flex;
         align-items: center;
       }
+
+      /* Color Picker Styles */
+      .color-palette { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+      .color-swatch { width: 32px; height: 32px; border-radius: 8px; cursor: pointer; transition: all 0.2s; border: 2px solid transparent; }
+      .color-swatch:hover { transform: scale(1.1); }
+      .color-swatch.active { border-color: #111827; box-shadow: 0 0 0 2px white, 0 0 0 4px #111827; }
+      .color-input { width: 60px; height: 40px; padding: 2px; cursor: pointer; border-radius: 8px; border: 1px solid #d1d5db; }
+      .color-hex-input { flex: 1; text-transform: uppercase; }
+      .custom-trigger { background: #f3f4f6; border: 2px dashed #d1d5db; display: flex; align-items: center; justify-content: center; color: #6b7280; }
+      .custom-trigger.active { border: 2px solid #111827; background: white; color: #111827; }
+      .custom-preview { width: 100%; height: 100%; border-radius: 6px; }
+      .custom-color-input-wrapper { display: flex; gap: 12px; align-items: center; margin-top: 16px; padding: 12px; background: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb; }
+      
+      .form-group.full-width { grid-column: span 2; }
+
 
       .empty-state {
         padding: 48px;
@@ -1058,6 +1019,7 @@ export class ProjectsViewComponent implements OnInit {
   Trash2 = Trash2;
   Copy = Copy;
   ExternalLink = ExternalLink;
+  Plus = Plus;
 
   projets: Projet[] = [];
   filteredProjects: Projet[] = [];
@@ -1072,14 +1034,21 @@ export class ProjectsViewComponent implements OnInit {
   showChiffresModal: boolean = false;
   selectedProjetId: number | null = null;
 
+  predefinedColors = [
+    '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16',
+    '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9',
+    '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef',
+    '#ec4899', '#f43f5e'
+  ];
+  isCustomColor = false;
+
   newProjet: Partial<Projet> = {
     code_projet: "",
     nom_projet: "",
     statut: "En cours",
-    chiffrage_initial: 0,
-    chiffrage_revise: 0,
-    chiffrage_previsionnel: 0,
-    temps_consomme: 0,
+    description: "",
+    reference_externe: "",
+    color: "#3b82f6",
   };
 
   constructor(
@@ -1147,20 +1116,24 @@ export class ProjectsViewComponent implements OnInit {
       code_projet: "",
       nom_projet: "",
       statut: "En cours",
-      chiffrage_initial: 0,
-      chiffrage_revise: 0,
-      chiffrage_previsionnel: 0,
-      temps_consomme: 0,
       description: "",
       reference_externe: "",
+      color: "#3b82f6",
     };
+    this.isCustomColor = false;
     this.showProjectModal = true;
     this.activeMenuId = null;
+  }
+
+  selectColor(color: string) {
+    this.newProjet.color = color;
+    this.isCustomColor = false;
   }
 
   openEditModal(projet: Projet) {
     this.editingProjetId = projet.id!;
     this.newProjet = { ...projet };
+    this.isCustomColor = !this.predefinedColors.includes(this.newProjet.color!);
     this.showProjectModal = true;
     this.activeMenuId = null;
   }
