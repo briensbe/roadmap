@@ -7,10 +7,10 @@ import { ChargeService } from "../services/charge.service";
 import { JalonService } from "../services/jalon.service";
 import { Equipe, Projet, Charge, Role, Personne, Capacite, Jalon } from "../models/types";
 import { CalendarService } from "../services/calendar.service";
-import { LucideAngularModule, Plus, ChevronDown, ChevronRight } from "lucide-angular";
+import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact } from "lucide-angular";
 
 @NgModule({
-  imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight })],
+  imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact })],
   exports: [LucideAngularModule]
 })
 export class LucideIconsModule { }
@@ -24,6 +24,7 @@ interface ResourceRow {
   type: "role" | "personne";
   jours_par_semaine: number;
   charges: Map<string, number>; // week string -> amount
+  color?: string;
 }
 
 interface ChildRow {
@@ -372,6 +373,9 @@ interface FlatRow {
                       <div class="row-label fixed-column row-detail px-0">
                         <div class="row-label-content resource-row">
                           <div class="resource-detail-label" style="padding-left:40px;">
+                            <div class="resource-icon-wrapper" [style.background-color]="resource.color || '#e2e8f0'">
+                              <lucide-icon [name]="resource.type === 'role' ? 'contact' : 'user'" [size]="14" class="resource-icon"></lucide-icon>
+                            </div>
                             <span class="resource-detail-name">{{ resource.label }}</span>
                           </div>
                           <button
@@ -861,6 +865,38 @@ interface FlatRow {
         letter-spacing: 0.5px;
         text-transform: uppercase;
         white-space: nowrap;
+      }
+
+      .resource-detail-label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        overflow: hidden;
+      }
+
+      .resource-icon-wrapper {
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        color: white;
+      }
+
+      .resource-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .resource-detail-name {
+        font-size: 14px;
+        color: #334155;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .info-label {
@@ -1667,6 +1703,8 @@ export class PlanViewComponent implements OnInit {
 
   // Icons
   Plus = Plus;
+  Contact = Contact;
+  User = User;
 
   constructor(
     private teamService: TeamService,
@@ -1853,6 +1891,7 @@ export class PlanViewComponent implements OnInit {
             let resourceLabel: string;
             let resourceType: "role" | "personne";
             let joursParSemaine = 0;
+            let resourceColor: string | undefined;
 
             if (charge.role_id) {
               resourceKey = `role_${charge.role_id}`;
@@ -1860,12 +1899,14 @@ export class PlanViewComponent implements OnInit {
               resourceLabel = role ? role.nom : "Unknown Role";
               joursParSemaine = role?.jours_par_semaine || 0;
               resourceType = "role";
+              resourceColor = role?.color;
             } else if (charge.personne_id) {
               resourceKey = `personne_${charge.personne_id}`;
               const personne = this.availablePersonnes.find((p) => p.id === charge.personne_id);
               resourceLabel = personne ? `${personne.prenom} ${personne.nom}` : "Unknown Person";
               joursParSemaine = personne?.jours_par_semaine || 0;
               resourceType = "personne";
+              resourceColor = personne?.color;
             } else {
               return; // Skip charges without resource
             }
@@ -1879,6 +1920,7 @@ export class PlanViewComponent implements OnInit {
                 type: resourceType,
                 jours_par_semaine: joursParSemaine,
                 charges: new Map<string, number>(),
+                color: resourceColor,
               });
             }
 
@@ -1967,6 +2009,7 @@ export class PlanViewComponent implements OnInit {
             let resourceLabel: string;
             let resourceType: "role" | "personne";
             let joursParSemaine = 0;
+            let resourceColor: string | undefined;
 
             if (charge.role_id) {
               resourceKey = `role_${charge.role_id}`;
@@ -1974,12 +2017,14 @@ export class PlanViewComponent implements OnInit {
               resourceLabel = role ? role.nom : "Unknown Role";
               joursParSemaine = role?.jours_par_semaine || 0;
               resourceType = "role";
+              resourceColor = role?.color;
             } else if (charge.personne_id) {
               resourceKey = `personne_${charge.personne_id}`;
               const personne = this.availablePersonnes.find((p) => p.id === charge.personne_id);
               resourceLabel = personne ? `${personne.prenom} ${personne.nom}` : "Unknown Person";
               joursParSemaine = personne?.jours_par_semaine || 0;
               resourceType = "personne";
+              resourceColor = personne?.color;
             } else {
               return; // Skip charges without resource
             }
@@ -1993,6 +2038,7 @@ export class PlanViewComponent implements OnInit {
                 type: resourceType,
                 jours_par_semaine: joursParSemaine,
                 charges: new Map<string, number>(),
+                color: resourceColor,
               });
             }
 
