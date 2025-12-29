@@ -6,7 +6,7 @@ import { SettingsService } from "../services/settings.service";
 import { Projet } from "../models/types";
 import { ChiffresModalComponent } from "./chiffres/chiffres-modal.component";
 import { Chiffre } from "../models/chiffres.type";
-import { LucideAngularModule, Plus, LucideCalculator } from "lucide-angular";
+import { LucideAngularModule, Plus, LucideCalculator, MoreVertical, Edit, Trash2, Copy, ExternalLink } from "lucide-angular";
 
 @Component({
   selector: "app-projects-view",
@@ -80,10 +80,11 @@ import { LucideAngularModule, Plus, LucideCalculator } from "lucide-angular";
             <div class="card-header-top">
               <div class="project-identifiers">
                 <span class="project-code">{{ projet.code_projet }}</span>
-                <span class="external-ref" *ngIf="projet.reference_externe">
+                <span class="external-ref-tag" *ngIf="projet.reference_externe">
                   <ng-container *ngIf="externalReferenceUrl; else noLink">
-                    <a [href]="externalReferenceUrl + projet.reference_externe" target="_blank" class="ref-link">
+                    <a [href]="externalReferenceUrl + projet.reference_externe" target="_blank" class="ref-link" (click)="$event.stopPropagation()">
                       #{{ projet.reference_externe }}
+                      <lucide-icon [img]="ExternalLink" [size]="12"></lucide-icon>
                     </a>
                   </ng-container>
                   <ng-template #noLink>
@@ -94,58 +95,24 @@ import { LucideAngularModule, Plus, LucideCalculator } from "lucide-angular";
               <div class="header-actions">
                 <span class="status-badge" [attr.data-status]="projet.statut">{{ projet.statut }}</span>
                 <div class="menu-container" (click)="$event.stopPropagation()">
-                  <button class="menu-btn" (click)="toggleMenu($event, projet.id!)">
-                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                      <circle cx="10" cy="3" r="2" />
-                      <circle cx="10" cy="10" r="2" />
-                      <circle cx="10" cy="17" r="2" />
-                    </svg>
-                  </button>
+              <button class="menu-btn" (click)="toggleMenu($event, projet.id!)">
+                <lucide-icon [img]="MoreVertical" [size]="20"></lucide-icon>
+              </button>
                   <div class="dropdown-menu" *ngIf="activeMenuId === projet.id">
-                    <button class="dropdown-item" (click)="openEditModal(projet)">
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                      </svg>
-                      Modifier
-                    </button>
+                <button class="dropdown-item" (click)="openEditModal(projet)">
+                  <lucide-icon [img]="Edit" [size]="14"></lucide-icon>
+                  Modifier
+                </button>
                     <button class="dropdown-item" (click)="openChiffresModal(projet.id_projet)">
                       <lucide-icon [img]="LucideCalculator" [size]="14"></lucide-icon>
                       Gérer les chiffres
                     </button>
                     <button class="dropdown-item" (click)="duplicateProjet(projet)">
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                      </svg>
+                      <lucide-icon [img]="Copy" [size]="14"></lucide-icon>
                       Dupliquer
                     </button>
                     <button class="dropdown-item delete" (click)="deleteProjet(projet)">
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                      </svg>
+                      <lucide-icon [img]="Trash2" [size]="14"></lucide-icon>
                       Supprimer
                     </button>
                   </div>
@@ -203,127 +170,63 @@ import { LucideAngularModule, Plus, LucideCalculator } from "lucide-angular";
       </div>
 
       <!-- List View -->
-      <div *ngIf="viewMode === 'list'" class="projects-list">
-        <table class="projects-table">
-          <thead>
-            <tr>
-              <th>Code</th>
-              <th>Réf. Ext.</th>
-              <th>Nom</th>
-              <th>Statut</th>
-              <th>Chef de projet</th>
-              <th class="text-right">Initial</th>
-              <th class="text-right">Révisé</th>
-              <th class="text-right">Prév.</th>
-              <th class="text-right">Consommé</th>
-              <th class="text-right">RAF</th>
-              <th style="min-width: 150px;">Progression</th>
-              <th style="width: 50px;"></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let projet of filteredProjects" class="project-row">
-              <td class="project-code-cell">{{ projet.code_projet }}</td>
-              <td class="external-ref-cell">
-                <ng-container *ngIf="projet.reference_externe; else dash">
-                  <ng-container *ngIf="externalReferenceUrl; else noLinkList">
-                    <a [href]="externalReferenceUrl + projet.reference_externe" target="_blank" class="ref-link">
-                      {{ projet.reference_externe }}
-                    </a>
-                  </ng-container>
-                  <ng-template #noLinkList>
-                    {{ projet.reference_externe }}
-                  </ng-template>
-                </ng-container>
-                <ng-template #dash>-</ng-template>
-              </td>
-              <td class="project-name-cell">{{ projet.nom_projet }}</td>
-              <td>
-                <span class="status-badge small" [attr.data-status]="projet.statut">
-                  {{ projet.statut }}
+      <div *ngIf="viewMode === 'list'" class="projects-list-view">
+        <div *ngFor="let projet of filteredProjects" class="project-list-card" (click)="openEditModal(projet)">
+          <div class="card-left">
+            <div class="avatar project" [attr.data-status]="projet.statut">
+              {{ projet.code_projet.charAt(0).toUpperCase() }}
+            </div>
+            <div class="project-info">
+              <div class="project-name-row">
+                <span class="project-name">{{ projet.nom_projet }}</span>
+                <span class="status-badge small" [attr.data-status]="projet.statut">{{ projet.statut }}</span>
+              </div>
+              <div class="project-meta">
+                <span class="project-code">{{ projet.code_projet }}</span>
+                <span *ngIf="projet.reference_externe"> • 
+                  <span class="external-ref-tag">
+                    <ng-container *ngIf="externalReferenceUrl; else noLinkList">
+                      <a [href]="externalReferenceUrl + projet.reference_externe" target="_blank" class="ref-link" (click)="$event.stopPropagation()">
+                        #{{ projet.reference_externe }}
+                        <lucide-icon [img]="ExternalLink" [size]="12"></lucide-icon>
+                      </a>
+                    </ng-container>
+                    <ng-template #noLinkList>
+                      #{{ projet.reference_externe }}
+                    </ng-template>
+                  </span>
                 </span>
-              </td>
-              <td>{{ projet.chef_projet || "-" }}</td>
-              <td class="text-right">{{ projet.chiffrage_initial }}j</td>
-              <td class="text-right">{{ projet.chiffrage_revise }}j</td>
-              <td class="text-right">{{ projet.chiffrage_previsionnel }}j</td>
-              <td class="text-right">{{ projet.temps_consomme }}j</td>
-              <td class="text-right" [class.negative]="calculateRAF(projet) < 0">{{ calculateRAF(projet) }}j</td>
-              <td>
-                <div class="inline-progress">
-                  <div class="progress-bar small">
-                    <div
-                      class="progress-fill"
-                      [style.width.%]="getProgressPercent(projet)"
-                      [class.warning]="getProgressPercent(projet) > 80 && getProgressPercent(projet) <= 100"
-                      [class.danger]="getProgressPercent(projet) > 100"
-                    ></div>
-                  </div>
-                  <span class="progress-percent">{{ getProgressPercent(projet) }}%</span>
-                </div>
-              </td>
-              <td class="actions-cell">
-                <div class="menu-container" (click)="$event.stopPropagation()">
-                  <button class="menu-btn" (click)="toggleMenu($event, projet.id!)">
-                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                      <circle cx="10" cy="3" r="2" />
-                      <circle cx="10" cy="10" r="2" />
-                      <circle cx="10" cy="17" r="2" />
-                    </svg>
-                  </button>
-                  <div class="dropdown-menu right" *ngIf="activeMenuId === projet.id">
-                    <button class="dropdown-item" (click)="openEditModal(projet)">
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                      </svg>
-                      Modifier
-                    </button>
-                    <button class="dropdown-item" (click)="openChiffresModal(projet.id_projet)">
-                      <lucide-icon [img]="LucideCalculator" [size]="14"></lucide-icon>
-                      Gérer les chiffres
-                    </button>
-                    <button class="dropdown-item" (click)="duplicateProjet(projet)">
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                      </svg>
-                      Dupliquer
-                    </button>
-                    <button class="dropdown-item delete" (click)="deleteProjet(projet)">
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                      </svg>
-                      Supprimer
-                    </button>
-                  </div>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                <span *ngIf="projet.chef_projet"> • <span class="manager-name">{{ projet.chef_projet }}</span></span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="card-right">
+            <div class="menu-container" (click)="$event.stopPropagation()">
+              <button class="menu-btn" (click)="toggleMenu($event, projet.id!)">
+                <lucide-icon [img]="MoreVertical" [size]="20"></lucide-icon>
+              </button>
+              <div class="dropdown-menu right" *ngIf="activeMenuId === projet.id">
+                <button class="dropdown-item" (click)="openEditModal(projet)">
+                  <lucide-icon [img]="Edit" [size]="14"></lucide-icon>
+                  Modifier
+                </button>
+                <button class="dropdown-item" (click)="openChiffresModal(projet.id_projet)">
+                  <lucide-icon [img]="LucideCalculator" [size]="14"></lucide-icon>
+                  Gérer les chiffres
+                </button>
+                <button class="dropdown-item" (click)="duplicateProjet(projet)">
+                  <lucide-icon [img]="Copy" [size]="14"></lucide-icon>
+                  Dupliquer
+                </button>
+                <button class="dropdown-item delete" (click)="deleteProjet(projet)">
+                  <lucide-icon [img]="Trash2" [size]="14"></lucide-icon>
+                  Supprimer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div *ngIf="filteredProjects.length === 0" class="empty-state">
           <p>Aucun projet trouvé</p>
@@ -575,16 +478,14 @@ import { LucideAngularModule, Plus, LucideCalculator } from "lucide-angular";
         gap: 8px;
       }
 
-      .project-code {
-        font-family: "Consolas", "Monaco", monospace;
-        font-weight: 600;
-        color: #4f46e5;
-        font-size: 13px;
-        letter-spacing: 0.5px;
+      .project-identifiers {
+        display: flex;
+        align-items: center;
+        gap: 8px;
       }
 
-      .external-ref {
-        font-size: 11px;
+      .project-code {
+        font-family: "Consolas", "Monaco", monospace;
         color: #9ca3af;
         font-weight: 500;
         background: #f3f4f6;
@@ -787,110 +688,132 @@ import { LucideAngularModule, Plus, LucideCalculator } from "lucide-angular";
         color: #ef4444;
       }
 
-      /* List View Styles */
-      .projects-list {
+
+      /* List View Refactoring */
+      .projects-list-view {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .project-list-card {
         background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 16px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.2s;
+        cursor: pointer;
+      }
+
+      .project-list-card:hover {
+        border-color: #4f46e5;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        transform: translateY(-1px);
+      }
+
+      .card-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .avatar.project {
+        width: 48px;
+        height: 48px;
         border-radius: 12px;
-        /* overflow: hidden; Removed to prevent menu clipping */
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 18px;
+        flex-shrink: 0;
+        background: #4f46e5;
       }
 
-      .projects-table {
-        width: 100%;
-        border-collapse: separate; /* Changed for border-radius */
-        border-spacing: 0;
+      .avatar.project[data-status="Actif"] { background: #10b981; }
+      .avatar.project[data-status="En cours"] { background: #3b82f6; }
+      .avatar.project[data-status="Planifié"] { background: #f59e0b; }
+      .avatar.project[data-status="Terminé"] { background: #6b7280; }
+      .avatar.project[data-status="En pause"] { background: #ef4444; }
+
+      .project-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
       }
 
-      .projects-table thead {
-        background: #f9fafb;
-        /* border-bottom removed as it doesn't work well with separate */
-      }
-
-      .projects-table th {
-        padding: 14px 16px;
-        text-align: left;
-        font-size: 12px;
-        font-weight: 600;
-        color: #6b7280;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        border-bottom: 2px solid #e5e7eb;
-      }
-
-      .projects-table th:first-child {
-        border-top-left-radius: 12px;
-      }
-
-      .projects-table th:last-child {
-        border-top-right-radius: 12px;
-      }
-
-      .projects-table th.text-right {
-        text-align: right;
-      }
-
-      .projects-table tbody tr {
-        border-bottom: 1px solid #f3f4f6;
-        transition: background 0.15s;
-      }
-
-      .projects-table tbody tr:hover {
-        background: #f9fafb;
-      }
-
-      .projects-table td {
-        padding: 16px;
-        font-size: 14px;
-        color: #374151;
-      }
-
-      .text-right {
-        text-align: right;
-      }
-
-      .project-code-cell {
-        font-family: "Consolas", "Monaco", monospace;
-        font-weight: 600;
-        color: #4f46e5;
-      }
-
-      .project-name-cell {
-        font-weight: 500;
-        color: #111827;
-      }
-
-      .negative {
-        color: #ef4444;
-        font-weight: 600;
-      }
-
-      .inline-progress {
+      .project-name-row {
         display: flex;
         align-items: center;
         gap: 12px;
       }
 
-      .inline-progress .progress-bar {
-        flex: 1;
+      .project-name {
+        font-weight: 700;
+        color: #111827;
+        font-size: 16px;
       }
 
-      .progress-percent {
-        font-size: 12px;
-        font-weight: 600;
+      .project-meta {
+        font-size: 13px;
         color: #6b7280;
-        min-width: 45px;
-        text-align: right;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 4px;
       }
 
-      .actions-cell {
-        text-align: right;
+      .manager-name {
+        color: #4f46e5;
+        font-weight: 600;
+      }
+
+      .external-ref-tag {
+        display: inline-flex;
+        align-items: center;
+        background: #f3f4f6;
+        padding: 2px 8px;
+        border-radius: 6px;
+        border: 1px solid #e5e7eb;
+        transition: all 0.2s;
+      }
+
+      .external-ref-tag:hover {
+        background: #e5e7eb;
+        border-color: #d1d5db;
+      }
+
+      .ref-link {
+        color: #4f46e5;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .ref-link:hover {
+        color: #4338ca;
+      }
+
+      .ref-link lucide-icon {
+        display: flex;
+        align-items: center;
       }
 
       .empty-state {
-        padding: 60px 20px;
+        padding: 48px;
         text-align: center;
         color: #9ca3af;
-        font-size: 16px;
+        font-size: 15px;
+        background: white;
+        border-radius: 16px;
+        border: 2px dashed #e5e7eb;
       }
 
       /* Menu & Dropdown Styles */
@@ -1129,7 +1052,12 @@ export class ProjectsViewComponent implements OnInit {
   searchQuery = "";
   statusFilter = "";
 
-  LucideCalculator = LucideCalculator; // Expose l'icône au template
+  LucideCalculator = LucideCalculator;
+  MoreVertical = MoreVertical;
+  Edit = Edit;
+  Trash2 = Trash2;
+  Copy = Copy;
+  ExternalLink = ExternalLink;
 
   projets: Projet[] = [];
   filteredProjects: Projet[] = [];
