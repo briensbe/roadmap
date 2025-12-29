@@ -369,18 +369,19 @@ interface FlatRow {
                       (mouseup)="onMouseUp()"
                       (mouseleave)="onMouseUp()"
                     >
-                      <div class="row-label fixed-column row-detail">
-                        <div class="resource-detail-label" style="padding-left:40px;">
-                          <span class="resource-detail-name">{{ resource.label }}</span>
+                      <div class="row-label fixed-column row-detail px-0">
+                        <div class="row-label-content resource-row">
+                          <div class="resource-detail-label" style="padding-left:40px;">
+                            <span class="resource-detail-name">{{ resource.label }}</span>
+                          </div>
+                          <button
+                            class="btn-hover-delete"
+                            (click)="removeResource(resource, child, row); $event.stopPropagation()"
+                            title="Supprimer cette ressource"
+                          >
+                            ×
+                          </button>
                         </div>
-                        <button
-                          class="btn btn-xs btn-danger"
-                          (click)="removeResource(resource, child, row); $event.stopPropagation()"
-                          title="Supprimer cette ressource"
-                          style="margin-left:auto;"
-                        >
-                          ×
-                        </button>
                       </div>
                       <div class="row-cells scrollable-column">
                       <div
@@ -812,7 +813,6 @@ interface FlatRow {
         height: 100%;
         cursor: pointer;
         padding: 0 12px;
-        transition: background-color 0.2s;
         position: relative;
       }
 
@@ -884,7 +884,7 @@ interface FlatRow {
         align-items: center;
         justify-content: center;
         opacity: 0;
-        transition: all 0.2s;
+        transition: opacity 0.1s ease-in-out;
         position: absolute;
         right: 12px;
       }
@@ -896,6 +896,33 @@ interface FlatRow {
       .btn-hover-add:hover {
         background-color: #e2e8f0;
         color: #0f172a;
+      }
+
+      .btn-hover-delete {
+        background: transparent;
+        border: none;
+        color: #ef4444;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        font-weight: 700;
+        opacity: 0;
+        transition: opacity 0.1s ease-in-out;
+        position: absolute;
+        right: 12px;
+      }
+
+      .row-label-content:hover .btn-hover-delete {
+        opacity: 1;
+      }
+
+      .btn-hover-delete:hover {
+        background-color: #fee2e2;
+        color: #b91c1c;
       }
 
       .px-0 { padding-left: 0 !important; padding-right: 0 !important; }
