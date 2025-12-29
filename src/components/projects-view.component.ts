@@ -77,6 +77,7 @@ import { LucideAngularModule, Plus, LucideCalculator, MoreVertical, Edit, Trash2
       <div *ngIf="viewMode === 'card'" class="projects-grid">
         <div *ngFor="let projet of filteredProjects" class="project-card" 
              [style.border-left-color]="projet.color || '#3b82f6'"
+             [class.menu-active]="activeMenuId === projet.id"
              (click)="openEditModal(projet)">
           <div class="card-header">
             <div class="card-header-top">
@@ -156,6 +157,7 @@ import { LucideAngularModule, Plus, LucideCalculator, MoreVertical, Edit, Trash2
       <div *ngIf="viewMode === 'list'" class="projects-list-view">
         <div *ngFor="let projet of filteredProjects" class="project-list-card" 
              [style.border-left-color]="projet.color || '#3b82f6'"
+             [class.menu-active]="activeMenuId === projet.id"
              (click)="openEditModal(projet)">
           <div class="card-left">
             <div class="project-info">
@@ -439,11 +441,16 @@ import { LucideAngularModule, Plus, LucideCalculator, MoreVertical, Edit, Trash2
       .project-card {
         background: white;
         border-radius: 16px;
-        overflow: hidden;
+        position: relative;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         border-left: 4px solid #4f46e5;
         cursor: pointer;
+      }
+
+      .project-card.menu-active, .project-list-card.menu-active {
+        z-index: 100;
+        position: relative;
       }
 
       .project-card:hover {
