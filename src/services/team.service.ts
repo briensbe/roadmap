@@ -62,7 +62,8 @@ export class TeamService {
                         id: attachment.roles.id,
                         uniqueId: attachment.id,
                         nom: attachment.roles.nom,
-                        jours_par_semaine: attachment.roles.jours_par_semaine
+                        jours_par_semaine: attachment.roles.jours_par_semaine,
+                        color: attachment.roles.color
                     });
                 }
             });
@@ -82,7 +83,8 @@ export class TeamService {
                     uniqueId: personne.id,
                     nom: personne.nom,
                     prenom: personne.prenom,
-                    jours_par_semaine: personne.jours_par_semaine
+                    jours_par_semaine: personne.jours_par_semaine,
+                    color: personne.color
                 });
             });
         }
