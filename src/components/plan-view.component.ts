@@ -815,7 +815,6 @@ interface FlatRow {
         padding: 0 12px;
         position: relative;
       }
-
       .row-label-content:hover {
         background-color: #f1f5f9;
       }
@@ -884,7 +883,6 @@ interface FlatRow {
         align-items: center;
         justify-content: center;
         opacity: 0;
-        transition: opacity 0.1s ease-in-out;
         position: absolute;
         right: 12px;
       }
@@ -892,6 +890,7 @@ interface FlatRow {
       .row-label-content:hover .btn-hover-add {
         opacity: 1;
       }
+      
 
       .btn-hover-add:hover {
         background-color: #e2e8f0;
@@ -911,7 +910,6 @@ interface FlatRow {
         font-size: 18px;
         font-weight: 700;
         opacity: 0;
-        transition: opacity 0.1s ease-in-out;
         position: absolute;
         right: 12px;
       }
@@ -939,7 +937,6 @@ interface FlatRow {
         cursor: pointer;
         font-size: 16px;
         line-height: 1;
-        transition: all 0.15s ease;
       }
 
       .btn-danger:hover {
@@ -1371,7 +1368,6 @@ interface FlatRow {
       /* Selection Styles */
       .resource-detail-cell {
         cursor: crosshair; /* pointer ou crosshair */
-        transition: background 0.15s ease;
         position: relative;
       }
 
