@@ -229,23 +229,24 @@ import { LucideAngularModule, Plus, LucideCalculator, MoreVertical, Edit, Trash2
           <button class="modal-close" (click)="closeModal()">×</button>
         </div>
         <form (ngSubmit)="saveProjet()" class="form">
-          <div class="form-group">
-            <label>Code Projet *</label>
-            <input [(ngModel)]="newProjet.code_projet" name="code" required />
+          <div class="grid grid-2">
+            <div class="form-group">
+              <label>Code Projet *</label>
+              <input [(ngModel)]="newProjet.code_projet" name="code" required />
+            </div>
+            <div class="form-group">
+              <label>Référence Externe</label>
+              <input [(ngModel)]="newProjet.reference_externe" name="ref_ext" placeholder="ex: JIRA-123" />
+            </div>
           </div>
-          <div class="form-group">
-            <label>Référence Externe</label>
-            <input [(ngModel)]="newProjet.reference_externe" name="ref_ext" placeholder="ex: JIRA-123" />
-          </div>
-          <div class="form-group">
-            <label>Nom Projet *</label>
-            <input [(ngModel)]="newProjet.nom_projet" name="nom" required />
-          </div>
-          <div class="form-group">
-            <label>Chef de Projet</label>
-            <input [(ngModel)]="newProjet.chef_projet" name="chef" />
-          </div>
-          <div class="form-group">
+          <div class="form-group full-width">
+              <label>Nom Projet *</label>
+              <input [(ngModel)]="newProjet.nom_projet" name="nom" required />
+            </div>
+
+          <div class="grid grid-2">
+            
+            <div class="form-group">
             <label>Statut</label>
             <select [(ngModel)]="newProjet.statut" name="statut">
               <option value="En cours">En cours</option>
@@ -255,6 +256,13 @@ import { LucideAngularModule, Plus, LucideCalculator, MoreVertical, Edit, Trash2
               <option value="Actif">Actif</option>
             </select>
           </div>
+            <div class="form-group">
+              <label>Chef de Projet</label>
+              <input [(ngModel)]="newProjet.chef_projet" name="chef" />
+            </div>
+          </div>
+
+          
           <div class="form-group full-width">
             <label>Description</label>
             <textarea [(ngModel)]="newProjet.description" name="desc" rows="3"></textarea>
@@ -992,6 +1000,10 @@ import { LucideAngularModule, Plus, LucideCalculator, MoreVertical, Edit, Trash2
 
       .grid-3 {
         grid-template-columns: repeat(3, 1fr);
+      }
+
+      .grid-2 {
+        grid-template-columns: repeat(2, 1fr);
       }
 
       .flex {
