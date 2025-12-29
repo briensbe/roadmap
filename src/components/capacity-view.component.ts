@@ -65,25 +65,26 @@ interface TeamRow {
           </div>
 
           <ng-container *ngFor="let teamRow of teamRows">
-            <div class="team-label-row">
-              <div class="team-label" (click)="toggleTeam(teamRow)">
+            <div class="team-label-row px-0">
+              <div class="row-label-content" (click)="toggleTeam(teamRow)">
                 <lucide-icon [name]="teamRow.expanded ? 'chevron-down' : 'chevron-right'" [size]="18" class="expand-icon-l"></lucide-icon>
                 <strong>{{ teamRow.equipe.nom }}</strong>
                 <button
-                  class="btn btn-xs btn-add"
+                  class="btn-hover-add"
                   (click)="openAddResourceModal(teamRow.equipe); $event.stopPropagation()"
                 >
-                  + Ressource
+                  <lucide-icon [name]="'plus'" [size]="14"></lucide-icon>
+                  Ressource
                 </button>
               </div>
             </div>
 
             <ng-container *ngIf="teamRow.expanded">
-              <div *ngFor="let resource of teamRow.resources" class="resource-label-row">
-                <div class="resource-label">
+              <div *ngFor="let resource of teamRow.resources" class="resource-label-row px-0">
+                <div class="row-label-content resource-row" style="padding-left:24px;">
                   <span class="resource-type-icon">{{ resource.type === "role" ? "👤" : "👨" }}</span>
                   <span class="resource-name">{{ resource.label }}</span>
-                  <button class="btn btn-xs btn-danger" (click)="removeResource(resource, teamRow.equipe)">×</button>
+                  <button class="btn-hover-delete" (click)="removeResource(resource, teamRow.equipe)">×</button>
                 </div>
               </div>
             </ng-container>
@@ -317,78 +318,87 @@ interface TeamRow {
       }
 
       .team-label-row {
-        border-bottom: 1px solid #e2e8f0;
         background: #f9fafb;
-      }
-
-      .team-label {
-        padding: 12px 16px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        cursor: pointer;
-        font-weight: 600;
-        user-select: none;
-        min-height: 48px;
-      }
-
-      .team-label:hover {
-        background: #f3f4f6;
-      }
-
-      .expand-icon {
-        font-size: 12px;
-        color: #6b7280;
+        border-bottom: 1px solid #e2e8f0;
       }
 
       .resource-label-row {
-        border-bottom: 1px solid #e2e8f0;
         background: white;
+        border-bottom: 1px solid #e2e8f0;
       }
 
-      .resource-label-row:hover {
-        background: #f9fafb;
-      }
-
-      .resource-label {
-        padding: 12px 16px 12px 32px;
+      .row-label-content {
         display: flex;
         align-items: center;
         gap: 8px;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+        padding: 0 16px;
+        position: relative;
         min-height: 48px;
       }
 
-      .resource-type-icon {
-        font-size: 16px;
+      .row-label-content:hover {
+        background: #f3f4f6;
       }
 
-      .resource-name {
-        flex: 1;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .btn-add {
+      .btn-hover-add {
         margin-left: auto;
-        padding: 2px 8px;
+        padding: 4px 10px;
         font-size: 11px;
-      }
-
-      .btn-danger {
-        background: #ef4444;
-        color: white;
-        border: none;
-        padding: 2px 6px;
-        border-radius: 4px;
+        font-weight: 600;
+        background: white;
+        color: #6366f1;
+        border: 1px solid #e0e7ff;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
         cursor: pointer;
-        font-size: 14px;
-        line-height: 1;
+        opacity: 0;
+        position: absolute;
+        right: 12px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
       }
 
-      .btn-danger:hover {
-        background: #dc2626;
+      .row-label-content:hover .btn-hover-add {
+        opacity: 1;
       }
+
+      .btn-hover-add:hover {
+        background: #f5f7ff;
+        border-color: #6366f1;
+        color: #4f46e5;
+      }
+
+      .btn-hover-delete {
+        background: transparent;
+        border: none;
+        color: #ef4444;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        font-weight: 700;
+        opacity: 0;
+        position: absolute;
+        right: 12px;
+      }
+
+      .row-label-content:hover .btn-hover-delete {
+        opacity: 1;
+      }
+
+      .btn-hover-delete:hover {
+        background-color: #fee2e2;
+        color: #b91c1c;
+      }
+
+      .px-0 { padding-left: 0 !important; padding-right: 0 !important; }
 
       .empty-state-label {
         padding: 40px 20px;
