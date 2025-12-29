@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef, HostListener } from "@angular/core";
+import { Component, OnInit, ViewChild, ElementRef, HostListener, NgModule } from "@angular/core";
 import { CommonModule, NgIf, NgFor } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { TeamService } from "../services/team.service";
@@ -7,7 +7,14 @@ import { ChargeService } from "../services/charge.service";
 import { JalonService } from "../services/jalon.service";
 import { Equipe, Projet, Charge, Role, Personne, Capacite, Jalon } from "../models/types";
 import { CalendarService } from "../services/calendar.service";
-import { LucideAngularModule, Plus } from "lucide-angular";
+import { LucideAngularModule, Plus, ChevronDown, ChevronRight } from "lucide-angular";
+
+@NgModule({
+  imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight })],
+  exports: [LucideAngularModule]
+})
+export class LucideIconsModule { }
+
 import { MilestoneModalComponent } from './milestone-modal.component';
 
 interface ResourceRow {
@@ -46,7 +53,7 @@ interface FlatRow {
 @Component({
   selector: "app-plan-view",
   standalone: true,
-  imports: [CommonModule, NgIf, NgFor, FormsModule, LucideAngularModule, MilestoneModalComponent],
+  imports: [CommonModule, NgIf, NgFor, FormsModule, LucideIconsModule, MilestoneModalComponent],
   template: `
     <div class="capacity-container">
       <div class="capacity-header">
@@ -248,7 +255,7 @@ interface FlatRow {
               <div class="calendar-row-wrapper">
                 <div class="row-label fixed-column">
                   <div class="team-label" (click)="toggleRow(row)">
-                    <span class="expand-icon">{{ row.expanded ? "▼" : "▶" }}</span>
+                    <lucide-icon [name]="row.expanded ? 'chevron-down' : 'chevron-right'" [size]="20" class="expand-icon-l"></lucide-icon>
                     <strong>{{ row.label }}</strong>
                   </div>
                   <button
@@ -289,7 +296,7 @@ interface FlatRow {
                   <div class="calendar-row-wrapper">
                     <div class="row-label fixed-column">
                       <div class="resource-label" (click)="toggleChild(child)" style="padding-left:32px;">
-                        <span class="expand-icon">{{ child.expanded ? "▼" : "▶" }}</span>
+                        <lucide-icon [name]="child.expanded ? 'chevron-down' : 'chevron-right'" [size]="18" class="expand-icon-l"></lucide-icon>
                         <span class="resource-name">{{ child.label }}</span>
                       </div>
                       <button
@@ -1252,7 +1259,7 @@ interface FlatRow {
 
       /* Availability Styles */
       .availability-indicator {
-        font-size: 11px;
+        font-size: 10px;
         margin-top: 2px;
         font-weight: 500;
       }

@@ -1,9 +1,16 @@
-import { Component, OnInit, ViewChild, ElementRef } from "@angular/core";
+import { Component, OnInit, ViewChild, ElementRef, NgModule } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { TeamService } from "../services/team.service";
 import { CalendarService } from "../services/calendar.service";
 import { Equipe, Role, Personne, Capacite, EquipeResource } from "../models/types";
+import { LucideAngularModule, ChevronDown, ChevronRight, Plus, User, Users } from "lucide-angular";
+
+@NgModule({
+  imports: [LucideAngularModule.pick({ ChevronDown, ChevronRight, Plus, User, Users })],
+  exports: [LucideAngularModule]
+})
+export class LucideIconsModule { }
 
 interface ResourceRow {
   type: "role" | "personne";
@@ -24,7 +31,7 @@ interface TeamRow {
 @Component({
   selector: "app-capacity-view",
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LucideIconsModule],
   template: `
     <div class="capacity-container">
       <div class="capacity-header">
@@ -60,7 +67,7 @@ interface TeamRow {
           <ng-container *ngFor="let teamRow of teamRows">
             <div class="team-label-row">
               <div class="team-label" (click)="toggleTeam(teamRow)">
-                <span class="expand-icon">{{ teamRow.expanded ? "▼" : "▶" }}</span>
+                <lucide-icon [name]="teamRow.expanded ? 'chevron-down' : 'chevron-right'" [size]="18" class="expand-icon-l"></lucide-icon>
                 <strong>{{ teamRow.equipe.nom }}</strong>
                 <button
                   class="btn btn-xs btn-add"
