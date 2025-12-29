@@ -234,7 +234,7 @@ interface OrgNode {
  
       <!-- Recursive Node Template -->
       <ng-template #nodeTemplate let-node>
-        <div class="tree-node" [style.padding-left.px]="node.level * 32" (click)="toggleNode(node)">
+        <div class="tree-node" [style.margin-left.px]="node.level * 32" (click)="toggleNode(node)">
           
           <!-- Expand/Collapse Icon -->
           @if (node.children.length > 0) {
@@ -346,27 +346,27 @@ interface OrgNode {
     
     /* Organization Tree */
     .org-structure { background: transparent; }
-    .tree-container { display: flex; flex-direction: column; gap: 4px; }
+    .tree-container { display: flex; flex-direction: column; gap: 12px; }
     
     .tree-node { 
-      display: flex; align-items: center; padding: 8px 12px; background: white; border-radius: 8px; 
-      border: 1px solid transparent; transition: all 0.2s; position: relative;
+      display: flex; align-items: center; padding: 16px 20px; background: white; border-radius: 16px; 
+      border: 1px solid #e5e7eb; transition: all 0.2s; position: relative;
       cursor: pointer;
     }
-    .tree-node:hover { background: #f9fafb; border-color: #e5e7eb; }
+    .tree-node:hover { border-color: #3b82f6; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transform: translateY(-1px); }
     
-    .toggle-icon { cursor: pointer; color: #9ca3af; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; margin-right: 8px; border-radius: 4px; }
+    .toggle-icon { cursor: pointer; color: #9ca3af; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; margin-right: 12px; border-radius: 4px; }
     .toggle-icon:hover { background: #e5e7eb; color: #4b5563; }
     .toggle-placeholder { width: 32px; }
     
     .node-icon { 
-      width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px; 
+      width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 16px; 
       background: #f3f4f6; color: #6b7280; flex-shrink: 0;
     }
     .node-icon.societe { /* Custom color applied inline */ }
     
     .node-info { flex: 1; display: flex; align-items: baseline; gap: 8px; }
-    .node-name { font-weight: 600; color: #111827; font-size: 15px; }
+    .node-name { font-weight: 700; color: #111827; font-size: 16px; }
     .node-code { font-size: 12px; color: #6b7280; font-weight: 500; }
     
     /* Kebab Menu */
