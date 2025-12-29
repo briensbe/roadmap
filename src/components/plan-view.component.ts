@@ -29,6 +29,8 @@ interface ResourceRow {
 interface ChildRow {
   id: string;
   label: string;
+  code?: string;
+  color?: string;
   expanded: boolean;
   resources: ResourceRow[];
   charges: Map<string, number>; // week string -> amount
@@ -37,6 +39,8 @@ interface ChildRow {
 interface ParentRow {
   id: string;
   label: string;
+  code?: string;
+  color?: string;
   expanded: boolean;
   children: ChildRow[];
   totalCharges: Map<string, number>; // week string -> amount
@@ -253,18 +257,28 @@ interface FlatRow {
             <ng-container *ngFor="let row of rows">
               <!-- Parent Row -->
               <div class="calendar-row-wrapper">
-                <div class="row-label fixed-column">
-                  <div class="team-label" (click)="toggleRow(row)">
+                <div class="row-label fixed-column px-0">
+                  <div class="row-label-content" (click)="toggleRow(row)">
                     <lucide-icon [name]="row.expanded ? 'chevron-down' : 'chevron-right'" [size]="20" class="expand-icon-l"></lucide-icon>
-                    <strong>{{ row.label }}</strong>
+                    
+                    <div class="row-info-stack-wrapper">
+                      <div class="color-bar-container">
+                        <div class="color-bar-v" [style.background-color]="row.color || '#94a3b8'"></div>
+                      </div>
+                      <div class="info-stack">
+                        <span class="info-code" *ngIf="row.code">{{ row.code }}</span>
+                        <span class="info-label">{{ row.label }}</span>
+                      </div>
+                    </div>
+
+                    <button
+                      class="btn-hover-add"
+                      (click)="openLinkModal(row); $event.stopPropagation()"
+                      title="Ajouter"
+                    >
+                      <lucide-icon [img]="Plus" [size]="18"></lucide-icon>
+                    </button>
                   </div>
-                  <button
-                    class="btn btn-xs btn-add"
-                    (click)="openLinkModal(row); $event.stopPropagation()"
-                    style="margin-left:auto;"
-                  >
-                    <lucide-icon [img]="Plus" [size]="16"></lucide-icon>
-                  </button>
                 </div>
                 <div class="row-cells scrollable-column">
                   <div *ngFor="let week of displayedWeeks" class="week-cell team-cell">
@@ -294,18 +308,28 @@ interface FlatRow {
                 <ng-container *ngFor="let child of row.children">
                   <!-- Child Row (2nd level) -->
                   <div class="calendar-row-wrapper">
-                    <div class="row-label fixed-column">
-                      <div class="resource-label" (click)="toggleChild(child)" style="padding-left:32px;">
+                    <div class="row-label fixed-column px-0">
+                      <div class="row-label-content child-row" (click)="toggleChild(child)" style="padding-left:24px;">
                         <lucide-icon [name]="child.expanded ? 'chevron-down' : 'chevron-right'" [size]="18" class="expand-icon-l"></lucide-icon>
-                        <span class="resource-name">{{ child.label }}</span>
+                        
+                        <div class="row-info-stack-wrapper">
+                          <div class="color-bar-container">
+                            <div class="color-bar-v small" [style.background-color]="child.color || '#cbd5e1'"></div>
+                          </div>
+                          <div class="info-stack">
+                            <span class="info-code" *ngIf="child.code">{{ child.code }}</span>
+                            <span class="info-label">{{ child.label }}</span>
+                          </div>
+                        </div>
+
+                        <button
+                          class="btn-hover-add"
+                          (click)="openAddResourceModal(child, row); $event.stopPropagation()"
+                          title="Ajouter ressource"
+                        >
+                          <lucide-icon [img]="Plus" [size]="16"></lucide-icon>
+                        </button>
                       </div>
-                      <button
-                        class="btn btn-xs btn-add"
-                        (click)="openAddResourceModal(child, row); $event.stopPropagation()"
-                        style="margin-left:auto;"
-                      >
-                        <lucide-icon [img]="Plus" [size]="14"></lucide-icon>
-                      </button>
                     </div>
                     <div class="row-cells scrollable-column">
                       <div
@@ -346,7 +370,7 @@ interface FlatRow {
                       (mouseleave)="onMouseUp()"
                     >
                       <div class="row-label fixed-column row-detail">
-                        <div class="resource-detail-label" style="padding-left:50px;">
+                        <div class="resource-detail-label" style="padding-left:40px;">
                           <span class="resource-detail-name">{{ resource.label }}</span>
                         </div>
                         <button
@@ -780,20 +804,101 @@ interface FlatRow {
         font-size: 11px;
       }
 
-      .btn-add {
-        margin-left: auto;
+      .row-label-content {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+        padding: 0 12px;
+        transition: background-color 0.2s;
+        position: relative;
+      }
+
+      .row-label-content:hover {
+        background-color: #f1f5f9;
+      }
+
+      .row-info-stack-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+        overflow: hidden;
+      }
+
+      .color-bar-container {
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #6b7280;
-        border: 1px solid #e5e7eb;
-        background: white;
+        width: 12px;
       }
 
-      .btn-add:hover {
-        background: #f3f4f6;
-        color: #374151;
+      .color-bar-v {
+        width: 6px;
+        height: 32px;
+        border-radius: 3px;
+        flex-shrink: 0;
       }
+
+      .color-bar-v.small {
+        height: 24px;
+        width: 4px;
+      }
+
+      .info-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        overflow: hidden;
+      }
+
+      .info-code {
+        font-family: "JetBrains Mono", "Cascadia Code", monospace;
+        font-size: 10px;
+        font-weight: 600;
+        color: #94a3b8;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+
+      .info-label {
+        font-size: 13px;
+        font-weight: 700;
+        color: #1e293b;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .btn-hover-add {
+        background: transparent;
+        border: none;
+        color: #64748b;
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: all 0.2s;
+        position: absolute;
+        right: 12px;
+      }
+
+      .row-label-content:hover .btn-hover-add {
+        opacity: 1;
+      }
+
+      .btn-hover-add:hover {
+        background-color: #e2e8f0;
+        color: #0f172a;
+      }
+
+      .px-0 { padding-left: 0 !important; padding-right: 0 !important; }
 
       .btn-danger {
         display: flex;
@@ -1709,6 +1814,8 @@ export class PlanViewComponent implements OnInit {
         involvedTeamIds.forEach((teamId) => {
           const team = this.allEquipes.find((e) => e.id === teamId);
           const label = team ? team.nom : "No Team";
+          const color = team ? team.color : undefined;
+          const code = team ? team.code : undefined;
           const teamCharges = new Map<string, number>();
 
           // Get charges for this team on this project
@@ -1775,6 +1882,8 @@ export class PlanViewComponent implements OnInit {
           children.push({
             id: teamId!,
             label: label,
+            code: code,
+            color: color,
             expanded: true, // Expanded by default
             resources: resources,
             charges: teamCharges,
@@ -1792,6 +1901,8 @@ export class PlanViewComponent implements OnInit {
         this.rows.push({
           id: project.id!,
           label: project.nom_projet,
+          code: project.code_projet,
+          color: project.color,
           expanded: true, // Expanded by default
           children: children,
           totalCharges: parentTotal,
@@ -1817,6 +1928,8 @@ export class PlanViewComponent implements OnInit {
         involvedProjectIds.forEach((projectId) => {
           const project = this.allProjects.find((p) => p.id === projectId);
           const label = project ? project.nom_projet : "Unknown Project";
+          const color = project ? project.color : undefined;
+          const code = project ? project.code_projet : undefined;
           const projectCharges = new Map<string, number>();
 
           // Get charges for this project on this team
@@ -1883,6 +1996,8 @@ export class PlanViewComponent implements OnInit {
           children.push({
             id: projectId!,
             label: label,
+            code: code,
+            color: color,
             expanded: true, // Expanded by default
             resources: resources,
             charges: projectCharges,
@@ -1900,6 +2015,8 @@ export class PlanViewComponent implements OnInit {
         this.rows.push({
           id: team.id!,
           label: team.nom,
+          code: team.code,
+          color: team.color,
           expanded: true, // Expanded by default
           children: children,
           totalCharges: parentTotal,
