@@ -69,7 +69,14 @@ interface TeamRow {
             <div class="team-label-row px-0">
               <div class="row-label-content" (click)="toggleTeam(teamRow)">
                 <lucide-icon [name]="teamRow.expanded ? 'chevron-down' : 'chevron-right'" [size]="18" class="expand-icon-l"></lucide-icon>
-                <strong>{{ teamRow.equipe.nom }}</strong>
+                <div class="row-info-stack-wrapper">
+                  <div class="color-bar-container">
+                    <div class="color-bar-v" [style.background-color]="teamRow.equipe.color || '#94a3b8'"></div>
+                  </div>
+                  <div class="info-stack">
+                    <span class="info-label">{{ teamRow.equipe.nom }}</span>
+                  </div>
+                </div>
                 <button
                   class="btn-hover-add"
                   (click)="openAddResourceModal(teamRow.equipe); $event.stopPropagation()"
@@ -82,7 +89,7 @@ interface TeamRow {
 
             <ng-container *ngIf="teamRow.expanded">
               <div *ngFor="let resource of teamRow.resources" class="resource-label-row px-0">
-                <div class="row-label-content resource-row" style="padding-left:24px;">
+                <div class="row-label-content resource-row">
                   <div class="resource-icon-wrapper" [style.background-color]="resource.color || '#e2e8f0'">
                     <lucide-icon [name]="resource.type === 'role' ? 'contact' : 'user'" [size]="14" class="resource-icon"></lucide-icon>
                   </div>
@@ -337,13 +344,65 @@ interface TeamRow {
         width: 100%;
         height: 100%;
         cursor: pointer;
-        padding: 0 16px;
+        padding: 0 12px;
         position: relative;
         min-height: 48px;
       }
 
+      .row-info-stack-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+        overflow: hidden;
+      }
+
+      .color-bar-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 12px;
+      }
+
+      .color-bar-v {
+        width: 6px;
+        height: 32px;
+        border-radius: 3px;
+        flex-shrink: 0;
+      }
+
+      .info-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        overflow: hidden;
+      }
+
+      .info-code {
+        font-family: "JetBrains Mono", "Cascadia Code", monospace;
+        font-size: 10px;
+        font-weight: 600;
+        color: #94a3b8;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+
+      .info-label {
+        font-size: 13px;
+        font-weight: 700;
+        color: #1e293b;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
       .row-label-content:hover {
         background: #f3f4f6;
+      }
+
+      .row-label-content.resource-row {
+        padding-left: 40px;
       }
 
       .btn-hover-add {
