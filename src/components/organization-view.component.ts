@@ -234,7 +234,10 @@ interface OrgNode {
  
       <!-- Recursive Node Template -->
       <ng-template #nodeTemplate let-node>
-        <div class="tree-node" [style.margin-left.px]="node.level * 32" (click)="toggleNode(node)">
+        <div class="tree-node" 
+             [style.margin-left.px]="node.level * 32" 
+             [class.menu-active]="activeMenuId === node.id"
+             (click)="toggleNode(node)">
           
           <!-- Expand/Collapse Icon -->
           @if (node.children.length > 0) {
@@ -353,6 +356,7 @@ interface OrgNode {
       border: 1px solid #e5e7eb; transition: all 0.2s; position: relative;
       cursor: pointer;
     }
+    .tree-node.menu-active { z-index: 100; }
     .tree-node:hover { border-color: #3b82f6; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transform: translateY(-1px); }
     
     .toggle-icon { cursor: pointer; color: #9ca3af; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; margin-right: 12px; border-radius: 4px; }
@@ -380,7 +384,7 @@ interface OrgNode {
     
     .menu-dropdown {
       position: absolute; right: 0; top: 100%; background: white; border: 1px solid #e5e7eb; border-radius: 8px; 
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1); py: 4px; min-width: 120px; z-index: 20; overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1); py: 4px; min-width: 120px; z-index: 20;
       display: flex; flex-direction: column;
     }
     .menu-dropdown button {
