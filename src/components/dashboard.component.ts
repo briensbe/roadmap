@@ -567,7 +567,6 @@ interface StatusCount {
       font-size: 11px;
       font-weight: 700;
       color: #64748b;
-      text-transform: uppercase;
       letter-spacing: 0.5px;
       background: #f1f5f9;
       padding: 2px 6px;
