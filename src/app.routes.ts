@@ -24,7 +24,7 @@ export const routes: Routes = [
     children: [
       { path: "", redirectTo: "/dashboard", pathMatch: "full" },
       { path: "dashboard", component: DashboardComponent },
-      { path: "planification", component: CalendarViewComponent },
+      // { path: "planification", component: CalendarViewComponent },
       { path: "organisation", component: OrganizationViewComponent },
       { path: "ressources", component: ResourceManagerComponent },
       { path: "capacite", component: CapacityViewComponent },
