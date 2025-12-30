@@ -260,7 +260,7 @@ interface FlatRow {
               <div class="calendar-row-wrapper">
                 <div class="row-label fixed-column px-0">
                   <div class="row-label-content" (click)="toggleRow(row)">
-                    <lucide-icon [name]="row.expanded ? 'chevron-down' : 'chevron-right'" [size]="20" class="expand-icon-l"></lucide-icon>
+                    <lucide-icon *ngIf="row.children.length > 0" [name]="row.expanded ? 'chevron-down' : 'chevron-right'" [size]="20" class="expand-icon-l"></lucide-icon>
                     
                     <div class="row-info-stack-wrapper">
                       <div class="color-bar-container">
@@ -311,7 +311,7 @@ interface FlatRow {
                   <div class="calendar-row-wrapper">
                     <div class="row-label fixed-column px-0">
                       <div class="row-label-content child-row" (click)="toggleChild(child)" style="padding-left:24px;">
-                        <lucide-icon [name]="child.expanded ? 'chevron-down' : 'chevron-right'" [size]="18" class="expand-icon-l"></lucide-icon>
+                        <lucide-icon *ngIf="child.resources.length > 0" [name]="child.expanded ? 'chevron-down' : 'chevron-right'" [size]="18" class="expand-icon-l"></lucide-icon>
                         
                         <div class="row-info-stack-wrapper">
                           <div class="color-bar-container">
