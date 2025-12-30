@@ -233,7 +233,7 @@ export class SidebarNavigationComponent {
   User = User;
 
   navigationItems: NavigationItem[] = [
-    { label: 'Tableau de bord', icon: this.LayoutDashboard },
+    { label: 'Tableau de bord', icon: this.LayoutDashboard, route: '/dashboard' },
     // { label: 'Planification', icon: this.Layers, route: '/planification' },
     { label: 'Capacité', icon: this.Gauge, route: '/capacite' },
     { label: 'Plan Global', icon: this.Calendar, route: '/plan-globale' },
