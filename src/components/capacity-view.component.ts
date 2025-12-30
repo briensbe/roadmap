@@ -67,8 +67,17 @@ interface TeamRow {
 
           <ng-container *ngFor="let teamRow of teamRows">
             <div class="team-label-row px-0">
-              <div class="row-label-content" (click)="toggleTeam(teamRow)">
-                <lucide-icon [name]="teamRow.expanded ? 'chevron-down' : 'chevron-right'" [size]="18" class="expand-icon-l"></lucide-icon>
+              <div
+                class="row-label-content"
+                (click)="toggleTeam(teamRow)"
+                [style.cursor]="teamRow.resources.length > 0 ? 'pointer' : 'default'"
+              >
+                <lucide-icon
+                  [name]="teamRow.expanded ? 'chevron-down' : 'chevron-right'"
+                  [size]="18"
+                  class="expand-icon-l"
+                  [style.visibility]="teamRow.resources.length > 0 ? 'visible' : 'hidden'"
+                ></lucide-icon>
                 <div class="row-info-stack-wrapper">
                   <div class="color-bar-container">
                     <div class="color-bar-v" [style.background-color]="teamRow.equipe.color || '#94a3b8'"></div>
@@ -973,7 +982,9 @@ export class CapacityViewComponent implements OnInit {
   }
 
   toggleTeam(teamRow: TeamRow) {
-    teamRow.expanded = !teamRow.expanded;
+    if (teamRow.resources.length > 0) {
+      teamRow.expanded = !teamRow.expanded;
+    }
   }
 
   async openAddResourceModal(equipe: Equipe) {
