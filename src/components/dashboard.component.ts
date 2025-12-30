@@ -28,7 +28,7 @@ interface StatusCount {
           <p class="dashboard-subtitle">Vue d'ensemble de vos ressources et projets</p>
         </div>
         <div class="header-actions">
-          <a [routerLink]="['/planification']" class="btn-planning">
+          <a [routerLink]="['/plan-globale']" class="btn-planning">
             <lucide-icon [img]="Calendar" [size]="18"></lucide-icon>
             Voir la planification
           </a>
@@ -55,11 +55,6 @@ interface StatusCount {
                   <div class="stat-number" [style.color]="'#3b82f6'">{{ status.count }}</div>
                   <div class="stat-label-wrapper">
                     <span class="stat-label">{{ status.statut.toLowerCase() }}</span>
-                    @if (hoveredStatus === status.statut) {
-                      <a [routerLink]="['/projets']" [queryParams]="{ status: status.statut }" class="stat-link">
-                        Voir →
-                      </a>
-                    }
                   </div>
                 </div>
               }
@@ -86,22 +81,12 @@ interface StatusCount {
                 <div class="stat-number" [style.color]="'#10b981'">{{ rolesCount }}</div>
                 <div class="stat-label-wrapper">
                   <span class="stat-label">Rôles</span>
-                  @if (hoveredResource === 'roles') {
-                    <a [routerLink]="['/ressources']" [queryParams]="{ tab: 'role' }" class="stat-link">
-                      Voir →
-                    </a>
-                  }
                 </div>
               </div>
               <div class="stat-item" (mouseenter)="hoveredResource = 'personnes'" (mouseleave)="hoveredResource = null">
                 <div class="stat-number" [style.color]="'#10b981'">{{ personnesCount }}</div>
                 <div class="stat-label-wrapper">
                   <span class="stat-label">Personnes</span>
-                  @if (hoveredResource === 'personnes') {
-                    <a [routerLink]="['/ressources']" [queryParams]="{ tab: 'personne' }" class="stat-link">
-                      Voir →
-                    </a>
-                  }
                 </div>
               </div>
             } @else {
@@ -153,7 +138,7 @@ interface StatusCount {
           <div class="content-card-body">
             @if (recentProjects.length > 0) {
               @for (projet of recentProjects; track projet.id) {
-                <div class="project-item">
+                <div class="project-item" [style.border-left-color]="projet.color || '#3b82f6'">
                   <div class="project-info">
                     <div class="project-header">
                       <span class="project-code" [style.color]="projet.color || '#3b82f6'">{{ projet.code_projet }}</span>
@@ -187,16 +172,18 @@ interface StatusCount {
                 <div class="milestone-item">
                   <div class="milestone-bar" [style.background-color]="getMilestoneColor(jalon)"></div>
                   <div class="milestone-content">
-                    <div class="milestone-title">{{ jalon.nom }}</div>
+                    <div class="milestone-header">
+                      <div class="milestone-title">{{ jalon.nom }}</div>
+                      <div class="milestone-date-wrapper">
+                        <div class="milestone-date">{{ formatDate(jalon.date_jalon) }}</div>
+                        <div class="milestone-days" [class.urgent]="getDaysRemaining(jalon.date_jalon) <= 7">
+                          {{ getDaysRemainingText(jalon.date_jalon) }}
+                        </div>
+                      </div>
+                    </div>
                     @if (getProjectName(jalon.projet_id)) {
                       <div class="milestone-project">{{ getProjectName(jalon.projet_id) }}</div>
                     }
-                    <div class="milestone-meta">
-                      <span class="milestone-date">{{ formatDate(jalon.date_jalon) }}</span>
-                      <span class="milestone-days" [class.urgent]="getDaysRemaining(jalon.date_jalon) <= 7">
-                        {{ getDaysRemainingText(jalon.date_jalon) }}
-                      </span>
-                    </div>
                   </div>
                 </div>
               }
@@ -329,9 +316,10 @@ interface StatusCount {
     }
 
     .card-content {
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      column-gap: 16px;
+      row-gap: 24px;
     }
 
     .stat-item {
@@ -350,9 +338,9 @@ interface StatusCount {
 
     .stat-label-wrapper {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
     }
 
     .stat-label {
@@ -367,20 +355,14 @@ interface StatusCount {
       color: #3b82f6;
       text-decoration: none;
       font-weight: 600;
-      transition: color 0.2s;
+      transition: color 0.2s, opacity 0.2s, transform 0.2s;
       opacity: 0;
-      animation: fadeIn 0.2s ease-in-out forwards;
+      transform: translateY(-4px);
     }
 
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateX(-4px);
-      }
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
+    .stat-item:hover .stat-link {
+      opacity: 1;
+      transform: translateY(0);
     }
 
     .stat-link:hover {
@@ -395,7 +377,7 @@ interface StatusCount {
 
     .main-content {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 5fr 4fr;
       gap: 24px;
     }
 
@@ -560,27 +542,42 @@ interface StatusCount {
       gap: 4px;
     }
 
+    .milestone-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
     .milestone-title {
       font-size: 15px;
       font-weight: 600;
       color: #1e293b;
+      flex: 1;
+    }
+
+    .milestone-date-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+
+    .milestone-date {
+      font-size: 13px;
+      font-weight: 700;
+      color: #1e293b;
+      /*text-transform: uppercase;*/
+      letter-spacing: 0.5px;
+      background: #f1f5f9;
+      padding: 4px 8px;
+      border-radius: 6px;
     }
 
     .milestone-project {
       font-size: 13px;
       color: #64748b;
-    }
-
-    .milestone-meta {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 4px;
-    }
-
-    .milestone-date {
-      font-size: 12px;
-      color: #94a3b8;
     }
 
     .milestone-days {
@@ -635,7 +632,7 @@ export class DashboardComponent implements OnInit {
     private teamService: TeamService,
     private jalonService: JalonService,
     private router: Router
-  ) {}
+  ) { }
 
   async ngOnInit() {
     await Promise.all([
@@ -708,7 +705,7 @@ export class DashboardComponent implements OnInit {
     // Get upcoming jalons (not past, max 7, ascending order)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     this.upcomingJalons = this.jalons
       .filter(jalon => {
         const jalonDate = new Date(jalon.date_jalon);
