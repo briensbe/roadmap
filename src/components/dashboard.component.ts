@@ -174,16 +174,16 @@ interface StatusCount {
                   <div class="milestone-content">
                     <div class="milestone-header">
                       <div class="milestone-title">{{ jalon.nom }}</div>
-                      <div class="milestone-date-wrapper">
-                        <div class="milestone-date">{{ formatDate(jalon.date_jalon) }}</div>
-                        <div class="milestone-days" [class.urgent]="getDaysRemaining(jalon.date_jalon) <= 7">
-                          {{ getDaysRemainingText(jalon.date_jalon) }}
-                        </div>
+                      <div class="milestone-date">{{ formatDate(jalon.date_jalon) }}</div>
+                    </div>
+                    <div class="milestone-meta">
+                      <div class="milestone-project">
+                        {{ getProjectName(jalon.projet_id) }}
+                      </div>
+                      <div class="milestone-days" [class.urgent]="getDaysRemaining(jalon.date_jalon) <= 7">
+                        {{ getDaysRemainingText(jalon.date_jalon) }}
                       </div>
                     </div>
-                    @if (getProjectName(jalon.projet_id)) {
-                      <div class="milestone-project">{{ getProjectName(jalon.projet_id) }}</div>
-                    }
                   </div>
                 </div>
               }
@@ -545,7 +545,7 @@ interface StatusCount {
     .milestone-header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
       gap: 12px;
     }
 
@@ -556,28 +556,32 @@ interface StatusCount {
       flex: 1;
     }
 
-    .milestone-date-wrapper {
+    .milestone-meta {
       display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 2px;
-      flex-shrink: 0;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 2px;
     }
 
     .milestone-date {
-      font-size: 13px;
+      font-size: 11px;
       font-weight: 700;
-      color: #1e293b;
-      /*text-transform: uppercase;*/
+      color: #64748b;
+      text-transform: uppercase;
       letter-spacing: 0.5px;
       background: #f1f5f9;
-      padding: 4px 8px;
-      border-radius: 6px;
+      padding: 2px 6px;
+      border-radius: 4px;
     }
 
     .milestone-project {
       font-size: 13px;
-      color: #64748b;
+      color: #94a3b8;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+      margin-right: 12px;
     }
 
     .milestone-days {
