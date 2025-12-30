@@ -1,6 +1,7 @@
 import { Component, OnInit, Output, EventEmitter, NgModule } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
+import { ActivatedRoute } from "@angular/router";
 import { ResourceService } from "../services/resource.service";
 import { RolesService } from "../services/roles.service";
 import { Service, Role, Personne, RoleAttachment } from "../models/types";
@@ -319,11 +320,22 @@ export class ResourceManagerComponent implements OnInit {
   ];
   isCustomColor = false;
 
-  constructor(private resourceService: ResourceService, private rolesService: RolesService) {
+  constructor(
+    private resourceService: ResourceService,
+    private rolesService: RolesService,
+    private route: ActivatedRoute
+  ) {
     window.addEventListener('click', () => this.activeMenuId = null);
   }
 
   async ngOnInit() {
+    // Read query params for tab selection
+    this.route.queryParams.subscribe(params => {
+      if (params['tab'] === 'personne' || params['tab'] === 'role') {
+        this.activeTab = params['tab'];
+      }
+    });
+    
     await this.loadData();
   }
 

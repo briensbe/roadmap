@@ -1,6 +1,7 @@
 import { Component, OnInit, HostListener, ElementRef } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
+import { ActivatedRoute } from "@angular/router";
 import { ProjetService } from "../services/projet.service";
 import { SettingsService } from "../services/settings.service";
 import { Projet } from "../models/types";
@@ -1072,7 +1073,8 @@ export class ProjectsViewComponent implements OnInit {
 
   constructor(
     private projetService: ProjetService,
-    private settingsService: SettingsService
+    private settingsService: SettingsService,
+    private route: ActivatedRoute
   ) { }
 
   @HostListener("document:click", ["$event"])
@@ -1093,6 +1095,13 @@ export class ProjectsViewComponent implements OnInit {
   }
 
   async ngOnInit() {
+    // Read query params for status filter
+    this.route.queryParams.subscribe(params => {
+      if (params['status']) {
+        this.statusFilter = params['status'];
+      }
+    });
+    
     await this.loadProjects();
     this.externalReferenceUrl = await this.settingsService.getSettingValue("external_reference_url", "global");
   }
