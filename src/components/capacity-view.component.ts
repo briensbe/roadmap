@@ -59,114 +59,103 @@ interface TeamRow {
       </div>
 
       <div class="calendar-wrapper">
-        <!-- Fixed Left Column: Labels -->
-        <div class="labels-column">
-          <div class="labels-header">
-            <span>Équipes / Ressources</span>
-          </div>
-
-          <ng-container *ngFor="let teamRow of teamRows">
-            <div class="team-label-row px-0">
-              <div
-                class="row-label-content"
-                (click)="toggleTeam(teamRow)"
-                [style.cursor]="teamRow.resources.length > 0 ? 'pointer' : 'default'"
-              >
-                <lucide-icon
-                  [name]="teamRow.expanded ? 'chevron-down' : 'chevron-right'"
-                  [size]="18"
-                  class="expand-icon-l"
-                  [style.visibility]="teamRow.resources.length > 0 ? 'visible' : 'hidden'"
-                ></lucide-icon>
-                <div class="row-info-stack-wrapper">
-                  <div class="color-bar-container">
-                    <div class="color-bar-v" [style.background-color]="teamRow.equipe.color || '#94a3b8'"></div>
-                  </div>
-                  <div class="info-stack">
-                    <span class="info-label">{{ teamRow.equipe.nom }}</span>
-                  </div>
-                </div>
-                <button
-                  class="btn-hover-add"
-                  (click)="openAddResourceModal(teamRow.equipe); $event.stopPropagation()"
-                >
-                  <lucide-icon [name]="'plus'" [size]="14"></lucide-icon>
-                  Ressource
-                </button>
-              </div>
+        <div class="calendar-grid">
+          <!-- Header Row -->
+          <div class="calendar-header-row">
+            <div class="label-header-cell sticky-col sticky-top">
+              <span>Équipes / Ressources</span>
             </div>
-
-            <ng-container *ngIf="teamRow.expanded">
-              <div *ngFor="let resource of teamRow.resources" class="resource-label-row px-0">
-                <div class="row-label-content resource-row">
-                  <div class="resource-icon-wrapper" [style.background-color]="resource.color || '#e2e8f0'">
-                    <lucide-icon [name]="resource.type === 'role' ? 'contact' : 'user'" [size]="14" class="resource-icon"></lucide-icon>
-                  </div>
-                  <span class="resource-name">{{ resource.label }}</span>
-                  <button class="btn-hover-delete" (click)="removeResource(resource, teamRow.equipe)">×</button>
-                </div>
+            <div class="weeks-header-container">
+              <div *ngFor="let week of displayedWeeks" class="week-header-cell sticky-top" [class.current-week]="isCurrentWeek(week)">
+                <div class="week-date">{{ formatWeekHeader(week) }}</div>
+                <div class="week-number">S{{ getWeekNumber(week) }}</div>
               </div>
-            </ng-container>
-          </ng-container>
-
-          <div *ngIf="teamRows.length === 0" class="empty-state-label">
-            <p>Aucune équipe</p>
-          </div>
-        </div>
-
-        <!-- Scrollable Right Column: Weeks -->
-        <div class="weeks-column">
-          <div class="weeks-header">
-            <div *ngFor="let week of displayedWeeks" class="week-header" [class.current-week]="isCurrentWeek(week)">
-              <div class="week-date">{{ formatWeekHeader(week) }}</div>
-              <div class="week-number">S{{ getWeekNumber(week) }}</div>
             </div>
           </div>
 
-          <ng-container *ngFor="let teamRow of teamRows">
-            <div class="team-weeks-row">
-              <div *ngFor="let week of displayedWeeks" class="week-cell team-cell">
-                <div class="team-summary" *ngIf="getTeamTotalCapacity(teamRow, week) > 0">
-                  <div class="capacity-value">
-                    {{ getTeamTotalCapacity(teamRow, week) | number : "1.0-1" }}
+          <!-- Body Rows -->
+          <div class="calendar-body">
+            <ng-container *ngFor="let teamRow of teamRows">
+              <!-- Team Row -->
+              <div class="calendar-row team-row-container">
+                <div class="label-cell team-label-cell sticky-col" (click)="toggleTeam(teamRow)" [style.cursor]="teamRow.resources.length > 0 ? 'pointer' : 'default'">
+                  <lucide-icon
+                    [name]="teamRow.expanded ? 'chevron-down' : 'chevron-right'"
+                    [size]="18"
+                    class="expand-icon-l"
+                    [style.visibility]="teamRow.resources.length > 0 ? 'visible' : 'hidden'"
+                  ></lucide-icon>
+                  <div class="row-info-stack-wrapper">
+                    <div class="color-bar-container">
+                      <div class="color-bar-v" [style.background-color]="teamRow.equipe.color || '#94a3b8'"></div>
+                    </div>
+                    <div class="info-stack">
+                      <span class="info-label">{{ teamRow.equipe.nom }}</span>
+                    </div>
                   </div>
-                  <div class="days-value" *ngIf="showDaysInCells">
-                    {{ getTeamTotalDays(teamRow, week) | number : "1.1-1" }}j
-                  </div>
+                  <button
+                    class="btn-hover-add"
+                    (click)="openAddResourceModal(teamRow.equipe); $event.stopPropagation()"
+                  >
+                    <lucide-icon [name]="'plus'" [size]="14"></lucide-icon>
+                    Ressource
+                  </button>
                 </div>
-              </div>
-            </div>
-
-            <ng-container *ngIf="teamRow.expanded">
-                <div
-                *ngFor="let resource of teamRow.resources"
-                class="resource-weeks-row"
-                [attr.data-resource-id]="resource.uniqueId"
-                (mousedown)="onMouseDown($event, resource)"
-                (mousemove)="onMouseMove($event, resource)"
-                (mouseup)="onMouseUp()"
-                (mouseleave)="onMouseUp()"
-              >
-                <div
-                  *ngFor="let week of displayedWeeks; let i = index"
-                  class="week-cell resource-cell"
-                  [class.selected]="isCellSelected(resource, week)"
-                  [class.has-capacity]="getCapacite(resource, week) > 0"
-                  [attr.data-week-index]="i"
-                >
-                  <div class="cell-content" *ngIf="getCapacite(resource, week) > 0">
-                    <div class="capacity-value">{{ getCapacite(resource, week) }}</div>
-                    <div class="days-value" *ngIf="showDaysInCells">
-                      {{ getCapacite(resource, week) * resource.jours_par_semaine | number : "1.1-1" }}j
+                <div class="weeks-cells-container">
+                  <div *ngFor="let week of displayedWeeks" class="week-cell team-cell">
+                    <div class="team-summary" *ngIf="getTeamTotalCapacity(teamRow, week) > 0">
+                      <div class="capacity-value">
+                        {{ getTeamTotalCapacity(teamRow, week) | number : "1.0-1" }}
+                      </div>
+                      <div class="days-value" *ngIf="showDaysInCells">
+                        {{ getTeamTotalDays(teamRow, week) | number : "1.1-1" }}j
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </ng-container>
-          </ng-container>
 
-          <div *ngIf="teamRows.length === 0" class="empty-state-weeks">
-            <p>Aucune donnée</p>
+              <!-- Resource Rows -->
+              <ng-container *ngIf="teamRow.expanded">
+                <div *ngFor="let resource of teamRow.resources" 
+                     class="calendar-row resource-row-container"
+                     [attr.data-resource-id]="resource.uniqueId"
+                     (mousedown)="onMouseDown($event, resource)"
+                     (mousemove)="onMouseMove($event, resource)"
+                     (mouseup)="onMouseUp()"
+                     (mouseleave)="onMouseUp()">
+                  <div class="label-cell resource-label-cell sticky-col">
+                    <div class="resource-icon-wrapper" [style.background-color]="resource.color || '#e2e8f0'">
+                      <lucide-icon [name]="resource.type === 'role' ? 'contact' : 'user'" [size]="14" class="resource-icon"></lucide-icon>
+                    </div>
+                    <span class="resource-name">{{ resource.label }}</span>
+                    <button class="btn-hover-delete" (click)="removeResource(resource, teamRow.equipe)">×</button>
+                  </div>
+                  <div class="weeks-cells-container">
+                    <div
+                      *ngFor="let week of displayedWeeks; let i = index"
+                      class="week-cell resource-cell"
+                      [class.selected]="isCellSelected(resource, week)"
+                      [class.has-capacity]="getCapacite(resource, week) > 0"
+                      [attr.data-week-index]="i"
+                    >
+                      <div class="cell-content" *ngIf="getCapacite(resource, week) > 0">
+                        <div class="capacity-value">{{ getCapacite(resource, week) }}</div>
+                        <div class="days-value" *ngIf="showDaysInCells">
+                          {{ getCapacite(resource, week) * resource.jours_par_semaine | number : "1.1-1" }}j
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+            </ng-container>
+
+            <!-- Empty State -->
+            <div *ngIf="teamRows.length === 0" class="calendar-row empty-state-row">
+              <div class="label-cell empty-state-label sticky-col">Aucune équipe</div>
+              <div class="weeks-cells-container empty-state-weeks">Aucune donnée</div>
+            </div>
           </div>
         </div>
       </div>
@@ -305,58 +294,169 @@ interface TeamRow {
 
       /* Two-column layout wrapper */
       .calendar-wrapper {
-        display: flex;
         background: white;
         border-radius: 8px;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        overflow: auto; /* Single scroll container for both vertical and horizontal */
+        overflow: auto;
         max-height: calc(100vh - 200px);
-        position: relative; /* Ensure it stays in place */
+        position: relative;
       }
 
-      /* Fixed left column for labels */
-      .labels-column {
-        width: 300px;
-        flex-shrink: 0;
-        border-right: 2px solid #e2e8f0;
-        position: sticky;
-        left: 0;
-        z-index: 20;
-        background: white;
+      .calendar-grid {
+        display: flex;
+        flex-direction: column;
+        min-width: max-content;
       }
 
-      .labels-header {
-        padding: 12px 16px;
+      .calendar-header-row {
+        display: flex;
         background: #f8fafc;
         border-bottom: 2px solid #e2e8f0;
-        position: sticky;
-        top: 0;
-        z-index: 30; /* Above labels rows and weeks content */
+        z-index: 100;
         min-height: 60px;
+      }
+
+      .label-header-cell {
+        width: 300px;
+        padding: 12px 16px;
+        font-weight: 600;
         display: flex;
         align-items: center;
+        border-right: 2px solid #e2e8f0;
+        flex-shrink: 0;
       }
 
-      .team-label-row {
-        background: #f9fafb;
+      .weeks-header-container {
+        display: flex;
+        flex: 1;
+      }
+
+      .week-header-cell {
+        min-width: 80px;
+        width: 80px;
+        padding: 8px;
+        text-align: center;
+        border-right: 1px solid #e2e8f0;
+        font-size: 12px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .week-header-cell.current-week {
+        background: #dbeafe;
+        border-left: 1px solid #3b82f6;
+        border-right: 1px solid #3b82f6;
+      }
+
+      .week-date {
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+
+      .week-number {
+        font-size: 11px;
+        color: #6b7280;
+      }
+
+      .calendar-body {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .calendar-row {
+        display: flex;
         border-bottom: 1px solid #e2e8f0;
+        min-height: 48px;
       }
 
-      .resource-label-row {
-        background: white;
-        border-bottom: 1px solid #e2e8f0;
-      }
-
-      .row-label-content {
+      .label-cell {
+        width: 300px;
+        flex-shrink: 0;
+        padding: 0 12px;
         display: flex;
         align-items: center;
         gap: 8px;
-        width: 100%;
-        height: 100%;
-        cursor: pointer;
-        padding: 0 12px;
+        border-right: 2px solid #e2e8f0;
+        background: inherit;
         position: relative;
-        min-height: 48px;
+      }
+
+      .team-label-cell {
+        background: #f9fafb;
+        font-weight: 700;
+      }
+
+      .resource-label-cell {
+        padding-left: 40px;
+        background: white;
+      }
+
+      .sticky-col {
+        position: sticky;
+        left: 0;
+        z-index: 50;
+      }
+
+      .sticky-top {
+        position: sticky;
+        top: 0;
+        z-index: 60;
+      }
+
+      .label-header-cell.sticky-top {
+        z-index: 110;
+      }
+
+      .weeks-cells-container {
+        display: flex;
+        flex: 1;
+      }
+
+      .week-cell {
+        min-width: 80px;
+        width: 80px;
+        padding: 8px;
+        border-right: 1px solid #e2e8f0;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .team-cell {
+        background: #f9fafb;
+      }
+
+      .resource-cell {
+        cursor: pointer;
+        transition: background 0.15s ease;
+        position: relative;
+        background: white;
+      }
+
+      .resource-cell:hover {
+        background: #f3f4f6;
+      }
+
+      .resource-cell.selected {
+        background: #dbeafe;
+        border: 2px solid #3b82f6;
+        z-index: 10;
+      }
+
+      .resource-cell.has-capacity {
+        background: #d1fae5;
+        font-weight: 600;
+        color: #059669;
+      }
+
+      .resource-cell.has-capacity.selected {
+        background: #a7f3d0;
+        border: 2px solid #3b82f6;
+        z-index: 10;
       }
 
       .row-info-stack-wrapper {
@@ -388,16 +488,6 @@ interface TeamRow {
         overflow: hidden;
       }
 
-      .info-code {
-        font-family: "JetBrains Mono", "Cascadia Code", monospace;
-        font-size: 10px;
-        font-weight: 600;
-        color: #94a3b8;
-        letter-spacing: 0.5px;
-        text-transform: uppercase;
-        white-space: nowrap;
-      }
-
       .info-label {
         font-size: 13px;
         font-weight: 700;
@@ -407,12 +497,9 @@ interface TeamRow {
         text-overflow: ellipsis;
       }
 
-      .row-label-content:hover {
+      .calendar-row:hover .team-label-cell,
+      .calendar-row:hover .resource-label-cell {
         background: #f3f4f6;
-      }
-
-      .row-label-content.resource-row {
-        padding-left: 40px;
       }
 
       .btn-hover-add {
@@ -434,14 +521,8 @@ interface TeamRow {
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
       }
 
-      .row-label-content:hover .btn-hover-add {
+      .calendar-row:hover .btn-hover-add {
         opacity: 1;
-      }
-
-      .btn-hover-add:hover {
-        background: #f5f7ff;
-        border-color: #6366f1;
-        color: #4f46e5;
       }
 
       .btn-hover-delete {
@@ -461,126 +542,8 @@ interface TeamRow {
         right: 12px;
       }
 
-      .row-label-content:hover .btn-hover-delete {
+      .calendar-row:hover .btn-hover-delete {
         opacity: 1;
-      }
-
-      .btn-hover-delete:hover {
-        background-color: #fee2e2;
-        color: #b91c1c;
-      }
-
-      .px-0 { padding-left: 0 !important; padding-right: 0 !important; }
-
-      .empty-state-label {
-        padding: 40px 20px;
-        text-align: center;
-        color: #6b7280;
-      }
-
-      /* Scrollable right column for weeks */
-      .weeks-column {
-        flex: 1;
-      }
-
-      .weeks-header {
-        display: flex;
-        background: #f8fafc;
-        border-bottom: 2px solid #e2e8f0;
-        position: sticky;
-        top: 0;
-        z-index: 25; /* Below labels-header but above weeks content */
-        min-height: 60px;
-      }
-
-      .week-header {
-        min-width: 80px;
-        width: 80px;
-        padding: 8px;
-        text-align: center;
-        border-right: 1px solid #e2e8f0;
-        font-size: 12px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        flex-shrink: 0;
-      }
-
-      .week-header.current-week {
-        background: #dbeafe;
-        border-left: 2px solid #3b82f6;
-        border-right: 2px solid #3b82f6;
-      }
-
-      .week-date {
-        font-weight: 600;
-        margin-bottom: 4px;
-      }
-
-      .week-number {
-        font-size: 11px;
-        color: #6b7280;
-      }
-
-      .team-weeks-row {
-        display: flex;
-        border-bottom: 1px solid #e2e8f0;
-        background: #f9fafb;
-        min-height: 48px;
-      }
-
-      .resource-weeks-row {
-        display: flex;
-        border-bottom: 1px solid #e2e8f0;
-        background: white;
-        min-height: 48px;
-        user-select: none;
-      }
-
-      .resource-weeks-row:hover {
-        background: #f9fafb;
-      }
-
-      .week-cell {
-        min-width: 80px;
-        width: 80px;
-        padding: 8px;
-        border-right: 1px solid #e2e8f0;
-        text-align: center;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-      }
-
-      .team-cell {
-        background: #f9fafb;
-      }
-
-      .resource-cell {
-        cursor: pointer;
-        transition: background 0.15s ease;
-        position: relative;
-      }
-
-      .resource-cell:hover {
-        background: #f3f4f6;
-      }
-
-      .resource-cell.selected {
-        background: #dbeafe;
-        border: 2px solid #3b82f6;
-      }
-
-      .resource-cell.has-capacity {
-        background: #d1fae5;
-        font-weight: 600;
-        color: #059669;
-      }
-
-      .resource-cell.has-capacity.selected {
-        background: #a7f3d0;
-        border: 2px solid #3b82f6;
       }
 
       .cell-content {
@@ -610,10 +573,13 @@ interface TeamRow {
         line-height: 1.1;
       }
 
-      .empty-state-weeks {
-        padding: 40px;
-        text-align: center;
+      .empty-state-row {
         color: #6b7280;
+        text-align: center;
+      }
+
+      .empty-state-label, .empty-state-weeks {
+        padding: 40px;
       }
 
       .selection-toolbar {
