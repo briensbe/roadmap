@@ -763,6 +763,7 @@ interface TeamRow {
         font-weight: 600;
         color: #64748b;
         margin-right: 2px;
+        text-transform: uppercase;
       }
 
       .badge-val {
