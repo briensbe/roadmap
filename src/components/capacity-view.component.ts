@@ -216,6 +216,9 @@ interface TeamRow {
           <button class="popover-item" [class.active]="selectedCapacityYear === '2026'" (click)="selectYear('2026')">
             Année 2026
           </button>
+          <div class="popover-date-jump">
+            <input type="date" class="jump-input" [value]="getSelectedStartDateISO()" (change)="onDateSelected($event)" />
+          </div>
         </div>
       </div>
     </div>
@@ -838,6 +841,28 @@ interface TeamRow {
         border-top: 1px solid #e2e8f0;
         transform: rotate(45deg);
       }
+
+      .popover-date-jump {
+        padding: 4px 6px 8px 6px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .jump-input {
+        width: 100%;
+        padding: 6px 8px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 12px;
+        color: #1e293b;
+        background: white;
+        outline: none;
+        transition: border-color 0.2s ease;
+      }
+
+      .jump-input:focus {
+        border-color: #2563eb;
+      }
       
       .modal-close {
         background: none;
@@ -993,7 +1018,8 @@ export class CapacityViewComponent implements OnInit {
   // Toggle to show/hide the computed days inside cells. Default: hidden (user activates toggle to show)
   showDaysInCells: boolean = false;
 
-  selectedCapacityYear: 'all' | '2025' | '2026' = 'all';
+  selectedCapacityYear: 'all' | '2025' | '2026' | 'custom' = 'all';
+  selectedStartDate: Date | null = null;
   showYearPopover = false;
   popoverPosition: { top: number; left: number } | null = null;
 
@@ -1316,11 +1342,17 @@ export class CapacityViewComponent implements OnInit {
   getResourceTotalPlannedDays(resource: ResourceRow): number {
     let total = 0;
     resource.weeks.forEach((val, weekStr) => {
-      const date = new Date(weekStr); // ou parse selon ton format
-      const isoYear = getISOWeekYear(date).toString();
+      const date = new Date(weekStr);
 
-      if (this.selectedCapacityYear === 'all' || isoYear === this.selectedCapacityYear) {
-        total += val * resource.jours_par_semaine;
+      if (this.selectedCapacityYear === 'custom' && this.selectedStartDate) {
+        if (date >= this.selectedStartDate) {
+          total += val * resource.jours_par_semaine;
+        }
+      } else {
+        const isoYear = getISOWeekYear(date).toString();
+        if (this.selectedCapacityYear === 'all' || isoYear === this.selectedCapacityYear) {
+          total += val * resource.jours_par_semaine;
+        }
       }
     });
     return total;
@@ -1328,6 +1360,11 @@ export class CapacityViewComponent implements OnInit {
 
   getBadgePrefix(): string {
     if (this.selectedCapacityYear === 'all') return 'Tout :';
+    if (this.selectedCapacityYear === 'custom' && this.selectedStartDate) {
+      const d = this.selectedStartDate;
+      const formatted = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+      return `Dès le ${formatted} :`;
+    }
     return `${this.selectedCapacityYear} :`;
   }
 
@@ -1350,6 +1387,25 @@ export class CapacityViewComponent implements OnInit {
 
   selectYear(year: 'all' | '2025' | '2026') {
     this.selectedCapacityYear = year;
+    this.selectedStartDate = null;
     this.showYearPopover = false;
+  }
+
+  onDateSelected(event: any) {
+    const selectedDateStr = event.target.value;
+    if (!selectedDateStr) return;
+
+    const selectedDate = new Date(selectedDateStr);
+    const mondayOfSelectedWeek = this.calendarService.getWeekStart(selectedDate);
+
+    this.selectedStartDate = mondayOfSelectedWeek;
+    this.selectedCapacityYear = 'custom';
+    this.showYearPopover = false;
+  }
+
+  getSelectedStartDateISO(): string {
+    if (!this.selectedStartDate) return '';
+    const d = this.selectedStartDate;
+    return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
   }
 }
