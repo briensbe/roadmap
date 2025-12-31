@@ -2876,12 +2876,12 @@ Cela supprimera toutes les charges associées à cette ressource.`;
 
       if (this.selectedCapacityYear === 'custom' && this.selectedStartDate) {
         if (date >= this.selectedStartDate) {
-          total += val;
+          total += val * resource.jours_par_semaine;
         }
       } else {
         const isoYear = getISOWeekYear(date).toString();
         if (this.selectedCapacityYear === 'all' || isoYear === this.selectedCapacityYear) {
-          total += val;
+          total += val * resource.jours_par_semaine;
         }
       }
     });
