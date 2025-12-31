@@ -486,6 +486,9 @@ interface FlatRow {
         </div>
 
         <!-- Localized Loading Overlay -->
+        <div class="loading-overlay-local" *ngIf="isSaving">
+          <div class="spinner-small"></div>
+          <span>Mise à jour...</span>
         </div>
       </div>
 
