@@ -1,5 +1,4 @@
 import { Routes } from "@angular/router";
-import { CalendarViewComponent } from "./components/calendar-view.component";
 import { OrganizationViewComponent } from "./components/organization-view.component";
 import { ResourceManagerComponent } from "./components/resource-manager.component";
 import { CapacityViewComponent } from "./components/capacity-view.component";
@@ -24,12 +23,11 @@ export const routes: Routes = [
     children: [
       { path: "", redirectTo: "/dashboard", pathMatch: "full" },
       { path: "dashboard", component: DashboardComponent },
-      // { path: "planification", component: CalendarViewComponent },
       { path: "organisation", component: OrganizationViewComponent },
       { path: "ressources", component: ResourceManagerComponent },
       { path: "capacite", component: CapacityViewComponent },
       { path: "projets", component: ProjectsViewComponent },
-      { path: "plan-globale", component: PlanViewComponent },
+      { path: "planification", component: PlanViewComponent },
       { path: "jalons", component: MilestonesViewComponent },
       { path: "settings", loadComponent: () => import('./components/settings/settings.component').then(m => m.SettingsComponent) },
       { path: "profile", component: ProfileComponent },

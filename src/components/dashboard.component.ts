@@ -28,7 +28,7 @@ interface StatusCount {
           <p class="dashboard-subtitle">Vue d'ensemble de vos ressources et projets</p>
         </div>
         <div class="header-actions">
-          <a [routerLink]="['/plan-globale']" class="btn-planning">
+          <a [routerLink]="['/planification']" class="btn-planning">
             <lucide-icon [img]="Calendar" [size]="18"></lucide-icon>
             Voir la planification
           </a>
