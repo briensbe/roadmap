@@ -1779,7 +1779,8 @@ export class PlanViewComponent implements OnInit {
 
     const firstWeek = this.calendarService.getWeekStart(startDate);
 
-    for (let i = 0; i < 32; i++) {
+    const NB_WEEKS_TO_DISPLAY = 52; // un an par défaut
+    for (let i = 0; i < NB_WEEKS_TO_DISPLAY; i++) {
       const week = new Date(firstWeek);
       week.setDate(week.getDate() + i * 7);
       this.displayedWeeks.push(week);
