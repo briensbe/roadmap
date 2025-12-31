@@ -459,7 +459,7 @@ interface TeamRow {
       }
 
       .resource-cell {
-        cursor: pointer;
+        cursor: crosshair;
         transition: background 0.15s ease;
         position: relative;
         background: white;
@@ -763,7 +763,6 @@ interface TeamRow {
         font-weight: 600;
         color: #64748b;
         margin-right: 2px;
-        text-transform: uppercase;
       }
 
       .badge-val {
