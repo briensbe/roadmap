@@ -234,9 +234,8 @@ export class SidebarNavigationComponent {
 
   navigationItems: NavigationItem[] = [
     { label: 'Tableau de bord', icon: this.LayoutDashboard, route: '/dashboard' },
-    // { label: 'Planification', icon: this.Layers, route: '/planification' },
     { label: 'Capacité', icon: this.Gauge, route: '/capacite' },
-    { label: 'Plan Global', icon: this.Calendar, route: '/plan-globale' },
+    { label: 'Planification', icon: this.Calendar, route: '/planification' },
     { label: 'Projets', icon: this.FolderKanban, route: '/projets' },
     { label: 'Jalons', icon: this.Flag, route: '/jalons' },
     { label: 'Ressources', icon: this.Users, route: '/ressources' },

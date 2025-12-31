@@ -1,17 +1,9 @@
 import { Component, OnInit } from "@angular/core";
 import { bootstrapApplication } from "@angular/platform-browser";
-import { provideRouter, RouterOutlet, Routes } from "@angular/router";
+import { provideRouter, RouterOutlet } from "@angular/router";
 import { CommonModule } from "@angular/common";
-import { CalendarViewComponent } from "./components/calendar-view.component";
-import { OrganizationViewComponent } from "./components/organization-view.component";
-import { ResourceManagerComponent } from "./components/resource-manager.component";
 import { SidebarNavigationComponent } from "./components/sidebar-navigation.component";
 import { SidebarService } from "./services/sidebar.service";
-import { ProjectsViewComponent } from "./components/projects-view.component";
-import { PlanViewComponent } from "./components/plan-view.component";
-
-import { CapacityViewComponent } from "./components/capacity-view.component";
-import { MilestonesViewComponent } from "./components/milestones-view.component";
 import { routes } from "../src/app.routes";
 
 @Component({
