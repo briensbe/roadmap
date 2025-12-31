@@ -220,9 +220,6 @@ interface FlatRow {
               </div>
             </div>
           </div>
-          <div class="metrics-header-fixed">
-            <div style="font-weight:600; font-size: 12px;">Métriques</div>
-          </div>
         </div>
 
         
@@ -247,7 +244,6 @@ interface FlatRow {
                </div>
              </div>
           </div>
-          <div class="metrics-header-fixed milestones-metrics-fixed"></div>
         </div>
 
         <!-- Data rows - single scroll container with metrics panel -->
@@ -287,18 +283,6 @@ interface FlatRow {
                       <!-- <div class="capacity-value">
                         {{ getParentTotal(row, week) | number : "1.0-1" }}
                       </div> -->
-                    </div>
-                  </div>
-                </div>
-                <div class="metrics-cell">
-                  <div class="metrics-group">
-                    <div class="metric-row">
-                      <label>2025:</label>
-                      <span>{{ getRowMetricsYear(row, 2025) | number : "1.0-0" }}j</span>
-                    </div>
-                    <div class="metric-row">
-                      <label>2026:</label>
-                      <span>{{ getRowMetricsYear(row, 2026) | number : "1.0-0" }}j</span>
                     </div>
                   </div>
                 </div>
@@ -343,18 +327,6 @@ interface FlatRow {
                         <div class="cell-content" *ngIf="getChildValue(child, week) > 0">
                           <div class="capacity-value">{{ getChildValue(child, week) | number : "1.0-1" }}</div>
                         </div> -->
-                      </div>
-                    </div>
-                    <div class="metrics-cell">
-                      <div class="metrics-group">
-                        <div class="metric-row">
-                          <label>2025:</label>
-                          <span>{{ getChildMetricsYear(child, 2025) | number : "1.0-0" }}j</span>
-                        </div>
-                        <div class="metric-row">
-                          <label>2026:</label>
-                          <span>{{ getChildMetricsYear(child, 2026) | number : "1.0-0" }}j</span>
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -415,23 +387,11 @@ interface FlatRow {
                           </div>
                         </div>
                       </div>
-                      </div>
-                      <div class="metrics-cell">
-                        <div class="metrics-group">
-                          <div class="metric-row">
-                            <label>2025:</label>
-                            <span>{{ getResourceMetricsYear(resource, 2025) | number : "1.0-0" }}j</span>
-                          </div>
-                          <div class="metric-row">
-                            <label>2026:</label>
-                            <span>{{ getResourceMetricsYear(resource, 2026) | number : "1.0-0" }}j</span>
-                          </div>
-                        </div>
-                      </div>
                     </div>
-                  </ng-container>
+                  </div>
                 </ng-container>
               </ng-container>
+            </ng-container>
             </ng-container>
           </ng-container>
 
@@ -479,22 +439,10 @@ interface FlatRow {
                       {{ getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) > 0 ? '+' : '' }}{{ getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) | number : "1.0-1" }}
                     </div>
                     </div>
-                   </div>
-                 </div>
-                 <div class="metrics-cell">
-                   <div class="metrics-group">
-                     <div class="metric-row">
-                       <label>2025:</label>
-                       <span>{{ getFlatRowMetricsYear(row, 2025) | number : "1.0-0" }}j</span>
-                     </div>
-                     <div class="metric-row">
-                       <label>2026:</label>
-                       <span>{{ getFlatRowMetricsYear(row, 2026) | number : "1.0-0" }}j</span>
-                     </div>
-                   </div>
-                 </div>
-             </div>
-          </ng-container>
+                  </div>
+                </div>
+              </div>
+           </ng-container>
 
           <div *ngIf="rows.length === 0" class="empty-state">
             <p>Aucune donnée</p>
@@ -538,12 +486,8 @@ interface FlatRow {
         </div>
 
         <!-- Localized Loading Overlay -->
-        <div class="loading-overlay-local" *ngIf="isSaving">
-          <div class="spinner-small"></div>
-          <span>Mise à jour...</span>
         </div>
       </div>
-    </div>
 
     <!-- Modal for linking -->
     <div *ngIf="showLinkModal" class="modal-overlay" (click)="closeLinkModal()">
@@ -1042,9 +986,6 @@ interface FlatRow {
 
       .milestones-metrics-fixed {
         background: #ffffff;
-        border-left: 2px solid #e2e8f0;
-        width: 200px;
-        flex-shrink: 0;
       }
 
       .milestone-week-cell {
@@ -1096,19 +1037,6 @@ interface FlatRow {
         display: flex;
       }
 
-      .metrics-header-fixed {
-        width: 200px;
-        flex-shrink: 0;
-        padding: 0 16px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #f9fafb;
-        border-left: 2px solid #e2e8f0;
-        z-index: 10;
-        text-align: center;
-      }
-
       .calendar-row-wrapper {
         display: flex;
         min-height: 48px;
@@ -1151,45 +1079,6 @@ interface FlatRow {
 
       .scrollable-column {
         position: relative;
-      }
-
-      .metrics-cell {
-        width: 200px;
-        flex-shrink: 0;
-        padding: 12px 16px;
-        border-left: 2px solid #e2e8f0;
-        background: white;
-        position: sticky;
-        right: 0;
-        z-index: 8;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 48px;
-        font-size: 12px;
-      }
-
-      .metrics-group {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-
-      .metric-row {
-        display: flex;
-        justify-content: space-between;
-        gap: 12px;
-      }
-
-      .metric-row label {
-        font-weight: 600;
-        color: #374151;
-        min-width: 50px;
-      }
-
-      .metric-row span {
-        font-weight: 500;
-        color: #1e293b;
       }
 
       .calendar-grid {
