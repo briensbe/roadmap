@@ -58,7 +58,7 @@ interface TeamRow {
         </div>
       </div>
 
-      <div class="calendar-wrapper">
+      <div class="calendar-wrapper" (scroll)="onScroll($event)">
         <div class="calendar-grid">
           <!-- Header Row -->
           <div class="calendar-header-row sticky-top">
@@ -98,7 +98,7 @@ interface TeamRow {
                     (click)="openAddResourceModal(teamRow.equipe); $event.stopPropagation()"
                   >
                     <lucide-icon [name]="'plus'" [size]="14"></lucide-icon>
-                    Ressource
+                    <!-- Ressource -->
                   </button>
                 </div>
                 <div class="weeks-cells-container">
@@ -863,25 +863,90 @@ export class CapacityViewComponent implements OnInit {
   // Toggle to show/hide the computed days inside cells. Default: hidden (user activates toggle to show)
   showDaysInCells: boolean = false;
 
+  isAddingWeeks = false;
+
   constructor(private teamService: TeamService, private calendarService: CalendarService) { }
 
   async ngOnInit() {
-    this.generateWeeks();
+    this.generateWeeks(16); // Start with a smaller range
     await this.loadData();
+    // After load, scroll to middle if we prepended some weeks
+    // But for initial load, we usually want to see "today" or start of month
+    // Today is handled by generateWeeks logic
   }
 
-  generateWeeks() {
+  generateWeeks(count: number = 24) {
     this.displayedWeeks = [];
-    const startDate = new Date(this.currentDate);
-    startDate.setDate(1);
+    const date = new Date(this.currentDate);
+    // Move to roughly middle of the count
+    const startDate = new Date(date);
+    startDate.setDate(startDate.getDate() - (count / 2) * 7);
+    const startOfWeek = this.calendarService.getWeekStart(startDate);
 
-    const firstWeek = this.calendarService.getWeekStart(startDate);
-
-    for (let i = 0; i < 32; i++) {
-      const week = new Date(firstWeek);
+    for (let i = 0; i < count; i++) {
+      const week = new Date(startOfWeek);
       week.setDate(week.getDate() + i * 7);
       this.displayedWeeks.push(week);
     }
+  }
+
+  onScroll(event: any) {
+    const el = event.target;
+    const scrollLeft = el.scrollLeft;
+    const scrollWidth = el.scrollWidth;
+    const clientWidth = el.clientWidth;
+
+    if (this.isAddingWeeks) return;
+
+    // Detect right edge (within 300px)
+    if (scrollLeft + clientWidth > scrollWidth - 300) {
+      this.appendWeeks(8);
+    }
+    // Detect left edge (within 300px)
+    else if (scrollLeft < 10) {
+      this.prependWeeks(8);
+    }
+  }
+
+  appendWeeks(count: number) {
+    this.isAddingWeeks = true;
+    const lastWeek = this.displayedWeeks[this.displayedWeeks.length - 1];
+    const newWeeks: Date[] = [];
+    for (let i = 1; i <= count; i++) {
+      const nextWeek = new Date(lastWeek);
+      nextWeek.setDate(nextWeek.getDate() + i * 7);
+      newWeeks.push(nextWeek);
+    }
+    this.displayedWeeks = [...this.displayedWeeks, ...newWeeks];
+    this.isAddingWeeks = false;
+  }
+
+  prependWeeks(count: number) {
+    const el = document.querySelector('.calendar-wrapper');
+    if (!el) return;
+
+    this.isAddingWeeks = true;
+    const firstWeek = this.displayedWeeks[0];
+    const newWeeks: Date[] = [];
+    for (let i = count; i >= 1; i--) {
+      const prevWeek = new Date(firstWeek);
+      prevWeek.setDate(prevWeek.getDate() - i * 7);
+      newWeeks.push(prevWeek);
+    }
+
+    // Capture current scroll positions and scrollWidth
+    const oldScrollWidth = el.scrollWidth;
+    const oldScrollLeft = el.scrollLeft;
+
+    this.displayedWeeks = [...newWeeks, ...this.displayedWeeks];
+
+    // Restore scroll position after Angular renders the new weeks
+    setTimeout(() => {
+      const newScrollWidth = el.scrollWidth;
+      const widthAdded = newScrollWidth - oldScrollWidth;
+      el.scrollLeft = oldScrollLeft + widthAdded;
+      this.isAddingWeeks = false;
+    }, 0);
   }
 
   async loadData() {
