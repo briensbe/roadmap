@@ -5,6 +5,7 @@ import { TeamService } from "../services/team.service";
 import { CalendarService } from "../services/calendar.service";
 import { Equipe, Role, Personne, Capacite, EquipeResource } from "../models/types";
 import { LucideAngularModule, ChevronDown, ChevronRight, Plus, User, Users, Contact } from "lucide-angular";
+import { getISOWeekYear } from "date-fns";
 
 @NgModule({
   imports: [LucideAngularModule.pick({ ChevronDown, ChevronRight, Plus, User, Users, Contact })],
@@ -1315,14 +1316,10 @@ export class CapacityViewComponent implements OnInit {
   getResourceTotalPlannedDays(resource: ResourceRow): number {
     let total = 0;
     resource.weeks.forEach((val, weekStr) => {
-      const year = weekStr.split('/')[2]; // Format is dd/mm/yyyy or similar? 
-      // Actually calendarService.formatWeekStart might return yyyy-mm-dd
-      // Let's check team service or calendar service format
+      const date = new Date(weekStr); // ou parse selon ton format
+      const isoYear = getISOWeekYear(date).toString();
 
-      const parts = weekStr.split('-');
-      const weekYear = parts[0]; // assuming yyyy-mm-dd
-
-      if (this.selectedCapacityYear === 'all' || weekYear === this.selectedCapacityYear) {
+      if (this.selectedCapacityYear === 'all' || isoYear === this.selectedCapacityYear) {
         total += val * resource.jours_par_semaine;
       }
     });
