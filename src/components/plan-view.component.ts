@@ -8,6 +8,7 @@ import { JalonService } from "../services/jalon.service";
 import { Equipe, Projet, Charge, Role, Personne, Capacite, Jalon } from "../models/types";
 import { CalendarService } from "../services/calendar.service";
 import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact } from "lucide-angular";
+import { getISOWeekYear } from "date-fns";
 
 @NgModule({
   imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact })],
@@ -349,6 +350,13 @@ interface FlatRow {
                               <lucide-icon [name]="resource.type === 'role' ? 'contact' : 'user'" [size]="14" class="resource-icon"></lucide-icon>
                             </div>
                             <span class="resource-detail-name">{{ resource.label }}</span>
+                            <div class="resource-total-badge" 
+                                 (click)="openYearPopover($event)" 
+                                 [title]="'Cliquer pour filtrer par année'">
+                              <span class="badge-prefix">{{ getBadgePrefix() }}</span>
+                              <span class="badge-val">{{ getResourceTotalPlannedDays(resource) | number : '1.0-1' }}</span>
+                              <span class="badge-unit">j</span>
+                            </div>
                           </div>
                           <button
                             class="btn-hover-delete"
@@ -408,9 +416,16 @@ interface FlatRow {
              >
                <div class="row-label fixed-column row-detail">
                  <!-- No expansion toggles, no add buttons, just the full label -->
-                 <div style="padding: 0 16px; font-weight: 500; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ row.fullLabel }}">
-                   {{ row.fullLabel }}
-                 </div>
+                  <div style="display:flex; align-items:center; gap:8px; padding: 0 16px; font-weight: 500; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ row.fullLabel }}">
+                    {{ row.fullLabel }}
+                    <div class="resource-total-badge" 
+                         (click)="openYearPopover($event)" 
+                         [title]="'Cliquer pour filtrer par année'">
+                      <span class="badge-prefix">{{ getBadgePrefix() }}</span>
+                      <span class="badge-val">{{ getResourceTotalPlannedDays(row.resource) | number : '1.0-1' }}</span>
+                      <span class="badge-unit">j</span>
+                    </div>
+                  </div>
                </div>
                <div class="row-cells scrollable-column">
                  <div
@@ -579,6 +594,29 @@ interface FlatRow {
         </div>
       </div>
     </div>
+    
+      <!-- Year Selection Popover -->
+      <div *ngIf="showYearPopover" 
+           class="year-popover" 
+           [style.top.px]="popoverPosition?.top" 
+           [style.left.px]="popoverPosition?.left"
+           (click)="$event.stopPropagation()">
+        <div class="popover-arrow"></div>
+        <div class="popover-content">
+          <button class="popover-item" [class.active]="selectedCapacityYear === 'all'" (click)="selectYear('all')">
+            Tout cumulé
+          </button>
+          <button class="popover-item" [class.active]="selectedCapacityYear === '2025'" (click)="selectYear('2025')">
+            Année 2025
+          </button>
+          <button class="popover-item" [class.active]="selectedCapacityYear === '2026'" (click)="selectYear('2026')">
+            Année 2026
+          </button>
+          <div class="popover-date-jump">
+            <input type="date" class="jump-input" [value]="getSelectedStartDateISO()" (change)="onDateSelected($event)" />
+          </div>
+        </div>
+      </div>
     
     <app-milestone-modal
         [(visible)]="showMilestoneModal"
@@ -1460,6 +1498,124 @@ interface FlatRow {
         border-radius: 50%;
       }
 
+      .resource-total-badge {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 2px;
+        padding: 2px 8px;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border: 1px solid #e2e8f0;
+        border-radius: 999px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        color: #475569;
+        font-family: 'Inter', system-ui, sans-serif;
+        margin-left: 4px;
+        flex-shrink: 0;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .resource-total-badge:hover {
+        border-color: #cbd5e1;
+        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .badge-prefix {
+        font-size: 9px;
+        font-weight: 600;
+        color: #64748b;
+        margin-right: 2px;
+      }
+
+      .badge-val {
+        font-size: 11px;
+        font-weight: 700;
+        color: #1e293b;
+      }
+
+      .badge-unit {
+        font-size: 9px;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: lowercase;
+      }
+
+      .year-popover {
+        position: fixed;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(8px);
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        z-index: 1001;
+        width: 160px;
+        animation: popOverIn 0.2s cubic-bezier(0, 0, 0.2, 1);
+      }
+
+      @keyframes popOverIn {
+        from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
+      }
+
+      .popover-content {
+        padding: 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .popover-item {
+        padding: 8px 12px;
+        border: none;
+        background: transparent;
+        border-radius: 8px;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 500;
+        color: #475569;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+
+      .popover-item:hover {
+        background: #f1f5f9;
+        color: #1e293b;
+      }
+
+      .popover-item.active {
+        background: #eff6ff;
+        color: #2563eb;
+        font-weight: 600;
+      }
+
+      .popover-arrow {
+        position: absolute;
+        top: -6px;
+        left: 20px;
+        width: 12px;
+        height: 12px;
+        background: white;
+        border-left: 1px solid #e2e8f0;
+        border-top: 1px solid #e2e8f0;
+        transform: rotate(45deg);
+      }
+
+      .popover-date-jump {
+        padding: 4px 6px 8px 6px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .jump-input {
+        width: 100%;
+        padding: 4px;
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        font-size: 11px;
+      }
+
       input:checked + .slider {
         background-color: #3b82f6;
       }
@@ -1527,6 +1683,11 @@ export class PlanViewComponent implements OnInit {
   viewMode: "project" | "team" = "project";
   displayFormat: "tree" | "flat" = "tree";
   showAvailability: boolean = false;
+
+  selectedCapacityYear: 'all' | '2025' | '2026' | 'custom' = 'all';
+  selectedStartDate: Date | null = null;
+  showYearPopover = false;
+  popoverPosition: { top: number; left: number } | null = null;
 
   flatRows: FlatRow[] = [];
 
@@ -2700,6 +2861,76 @@ Cela supprimera toutes les charges associées à cette ressource.`;
       console.error('Error removing resource:', error);
       alert('Erreur lors de la suppression de la ressource.');
     }
+  }
+
+  getSelectedStartDateISO(): string {
+    if (!this.selectedStartDate) return '';
+    const d = this.selectedStartDate;
+    return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
+  }
+
+  getResourceTotalPlannedDays(resource: ResourceRow): number {
+    let total = 0;
+    resource.charges.forEach((val, weekStr) => {
+      const date = new Date(weekStr);
+
+      if (this.selectedCapacityYear === 'custom' && this.selectedStartDate) {
+        if (date >= this.selectedStartDate) {
+          total += val;
+        }
+      } else {
+        const isoYear = getISOWeekYear(date).toString();
+        if (this.selectedCapacityYear === 'all' || isoYear === this.selectedCapacityYear) {
+          total += val;
+        }
+      }
+    });
+    return total;
+  }
+
+  getBadgePrefix(): string {
+    if (this.selectedCapacityYear === 'all') return 'Tout :';
+    if (this.selectedCapacityYear === 'custom' && this.selectedStartDate) {
+      const d = this.selectedStartDate;
+      const formatted = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+      return `Dès le ${formatted} :`;
+    }
+    return `${this.selectedCapacityYear} :`;
+  }
+
+  openYearPopover(event: MouseEvent) {
+    event.stopPropagation();
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    this.popoverPosition = {
+      top: rect.bottom + 10,
+      left: rect.left
+    };
+    this.showYearPopover = true;
+
+    // Close when clicking outside
+    const closeHandler = () => {
+      this.showYearPopover = false;
+      document.removeEventListener('click', closeHandler);
+    };
+    document.addEventListener('click', closeHandler);
+  }
+
+  selectYear(year: 'all' | '2025' | '2026') {
+    this.selectedCapacityYear = year;
+    this.selectedStartDate = null;
+    this.showYearPopover = false;
+  }
+
+  onDateSelected(event: any) {
+    const selectedDateStr = event.target.value;
+    if (!selectedDateStr) return;
+
+    const selectedDate = new Date(selectedDateStr);
+    const mondayOfSelectedWeek = this.calendarService.getWeekStart(selectedDate);
+
+    this.selectedStartDate = mondayOfSelectedWeek;
+    this.selectedCapacityYear = 'custom';
+    this.showYearPopover = false;
   }
 }
 
