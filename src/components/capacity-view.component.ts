@@ -61,12 +61,12 @@ interface TeamRow {
       <div class="calendar-wrapper">
         <div class="calendar-grid">
           <!-- Header Row -->
-          <div class="calendar-header-row">
-            <div class="label-header-cell sticky-col sticky-top">
+          <div class="calendar-header-row sticky-top">
+            <div class="label-header-cell sticky-col">
               <span>Équipes / Ressources</span>
             </div>
             <div class="weeks-header-container">
-              <div *ngFor="let week of displayedWeeks" class="week-header-cell sticky-top" [class.current-week]="isCurrentWeek(week)">
+              <div *ngFor="let week of displayedWeeks" class="week-header-cell" [class.current-week]="isCurrentWeek(week)">
                 <div class="week-date">{{ formatWeekHeader(week) }}</div>
                 <div class="week-number">S{{ getWeekNumber(week) }}</div>
               </div>
@@ -314,6 +314,8 @@ interface TeamRow {
         border-bottom: 2px solid #e2e8f0;
         z-index: 100;
         min-height: 60px;
+        position: sticky;
+        top: 0;
       }
 
       .label-header-cell {
@@ -324,6 +326,7 @@ interface TeamRow {
         align-items: center;
         border-right: 2px solid #e2e8f0;
         flex-shrink: 0;
+        background: #f8fafc; /* Opaque background to hide weeks during horizontal scroll */
       }
 
       .weeks-header-container {
@@ -399,14 +402,14 @@ interface TeamRow {
         z-index: 50;
       }
 
+      .label-header-cell.sticky-col {
+        z-index: 110;
+      }
+
       .sticky-top {
         position: sticky;
         top: 0;
         z-index: 60;
-      }
-
-      .label-header-cell.sticky-top {
-        z-index: 110;
       }
 
       .weeks-cells-container {
