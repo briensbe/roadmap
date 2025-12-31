@@ -309,7 +309,7 @@ interface TeamRow {
         background: white;
         border-radius: 8px;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        overflow: hidden;
+        overflow: auto; /* Single scroll container for both vertical and horizontal */
         max-height: calc(100vh - 200px);
         position: relative; /* Ensure it stays in place */
       }
@@ -319,18 +319,19 @@ interface TeamRow {
         width: 300px;
         flex-shrink: 0;
         border-right: 2px solid #e2e8f0;
-        overflow-y: auto;
-        overflow-x: hidden;
+        position: sticky;
+        left: 0;
+        z-index: 20;
+        background: white;
       }
 
       .labels-header {
         padding: 12px 16px;
         background: #f8fafc;
         border-bottom: 2px solid #e2e8f0;
-        font-weight: 600;
         position: sticky;
         top: 0;
-        z-index: 10;
+        z-index: 30; /* Above labels rows and weeks content */
         min-height: 60px;
         display: flex;
         align-items: center;
@@ -480,8 +481,6 @@ interface TeamRow {
       /* Scrollable right column for weeks */
       .weeks-column {
         flex: 1;
-        overflow-x: auto;
-        overflow-y: auto;
       }
 
       .weeks-header {
@@ -490,7 +489,7 @@ interface TeamRow {
         border-bottom: 2px solid #e2e8f0;
         position: sticky;
         top: 0;
-        z-index: 10;
+        z-index: 25; /* Below labels-header but above weeks content */
         min-height: 60px;
       }
 
