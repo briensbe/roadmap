@@ -129,6 +129,10 @@ interface TeamRow {
                       <lucide-icon [name]="resource.type === 'role' ? 'contact' : 'user'" [size]="14" class="resource-icon"></lucide-icon>
                     </div>
                     <span class="resource-name">{{ resource.label }}</span>
+                    <div class="resource-total-badge" title="Total jours planifiés sur toutes les semaines">
+                      <span class="badge-val">{{ getResourceTotalPlannedDays(resource) | number : '1.0-1' }}</span>
+                      <span class="badge-unit">j</span>
+                    </div>
                     <button class="btn-hover-delete" (click)="removeResource(resource, teamRow.equipe)">×</button>
                   </div>
                   <div class="weeks-cells-container">
@@ -319,7 +323,7 @@ interface TeamRow {
       }
 
       .label-header-cell {
-        width: 300px;
+        width: 350px;
         padding: 12px 16px;
         font-weight: 600;
         display: flex;
@@ -375,7 +379,7 @@ interface TeamRow {
       }
 
       .label-cell {
-        width: 300px;
+        width: 350px;
         flex-shrink: 0;
         padding: 0 12px;
         display: flex;
@@ -701,12 +705,45 @@ interface TeamRow {
       }
 
       .resource-name {
-        flex: 1;
+        flex: 0 1 auto;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         font-size: 14px;
         color: #334155;
+      }
+
+      .resource-total-badge {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 2px;
+        padding: 2px 8px;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border: 1px solid #e2e8f0;
+        border-radius: 999px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        color: #475569;
+        font-family: 'Inter', system-ui, sans-serif;
+        margin-left: 4px;
+        flex-shrink: 0;
+      }
+
+      .resource-total-badge:hover {
+        border-color: #cbd5e1;
+        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+      }
+
+      .badge-val {
+        font-size: 11px;
+        font-weight: 700;
+        color: #1e293b;
+      }
+
+      .badge-unit {
+        font-size: 9px;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: lowercase;
       }
       
       .modal-close {
@@ -877,7 +914,8 @@ export class CapacityViewComponent implements OnInit {
 
     const firstWeek = this.calendarService.getWeekStart(startDate);
 
-    for (let i = 0; i < 32; i++) {
+    const NB_WEEK_TO_DISPLAY = 52; // un an par défaut
+    for (let i = 0; i < NB_WEEK_TO_DISPLAY; i++) {
       const week = new Date(firstWeek);
       week.setDate(week.getDate() + i * 7);
       this.displayedWeeks.push(week);
@@ -1176,5 +1214,13 @@ export class CapacityViewComponent implements OnInit {
       (sum, resource) => sum + this.getCapacite(resource, week) * resource.jours_par_semaine,
       0
     );
+  }
+
+  getResourceTotalPlannedDays(resource: ResourceRow): number {
+    let total = 0;
+    resource.weeks.forEach((val) => {
+      total += val * resource.jours_par_semaine;
+    });
+    return total;
   }
 }
