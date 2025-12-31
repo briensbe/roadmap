@@ -204,58 +204,53 @@ interface FlatRow {
         </div>
       </div>
 
-      <!-- Main calendar container with sticky header -->
-      <div class="calendar-container">
-        <!-- Header row with sticky positioning -->
-        <div class="calendar-header-wrapper">
-          <div class="row-label fixed-column header-fixed">
-            <span style="font-weight:600;">{{
-              viewMode === "project" ? "Projets / Équipes" : "Équipes / Projets"
-            }}</span>
-          </div>
-          <div class="header-scroll-container" #headerScroll>
-            <div class="row-cells scrollable-column">
-              <div *ngFor="let week of displayedWeeks" class="week-header" [class.current-week]="isCurrentWeek(week)">
+      <!-- Main calendar with unified scroll -->
+      <div class="calendar-wrapper">
+        <div class="calendar-grid">
+          <!-- Header row (sticky top) -->
+          <div class="calendar-header-row">
+            <div class="label-cell header-label">
+              <span style="font-weight:600;">{{
+                viewMode === "project" ? "Projets / Équipes" : "Équipes / Projets"
+              }}</span>
+            </div>
+            <div class="weeks-container">
+              <div *ngFor="let week of displayedWeeks" class="week-header-cell" [class.current-week]="isCurrentWeek(week)">
                 <div class="week-date">{{ formatWeekHeader(week) }}</div>
                 <div class="week-number">S{{ getWeekNumber(week) }}</div>
               </div>
             </div>
           </div>
-        </div>
 
-        
-        <!-- Milestones Header -->
-        <div class="milestones-header-wrapper">
-          <div class="row-label fixed-column header-fixed milestones-fixed-col">
-            <span style="font-weight:600; font-size: 13px;">Jalons</span>
+          <!-- Milestones row (sticky top with offset) -->
+          <div class="milestones-header-row">
+            <div class="label-cell milestones-label">
+              <span style="font-weight:600; font-size: 13px;">Jalons</span>
+            </div>
+            <div class="weeks-container">
+              <div *ngFor="let week of displayedWeeks" class="week-cell milestone-cell" [class.current-week]="isCurrentWeek(week)">
+                <div class="milestones-container">
+                  <div *ngFor="let jalon of getJalonsForWeek(week)"
+                       class="jalon-item"
+                       [style.background-color]="getJalonColor(jalon.type)"
+                       [style.color]="getJalonTextColor(jalon.type)"
+                       [title]="jalon.date_jalon"
+                       (click)="openMilestoneModal(jalon, $event)">
+                    {{ jalon.nom || '★' }}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="header-scroll-container" #milestonesScroll>
-             <div class="row-cells scrollable-column">
-               <div *ngFor="let week of displayedWeeks" class="week-cell milestone-week-cell" [class.current-week]="isCurrentWeek(week)">
-                 <div class="milestones-container">
-                    <div *ngFor="let jalon of getJalonsForWeek(week)"
-                         class="jalon-item"
-                         [style.background-color]="getJalonColor(jalon.type)"
-                         [style.color]="getJalonTextColor(jalon.type)"
-                         [title]="jalon.date_jalon"
-                         (click)="openMilestoneModal(jalon, $event)">
-                         {{ jalon.nom || '★' }}
-                    </div>
-                 </div>
-               </div>
-             </div>
-          </div>
-        </div>
 
-        <!-- Data rows - single scroll container with metrics panel -->
-        <div class="calendar-grid-wrapper">
-          <div class="calendar-grid" #dataScroll (scroll)="onGridScroll($event)">
+          <!-- Data rows -->
+          <div class="calendar-body">
             <!-- Tree View -->
             <ng-container *ngIf="displayFormat === 'tree'">
             <ng-container *ngFor="let row of rows">
               <!-- Parent Row -->
-              <div class="calendar-row-wrapper">
-                <div class="row-label fixed-column px-0">
+              <div class="calendar-row">
+                <div class="label-cell row-label-parent">
                   <div class="row-label-content" (click)="toggleRow(row)">
                     <lucide-icon *ngIf="row.children.length > 0" [name]="row.expanded ? 'chevron-down' : 'chevron-right'" [size]="20" class="expand-icon-l"></lucide-icon>
                     
@@ -278,7 +273,7 @@ interface FlatRow {
                     </button>
                   </div>
                 </div>
-                <div class="row-cells scrollable-column">
+                <div class="weeks-container">
                   <div *ngFor="let week of displayedWeeks" class="week-cell team-cell">
                     <div class="team-summary" *ngIf="getParentTotal(row, week) > 0">
                       <!-- <div class="capacity-value">
@@ -293,8 +288,8 @@ interface FlatRow {
               <ng-container *ngIf="row.expanded">
                 <ng-container *ngFor="let child of row.children">
                   <!-- Child Row (2nd level) -->
-                  <div class="calendar-row-wrapper">
-                    <div class="row-label fixed-column px-0">
+                  <div class="calendar-row">
+                    <div class="label-cell row-label-child">
                       <div class="row-label-content child-row" (click)="toggleChild(child)" style="padding-left:24px;">
                         <lucide-icon *ngIf="child.resources.length > 0" [name]="child.expanded ? 'chevron-down' : 'chevron-right'" [size]="18" class="expand-icon-l"></lucide-icon>
                         
@@ -317,7 +312,7 @@ interface FlatRow {
                         </button>
                       </div>
                     </div>
-                    <div class="row-cells scrollable-column">
+                    <div class="weeks-container">
                       <div
                         *ngFor="let week of displayedWeeks"
                         class="week-cell resource-cell"
@@ -336,14 +331,14 @@ interface FlatRow {
                   <ng-container *ngIf="child.expanded">
                     <div
                       *ngFor="let resource of child.resources"
-                      class="calendar-row-wrapper"
+                      class="calendar-row"
                       [attr.data-resource-id]="getResourceUniqueId(resource, child, row)"
                       (mousedown)="onMouseDown($event, resource, child, row)"
                       (mousemove)="onMouseMove($event, resource, child, row)"
                       (mouseup)="onMouseUp()"
                       (mouseleave)="onMouseUp()"
                     >
-                      <div class="row-label fixed-column row-detail px-0">
+                      <div class="label-cell row-label-resource">
                         <div class="row-label-content resource-row">
                           <div class="resource-detail-label" style="padding-left:40px;">
                             <div class="resource-icon-wrapper" [style.background-color]="resource.color || '#e2e8f0'">
@@ -367,55 +362,54 @@ interface FlatRow {
                           </button>
                         </div>
                       </div>
-                      <div class="row-cells scrollable-column">
-                      <div
-                        *ngFor="let week of displayedWeeks; let i = index"
-                        class="week-cell resource-detail-cell"
-                        [class.selected]="isCellSelected(resource, week)"
-                        [class.has-capacity]="getResourceValue(resource, week) > 0"
-                        [class.cell-positive]="shouldShowAvailability(resource, week, viewMode === 'project' ? child.id : row.id) && getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) > 0"
-                        [class.cell-zero]="shouldShowAvailability(resource, week, viewMode === 'project' ? child.id : row.id) && getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) === 0"
-                        [class.cell-negative]="shouldShowAvailability(resource, week, viewMode === 'project' ? child.id : row.id) && getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) < 0"
-                        [attr.data-week-index]="i"
-                      >
-                        <div class="cell-content">
-                          <div *ngIf="getResourceValue(resource, week) > 0" class="capacity-value">
-                            {{ getResourceValue(resource, week) | number : "1.0-1" }}
-                          </div>
-                          <div
-                            class="availability-indicator"
-                            *ngIf="shouldShowAvailability(resource, week, viewMode === 'project' ? child.id : row.id)"
-                            [ngClass]="{
-                              'availability-positive': getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) > 0,
-                              'availability-zero': getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) === 0,
-                              'availability-negative': getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) < 0
-                            }"
-                          >
-                            {{ getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) > 0 ? '+' : '' }}{{ getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) | number : "1.0-1" }}
+                      <div class="weeks-container">
+                        <div
+                          *ngFor="let week of displayedWeeks; let i = index"
+                          class="week-cell resource-detail-cell"
+                          [class.selected]="isCellSelected(resource, week)"
+                          [class.has-capacity]="getResourceValue(resource, week) > 0"
+                          [class.cell-positive]="shouldShowAvailability(resource, week, viewMode === 'project' ? child.id : row.id) && getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) > 0"
+                          [class.cell-zero]="shouldShowAvailability(resource, week, viewMode === 'project' ? child.id : row.id) && getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) === 0"
+                          [class.cell-negative]="shouldShowAvailability(resource, week, viewMode === 'project' ? child.id : row.id) && getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) < 0"
+                          [attr.data-week-index]="i"
+                        >
+                          <div class="cell-content">
+                            <div *ngIf="getResourceValue(resource, week) > 0" class="capacity-value">
+                              {{ getResourceValue(resource, week) | number : "1.0-1" }}
+                            </div>
+                            <div
+                              class="availability-indicator"
+                              *ngIf="shouldShowAvailability(resource, week, viewMode === 'project' ? child.id : row.id)"
+                              [ngClass]="{
+                                'availability-positive': getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) > 0,
+                                'availability-zero': getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) === 0,
+                                'availability-negative': getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) < 0
+                              }"
+                            >
+                              {{ getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) > 0 ? '+' : '' }}{{ getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) | number : "1.0-1" }}
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </ng-container>
                 </ng-container>
               </ng-container>
             </ng-container>
             </ng-container>
-          </ng-container>
 
-          <!-- Flat View -->
-          <ng-container *ngIf="displayFormat === 'flat'">
-             <div
-               *ngFor="let row of flatRows"
-               class="calendar-row-wrapper"
-               [attr.data-resource-id]="getResourceUniqueId(row.resource, row.child, row.parent)"
-               (mousedown)="onMouseDown($event, row.resource, row.child, row.parent)"
-               (mousemove)="onMouseMove($event, row.resource, row.child, row.parent)"
-               (mouseup)="onMouseUp()"
-               (mouseleave)="onMouseUp()"
-             >
-               <div class="row-label fixed-column row-detail">
-                 <!-- No expansion toggles, no add buttons, just the full label -->
+            <!-- Flat View -->
+            <ng-container *ngIf="displayFormat === 'flat'">
+              <div
+                *ngFor="let row of flatRows"
+                class="calendar-row"
+                [attr.data-resource-id]="getResourceUniqueId(row.resource, row.child, row.parent)"
+                (mousedown)="onMouseDown($event, row.resource, row.child, row.parent)"
+                (mousemove)="onMouseMove($event, row.resource, row.child, row.parent)"
+                (mouseup)="onMouseUp()"
+                (mouseleave)="onMouseUp()"
+              >
+                <div class="label-cell row-label-flat">
                   <div style="display:flex; align-items:center; gap:8px; padding: 0 16px; font-weight: 500; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ row.fullLabel }}">
                     {{ row.fullLabel }}
                     <div class="resource-total-badge" 
@@ -426,41 +420,42 @@ interface FlatRow {
                       <span class="badge-unit">j</span>
                     </div>
                   </div>
-               </div>
-               <div class="row-cells scrollable-column">
-                 <div
-                   *ngFor="let week of displayedWeeks; let i = index"
-                   class="week-cell resource-detail-cell"
-                  [class.selected]="isCellSelected(row.resource, week)"
-                  [class.has-capacity]="getResourceValue(row.resource, week) > 0"
-                  [class.cell-positive]="shouldShowAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) && getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) > 0"
-                  [class.cell-zero]="shouldShowAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) && getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) === 0"
-                  [class.cell-negative]="shouldShowAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) && getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) < 0"
-                  [attr.data-week-index]="i"
-                 >
-                   <div class="cell-content">
-                     <div *ngIf="getResourceValue(row.resource, week) > 0" class="capacity-value">
-                       {{ getResourceValue(row.resource, week) | number : "1.0-1" }}
-                     </div>
-                    <div
-                      class="availability-indicator"
-                      *ngIf="shouldShowAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id)"
-                      [ngClass]="{
-                        'availability-positive': getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) > 0,
-                        'availability-zero': getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) === 0,
-                        'availability-negative': getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) < 0
-                      }"
-                    >
-                      {{ getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) > 0 ? '+' : '' }}{{ getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) | number : "1.0-1" }}
-                    </div>
+                </div>
+                <div class="weeks-container">
+                  <div
+                    *ngFor="let week of displayedWeeks; let i = index"
+                    class="week-cell resource-detail-cell"
+                    [class.selected]="isCellSelected(row.resource, week)"
+                    [class.has-capacity]="getResourceValue(row.resource, week) > 0"
+                    [class.cell-positive]="shouldShowAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) && getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) > 0"
+                    [class.cell-zero]="shouldShowAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) && getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) === 0"
+                    [class.cell-negative]="shouldShowAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) && getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) < 0"
+                    [attr.data-week-index]="i"
+                  >
+                    <div class="cell-content">
+                      <div *ngIf="getResourceValue(row.resource, week) > 0" class="capacity-value">
+                        {{ getResourceValue(row.resource, week) | number : "1.0-1" }}
+                      </div>
+                      <div
+                        class="availability-indicator"
+                        *ngIf="shouldShowAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id)"
+                        [ngClass]="{
+                          'availability-positive': getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) > 0,
+                          'availability-zero': getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) === 0,
+                          'availability-negative': getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) < 0
+                        }"
+                      >
+                        {{ getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) > 0 ? '+' : '' }}{{ getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) | number : "1.0-1" }}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-           </ng-container>
+            </ng-container>
 
-          <div *ngIf="rows.length === 0" class="empty-state">
-            <p>Aucune donnée</p>
+            <div *ngIf="rows.length === 0" class="empty-state">
+              <p>Aucune donnée</p>
+            </div>
           </div>
         </div>
       </div>
@@ -985,57 +980,124 @@ interface FlatRow {
       }
 
       .calendar-wrapper {
-        display: flex;
         background: white;
         border-radius: 8px;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        overflow: hidden;
+        overflow: auto;
         max-height: calc(100vh - 250px);
         position: relative;
       }
 
-      .calendar-container {
+      .calendar-grid {
         display: flex;
         flex-direction: column;
-        flex: 1;
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        overflow: hidden;
-        max-height: calc(100vh - 250px);
+        min-width: max-content;
       }
 
-      .calendar-header-wrapper {
+      /* Header row - sticky top */
+      .calendar-header-row {
         display: flex;
+        background: #f8fafc;
         border-bottom: 2px solid #e2e8f0;
         min-height: 60px;
-        background: #f9fafb;
-        flex-shrink: 0;
+        position: sticky;
+        top: 0;
+        z-index: 100;
       }
 
-      .milestones-header-wrapper {
+      /* Milestones row - sticky top with offset */
+      .milestones-header-row {
         display: flex;
+        background: #ffffff;
         border-bottom: 2px solid #e2e8f0;
         min-height: 40px;
+        position: sticky;
+        top: 60px;
+        z-index: 90;
+      }
+
+      /* Label cells - sticky left */
+      .label-cell {
+        width: 300px;
+        flex-shrink: 0;
+        border-right: 2px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+        position: sticky;
+        left: 0;
+        z-index: 10;
+      }
+
+      /* Header label has highest z-index */
+      .calendar-header-row .label-cell {
+        z-index: 110;
+        background: #f8fafc;
+        font-weight: 600;
+      }
+
+      /* Milestones label */
+      .milestones-header-row .label-cell {
+        z-index: 105;
         background: #ffffff;
+      }
+
+      /* Data row labels */
+      .row-label-parent {
+        background: #f9fafb;
+        padding: 0 !important;
+      }
+
+      .row-label-child {
+        background: #f9fafb;
+        padding: 0 !important;
+      }
+
+      .row-label-resource {
+        background: #ffffff;
+        padding: 0 !important;
+      }
+
+      .row-label-flat {
+        background: #ffffff;
+      }
+
+      /* Weeks container */
+      .weeks-container {
+        display: flex;
+        flex: 1;
+      }
+
+      /* Week header cells */
+      .week-header-cell {
+        min-width: 80px;
+        width: 80px;
+        padding: 8px;
+        text-align: center;
+        border-right: 1px solid #e2e8f0;
+        font-size: 12px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
         flex-shrink: 0;
       }
 
-      .milestones-fixed-col {
-        background: #ffffff;
+      .week-header-cell.current-week {
+        background: #dbeafe;
+        border-left: 2px solid #3b82f6;
+        border-right: 2px solid #3b82f6;
       }
 
-      .milestones-metrics-fixed {
-        background: #ffffff;
-      }
-
-      .milestone-week-cell {
+      /* Milestone cells */
+      .milestone-cell {
+        min-width: 80px;
+        width: 80px;
+        padding: 2px;
+        border-right: 1px solid #e2e8f0;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 2px;
-        background: #ffffff;
-        border-right: 1px solid #e2e8f0;
+        flex-shrink: 0;
       }
 
       .milestones-container {
@@ -1062,119 +1124,20 @@ interface FlatRow {
         white-space: nowrap;
       }
 
-      .header-fixed {
+      /* Calendar body */
+      .calendar-body {
         display: flex;
-        align-items: center;
-        padding: 0 16px;
-        background: #f9fafb;
-        border-right: 2px solid #e2e8f0;
-        z-index: 10;
+        flex-direction: column;
       }
 
-      .header-scroll-container {
-        flex: 1;
-        overflow-x: hidden;
-        overflow-y: hidden;
-        display: flex;
-      }
-
-      .calendar-row-wrapper {
+      /* Calendar rows */
+      .calendar-row {
         display: flex;
         min-height: 48px;
-      }
-
-      .calendar-grid-wrapper {
-        display: flex;
-        flex: 1;
-        position: relative;
-        overflow: hidden;
-      }
-
-      .row-label {
-        display: flex;
-        align-items: center;
-        padding: 0 16px;
         border-bottom: 1px solid #e2e8f0;
       }
 
-      .fixed-column {
-        width: 300px;
-        flex-shrink: 0;
-        border-right: 2px solid #e2e8f0;
-        background: #f9fafb;
-        position: sticky;
-        left: 0;
-        z-index: 5;
-      }
-
-      /* pour un fond blanc sur le label de détail */
-      .calendar-row-wrapper .row-label.fixed-column.row-detail {
-        background: white;
-      }
-
-      .row-cells {
-        display: flex;
-        flex: 1;
-        border-bottom: 1px solid #e2e8f0;  /* bordure sur chaque cellule */
-      }
-
-      .scrollable-column {
-        position: relative;
-      }
-
-      .calendar-grid {
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-        overflow-x: auto;
-        overflow-y: auto;
-      }
-
-      .calendar-row-wrapper .fixed-column {
-        background: #f9fafb; 
-        /* background: white; */ 
-      }
-/*
-      .calendar-row-wrapper:nth-child(odd) .fixed-column {
-        background: #f9fafb; 
-        background: white;
-      }
-
-      .calendar-row-wrapper:nth-child(even) .fixed-column {
-        background: white;
-      }
-*/
-      .week-header {
-        min-width: 80px;
-        width: 80px;
-        padding: 8px;
-        border-right: 1px solid #e2e8f0;
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        font-weight: 600;
-        background: #f9fafb;
-      }
-
-      .week-date {
-        font-size: 12px;
-        color: #6b7280;
-      }
-
-      .week-number {
-        font-size: 13px;
-        font-weight: 700;
-        color: #374151;
-      }
-
-      .week-header.current-week {
-        background: #dbeafe;
-        border-left: 3px solid #3b82f6;
-      }
-
+      /* Week cells in data rows */
       .week-cell {
         min-width: 80px;
         width: 80px;
@@ -1748,11 +1711,8 @@ export class PlanViewComponent implements OnInit {
   isSaving = false;
 
   @ViewChild("bulkChargeInput") bulkChargeInput?: ElementRef<HTMLInputElement>;
-  @ViewChild("headerScroll") headerScroll?: ElementRef<HTMLDivElement>;
-  @ViewChild("dataScroll") dataScroll?: ElementRef<HTMLDivElement>;
 
   jalons: Jalon[] = [];
-  @ViewChild("milestonesScroll") milestonesScroll!: ElementRef;
 
   // Icons
   Plus = Plus;
@@ -2235,19 +2195,6 @@ export class PlanViewComponent implements OnInit {
   getResourceValue(resource: ResourceRow, week: Date): number {
     const weekKey = week.toISOString().split("T")[0];
     return resource.charges.get(weekKey) || 0;
-  }
-
-  onGridScroll(event: Event): void {
-    // Synchronize horizontal scroll between header and data
-    const target = event.target as HTMLElement;
-    const scrollLeft = target.scrollLeft;
-
-    if (this.headerScroll) {
-      this.headerScroll.nativeElement.scrollLeft = scrollLeft;
-    }
-    if (this.milestonesScroll) {
-      this.milestonesScroll.nativeElement.scrollLeft = scrollLeft;
-    }
   }
 
   // Modal & Linking Logic
