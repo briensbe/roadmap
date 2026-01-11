@@ -1047,26 +1047,54 @@ export class CapacityViewComponent implements OnInit {
 
   async loadData() {
     try {
-      const equipes = await this.teamService.getAllEquipes();
-      this.availableRoles = await this.teamService.getAllRoles();
-      this.availablePersonnes = await this.teamService.getAllPersonnes();
+      console.log("Loading data...");
 
-      this.teamRows = [];
+      // 1️⃣ Load ALL data in parallel (no nested loops with await!)
+      const [equipes, allCapacities, roles, personnes] = await Promise.all([
+        this.teamService.getAllEquipes(),
+        this.teamService.getAllCapacities(),
+        this.teamService.getAllRoles(),
+        this.teamService.getAllPersonnes(),
+      ]);
 
-      for (const equipe of equipes) {
-        const resources = await this.teamService.getEquipeResources(equipe.id!);
-        const resourceRows: ResourceRow[] = [];
+      this.availableRoles = roles;
+      this.availablePersonnes = personnes;
 
-        for (const resource of resources) {
-          const capacites = await this.teamService.getCapacites(resource.id, resource.type, equipe.id!);
+      // Load all resources for all teams in parallel
+      const allResourcesArrays = await Promise.all(
+        equipes.map(equipe => this.teamService.getEquipeResources(equipe.id!))
+      );
+
+      console.log("Data loaded, building team rows...");
+
+      // 2️⃣ Index capacities by resource for O(1) lookup
+      const capacitiesByResource = new Map<string, Capacite[]>();
+      allCapacities.forEach(cap => {
+        // Build key based on whether it's a role or personne capacity
+        const resourceId = cap.role_id || cap.personne_id;
+        const type = cap.role_id ? 'role' : 'personne';
+        const key = `${resourceId}_${type}_${cap.equipe_id}`;
+        if (!capacitiesByResource.has(key)) {
+          capacitiesByResource.set(key, []);
+        }
+        capacitiesByResource.get(key)!.push(cap);
+      });
+
+      // 3️⃣ Build team rows in memory (no more DB calls)
+      this.teamRows = equipes.map((equipe, index) => {
+        const resources = allResourcesArrays[index];
+
+        const resourceRows: ResourceRow[] = resources.map(resource => {
+          const key = `${resource.id}_${resource.type}_${equipe.id}`;
+          const capacites = capacitiesByResource.get(key) || [];
           const weeks = new Map<string, number>();
 
-          capacites.forEach((cap) => {
+          capacites.forEach(cap => {
             const weekStr = this.calendarService.formatWeekStart(new Date(cap.semaine_debut));
             weeks.set(weekStr, cap.capacite);
           });
 
-          resourceRows.push({
+          return {
             type: resource.type,
             id: resource.id,
             uniqueId: resource.uniqueId,
@@ -1075,15 +1103,17 @@ export class CapacityViewComponent implements OnInit {
             weeks,
             jours_par_semaine: resource.jours_par_semaine,
             color: resource.color,
-          });
-        }
+          };
+        });
 
-        this.teamRows.push({
+        return {
           equipe,
           resources: resourceRows,
           expanded: true,
-        });
-      }
+        };
+      });
+
+      console.log("Team rows built successfully");
     } catch (error) {
       console.error("Error loading data:", error);
     }
