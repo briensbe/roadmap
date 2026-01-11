@@ -1,5 +1,6 @@
 import { Injectable } from "@angular/core";
 import { SupabaseService } from "./supabase.service";
+import { TeamService } from "./team.service";
 import { Societe, Departement, Service, Equipe, Role, Personne } from "../models/types";
 
 @Injectable({
@@ -14,7 +15,10 @@ export class ResourceService {
   private _rolesCache: Role[] | null = null;
   private _personnesCache: Personne[] | null = null;
 
-  constructor(private supabase: SupabaseService) { }
+  constructor(
+    private supabase: SupabaseService,
+    private teamService: TeamService
+  ) { }
 
   private clearCache() {
     this._societesCache = null;
@@ -23,6 +27,8 @@ export class ResourceService {
     this._equipesCache = null;
     this._rolesCache = null;
     this._personnesCache = null;
+    // Also clear TeamService cache to keep them in sync
+    this.teamService.clearCache();
   }
 
   async getAllSocietes(): Promise<Societe[]> {
