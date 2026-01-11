@@ -16,7 +16,7 @@ export class TeamService {
 
     constructor(private supabase: SupabaseService) { }
 
-    private clearCache() {
+    clearCache() {
         this._equipesCache = null;
         this._rolesCache = null;
         this._personnesCache = null;
