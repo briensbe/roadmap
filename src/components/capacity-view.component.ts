@@ -1047,7 +1047,6 @@ export class CapacityViewComponent implements OnInit {
 
   async loadData() {
     try {
-      console.log("Loading data...");
 
       // 1️⃣ Load ALL data in parallel (no nested loops with await!)
       const [equipes, allCapacities, roles, personnes] = await Promise.all([
@@ -1065,7 +1064,6 @@ export class CapacityViewComponent implements OnInit {
         equipes.map(equipe => this.teamService.getEquipeResources(equipe.id!))
       );
 
-      console.log("Data loaded, building team rows...");
 
       // 2️⃣ Index capacities by resource for O(1) lookup
       const capacitiesByResource = new Map<string, Capacite[]>();
@@ -1113,7 +1111,6 @@ export class CapacityViewComponent implements OnInit {
         };
       });
 
-      console.log("Team rows built successfully");
     } catch (error) {
       console.error("Error loading data:", error);
     }

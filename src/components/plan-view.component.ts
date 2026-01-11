@@ -2144,7 +2144,6 @@ export class PlanViewComponent implements OnInit {
 
     // Sort flattened rows alphabetically by full label
     this.flatRows.sort((a, b) => a.fullLabel.localeCompare(b.fullLabel));
-    // console.log(this.flatRows);
   }
 
   goToToday() {
