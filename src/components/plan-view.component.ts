@@ -2783,7 +2783,6 @@ export class PlanViewComponent implements OnInit {
     return total;
   }
 
-  // Remove a resource from charges
   async removeResource(resource: ResourceRow, child: ChildRow, parent: ParentRow) {
     const confirmMsg = `Êtes-vous sûr de vouloir supprimer "${resource.label}" ?
 Cela supprimera toutes les charges associées à cette ressource.`;
@@ -2793,18 +2792,26 @@ Cela supprimera toutes les charges associées à cette ressource.`;
     }
 
     try {
-      // Filter out all charges associated with this resource
-      this.allCharges = this.allCharges.filter(
-        (charge) =>
-          !(
-            (charge.role_id === resource.id && resource.type === 'role') ||
-            (charge.personne_id === resource.id && resource.type === 'personne')
-          )
-      );
+      let projetId: string;
+      let equipeId: string;
 
-      // Rebuild tree to reflect changes
-      this.calculateUsage();
-      this.buildTree();
+      if (this.viewMode === "project") {
+        // Parent is Project, Child is Team
+        projetId = parent.id;
+        equipeId = child.id;
+      } else {
+        // Parent is Team, Child is Project
+        equipeId = parent.id;
+        projetId = child.id;
+      }
+
+      const roleId = resource.type === 'role' ? resource.id : undefined;
+      const personneId = resource.type === 'personne' ? resource.id : undefined;
+
+      await this.chargeService.deleteChargesForResource(projetId, equipeId, roleId, personneId);
+
+      // Reload data to reflect changes from DB
+      await this.loadData();
     } catch (error) {
       console.error('Error removing resource:', error);
       alert('Erreur lors de la suppression de la ressource.');

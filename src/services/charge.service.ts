@@ -238,6 +238,34 @@ export class ChargeService {
         return data || [];
     }
 
+    async deleteChargesForResource(
+        projetId: string,
+        equipeId: string,
+        roleId?: string,
+        personneId?: string
+    ): Promise<void> {
+        let query = this.supabase.client
+            .from('charges')
+            .delete()
+            .eq('projet_id', projetId)
+            .eq('equipe_id', equipeId);
+
+        if (roleId) {
+            query = query.eq('role_id', roleId);
+        } else if (personneId) {
+            query = query.eq('personne_id', personneId);
+        } else {
+            // If neither roleId nor personneId is provided, we don't want to delete everything
+            return;
+        }
+
+        const { error } = await query;
+        if (error) throw error;
+
+        // Invalidate cache
+        this.clearCache();
+    }
+
     private getFirstDayOfWeek(fromDate: string) {
         // console.log("fromDate : " + fromDate);
 
