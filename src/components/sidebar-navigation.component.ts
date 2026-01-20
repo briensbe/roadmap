@@ -17,6 +17,7 @@ import {
   User
 } from 'lucide-angular';
 import { SidebarService } from '../services/sidebar.service';
+import { environment } from '../environments/environment';
 
 interface NavigationItem {
   label: string;
@@ -54,6 +55,10 @@ interface NavigationItem {
           </div>
           <span class="nav-item-label" *ngIf="!isCollapsed">{{ item.label }}</span>
         </a>
+      </div>
+
+      <div class="sidebar-footer">
+        <span class="version-text">{{ version }}</span>
       </div>
     </nav>
   `,
@@ -213,10 +218,29 @@ interface NavigationItem {
     .nav-items::-webkit-scrollbar-thumb:hover {
       background: #9ca3af;
     }
+
+    .sidebar-footer {
+      padding: 12px 16px;
+      /* border-top: 1px solid #e5e7eb; */
+      display: flex;
+      justify-content: left;
+      align-items: center;
+    }
+
+    .version-text {
+      font-size: 10px;
+      color: #9ca3af;
+      font-family: monospace;
+    }
+
+    .sidebar.collapsed .version-text {
+      font-size: 8px;
+    }
   `]
 })
 export class SidebarNavigationComponent {
   isCollapsed = false;
+  version = environment.version;
 
   // Lucide icons
   LayoutDashboard = LayoutDashboard;

@@ -59,14 +59,17 @@ export class SupabaseService {
    */
   async signUpWithEmail(payload: SignupPayload) {
     // Récupère l'URL de base de l'app (inclut le repo path)
-    const baseUrl = document.querySelector("base")?.href || window.location.origin;
-    console.log("1- signup baseUrl = " + baseUrl);
+    // const baseUrl = document.querySelector("base")?.href || window.location.origin;
+    // console.log("1- signup baseUrl = " + baseUrl);
+
+    const authRedirectUrl = environment.authRedirectUrl;
+    console.log("2- signup authRedirectUrl = " + authRedirectUrl);
 
     return await this.supabase.auth.signUp({
       email: payload.email,
       password: payload.password,
       options: {
-        emailRedirectTo: baseUrl,
+        emailRedirectTo: authRedirectUrl,
         data: {
           displayName: payload.name,
         },
@@ -108,15 +111,18 @@ export class SupabaseService {
   async resetPasswordForEmail(email: string): Promise<void> {
     try {
       // Récupère l'URL de base de l'app (inclut le repo path)
-      const baseUrl = document.querySelector("base")?.href || window.location.origin;
+      // const baseUrl = document.querySelector("base")?.href || window.location.origin;
 
       // console.log("baseUrl = " + baseUrl);
       // console.log("$baseUrl ... = " + `${baseUrl}update-password`);
-      // console.log("baseUrl ... = )" +  baseUrl + "update-password");
+      // console.log("baseUrl ... = )" + baseUrl + "update-password");
+
+      const authRedirectUrl = environment.authRedirectUrl;
+      console.log("authRedirectUrl = " + authRedirectUrl);
 
       const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
         // redirectTo: `${baseUrl}update-password`,
-        redirectTo: baseUrl + "update-password",
+        redirectTo: authRedirectUrl + "/update-password",
       });
 
       // const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
