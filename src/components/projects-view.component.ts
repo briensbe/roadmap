@@ -1101,7 +1101,7 @@ export class ProjectsViewComponent implements OnInit {
         this.statusFilter = params['status'];
       }
     });
-    
+
     await this.loadProjects();
     this.externalReferenceUrl = await this.settingsService.getSettingValue("external_reference_url", "global");
   }
@@ -1171,10 +1171,15 @@ export class ProjectsViewComponent implements OnInit {
     console.log("PROJET Origine : ", projet);
 
     // Destructure pour exclure les propriétés à ne pas copier
-    const { id, created_at, updated_at, ...restProjet } = projet;
+    // On exclut id_projet pour en générer un nouveau (incrémenté)
+    const { id, created_at, updated_at, id_projet, ...restProjet } = projet;
+
+    // Trouver le prochain id_projet (max + 1)
+    const maxId = this.projets.reduce((max, p) => (p.id_projet > max ? p.id_projet : max), 0);
 
     this.newProjet = {
       ...restProjet,
+      id_projet: maxId + 1,
       code_projet: `${projet.code_projet}-COPY`,
       nom_projet: `${projet.nom_projet} (Copie)`,
     };
