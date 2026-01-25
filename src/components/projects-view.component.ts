@@ -1120,7 +1120,10 @@ export class ProjectsViewComponent implements OnInit {
       const matchesSearch =
         !this.searchQuery ||
         projet.nom_projet.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-        projet.code_projet.toLowerCase().includes(this.searchQuery.toLowerCase());
+        projet.code_projet.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+        (projet.reference_externe && projet.reference_externe.toLowerCase().includes(this.searchQuery.toLowerCase())) ||
+        (projet.description && projet.description.toLowerCase().includes(this.searchQuery.toLowerCase())) ||
+        (projet.chef_projet && projet.chef_projet.toLowerCase().includes(this.searchQuery.toLowerCase()));
 
       const matchesStatus = !this.statusFilter || projet.statut === this.statusFilter;
 
