@@ -252,12 +252,13 @@ interface FlatRow {
               <div class="calendar-row">
                 <div class="label-cell row-label-parent">
                   <div class="row-label-content" (click)="toggleRow(row)">
+                    <div class="color-bar-container">
+                      <div class="color-bar-v" [style.background-color]="row.color || '#94a3b8'"></div>
+                    </div>
+
                     <lucide-icon *ngIf="row.children.length > 0" [name]="row.expanded ? 'chevron-down' : 'chevron-right'" [size]="20" class="expand-icon-l"></lucide-icon>
                     
                     <div class="row-info-stack-wrapper">
-                      <div class="color-bar-container">
-                        <div class="color-bar-v" [style.background-color]="row.color || '#94a3b8'"></div>
-                      </div>
                       <div class="info-stack">
                         <span class="info-code" *ngIf="row.code">{{ row.code }}</span>
                         <span class="info-label">{{ row.label }}</span>
@@ -291,12 +292,13 @@ interface FlatRow {
                   <div class="calendar-row">
                     <div class="label-cell row-label-child">
                       <div class="row-label-content child-row" (click)="toggleChild(child)" style="padding-left:24px;">
+                        <div class="color-bar-container">
+                          <div class="color-bar-v small" [style.background-color]="child.color || '#cbd5e1'"></div>
+                        </div>
+
                         <lucide-icon *ngIf="child.resources.length > 0" [name]="child.expanded ? 'chevron-down' : 'chevron-right'" [size]="18" class="expand-icon-l"></lucide-icon>
                         
                         <div class="row-info-stack-wrapper">
-                          <div class="color-bar-container">
-                            <div class="color-bar-v small" [style.background-color]="child.color || '#cbd5e1'"></div>
-                          </div>
                           <div class="info-stack">
                             <span class="info-code" *ngIf="child.code">{{ child.code }}</span>
                             <span class="info-label">{{ child.label }}</span>
