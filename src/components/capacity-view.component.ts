@@ -80,6 +80,9 @@ interface TeamRow {
               <!-- Team Row -->
               <div class="calendar-row team-row-container">
                 <div class="label-cell team-label-cell sticky-col" (click)="toggleTeam(teamRow)" [style.cursor]="teamRow.resources.length > 0 ? 'pointer' : 'default'">
+                  <div class="color-bar-container">
+                    <div class="color-bar-v" [style.background-color]="teamRow.equipe.color || '#94a3b8'"></div>
+                  </div>
                   <lucide-icon
                     [name]="teamRow.expanded ? 'chevron-down' : 'chevron-right'"
                     [size]="18"
@@ -87,9 +90,6 @@ interface TeamRow {
                     [style.visibility]="teamRow.resources.length > 0 ? 'visible' : 'hidden'"
                   ></lucide-icon>
                   <div class="row-info-stack-wrapper">
-                    <div class="color-bar-container">
-                      <div class="color-bar-v" [style.background-color]="teamRow.equipe.color || '#94a3b8'"></div>
-                    </div>
                     <div class="info-stack">
                       <span class="info-label">{{ teamRow.equipe.nom }}</span>
                     </div>
