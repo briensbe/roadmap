@@ -234,17 +234,18 @@ import { LucideAngularModule, Plus, LucideCalculator, MoreVertical, Edit, Trash2
         <form (ngSubmit)="saveProjet()" class="form">
           <div class="grid grid-2">
             <div class="form-group">
-              <label>Code Projet *</label>
-              <input [(ngModel)]="newProjet.code_projet" name="code" required />
+              <label>Code Projet</label>
+              <input [(ngModel)]="newProjet.code_projet" name="code" />
             </div>
             <div class="form-group">
               <label>Référence Externe</label>
               <input [(ngModel)]="newProjet.reference_externe" name="ref_ext" placeholder="ex: JIRA-123" />
             </div>
           </div>
-          <div class="form-group full-width">
+            <div class="form-group full-width" [class.has-error]="formErrors.nom_projet">
               <label>Nom Projet *</label>
-              <input [(ngModel)]="newProjet.nom_projet" name="nom" required />
+              <input [(ngModel)]="newProjet.nom_projet" name="nom" required (ngModelChange)="formErrors.nom_projet = false" />
+              <span class="error-message" *ngIf="formErrors.nom_projet">Le nom du projet est obligatoire</span>
             </div>
 
           <div class="grid grid-2">
@@ -1001,6 +1002,22 @@ import { LucideAngularModule, Plus, LucideCalculator, MoreVertical, Edit, Trash2
         box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
       }
 
+      .form-group.has-error input {
+        border-color: #ef4444;
+      }
+
+      .form-group.has-error input:focus {
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+      }
+
+      .error-message {
+        color: #ef4444;
+        font-size: 12px;
+        font-weight: 500;
+        margin-top: 4px;
+        display: block;
+      }
+
       .grid {
         display: grid;
         gap: 16px;
@@ -1069,6 +1086,10 @@ export class ProjectsViewComponent implements OnInit {
     description: "",
     reference_externe: "",
     color: "#3b82f6",
+  };
+
+  formErrors = {
+    nom_projet: false
   };
 
   constructor(
@@ -1152,6 +1173,7 @@ export class ProjectsViewComponent implements OnInit {
       color: "#3b82f6",
     };
     this.isCustomColor = false;
+    this.formErrors = { nom_projet: false };
     this.showProjectModal = true;
     this.activeMenuId = null;
   }
@@ -1165,6 +1187,7 @@ export class ProjectsViewComponent implements OnInit {
     this.editingProjetId = projet.id!;
     this.newProjet = { ...projet };
     this.isCustomColor = !this.predefinedColors.includes(this.newProjet.color!);
+    this.formErrors = { nom_projet: false };
     this.showProjectModal = true;
     this.activeMenuId = null;
   }
@@ -1188,6 +1211,7 @@ export class ProjectsViewComponent implements OnInit {
     };
 
     console.log("PROJET Copie : ", this.newProjet);
+    this.formErrors = { nom_projet: false };
     this.showProjectModal = true;
     this.activeMenuId = null;
   }
@@ -1223,6 +1247,12 @@ export class ProjectsViewComponent implements OnInit {
   }
 
   async saveProjet() {
+    // Validation
+    if (!this.newProjet.nom_projet || this.newProjet.nom_projet.trim() === "") {
+      this.formErrors.nom_projet = true;
+      return;
+    }
+
     try {
       if (this.editingProjetId) {
         await this.projetService.updateProjet(this.editingProjetId, this.newProjet);
