@@ -312,6 +312,13 @@ interface FlatRow {
                         >
                           <lucide-icon [img]="Plus" [size]="16"></lucide-icon>
                         </button>
+                        <button
+                          class="btn-hover-delete"
+                          (click)="removeChild(child, row); $event.stopPropagation()"
+                          title="{{ viewMode === 'project' ? 'Retirer cette équipe du projet' : 'Retirer ce projet de l\'équipe' }}"
+                        >
+                          ×
+                        </button>
                       </div>
                     </div>
                     <div class="weeks-container">
@@ -940,6 +947,16 @@ interface FlatRow {
         background-color: #fee2e2;
         color: #b91c1c;
       }
+
+      /* Child row buttons positioning - both buttons visible side by side */
+      .child-row .btn-hover-add {
+        right: 44px; /* Make room for delete button */
+      }
+
+      .child-row .btn-hover-delete {
+        right: 12px;
+      }
+
 
       .px-0 { padding-left: 0 !important; padding-right: 0 !important; }
 
@@ -2818,6 +2835,47 @@ Cela supprimera toutes les charges associées à cette ressource.`;
       alert('Erreur lors de la suppression de la ressource.');
     }
   }
+
+  async removeChild(child: ChildRow, parent: ParentRow) {
+    const childType = this.viewMode === "project" ? "équipe" : "projet";
+    const parentType = this.viewMode === "project" ? "projet" : "équipe";
+
+    const confirmMsg = `Êtes-vous sûr de vouloir retirer "${child.label}" ${childType === "équipe" ? "de l'" : "du "}${parentType} "${parent.label}" ?
+Cela supprimera toutes les charges associées à cette ${childType}.`;
+
+    if (!confirm(confirmMsg)) {
+      return;
+    }
+
+    try {
+      let projetId: string;
+      let equipeId: string;
+
+      if (this.viewMode === "project") {
+        // Parent is Project, Child is Team
+        projetId = parent.id;
+        equipeId = child.id;
+      } else {
+        // Parent is Team, Child is Project
+        equipeId = parent.id;
+        projetId = child.id;
+      }
+
+      console.log("Deleting charges for project-team combination: (projetId, equipeId)", projetId, equipeId);
+      // Delete all charges for this project-team combination
+      await this.chargeService.deleteChargesForProjectTeam(projetId, equipeId);
+
+      // Also delete the link from equipes_projets table
+      await this.projetService.unlinkProjectFromTeam(projetId, equipeId);
+
+      // Reload data to reflect changes from DB
+      await this.loadData();
+    } catch (error) {
+      console.error('Error removing child:', error);
+      alert(`Erreur lors de la suppression de l'association.`);
+    }
+  }
+
 
   getSelectedStartDateISO(): string {
     if (!this.selectedStartDate) return '';

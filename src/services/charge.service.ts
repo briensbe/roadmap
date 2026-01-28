@@ -266,6 +266,23 @@ export class ChargeService {
         this.clearCache();
     }
 
+    async deleteChargesForProjectTeam(
+        projetId: string,
+        equipeId: string
+    ): Promise<void> {
+        const { error } = await this.supabase.client
+            .from('charges')
+            .delete()
+            .eq('projet_id', projetId)
+            .eq('equipe_id', equipeId);
+
+        if (error) throw error;
+
+        // Invalidate cache
+        this.clearCache();
+    }
+
+
     private getFirstDayOfWeek(fromDate: string) {
         // console.log("fromDate : " + fromDate);
 
