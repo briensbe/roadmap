@@ -7,11 +7,11 @@ import { ChargeService } from "../services/charge.service";
 import { JalonService } from "../services/jalon.service";
 import { Equipe, Projet, Charge, Role, Personne, Capacite, Jalon } from "../models/types";
 import { CalendarService } from "../services/calendar.service";
-import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact } from "lucide-angular";
+import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact, X } from "lucide-angular";
 import { getISOWeekYear } from "date-fns";
 
 @NgModule({
-  imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact })],
+  imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact, X })],
   exports: [LucideAngularModule]
 })
 export class LucideIconsModule { }
@@ -312,12 +312,12 @@ interface FlatRow {
                         >
                           <lucide-icon [img]="Plus" [size]="16"></lucide-icon>
                         </button>
-                        <button
-                          class="btn-hover-delete"
-                          (click)="removeChild(child, row); $event.stopPropagation()"
-                          title="{{ viewMode === 'project' ? 'Retirer cette équipe du projet' : 'Retirer ce projet de l\'équipe' }}"
-                        >
-                          ×
+                         <button
+                           class="btn-hover-delete"
+                           (click)="removeChild(child, row); $event.stopPropagation()"
+                           [title]='viewMode === "project" ? "Retirer cette équipe du projet" : "Retirer ce projet de l&apos;équipe"'
+                         >
+                          <lucide-icon [img]="X" [size]="16"></lucide-icon>
                         </button>
                       </div>
                     </div>
@@ -367,7 +367,7 @@ interface FlatRow {
                             (click)="removeResource(resource, child, row); $event.stopPropagation()"
                             title="Supprimer cette ressource"
                           >
-                            ×
+                            <lucide-icon [img]="X" [size]="14"></lucide-icon>
                           </button>
                         </div>
                       </div>
@@ -897,50 +897,41 @@ interface FlatRow {
         text-overflow: ellipsis;
       }
 
-      .btn-hover-add {
+      .btn-hover-add, .btn-hover-delete {
         background: transparent;
         border: none;
-        color: #64748b;
         cursor: pointer;
-        padding: 6px;
+        padding: 0;
         border-radius: 4px;
         display: flex;
         align-items: center;
         justify-content: center;
         opacity: 0;
         position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
         right: 12px;
+        width: 28px;
+        height: 28px;
+        transition: all 0.2s;
       }
 
-      .row-label-content:hover .btn-hover-add {
+      .btn-hover-add {
+        color: #64748b;
+      }
+
+      .btn-hover-delete {
+        color: #ef4444;
+      }
+
+      .row-label-content:hover .btn-hover-add,
+      .row-label-content:hover .btn-hover-delete {
         opacity: 1;
       }
-      
 
       .btn-hover-add:hover {
         background-color: #e2e8f0;
         color: #0f172a;
-      }
-
-      .btn-hover-delete {
-        background: transparent;
-        border: none;
-        color: #ef4444;
-        cursor: pointer;
-        padding: 4px 8px;
-        border-radius: 4px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 18px;
-        font-weight: 700;
-        opacity: 0;
-        position: absolute;
-        right: 12px;
-      }
-
-      .row-label-content:hover .btn-hover-delete {
-        opacity: 1;
       }
 
       .btn-hover-delete:hover {
@@ -950,7 +941,7 @@ interface FlatRow {
 
       /* Child row buttons positioning - both buttons visible side by side */
       .child-row .btn-hover-add {
-        right: 44px; /* Make room for delete button */
+        right: 44px; /* Room for delete button */
       }
 
       .child-row .btn-hover-delete {
@@ -1735,6 +1726,7 @@ export class PlanViewComponent implements OnInit {
 
   // Icons
   Plus = Plus;
+  X = X;
   Contact = Contact;
   User = User;
 
