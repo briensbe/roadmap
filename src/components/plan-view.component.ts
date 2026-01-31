@@ -611,8 +611,8 @@ interface FlatRow {
            class="year-popover" 
            (click)="$event.stopPropagation()">
         <div class="popover-arrow" 
-             [class.top]="true"
-             [class.bottom]="false"></div>
+             [class.top]="popoverArrowSide === 'top'"
+             [class.bottom]="popoverArrowSide === 'bottom'"></div>
         <div class="popover-content">
           <button class="popover-item" [class.active]="selectedCapacityYear === 'all'" (click)="selectYear('all')">
             Tout cumulé
@@ -1685,6 +1685,7 @@ export class PlanViewComponent implements OnInit {
   selectedStartDate: Date | null = null;
   showYearPopover = false;
   popoverPosition: PopoverPosition | null = null;
+  popoverArrowSide: 'top' | 'bottom' = 'top';
   activeAnchorId: string | null = null;
 
   flatRows: FlatRow[] = [];
@@ -3017,6 +3018,17 @@ Cela supprimera toutes les charges associées à cette ${childType}.`;
 
     this.activeAnchorId = anchorId;
     this.showYearPopover = true;
+
+    // Calculate best position to determine arrow side
+    const rect = targetElement.getBoundingClientRect();
+    const pos = calculateBestPopoverPosition({
+      rect,
+      viewportHeight: window.innerHeight,
+      viewportWidth: window.innerWidth,
+      popoverHeight: 200, // Estimated height of the popover
+      popoverWidth: 160
+    });
+    this.popoverArrowSide = pos.arrowSide;
 
     // Close when clicking outside
     const closeHandler = (e: MouseEvent | Event) => {
