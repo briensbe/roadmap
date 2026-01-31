@@ -138,7 +138,7 @@ interface TeamRow {
                   ></lucide-icon>
                   <div class="row-info-stack-wrapper">
                     <div class="info-stack">
-                      <span class="info-label">{{ teamRow.equipe.nom }}</span>
+                      <span class="info-label" [title]="teamRow.equipe.nom">{{ teamRow.equipe.nom }}</span>
                     </div>
                   </div>
                   <button
@@ -176,7 +176,7 @@ interface TeamRow {
                     <div class="resource-icon-wrapper" [style.background-color]="resource.color || '#e2e8f0'">
                       <lucide-icon [name]="resource.type === 'role' ? 'contact' : 'user'" [size]="14" class="resource-icon"></lucide-icon>
                     </div>
-                    <span class="resource-name">{{ resource.label }}</span>
+                    <span class="resource-name" [title]="resource.label">{{ resource.label }}</span>
                     <div class="resource-total-badge" 
                          [class.anchor-active]="activeAnchorId === resource.uniqueId"
                          (click)="openYearPopover($event, resource.uniqueId)" 

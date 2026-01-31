@@ -287,7 +287,7 @@ interface FlatRow {
                     <div class="row-info-stack-wrapper">
                       <div class="info-stack">
                         <span class="info-code" *ngIf="row.code">{{ row.code }}</span>
-                        <span class="info-label">{{ row.label }}</span>
+                        <span class="info-label" [title]="row.label">{{ row.label }}</span>
                       </div>
                     </div>
 
@@ -327,7 +327,7 @@ interface FlatRow {
                         <div class="row-info-stack-wrapper">
                           <div class="info-stack">
                             <span class="info-code" *ngIf="child.code">{{ child.code }}</span>
-                            <span class="info-label">{{ child.label }}</span>
+                            <span class="info-label" [title]="child.label">{{ child.label }}</span>
                           </div>
                         </div>
 
@@ -379,7 +379,7 @@ interface FlatRow {
                             <div class="resource-icon-wrapper" [style.background-color]="resource.color || '#e2e8f0'">
                               <lucide-icon [name]="resource.type === 'role' ? 'contact' : 'user'" [size]="14" class="resource-icon"></lucide-icon>
                             </div>
-                            <span class="resource-detail-name">{{ resource.label }}</span>
+                            <span class="resource-detail-name" [title]="resource.label">{{ resource.label }}</span>
                             <div class="resource-total-badge" 
                                  [class.anchor-active]="activeAnchorId === getResourceUniqueId(resource, child, row)"
                                  (click)="openYearPopover($event, getResourceUniqueId(resource, child, row))" 
