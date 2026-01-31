@@ -4,6 +4,13 @@ export interface ToolbarPosition {
     transform: string;
 }
 
+export interface PopoverPosition {
+    top: number;
+    left: number;
+    transform?: string;
+    arrowSide: 'top' | 'bottom';
+}
+
 export interface PositioningParams {
     rect: DOMRect;
     viewportWidth: number;
@@ -70,3 +77,39 @@ export function calculateBestToolbarPosition(params: PositioningParams): Toolbar
 
     return { top, left, transform };
 }
+
+export interface PopoverParams {
+    rect: DOMRect;
+    viewportHeight: number;
+    viewportWidth: number;
+    popoverHeight?: number; // Estimated height
+    popoverWidth?: number;  // Estimated width
+}
+
+/**
+ * Calculates the best position for a floating popover (above or below an element).
+ */
+export function calculateBestPopoverPosition(params: PopoverParams): PopoverPosition {
+    const { rect, viewportHeight, viewportWidth, popoverHeight = 200, popoverWidth = 160 } = params;
+
+    const spaceBelow = viewportHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    let top = rect.bottom + 10;
+    let left = rect.left;
+
+    // Check if enough space below
+    if (spaceBelow < popoverHeight && spaceAbove > spaceBelow) {
+        // Position ABOVE if more space available or if below is too tight
+        top = rect.top - 10;
+        return {
+            top,
+            left,
+            transform: 'translateY(-100%)',
+            arrowSide: 'bottom'
+        };
+    }
+
+    return { top, left, arrowSide: 'top' };
+}
+

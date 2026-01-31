@@ -285,3 +285,106 @@ textarea:focus {
   border: 1px solid #d1d5db;
   border-radius: 6px;
 }
+
+/* Year Popover Styles */
+.year-popover {
+  position: fixed;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow:
+    0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  z-index: 1001;
+  width: 160px;
+  animation: popOverIn 0.2s cubic-bezier(0, 0, 0.2, 1);
+  transition:
+    top 0.2s ease,
+    left 0.2s ease;
+}
+
+@keyframes popOverIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.popover-arrow {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: white;
+  transform: rotate(45deg);
+  left: 20px;
+}
+
+.popover-arrow.top {
+  top: -6px;
+  border-left: 1px solid #e2e8f0;
+  border-top: 1px solid #e2e8f0;
+}
+
+.popover-arrow.bottom {
+  bottom: -6px;
+  border-right: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.popover-content {
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.popover-item {
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.popover-item:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.popover-item.active {
+  background: #eff6ff;
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.popover-date-jump {
+  padding: 4px 6px 8px 6px;
+  display: flex;
+  flex-direction: column;
+}
+
+.popover-date-jump .jump-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #1e293b;
+  background: white;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.popover-date-jump .jump-input:focus {
+  border-color: #2563eb;
+}

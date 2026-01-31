@@ -9,7 +9,7 @@ import { Equipe, Projet, Charge, Role, Personne, Capacite, Jalon } from "../mode
 import { CalendarService } from "../services/calendar.service";
 import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact, X } from "lucide-angular";
 import { getISOWeekYear } from "date-fns";
-import { calculateBestToolbarPosition, ToolbarPosition } from "../utils/selection-positioning";
+import { calculateBestToolbarPosition, calculateBestPopoverPosition, ToolbarPosition, PopoverPosition } from "../utils/selection-positioning";
 import { SelectionToolbarComponent } from "./selection-toolbar.component";
 
 @NgModule({
@@ -573,13 +573,15 @@ interface FlatRow {
       </div>
     </div>
     
-      <!-- Year Selection Popover -->
       <div *ngIf="showYearPopover" 
            class="year-popover" 
            [style.top.px]="popoverPosition?.top" 
            [style.left.px]="popoverPosition?.left"
+           [style.transform]="popoverPosition?.transform"
            (click)="$event.stopPropagation()">
-        <div class="popover-arrow"></div>
+        <div class="popover-arrow" 
+             [class.top]="popoverPosition?.arrowSide === 'top'"
+             [class.bottom]="popoverPosition?.arrowSide === 'bottom'"></div>
         <div class="popover-content">
           <button class="popover-item" [class.active]="selectedCapacityYear === 'all'" (click)="selectYear('all')">
             Tout cumulé
@@ -1437,80 +1439,10 @@ interface FlatRow {
         text-transform: lowercase;
       }
 
-      .year-popover {
-        position: fixed;
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(8px);
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-        z-index: 1001;
-        width: 160px;
-        animation: popOverIn 0.2s cubic-bezier(0, 0, 0.2, 1);
+      .jump-input:focus {
+        border-color: #2563eb;
       }
-
-      @keyframes popOverIn {
-        from { opacity: 0; transform: scale(0.95) translateY(-10px); }
-        to { opacity: 1; transform: scale(1) translateY(0); }
-      }
-
-      .popover-content {
-        padding: 6px;
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-      }
-
-      .popover-item {
-        padding: 8px 12px;
-        border: none;
-        background: transparent;
-        border-radius: 8px;
-        text-align: left;
-        font-size: 13px;
-        font-weight: 500;
-        color: #475569;
-        cursor: pointer;
-        transition: all 0.15s ease;
-      }
-
-      .popover-item:hover {
-        background: #f1f5f9;
-        color: #1e293b;
-      }
-
-      .popover-item.active {
-        background: #eff6ff;
-        color: #2563eb;
-        font-weight: 600;
-      }
-
-      .popover-arrow {
-        position: absolute;
-        top: -6px;
-        left: 20px;
-        width: 12px;
-        height: 12px;
-        background: white;
-        border-left: 1px solid #e2e8f0;
-        border-top: 1px solid #e2e8f0;
-        transform: rotate(45deg);
-      }
-
-      .popover-date-jump {
-        padding: 4px 6px 8px 6px;
-        display: flex;
-        flex-direction: column;
-      }
-
-      .jump-input {
-        width: 100%;
-        padding: 4px;
-        border: 1px solid #e2e8f0;
-        border-radius: 4px;
-        font-size: 11px;
-      }
-
+      
       input:checked + .slider {
         background-color: #3b82f6;
       }
@@ -1582,7 +1514,7 @@ export class PlanViewComponent implements OnInit {
   selectedCapacityYear: 'all' | '2025' | '2026' | 'custom' = 'all';
   selectedStartDate: Date | null = null;
   showYearPopover = false;
-  popoverPosition: { top: number; left: number } | null = null;
+  popoverPosition: PopoverPosition | null = null;
 
   flatRows: FlatRow[] = [];
 
@@ -2773,10 +2705,11 @@ Cela supprimera toutes les charges associées à cette ${childType}.`;
   openYearPopover(event: MouseEvent) {
     event.stopPropagation();
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    this.popoverPosition = {
-      top: rect.bottom + 10,
-      left: rect.left
-    };
+    this.popoverPosition = calculateBestPopoverPosition({
+      rect,
+      viewportHeight: window.innerHeight,
+      viewportWidth: window.innerWidth
+    });
     this.showYearPopover = true;
 
     // Close when clicking outside
