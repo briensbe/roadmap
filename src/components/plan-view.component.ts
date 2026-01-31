@@ -2704,6 +2704,12 @@ Cela supprimera toutes les charges associées à cette ${childType}.`;
 
   openYearPopover(event: MouseEvent) {
     event.stopPropagation();
+
+    if (this.showYearPopover) {
+      this.showYearPopover = false;
+      return;
+    }
+
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
     this.popoverPosition = calculateBestPopoverPosition({
       rect,
@@ -2713,7 +2719,11 @@ Cela supprimera toutes les charges associées à cette ${childType}.`;
     this.showYearPopover = true;
 
     // Close when clicking outside or scrolling
-    const closeHandler = () => {
+    const closeHandler = (e: MouseEvent | Event) => {
+      // Don't close if we clicked the toggle itself (it will be handled by the click handler above)
+      if (e instanceof MouseEvent && (event.currentTarget as HTMLElement).contains(e.target as Node)) {
+        return;
+      }
       this.showYearPopover = false;
       document.removeEventListener('click', closeHandler);
       window.removeEventListener('scroll', closeHandler, true);
