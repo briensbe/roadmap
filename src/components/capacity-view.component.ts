@@ -1093,6 +1093,10 @@ export class CapacityViewComponent implements OnInit {
   activeTooltip: string | null = null;
   tooltipX = 0;
   tooltipY = 0;
+  private tooltipShowTimer: any;
+  private tooltipHideTimer: any;
+  private readonly SHOW_DELAY = 400;
+  private readonly HIDE_DELAY = 100;
 
   availableRoles: Role[] = [];
   availablePersonnes: Personne[] = [];
@@ -1397,12 +1401,28 @@ export class CapacityViewComponent implements OnInit {
 
   // Sexy Tooltip Methods
   showTooltip(event: MouseEvent, text: string) {
-    this.activeTooltip = text;
-    this.updateTooltipPosition(event);
+    if (this.tooltipHideTimer) {
+      clearTimeout(this.tooltipHideTimer);
+      this.tooltipHideTimer = null;
+    }
+
+    if (this.activeTooltip === text) return;
+
+    this.tooltipShowTimer = setTimeout(() => {
+      this.activeTooltip = text;
+      this.updateTooltipPosition(event);
+    }, this.SHOW_DELAY);
   }
 
   hideTooltip() {
-    this.activeTooltip = null;
+    if (this.tooltipShowTimer) {
+      clearTimeout(this.tooltipShowTimer);
+      this.tooltipShowTimer = null;
+    }
+
+    this.tooltipHideTimer = setTimeout(() => {
+      this.activeTooltip = null;
+    }, this.HIDE_DELAY);
   }
 
   @HostListener('mousemove', ['$event'])
