@@ -61,8 +61,33 @@ interface TeamRow {
               </select>
             </div>
             <div class="filter-item">
-              <div class="search-input-wrapper">
-                <input type="text" [(ngModel)]="resourceSearch" placeholder="Rechercher ressource..." class="form-control form-control-sm" style="width: 180px;" />
+              <div class="filter-dropdown-container">
+                <input type="text" 
+                       [(ngModel)]="resourceSearch" 
+                       placeholder="Filtrer ressources..." 
+                       class="form-control form-control-sm search-input" 
+                       (click)="toggleResourceDropdown($event)" />
+                
+                <div *ngIf="showResourceDropdown" class="resource-dropdown shadow-lg">
+                  <div class="dropdown-header">
+                    <span>{{ selectedResourceNames.size }} sélectionnée(s)</span>
+                    <button class="btn-clear" *ngIf="selectedResourceNames.size > 0" (click)="selectedResourceNames.clear(); $event.stopPropagation()">Effacer</button>
+                  </div>
+                  <div class="dropdown-list">
+                    <div *ngFor="let res of filteredResourceList" 
+                         class="dropdown-item" 
+                         (click)="toggleResourceSelection(res.label); $event.stopPropagation()">
+                      <input type="checkbox" [checked]="isResourceSelected(res.label)" />
+                      <div class="item-icon" [style.background-color]="res.color || '#e2e8f0'">
+                        <lucide-icon [name]="res.type === 'role' ? 'contact' : 'user'" [size]="12"></lucide-icon>
+                      </div>
+                      <span class="item-label">{{ res.label }}</span>
+                    </div>
+                    <div *ngIf="filteredResourceList.length === 0" class="no-results">
+                      Aucun résultat
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -841,6 +866,111 @@ interface TeamRow {
       .ios-switch input:focus + .ios-slider {
         box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
       }
+
+      /* Multi-select Dropdown Styles */
+      .filter-dropdown-container {
+        position: relative;
+        width: 200px;
+      }
+
+      .search-input {
+        cursor: pointer;
+      }
+
+      .resource-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 260px;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        margin-top: 8px;
+        z-index: 2000;
+        display: flex;
+        flex-direction: column;
+        max-height: 400px;
+      }
+
+      .dropdown-header {
+        padding: 8px 12px;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #f8fafc;
+        border-radius: 8px 8px 0 0;
+        font-size: 11px;
+        font-weight: 600;
+        color: #64748b;
+      }
+
+      .btn-clear {
+        background: transparent;
+        border: none;
+        color: #3b82f6;
+        cursor: pointer;
+        font-size: 11px;
+        padding: 0;
+      }
+
+      .btn-clear:hover {
+        text-decoration: underline;
+      }
+
+      .dropdown-list {
+        overflow-y: auto;
+        padding: 4px 0;
+      }
+
+      .dropdown-item {
+        padding: 6px 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        transition: background 0.15s ease;
+      }
+
+      .dropdown-item:hover {
+        background: #f1f5f9;
+      }
+
+      .dropdown-item input[type="checkbox"] {
+        width: 14px;
+        height: 14px;
+        cursor: pointer;
+      }
+
+      .item-icon {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        flex-shrink: 0;
+      }
+
+      .item-label {
+        font-size: 13px;
+        color: #334155;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .no-results {
+        padding: 12px;
+        text-align: center;
+        color: #94a3b8;
+        font-size: 12px;
+      }
+
+      .shadow-lg {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      }
     `,
   ],
 })
@@ -853,6 +983,8 @@ export class CapacityViewComponent implements OnInit {
 
   teamFilter: string = "all";
   resourceSearch: string = "";
+  selectedResourceNames: Set<string> = new Set();
+  showResourceDropdown: boolean = false;
 
   availableRoles: Role[] = [];
   availablePersonnes: Personne[] = [];
@@ -987,8 +1119,13 @@ export class CapacityViewComponent implements OnInit {
       rows = rows.filter(tr => tr.equipe.id === this.teamFilter);
     }
 
-    // Filter by resource search
-    if (this.resourceSearch.trim()) {
+    // Filter by resource search OR multi-select (by name)
+    if (this.selectedResourceNames.size > 0) {
+      rows = rows.map(tr => ({
+        ...tr,
+        resources: tr.resources.filter(r => this.selectedResourceNames.has(r.label))
+      })).filter(tr => tr.resources.length > 0);
+    } else if (this.resourceSearch.trim()) {
       const search = this.resourceSearch.toLowerCase().trim();
       rows = rows.map(tr => ({
         ...tr,
@@ -997,6 +1134,54 @@ export class CapacityViewComponent implements OnInit {
     }
 
     return rows;
+  }
+
+  get allResources(): ResourceRow[] {
+    const all: ResourceRow[] = [];
+    const seenLabels = new Set<string>();
+    this.teamRows.forEach(tr => {
+      tr.resources.forEach(r => {
+        if (!seenLabels.has(r.label)) {
+          seenLabels.add(r.label);
+          all.push(r);
+        }
+      });
+    });
+    return all.sort((a, b) => a.label.localeCompare(b.label));
+  }
+
+  get filteredResourceList(): ResourceRow[] {
+    const search = this.resourceSearch.toLowerCase().trim();
+    if (!search) return this.allResources;
+    return this.allResources.filter(r => r.label.toLowerCase().includes(search));
+  }
+
+  toggleResourceSelection(label: string) {
+    if (this.selectedResourceNames.has(label)) {
+      this.selectedResourceNames.delete(label);
+    } else {
+      this.selectedResourceNames.add(label);
+    }
+  }
+
+  isResourceSelected(label: string): boolean {
+    return this.selectedResourceNames.has(label);
+  }
+
+  toggleResourceDropdown(event: MouseEvent) {
+    event.stopPropagation();
+    this.showResourceDropdown = !this.showResourceDropdown;
+
+    if (this.showResourceDropdown) {
+      const closeHandler = (e: MouseEvent) => {
+        const target = e.target as HTMLElement;
+        if (!target.closest('.filter-dropdown-container')) {
+          this.showResourceDropdown = false;
+          document.removeEventListener('click', closeHandler);
+        }
+      };
+      document.addEventListener('click', closeHandler);
+    }
   }
 
   formatWeekHeader(date: Date): string {
