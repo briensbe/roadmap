@@ -1,5 +1,6 @@
 import { Injectable } from "@angular/core";
 import { SupabaseService } from "./supabase.service";
+import { DataSyncService } from "./data-sync.service";
 import { Personne } from "../models/types";
 
 @Injectable({
@@ -8,9 +9,19 @@ import { Personne } from "../models/types";
 export class PersonnesService {
     private _personnesCache: Personne[] | null = null;
 
-    constructor(private supabase: SupabaseService) { }
+    constructor(
+        private supabase: SupabaseService,
+        private dataSync: DataSyncService
+    ) {
+        this.dataSync.sync$.subscribe(() => this.clearLocalCache());
+    }
 
-    private clearCache() {
+    public clearCache() {
+        this.clearLocalCache();
+        this.dataSync.notifyChange();
+    }
+
+    private clearLocalCache() {
         this._personnesCache = null;
     }
 

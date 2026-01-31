@@ -1,5 +1,6 @@
 import { Injectable } from "@angular/core";
 import { SupabaseService } from "./supabase.service";
+import { DataSyncService } from "./data-sync.service";
 import { Role, RoleAttachment } from "../models/types";
 
 @Injectable({
@@ -9,9 +10,19 @@ export class RolesService {
     private _rolesCache: Role[] | null = null;
     private _attachmentsCache: RoleAttachment[] | null = null;
 
-    constructor(private supabase: SupabaseService) { }
+    constructor(
+        private supabase: SupabaseService,
+        private dataSync: DataSyncService
+    ) {
+        this.dataSync.sync$.subscribe(() => this.clearLocalCache());
+    }
 
-    private clearCache() {
+    public clearCache() {
+        this.clearLocalCache();
+        this.dataSync.notifyChange();
+    }
+
+    private clearLocalCache() {
         this._rolesCache = null;
         this._attachmentsCache = null;
     }

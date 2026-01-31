@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { SupabaseService } from "./supabase.service";
-import { TeamService } from "./team.service";
+import { DataSyncService } from "./data-sync.service";
 import { Societe, Departement, Service, Equipe, Role, Personne } from "../models/types";
 
 @Injectable({
@@ -17,18 +17,23 @@ export class ResourceService {
 
   constructor(
     private supabase: SupabaseService,
-    private teamService: TeamService
-  ) { }
+    private dataSync: DataSyncService
+  ) {
+    this.dataSync.sync$.subscribe(() => this.clearLocalCache());
+  }
 
   private clearCache() {
+    this.clearLocalCache();
+    this.dataSync.notifyChange();
+  }
+
+  private clearLocalCache() {
     this._societesCache = null;
     this._departementsCache = null;
     this._servicesCache = null;
     this._equipesCache = null;
     this._rolesCache = null;
     this._personnesCache = null;
-    // Also clear TeamService cache to keep them in sync
-    this.teamService.clearCache();
   }
 
   async getAllSocietes(): Promise<Societe[]> {

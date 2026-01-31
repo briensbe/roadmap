@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
+import { DataSyncService } from './data-sync.service';
 import { Equipe, Role, Personne, Capacite, EquipeResource } from '../models/types';
 
 @Injectable({
@@ -14,9 +15,20 @@ export class TeamService {
     private _capacitesCache = new Map<string, Capacite[]>();
     private _allCapacitiesCache: Capacite[] | null = null;
 
-    constructor(private supabase: SupabaseService) { }
+    constructor(
+        private supabase: SupabaseService,
+        private dataSync: DataSyncService
+    ) {
+        // Subscribe to global sync events to clear local cache
+        this.dataSync.sync$.subscribe(() => this.clearLocalCache());
+    }
 
-    clearCache() {
+    public clearCache() {
+        this.clearLocalCache();
+        this.dataSync.notifyChange();
+    }
+
+    private clearLocalCache() {
         this._equipesCache = null;
         this._rolesCache = null;
         this._personnesCache = null;
