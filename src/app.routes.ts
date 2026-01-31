@@ -5,7 +5,7 @@ import { CapacityViewComponent } from "./components/capacity-view.component";
 import { ProjectsViewComponent } from "./components/projects-view.component";
 import { PlanViewComponent } from "./components/plan-view.component";
 import { MilestonesViewComponent } from "./components/milestones-view.component";
-import { DashboardComponent } from "./components/dashboard.component";
+import { DashboardComponent } from "./components/dashboard/dashboard.component";
 import { LoginComponent } from "./auth/login/login.component";
 import { SignupComponent } from "./auth/signup/signup.component";
 import { ForgotPasswordComponent } from "./auth/forgot-password/forgot-password.component";

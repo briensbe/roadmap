@@ -1,0 +1,174 @@
+<div class="dashboard-container">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <div class="header-left">
+      <h1 class="dashboard-title">Tableau de bord</h1>
+      <p class="dashboard-subtitle">Vue d'ensemble de vos ressources et projets</p>
+    </div>
+    <div class="header-actions">
+      <a [routerLink]="['/planification']" class="btn-planning">
+        <lucide-icon [img]="Calendar" [size]="18"></lucide-icon>
+        Voir la planification
+      </a>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="summary-cards">
+    <!-- Card Projets -->
+    <div class="summary-card">
+      <div class="card-header">
+        <div class="card-title-group">
+          <div class="card-icon" [style.background-color]="'#3b82f6'">
+            <lucide-icon [img]="FolderKanban" [size]="24"></lucide-icon>
+          </div>
+          <h3 class="card-title">Projets</h3>
+        </div>
+        <a [routerLink]="['/projets']" class="card-link">Voir tout →</a>
+      </div>
+      <div class="card-content">
+        @if (projectStatusCounts.length > 0) {
+          @for (status of projectStatusCounts; track status.statut) {
+            <div class="stat-item" (mouseenter)="hoveredStatus = status.statut" (mouseleave)="hoveredStatus = null">
+              <div class="stat-number" [style.color]="'#3b82f6'">{{ status.count }}</div>
+              <div class="stat-label-wrapper">
+                <span class="stat-label">{{ status.statut.toLowerCase() }}</span>
+              </div>
+            </div>
+          }
+        } @else {
+          <div class="empty-message">Aucun projet</div>
+        }
+      </div>
+    </div>
+
+    <!-- Card Ressources -->
+    <div class="summary-card">
+      <div class="card-header">
+        <div class="card-title-group">
+          <div class="card-icon" [style.background-color]="'#10b981'">
+            <lucide-icon [img]="Users" [size]="24"></lucide-icon>
+          </div>
+          <h3 class="card-title">Ressources</h3>
+        </div>
+        <a [routerLink]="['/ressources']" class="card-link">Voir tout →</a>
+      </div>
+      <div class="card-content">
+        @if (rolesCount > 0 || personnesCount > 0) {
+          <div class="stat-item" (mouseenter)="hoveredResource = 'roles'" (mouseleave)="hoveredResource = null">
+            <div class="stat-number" [style.color]="'#10b981'">{{ rolesCount }}</div>
+            <div class="stat-label-wrapper">
+              <span class="stat-label">Rôles</span>
+            </div>
+          </div>
+          <div class="stat-item" (mouseenter)="hoveredResource = 'personnes'" (mouseleave)="hoveredResource = null">
+            <div class="stat-number" [style.color]="'#10b981'">{{ personnesCount }}</div>
+            <div class="stat-label-wrapper">
+              <span class="stat-label">Personnes</span>
+            </div>
+          </div>
+        } @else {
+          <div class="empty-message">Aucune ressource</div>
+        }
+      </div>
+    </div>
+
+    <!-- Card Organisation -->
+    <div class="summary-card">
+      <div class="card-header">
+        <div class="card-title-group">
+          <div class="card-icon" [style.background-color]="'#8b5cf6'">
+            <lucide-icon [img]="Building2" [size]="24"></lucide-icon>
+          </div>
+          <h3 class="card-title">Organisation</h3>
+        </div>
+        <a [routerLink]="['/organisation']" class="card-link">Voir tout →</a>
+      </div>
+      <div class="card-content">
+        @if (servicesCount > 0 || equipesCount > 0) {
+          <div class="stat-item">
+            <div class="stat-number" [style.color]="'#8b5cf6'">{{ servicesCount }}</div>
+            <div class="stat-label-wrapper">
+              <span class="stat-label">Services</span>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number" [style.color]="'#8b5cf6'">{{ equipesCount }}</div>
+            <div class="stat-label-wrapper">
+              <span class="stat-label">Équipes</span>
+            </div>
+          </div>
+        } @else {
+          <div class="empty-message">Aucune organisation</div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="main-content">
+    <!-- Recent Projects -->
+    <div class="content-card">
+      <div class="content-card-header">
+        <h3 class="content-card-title">Projets récents</h3>
+        <a [routerLink]="['/projets']" class="content-card-link">Voir tout →</a>
+      </div>
+      <div class="content-card-body">
+        @if (recentProjects.length > 0) {
+          @for (projet of recentProjects; track projet.id) {
+            <div class="project-item" [style.border-left-color]="projet.color || '#3b82f6'">
+              <div class="project-info">
+                <div class="project-header">
+                  <span class="project-code" [style.color]="projet.color || '#3b82f6'">{{ projet.code_projet }}</span>
+                  <span class="project-status" [attr.data-status]="projet.statut">{{ projet.statut }}</span>
+                </div>
+                <div class="project-name">{{ projet.nom_projet }}</div>
+                <div class="project-progress">
+                  <div class="progress-bar">
+                    <div class="progress-fill" [style.width.%]="getProgressPercent(projet)"></div>
+                  </div>
+                  <span class="progress-text">{{ getProgressText(projet) }}</span>
+                </div>
+              </div>
+            </div>
+          }
+        } @else {
+          <div class="empty-state">Aucun projet récent</div>
+        }
+      </div>
+    </div>
+
+    <!-- Upcoming Milestones -->
+    <div class="content-card">
+      <div class="content-card-header">
+        <h3 class="content-card-title">Jalons à venir</h3>
+        <a [routerLink]="['/jalons']" class="content-card-link">Voir tout →</a>
+      </div>
+      <div class="content-card-body">
+        @if (upcomingJalons.length > 0) {
+          @for (jalon of upcomingJalons; track jalon.id) {
+            <div class="milestone-item">
+              <div class="milestone-bar" [style.background-color]="getMilestoneColor(jalon)"></div>
+              <div class="milestone-content">
+                <div class="milestone-header">
+                  <div class="milestone-title">{{ jalon.nom }}</div>
+                  <div class="milestone-date">{{ formatDate(jalon.date_jalon) }}</div>
+                </div>
+                <div class="milestone-meta">
+                  <div class="milestone-project">
+                    {{ getProjectName(jalon.projet_id) }}
+                  </div>
+                  <div class="milestone-days" [class.urgent]="getDaysRemaining(jalon.date_jalon) <= 7">
+                    {{ getDaysRemainingText(jalon.date_jalon) }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        } @else {
+          <div class="empty-state">Aucun jalon à venir</div>
+        }
+      </div>
+    </div>
+  </div>
+</div>
