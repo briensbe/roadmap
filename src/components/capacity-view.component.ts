@@ -173,7 +173,7 @@ interface TeamRow {
         class="selection-toolbar"
         [style.top.px]="toolbarPosition?.top"
         [style.left.px]="toolbarPosition?.left"
-        [style.transform]="'translate(-50%, 10px)'"
+        [style.transform]="toolbarTransform"
         [style.opacity]="toolbarVisible ? 1 : 0">
         <div class="selection-info">
           {{ selectedCells.length }} semaine(s) sélectionnée(s)
@@ -1006,6 +1006,7 @@ export class CapacityViewComponent implements OnInit {
   selectedCells: Array<{ resource: ResourceRow; week: Date }> = [];
   isSelectionFinished: boolean = false;
   toolbarPosition: { top: number; left: number } | null = null;
+  toolbarTransform: string = '';
   toolbarVisible: boolean = false; // Controls opacity to prevent flash
 
   bulkCapaciteValue: number | null = null;
@@ -1242,7 +1243,7 @@ export class CapacityViewComponent implements OnInit {
   updateToolbarPosition() {
     if (!this.dragStartResource || this.dragEndWeekIndex < 0) return;
 
-    // Use setTimeout to allow DOM to update if necessary, or just run immediately if purely purely based on existing elements
+    // Use setTimeout to allow DOM to update if necessary
     setTimeout(() => {
       // Find the row
       const rowSelector = `[data-resource-id="${this.dragStartResource!.uniqueId}"]`;
@@ -1255,11 +1256,32 @@ export class CapacityViewComponent implements OnInit {
 
         if (cellElement) {
           const rect = cellElement.getBoundingClientRect();
-          // Position below the cell, centered horizontally
+          const viewportHeight = window.innerHeight;
+          const viewportWidth = window.innerWidth;
+
+          // Estimated toolbar dimensions (safe buffer)
+          const bottomSafetyMargin = 150; // Height of toolbar + some padding
+          const rightSafetyMargin = 320; // Width of toolbar + padding
+
+          const spaceBelow = viewportHeight - rect.bottom;
+
+          let top = rect.bottom;
+          let left = rect.left + rect.width / 2;
+          let transform = 'translate(-50%, 10px)'; // Default: centered below
+
+          // Check if we are too close to the bottom
+          if (spaceBelow < bottomSafetyMargin) {
+            const spaceRight = viewportWidth - rect.right;
+            const spaceLeft = rect.left;
+
+            ({ top, left, transform } = this.calculateBestPosition(spaceRight, rightSafetyMargin, spaceLeft, top, rect, left, transform, bottomSafetyMargin));
+          }
+
           this.toolbarPosition = {
-            top: rect.bottom,
-            left: rect.left + (rect.width / 2)
+            top: top,
+            left: left,
           };
+          this.toolbarTransform = transform;
 
           // Make toolbar visible now that position is set
           this.toolbarVisible = true;
@@ -1271,6 +1293,41 @@ export class CapacityViewComponent implements OnInit {
         }
       }
     }, 0);
+  }
+
+  /**
+   * Calculate the best position for the toolbar based on the available space.
+   */
+  private calculateBestPosition(spaceRight: number, rightSafetyMargin: number, spaceLeft: number, top: number, rect: DOMRect, left: number, transform: string, bottomSafetyMargin: number) {
+    const preferRight = this.dragStartWeekIndex - this.dragEndWeekIndex <= 0;
+
+    let side: 'RIGHT' | 'LEFT' | null = null;
+
+    // Side selection
+    if (preferRight) {
+      if (spaceRight > rightSafetyMargin) side = 'RIGHT';
+      else if (spaceLeft > rightSafetyMargin) side = 'LEFT';
+    } else {
+      if (spaceLeft > rightSafetyMargin) side = 'LEFT';
+      else if (spaceRight > rightSafetyMargin) side = 'RIGHT';
+    }
+
+    // Positioning application
+    if (side === 'RIGHT') {
+      top = rect.top + rect.height / 2;
+      left = rect.right;
+      transform = 'translate(10px, -50%)';
+    } else if (side === 'LEFT') {
+      top = rect.top + rect.height / 2;
+      left = rect.left;
+      transform = 'translate(calc(-100% - 10px), -50%)';
+    } else if (rect.top > bottomSafetyMargin) {
+      // Fallback ABOVE
+      top = rect.top;
+      left = rect.left + rect.width / 2;
+      transform = 'translate(-50%, calc(-100% - 10px))';
+    }
+    return { top, left, transform };
   }
 
   updateSelection() {
