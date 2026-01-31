@@ -64,6 +64,13 @@ interface FlatRow {
   imports: [CommonModule, NgIf, NgFor, FormsModule, LucideIconsModule, MilestoneModalComponent, SelectionToolbarComponent],
   template: `
     <div class="capacity-container">
+      <!-- Sexy Tooltip Singleton -->
+      <div class="sexy-tooltip" 
+           [class.visible]="activeTooltip" 
+           [style.left.px]="tooltipX" 
+           [style.top.px]="tooltipY">
+        {{ activeTooltip }}
+      </div>
       <div class="capacity-header">
         <h1>Vue Planification</h1>
         <div class="header-actions">
@@ -287,7 +294,7 @@ interface FlatRow {
                     <div class="row-info-stack-wrapper">
                       <div class="info-stack">
                         <span class="info-code" *ngIf="row.code">{{ row.code }}</span>
-                        <span class="info-label" [title]="row.label">{{ row.label }}</span>
+                        <span class="info-label" (mouseenter)="showTooltip($event, row.label)" (mouseleave)="hideTooltip()">{{ row.label }}</span>
                       </div>
                     </div>
 
@@ -327,7 +334,7 @@ interface FlatRow {
                         <div class="row-info-stack-wrapper">
                           <div class="info-stack">
                             <span class="info-code" *ngIf="child.code">{{ child.code }}</span>
-                            <span class="info-label" [title]="child.label">{{ child.label }}</span>
+                            <span class="info-label" (mouseenter)="showTooltip($event, child.label)" (mouseleave)="hideTooltip()">{{ child.label }}</span>
                           </div>
                         </div>
 
@@ -379,7 +386,7 @@ interface FlatRow {
                             <div class="resource-icon-wrapper" [style.background-color]="resource.color || '#e2e8f0'">
                               <lucide-icon [name]="resource.type === 'role' ? 'contact' : 'user'" [size]="14" class="resource-icon"></lucide-icon>
                             </div>
-                            <span class="resource-detail-name" [title]="resource.label">{{ resource.label }}</span>
+                            <span class="resource-detail-name" (mouseenter)="showTooltip($event, resource.label)" (mouseleave)="hideTooltip()">{{ resource.label }}</span>
                             <div class="resource-total-badge" 
                                  [class.anchor-active]="activeAnchorId === getResourceUniqueId(resource, child, row)"
                                  (click)="openYearPopover($event, getResourceUniqueId(resource, child, row))" 
@@ -446,12 +453,13 @@ interface FlatRow {
                 (mouseleave)="onMouseUp()"
               >
                 <div class="label-cell row-label-flat">
-                  <div style="display:flex; align-items:center; gap:8px; padding: 0 16px; font-weight: 500; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ row.fullLabel }}">
+                  <div style="display:flex; align-items:center; gap:8px; padding: 0 16px; font-weight: 500; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" (mouseenter)="showTooltip($event, row.fullLabel)" (mouseleave)="hideTooltip()">
                     {{ row.fullLabel }}
                     <div class="resource-total-badge" 
                          [class.anchor-active]="activeAnchorId === getResourceUniqueId(row.resource, row.child, row.parent)"
                          (click)="openYearPopover($event, getResourceUniqueId(row.resource, row.child, row.parent))" 
-                         [title]="'Cliquer pour filtrer par année'">
+                         (mouseenter)="$event.stopPropagation(); showTooltip($event, 'Cliquer pour filtrer par année')"
+                         (mouseleave)="hideTooltip()">
                       <span class="badge-prefix">{{ getBadgePrefix() }}</span>
                       <span class="badge-val">{{ getResourceTotalPlannedDays(row.resource) | number : '1.0-1' }}</span>
                       <span class="badge-unit">j</span>
@@ -637,6 +645,34 @@ interface FlatRow {
         display: flex;
         flex-direction: column;
         overflow-x: hidden;
+      }
+
+      /* Sexy Tooltip Styles */
+      .sexy-tooltip {
+        position: fixed;
+        z-index: 10000;
+        background: rgba(15, 23, 42, 0.9);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        color: white;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        pointer-events: none;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+        transition: opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        white-space: pre-wrap;
+        max-width: 300px;
+        line-height: 1.4;
+      }
+
+      .sexy-tooltip.visible {
+        opacity: 1;
+        transform: scale(1) translateY(0);
       }
 
       .capacity-header {
@@ -1662,10 +1698,17 @@ export class PlanViewComponent implements OnInit {
   rows: ParentRow[] = [];
 
   allProjects: Projet[] = [];
+  allCharges: Charge[] = [];
+  allJalons: Jalon[] = [];
+
+  // Sexy Tooltip State
+  activeTooltip: string | null = null;
+  tooltipX = 0;
+  tooltipY = 0;
+
   allEquipes: Equipe[] = [];
   // Duplicate removed
 
-  allCharges: Charge[] = [];
   allCapacities: Capacite[] = [];
   allLinks: { equipe_id: string; projet_id: string }[] = [];
 
@@ -2345,6 +2388,43 @@ export class PlanViewComponent implements OnInit {
   // Drag Selection Methods
   getResourceUniqueId(resource: ResourceRow, child: ChildRow, parent: ParentRow): string {
     return `${parent.id}_${child.id}_${resource.id}_${resource.type}`;
+  }
+
+  // Sexy Tooltip Methods
+  showTooltip(event: MouseEvent, text: string) {
+    this.activeTooltip = text;
+    this.updateTooltipPosition(event);
+  }
+
+  hideTooltip() {
+    this.activeTooltip = null;
+  }
+
+  @HostListener('mousemove', ['$event'])
+  updateTooltipPosition(event: MouseEvent) {
+    if (!this.activeTooltip) return;
+
+    // Offset from cursor to avoid overlap
+    const offsetX = 15;
+    const offsetY = 15;
+
+    let x = event.clientX + offsetX;
+    let y = event.clientY + offsetY;
+
+    // Simple boundary check to keep tooltip on screen
+    const tooltipWidth = 200; // Estimated
+    const tooltipHeight = 40;  // Estimated
+
+    if (x + tooltipWidth > window.innerWidth) {
+      x = event.clientX - tooltipWidth - offsetX;
+    }
+
+    if (y + tooltipHeight > window.innerHeight) {
+      y = event.clientY - tooltipHeight - offsetY;
+    }
+
+    this.tooltipX = x;
+    this.tooltipY = y;
   }
 
   onMouseDown(event: MouseEvent, resource: ResourceRow, child: ChildRow, parent: ParentRow) {
