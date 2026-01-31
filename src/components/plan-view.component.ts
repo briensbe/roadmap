@@ -7,13 +7,13 @@ import { ChargeService } from "../services/charge.service";
 import { JalonService } from "../services/jalon.service";
 import { Equipe, Projet, Charge, Role, Personne, Capacite, Jalon } from "../models/types";
 import { CalendarService } from "../services/calendar.service";
-import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact, X } from "lucide-angular";
+import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus } from "lucide-angular";
 import { getISOWeekYear } from "date-fns";
 import { calculateBestToolbarPosition, calculateBestPopoverPosition, ToolbarPosition, PopoverPosition } from "../utils/selection-positioning";
 import { SelectionToolbarComponent } from "./selection-toolbar.component";
 
 @NgModule({
-  imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact, X })],
+  imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus })],
   exports: [LucideAngularModule]
 })
 export class LucideIconsModule { }
@@ -229,9 +229,16 @@ interface FlatRow {
           <!-- Header row (sticky top) -->
           <div class="calendar-header-row">
             <div class="label-cell header-label">
-              <span style="font-weight:600;">{{
-                viewMode === "project" ? "Projets / Équipes" : "Équipes / Projets"
-              }}</span>
+              <div class="header-label-content">
+                <span style="font-weight:600;">{{
+                  viewMode === "project" ? "Projets / Équipes" : "Équipes / Projets"
+                }}</span>
+                <div class="header-expand-controls">
+                  <button class="btn-icon-s" (click)="toggleAllExpansion()" [title]="isAllExpanded ? 'Tout replier' : 'Tout déplier'">
+                    <lucide-icon [name]="isAllExpanded ? 'square-minus' : 'square-plus'" [size]="16"></lucide-icon>
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="weeks-container">
               <div *ngFor="let week of displayedWeeks" class="week-header-cell" [class.current-week]="isCurrentWeek(week)">
@@ -672,6 +679,44 @@ interface FlatRow {
       .view-mode-toggle .btn-secondary {
         background: transparent;
         color: #64748b;
+      }
+
+      .icon-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px !important;
+      }
+
+      .header-label-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        gap: 8px;
+      }
+
+      .header-expand-controls {
+        display: flex;
+        gap: 4px;
+      }
+
+      .btn-icon-s {
+        background: transparent;
+        border: none;
+        padding: 4px;
+        color: #64748b;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        transition: all 0.2s;
+      }
+
+      .btn-icon-s:hover {
+        background: #e2e8f0;
+        color: #1e293b;
       }
 
       .calendar-controls {
@@ -1679,6 +1724,33 @@ export class PlanViewComponent implements OnInit {
     private calendarService: CalendarService,
     private jalonService: JalonService
   ) { }
+
+  expandAll() {
+    this.rows.forEach(r => {
+      r.expanded = true;
+      r.children.forEach(c => c.expanded = true);
+    });
+  }
+
+  collapseAll() {
+    this.rows.forEach(r => {
+      r.expanded = false;
+      r.children.forEach(c => c.expanded = false);
+    });
+  }
+
+  get isAllExpanded(): boolean {
+    if (this.rows.length === 0) return false;
+    return this.rows.every(r => r.expanded && r.children.every(c => c.expanded));
+  }
+
+  toggleAllExpansion() {
+    if (this.isAllExpanded) {
+      this.collapseAll();
+    } else {
+      this.expandAll();
+    }
+  }
 
   async ngOnInit() {
     this.generateWeeks();

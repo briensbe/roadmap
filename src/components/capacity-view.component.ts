@@ -5,12 +5,12 @@ import { SelectionToolbarComponent } from "./selection-toolbar.component";
 import { TeamService } from "../services/team.service";
 import { CalendarService } from "../services/calendar.service";
 import { Equipe, Role, Personne, Capacite, EquipeResource } from "../models/types";
-import { LucideAngularModule, ChevronDown, ChevronRight, Plus, User, Users, Contact } from "lucide-angular";
+import { LucideAngularModule, ChevronDown, ChevronRight, Plus, User, Users, Contact, SquarePlus, SquareMinus } from "lucide-angular";
 import { getISOWeekYear } from "date-fns";
 import { calculateBestToolbarPosition, calculateBestPopoverPosition, ToolbarPosition, PopoverPosition } from "../utils/selection-positioning";
 
 @NgModule({
-  imports: [LucideAngularModule.pick({ ChevronDown, ChevronRight, Plus, User, Users, Contact })],
+  imports: [LucideAngularModule.pick({ ChevronDown, ChevronRight, Plus, User, Users, Contact, SquarePlus, SquareMinus })],
   exports: [LucideAngularModule]
 })
 export class LucideIconsModule { }
@@ -104,7 +104,14 @@ interface TeamRow {
           <!-- Header Row -->
           <div class="calendar-header-row sticky-top">
             <div class="label-header-cell sticky-col">
-              <span>Équipes / Ressources</span>
+              <div class="header-label-content">
+                <span>Équipes / Ressources</span>
+                <div class="header-expand-controls">
+                  <button class="btn-icon-s" (click)="toggleAllExpansion()" [title]="isAllExpanded ? 'Tout replier' : 'Tout déplier'">
+                    <lucide-icon [name]="isAllExpanded ? 'square-minus' : 'square-plus'" [size]="16"></lucide-icon>
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="weeks-header-container">
               <div *ngFor="let week of displayedWeeks" class="week-header-cell" [class.current-week]="isCurrentWeek(week)">
@@ -325,6 +332,66 @@ interface TeamRow {
       .header-actions {
         display: flex;
         gap: 12px;
+        align-items: center;
+      }
+
+      .view-mode-toggle {
+        display: flex;
+        background: #e2e8f0;
+        padding: 4px;
+        border-radius: 8px;
+        gap: 4px;
+      }
+
+      .view-mode-toggle .btn {
+        padding: 6px 12px;
+        font-size: 14px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+
+      .view-mode-toggle .btn-secondary {
+        background: transparent;
+        color: #64748b;
+      }
+
+      .icon-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px !important;
+      }
+
+      .header-label-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        gap: 8px;
+      }
+
+      .header-expand-controls {
+        display: flex;
+        gap: 4px;
+      }
+
+      .btn-icon-s {
+        background: transparent;
+        border: none;
+        padding: 4px;
+        color: #64748b;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        transition: all 0.2s;
+      }
+
+      .btn-icon-s:hover {
+        background: #e2e8f0;
+        color: #1e293b;
       }
 
       .calendar-controls {
@@ -1017,7 +1084,31 @@ export class CapacityViewComponent implements OnInit {
   showYearPopover = false;
   popoverPosition: PopoverPosition | null = null;
 
-  constructor(private teamService: TeamService, private calendarService: CalendarService) { }
+  constructor(
+    private teamService: TeamService,
+    private calendarService: CalendarService
+  ) { }
+
+  expandAll() {
+    this.filteredTeamRows.forEach(r => r.expanded = true);
+  }
+
+  collapseAll() {
+    this.filteredTeamRows.forEach(r => r.expanded = false);
+  }
+
+  get isAllExpanded(): boolean {
+    if (this.filteredTeamRows.length === 0) return false;
+    return this.filteredTeamRows.every(r => r.expanded);
+  }
+
+  toggleAllExpansion() {
+    if (this.isAllExpanded) {
+      this.collapseAll();
+    } else {
+      this.expandAll();
+    }
+  }
 
   async ngOnInit() {
     this.generateWeeks();
