@@ -5,11 +5,12 @@ import { JalonService } from '../services/jalon.service';
 import { ProjetService } from '../services/projet.service';
 import { Jalon, Projet } from '../models/types';
 import { MilestoneModalComponent } from './milestone-modal.component';
+import { ConfirmModalComponent } from "./confirm-modal.component";
 
 @Component({
   selector: 'app-milestones-view',
   standalone: true,
-  imports: [CommonModule, FormsModule, MilestoneModalComponent],
+  imports: [CommonModule, FormsModule, MilestoneModalComponent, ConfirmModalComponent],
   template: `
     <div class="milestones-container">
       <div class="milestones-header">
@@ -77,6 +78,15 @@ import { MilestoneModalComponent } from './milestone-modal.component';
         [projets]="projets"
         (saved)="onJalonSaved()">
     </app-milestone-modal>
+
+    <app-confirm-modal
+      [visible]="showConfirmModal"
+      [title]="confirmTitle"
+      [message]="confirmMessage"
+      confirmLabel="Supprimer"
+      (confirm)="onConfirmAction()"
+      (cancel)="showConfirmModal = false">
+    </app-confirm-modal>
   `,
   styles: [`
     .milestones-container {
@@ -257,6 +267,19 @@ export class MilestonesViewComponent implements OnInit {
   showModal = false;
   currentJalon: Partial<Jalon> | null = null;
 
+  // Confirm Modal state
+  showConfirmModal = false;
+  confirmTitle = '';
+  confirmMessage = '';
+  private pendingConfirmAction: (() => void) | null = null;
+
+  onConfirmAction() {
+    if (this.pendingConfirmAction) {
+      this.pendingConfirmAction();
+    }
+    this.showConfirmModal = false;
+  }
+
   constructor(
     private jalonService: JalonService,
     private projetService: ProjetService
@@ -299,13 +322,19 @@ export class MilestonesViewComponent implements OnInit {
   }
 
   async deleteJalon(jalon: Jalon) {
-    if (!jalon.id || !confirm('Êtes-vous sûr de vouloir supprimer ce jalon ?')) return;
+    if (!jalon.id) return;
 
-    try {
-      await this.jalonService.deleteJalon(jalon.id);
-      await this.loadData();
-    } catch (error) {
-      console.error('Error deleting jalon:', error);
-    }
+    this.confirmTitle = "Supprimer le jalon";
+    this.confirmMessage = "Êtes-vous sûr de vouloir supprimer ce jalon ?";
+
+    this.pendingConfirmAction = async () => {
+      try {
+        await this.jalonService.deleteJalon(jalon.id!);
+        await this.loadData();
+      } catch (error) {
+        console.error('Error deleting jalon:', error);
+      }
+    };
+    this.showConfirmModal = true;
   }
 }

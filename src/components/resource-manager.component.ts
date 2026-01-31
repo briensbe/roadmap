@@ -6,6 +6,7 @@ import { ResourceService } from "../services/resource.service";
 import { RolesService } from "../services/roles.service";
 import { Service, Role, Personne, RoleAttachment } from "../models/types";
 import { LucideAngularModule, Building2, Layers, Box, Users, MoreVertical, Plus, Edit, Trash2, Search, Check, X, ChevronDown, User } from 'lucide-angular';
+import { ConfirmModalComponent } from "./confirm-modal.component";
 
 @NgModule({
   imports: [LucideAngularModule.pick({ Building2, Layers, Box, Users, MoreVertical, Plus, Edit, Trash2, Search, Check, X, ChevronDown, User })],
@@ -27,7 +28,7 @@ interface ResourceFormData {
 @Component({
   selector: "app-resource-manager",
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideIconsModule],
+  imports: [CommonModule, FormsModule, LucideIconsModule, ConfirmModalComponent],
   template: `
     <div class="resource-manager">
       <div class="view-header">
@@ -213,6 +214,15 @@ interface ResourceFormData {
           </div>
         </div>
       }
+
+      <app-confirm-modal
+        [visible]="showConfirmModal"
+        [title]="confirmTitle"
+        [message]="confirmMessage"
+        confirmLabel="Supprimer"
+        (confirm)="onConfirmAction()"
+        (cancel)="showConfirmModal = false">
+      </app-confirm-modal>
     </div>
   `,
   styles: [`
@@ -312,6 +322,19 @@ export class ResourceManagerComponent implements OnInit {
   editingId: string | null = null;
   formData: ResourceFormData = this.resetFormData();
 
+  // Confirm Modal state
+  showConfirmModal = false;
+  confirmTitle = '';
+  confirmMessage = '';
+  private pendingConfirmAction: (() => void) | null = null;
+
+  onConfirmAction() {
+    if (this.pendingConfirmAction) {
+      this.pendingConfirmAction();
+    }
+    this.showConfirmModal = false;
+  }
+
   predefinedColors = [
     '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16',
     '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9',
@@ -335,7 +358,7 @@ export class ResourceManagerComponent implements OnInit {
         this.activeTab = params['tab'];
       }
     });
-    
+
     await this.loadData();
   }
 
@@ -503,17 +526,22 @@ export class ResourceManagerComponent implements OnInit {
   }
 
   async handleDelete(type: 'role' | 'personne', id: string) {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cette ressource ?')) return;
-    try {
-      if (type === 'role') {
-        await this.rolesService.deleteRole(id);
-      } else {
-        await this.resourceService.deletePersonne(id);
+    this.confirmTitle = "Supprimer la ressource";
+    this.confirmMessage = "Êtes-vous sûr de vouloir supprimer cette ressource ?";
+
+    this.pendingConfirmAction = async () => {
+      try {
+        if (type === 'role') {
+          await this.rolesService.deleteRole(id);
+        } else {
+          await this.resourceService.deletePersonne(id);
+        }
+        await this.loadData();
+        this.resourceCreated.emit();
+      } catch (error) {
+        console.error("Error deleting resource:", error);
       }
-      await this.loadData();
-      this.resourceCreated.emit();
-    } catch (error) {
-      console.error("Error deleting resource:", error);
-    }
+    };
+    this.showConfirmModal = true;
   }
 }

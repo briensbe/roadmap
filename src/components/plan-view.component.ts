@@ -19,6 +19,7 @@ import { SelectionToolbarComponent } from "./selection-toolbar.component";
 export class LucideIconsModule { }
 
 import { MilestoneModalComponent } from './milestone-modal.component';
+import { ConfirmModalComponent } from './confirm-modal.component';
 
 interface ResourceRow {
   id: string;
@@ -61,7 +62,7 @@ interface FlatRow {
 @Component({
   selector: "app-plan-view",
   standalone: true,
-  imports: [CommonModule, NgIf, NgFor, FormsModule, LucideIconsModule, MilestoneModalComponent, SelectionToolbarComponent],
+  imports: [CommonModule, NgIf, NgFor, FormsModule, LucideIconsModule, MilestoneModalComponent, SelectionToolbarComponent, ConfirmModalComponent],
   template: `
     <div class="capacity-container">
       <!-- Sexy Tooltip Singleton -->
@@ -635,6 +636,15 @@ interface FlatRow {
         [projets]="allProjects"
         (saved)="onMilestoneSaved()">
     </app-milestone-modal>
+
+    <app-confirm-modal
+      [visible]="showConfirmModal"
+      [title]="confirmTitle"
+      [message]="confirmMessage"
+      confirmLabel="Supprimer"
+      (confirm)="onConfirmAction()"
+      (cancel)="showConfirmModal = false">
+    </app-confirm-modal>
   `,
   styles: [
     `
@@ -1758,6 +1768,19 @@ export class PlanViewComponent implements OnInit {
   isSaving = false;
 
   jalons: Jalon[] = [];
+
+  // Confirm Modal state
+  showConfirmModal = false;
+  confirmTitle = '';
+  confirmMessage = '';
+  private pendingConfirmAction: (() => void) | null = null;
+
+  onConfirmAction() {
+    if (this.pendingConfirmAction) {
+      this.pendingConfirmAction();
+    }
+    this.showConfirmModal = false;
+  }
 
   // Icons
   Plus = Plus;
@@ -2913,78 +2936,64 @@ export class PlanViewComponent implements OnInit {
   }
 
   async removeResource(resource: ResourceRow, child: ChildRow, parent: ParentRow) {
-    const confirmMsg = `Êtes-vous sûr de vouloir supprimer "${resource.label}" ?
-Cela supprimera toutes les charges associées à cette ressource.`;
+    this.confirmTitle = "Supprimer la ressource";
+    this.confirmMessage = `Êtes-vous sûr de vouloir supprimer "${resource.label}" ?\nCela supprimera toutes les charges associées à cette ressource.`;
 
-    if (!confirm(confirmMsg)) {
-      return;
-    }
+    this.pendingConfirmAction = async () => {
+      try {
+        let projetId: string;
+        let equipeId: string;
 
-    try {
-      let projetId: string;
-      let equipeId: string;
+        if (this.viewMode === "project") {
+          projetId = parent.id;
+          equipeId = child.id;
+        } else {
+          equipeId = parent.id;
+          projetId = child.id;
+        }
 
-      if (this.viewMode === "project") {
-        // Parent is Project, Child is Team
-        projetId = parent.id;
-        equipeId = child.id;
-      } else {
-        // Parent is Team, Child is Project
-        equipeId = parent.id;
-        projetId = child.id;
+        const roleId = resource.type === 'role' ? resource.id : undefined;
+        const personneId = resource.type === 'personne' ? resource.id : undefined;
+
+        await this.chargeService.deleteChargesForResource(projetId, equipeId, roleId, personneId);
+        await this.loadData();
+      } catch (error) {
+        console.error('Error removing resource:', error);
+        alert('Erreur lors de la suppression de la ressource.');
       }
-
-      const roleId = resource.type === 'role' ? resource.id : undefined;
-      const personneId = resource.type === 'personne' ? resource.id : undefined;
-
-      await this.chargeService.deleteChargesForResource(projetId, equipeId, roleId, personneId);
-
-      // Reload data to reflect changes from DB
-      await this.loadData();
-    } catch (error) {
-      console.error('Error removing resource:', error);
-      alert('Erreur lors de la suppression de la ressource.');
-    }
+    };
+    this.showConfirmModal = true;
   }
 
   async removeChild(child: ChildRow, parent: ParentRow) {
     const childType = this.viewMode === "project" ? "équipe" : "projet";
     const parentType = this.viewMode === "project" ? "projet" : "équipe";
 
-    const confirmMsg = `Êtes-vous sûr de vouloir retirer "${child.label}" ${childType === "équipe" ? "de l'" : "du "}${parentType} "${parent.label}" ?
-Cela supprimera toutes les charges associées à cette ${childType}.`;
+    this.confirmTitle = "Retirer " + (this.viewMode === "project" ? "l'équipe" : "le projet");
+    this.confirmMessage = `Êtes-vous sûr de vouloir retirer "${child.label}" ${childType === "équipe" ? "de l'" : "du "}${parentType} "${parent.label}" ?\nCela supprimera toutes les charges associées à cette ${childType}.`;
 
-    if (!confirm(confirmMsg)) {
-      return;
-    }
+    this.pendingConfirmAction = async () => {
+      try {
+        let projetId: string;
+        let equipeId: string;
 
-    try {
-      let projetId: string;
-      let equipeId: string;
+        if (this.viewMode === "project") {
+          projetId = parent.id;
+          equipeId = child.id;
+        } else {
+          equipeId = parent.id;
+          projetId = child.id;
+        }
 
-      if (this.viewMode === "project") {
-        // Parent is Project, Child is Team
-        projetId = parent.id;
-        equipeId = child.id;
-      } else {
-        // Parent is Team, Child is Project
-        equipeId = parent.id;
-        projetId = child.id;
+        await this.chargeService.deleteChargesForProjectTeam(projetId, equipeId);
+        await this.projetService.unlinkProjectFromTeam(projetId, equipeId);
+        await this.loadData();
+      } catch (error) {
+        console.error('Error removing child:', error);
+        alert(`Erreur lors de la suppression de l'association.`);
       }
-
-      console.log("Deleting charges for project-team combination: (projetId, equipeId)", projetId, equipeId);
-      // Delete all charges for this project-team combination
-      await this.chargeService.deleteChargesForProjectTeam(projetId, equipeId);
-
-      // Also delete the link from equipes_projets table
-      await this.projetService.unlinkProjectFromTeam(projetId, equipeId);
-
-      // Reload data to reflect changes from DB
-      await this.loadData();
-    } catch (error) {
-      console.error('Error removing child:', error);
-      alert(`Erreur lors de la suppression de l'association.`);
-    }
+    };
+    this.showConfirmModal = true;
   }
 
 

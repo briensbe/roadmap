@@ -19,11 +19,12 @@ import {
 } from 'lucide-angular';
 import { SettingsService } from '../../services/settings.service';
 import { Setting, SettingType } from '../../models/settings.type';
+import { ConfirmModalComponent } from '../confirm-modal.component';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule, ConfirmModalComponent],
   template: `
     <div class="settings-container">
       <header class="settings-header">
@@ -166,6 +167,15 @@ import { Setting, SettingType } from '../../models/settings.type';
           </form>
         </div>
       </div>
+
+      <app-confirm-modal
+        [visible]="showConfirmModal"
+        [title]="confirmTitle"
+        [message]="confirmMessage"
+        confirmLabel="Supprimer"
+        (confirm)="onConfirmAction()"
+        (cancel)="showConfirmModal = false">
+      </app-confirm-modal>
     </div>
   `,
   styles: [`
@@ -548,6 +558,19 @@ export class SettingsComponent implements OnInit {
   editingSetting: Setting | null = null;
   currentSetting: Setting = this.getDefaultSetting();
 
+  // Confirm Modal state
+  showConfirmModal = false;
+  confirmTitle = '';
+  confirmMessage = '';
+  private pendingConfirmAction: (() => void) | null = null;
+
+  onConfirmAction() {
+    if (this.pendingConfirmAction) {
+      this.pendingConfirmAction();
+    }
+    this.showConfirmModal = false;
+  }
+
   // Lucide icons
   SettingsIcon = Settings;
   PlusIcon = Plus;
@@ -614,7 +637,10 @@ export class SettingsComponent implements OnInit {
   }
 
   async deleteSetting(setting: Setting) {
-    if (confirm(`Êtes-vous sûr de vouloir supprimer le paramètre "${setting.key}" ?`)) {
+    this.confirmTitle = "Supprimer le paramètre";
+    this.confirmMessage = `Êtes-vous sûr de vouloir supprimer le paramètre "${setting.key}" ?`;
+
+    this.pendingConfirmAction = async () => {
       try {
         if (setting.id) {
           await this.settingsService.deleteSetting(setting.id);
@@ -623,7 +649,8 @@ export class SettingsComponent implements OnInit {
       } catch (error) {
         console.error('Error deleting setting:', error);
       }
-    }
+    };
+    this.showConfirmModal = true;
   }
 
   closeModal() {

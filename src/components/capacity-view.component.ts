@@ -2,6 +2,7 @@ import { Component, OnInit, NgModule, HostListener } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { SelectionToolbarComponent } from "./selection-toolbar.component";
+import { ConfirmModalComponent } from "./confirm-modal.component";
 import { TeamService } from "../services/team.service";
 import { CalendarService } from "../services/calendar.service";
 import { Equipe, Role, Personne, Capacite, EquipeResource } from "../models/types";
@@ -35,7 +36,7 @@ interface TeamRow {
 @Component({
   selector: "app-capacity-view",
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideIconsModule, SelectionToolbarComponent],
+  imports: [CommonModule, FormsModule, LucideIconsModule, SelectionToolbarComponent, ConfirmModalComponent],
   template: `
     <div class="capacity-container">
       <!-- Sexy Tooltip Singleton -->
@@ -318,6 +319,15 @@ interface TeamRow {
         </div>
       </div>
     </div>
+
+    <app-confirm-modal
+      [visible]="showConfirmModal"
+      [title]="confirmTitle"
+      [message]="confirmMessage"
+      confirmLabel="Retirer"
+      (confirm)="onConfirmAction()"
+      (cancel)="showConfirmModal = false">
+    </app-confirm-modal>
   `,
   styles: [
     `
@@ -1102,6 +1112,19 @@ export class CapacityViewComponent implements OnInit {
   availablePersonnes: Personne[] = [];
 
   showAddResourceModal = false;
+
+  // Confirm Modal state
+  showConfirmModal = false;
+  confirmTitle = '';
+  confirmMessage = '';
+  private pendingConfirmAction: (() => void) | null = null;
+
+  onConfirmAction() {
+    if (this.pendingConfirmAction) {
+      this.pendingConfirmAction();
+    }
+    this.showConfirmModal = false;
+  }
   selectedEquipe: Equipe | null = null;
   resourceTypeToAdd: "role" | "personne" = "role";
   selectedResourceId: string = "";
@@ -1385,19 +1408,22 @@ export class CapacityViewComponent implements OnInit {
   }
 
   async removeResource(resource: ResourceRow, equipe: Equipe) {
-    if (!confirm(`Retirer ${resource.label} de l'équipe ${equipe.nom} ?`)) return;
+    this.confirmTitle = "Supprimer la ressource";
+    this.confirmMessage = `Retirer ${resource.label} de l'équipe ${equipe.nom} ?`;
 
-    try {
-      if (resource.type === "role") {
-        await this.teamService.removeRoleFromEquipe(resource.id, equipe.id!);
-      } else {
-        await this.teamService.removePersonneFromEquipe(resource.id);
+    this.pendingConfirmAction = async () => {
+      try {
+        if (resource.type === "role") {
+          await this.teamService.removeRoleFromEquipe(resource.id, equipe.id!);
+        } else {
+          await this.teamService.removePersonneFromEquipe(resource.id);
+        }
+        await this.loadData();
+      } catch (error) {
+        console.error("Error removing resource:", error);
       }
-
-      await this.loadData();
-    } catch (error) {
-      console.error("Error removing resource:", error);
-    }
+    };
+    this.showConfirmModal = true;
   }
 
   // Sexy Tooltip Methods

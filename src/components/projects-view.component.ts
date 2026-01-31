@@ -8,11 +8,12 @@ import { Projet } from "../models/types";
 import { ChiffresModalComponent } from "./chiffres/chiffres-modal.component";
 import { Chiffre } from "../models/chiffres.type";
 import { LucideAngularModule, Plus, LucideCalculator, MoreVertical, Edit, Trash2, Copy, ExternalLink } from "lucide-angular";
+import { ConfirmModalComponent } from "./confirm-modal.component";
 
 @Component({
   selector: "app-projects-view",
   standalone: true,
-  imports: [CommonModule, FormsModule, ChiffresModalComponent, LucideAngularModule],
+  imports: [CommonModule, FormsModule, ChiffresModalComponent, LucideAngularModule, ConfirmModalComponent],
   template: `
     <div class="projects-container">
       <div class="projects-header">
@@ -320,6 +321,15 @@ import { LucideAngularModule, Plus, LucideCalculator, MoreVertical, Edit, Trash2
         (saved)="onChiffresModalSaved($event)"
       ></app-chiffres-modal>
     </div>
+
+    <app-confirm-modal
+      [visible]="showConfirmModal"
+      [title]="confirmTitle"
+      [message]="confirmMessage"
+      confirmLabel="Supprimer"
+      (confirm)="onConfirmAction()"
+      (cancel)="showConfirmModal = false">
+    </app-confirm-modal>
   `,
   styles: [
     `
@@ -1092,6 +1102,19 @@ export class ProjectsViewComponent implements OnInit {
     nom_projet: false
   };
 
+  // Confirm Modal state
+  showConfirmModal = false;
+  confirmTitle = '';
+  confirmMessage = '';
+  private pendingConfirmAction: (() => void) | null = null;
+
+  onConfirmAction() {
+    if (this.pendingConfirmAction) {
+      this.pendingConfirmAction();
+    }
+    this.showConfirmModal = false;
+  }
+
   constructor(
     private projetService: ProjetService,
     private settingsService: SettingsService,
@@ -1236,14 +1259,18 @@ export class ProjectsViewComponent implements OnInit {
 
   async deleteProjet(projet: Projet) {
     this.activeMenuId = null;
-    if (confirm(`Êtes-vous sûr de vouloir supprimer le projet "${projet.nom_projet}" ?`)) {
+    this.confirmTitle = "Supprimer le projet";
+    this.confirmMessage = `Êtes-vous sûr de vouloir supprimer le projet "${projet.nom_projet}" ?`;
+
+    this.pendingConfirmAction = async () => {
       try {
         await this.projetService.deleteProjet(projet.id!);
         await this.loadProjects();
       } catch (error) {
         console.error("Error deleting project:", error);
       }
-    }
+    };
+    this.showConfirmModal = true;
   }
 
   async saveProjet() {

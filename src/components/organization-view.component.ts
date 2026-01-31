@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, Building2, Layers, Box, Users, ChevronRight, ChevronDown, MoreVertical, Plus } from 'lucide-angular';
 import { ResourceService } from '../services/resource.service';
 import { Societe, Departement, Service, Equipe } from '../models/types';
+import { ConfirmModalComponent } from "./confirm-modal.component";
 
 
 @NgModule({
@@ -43,6 +44,7 @@ interface OrgNode {
     CommonModule,
     FormsModule,
     LucideIconsModule,
+    ConfirmModalComponent,
   ],
   template: `
     <div class="organization-view">
@@ -294,6 +296,15 @@ interface OrgNode {
         }
       </ng-template>
 
+
+      <app-confirm-modal
+        [visible]="showConfirmModal"
+        [title]="confirmTitle"
+        [message]="confirmMessage"
+        confirmLabel="Supprimer"
+        (confirm)="onConfirmAction()"
+        (cancel)="showConfirmModal = false">
+      </app-confirm-modal>
     </div>
   `,
   styles: [`
@@ -471,6 +482,19 @@ export class OrganizationViewComponent implements OnInit {
   ];
 
   isCustomColor = false;
+
+  // Confirm Modal state
+  showConfirmModal = false;
+  confirmTitle = '';
+  confirmMessage = '';
+  private pendingConfirmAction: (() => void) | null = null;
+
+  onConfirmAction() {
+    if (this.pendingConfirmAction) {
+      this.pendingConfirmAction();
+    }
+    this.showConfirmModal = false;
+  }
 
   selectColor(color: string) {
     this.formData.color = color;
@@ -749,21 +773,26 @@ export class OrganizationViewComponent implements OnInit {
   }
 
   async handleDelete(node: OrgNode) {
-    if (!confirm(`Êtes-vous sûr de vouloir supprimer ${node.nom} ?`)) return;
-    try {
-      if (node.type === 'societe') {
-        await this.resourceService.deleteSociete(node.id);
-      } else if (node.type === 'departement') {
-        await this.resourceService.deleteDepartement(node.id);
-      } else if (node.type === 'service') {
-        await this.resourceService.deleteService(node.id);
-      } else if (node.type === 'equipe') {
-        await this.resourceService.deleteEquipe(node.id);
+    this.confirmTitle = "Supprimer l'élément";
+    this.confirmMessage = `Êtes-vous sûr de vouloir supprimer ${node.nom} ?`;
+
+    this.pendingConfirmAction = async () => {
+      try {
+        if (node.type === 'societe') {
+          await this.resourceService.deleteSociete(node.id);
+        } else if (node.type === 'departement') {
+          await this.resourceService.deleteDepartement(node.id);
+        } else if (node.type === 'service') {
+          await this.resourceService.deleteService(node.id);
+        } else if (node.type === 'equipe') {
+          await this.resourceService.deleteEquipe(node.id);
+        }
+        this.activeMenuId = null;
+        await this.loadData();
+      } catch (error) {
+        console.error('Error deleting:', error);
       }
-      this.activeMenuId = null;
-      await this.loadData();
-    } catch (error) {
-      console.error('Error deleting:', error);
-    }
+    };
+    this.showConfirmModal = true;
   }
 }
