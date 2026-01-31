@@ -1038,7 +1038,7 @@ export class CapacityViewComponent implements OnInit {
 
     const firstWeek = this.calendarService.getWeekStart(startDate);
 
-    const NB_WEEK_TO_DISPLAY = 52; // un an par défaut
+    const NB_WEEK_TO_DISPLAY = 53; // un an par défaut (besoin de 53 semaines pour couvrir 2026)
     for (let i = 0; i < NB_WEEK_TO_DISPLAY; i++) {
       const week = new Date(firstWeek);
       week.setDate(week.getDate() + i * 7);
