@@ -357,7 +357,8 @@ interface FlatRow {
                             </div>
                             <span class="resource-detail-name">{{ resource.label }}</span>
                             <div class="resource-total-badge" 
-                                 (click)="openYearPopover($event)" 
+                                 [class.anchor-active]="activeAnchorId === getResourceUniqueId(resource, child, row)"
+                                 (click)="openYearPopover($event, getResourceUniqueId(resource, child, row))" 
                                  [title]="'Cliquer pour filtrer par année'">
                               <span class="badge-prefix">{{ getBadgePrefix() }}</span>
                               <span class="badge-val">{{ getResourceTotalPlannedDays(resource) | number : '1.0-1' }}</span>
@@ -424,7 +425,8 @@ interface FlatRow {
                   <div style="display:flex; align-items:center; gap:8px; padding: 0 16px; font-weight: 500; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ row.fullLabel }}">
                     {{ row.fullLabel }}
                     <div class="resource-total-badge" 
-                         (click)="openYearPopover($event)" 
+                         [class.anchor-active]="activeAnchorId === getResourceUniqueId(row.resource, row.child, row.parent)"
+                         (click)="openYearPopover($event, getResourceUniqueId(row.resource, row.child, row.parent))" 
                          [title]="'Cliquer pour filtrer par année'">
                       <span class="badge-prefix">{{ getBadgePrefix() }}</span>
                       <span class="badge-val">{{ getResourceTotalPlannedDays(row.resource) | number : '1.0-1' }}</span>
@@ -575,13 +577,10 @@ interface FlatRow {
     
       <div *ngIf="showYearPopover" 
            class="year-popover" 
-           [style.top.px]="popoverPosition?.top" 
-           [style.left.px]="popoverPosition?.left"
-           [style.transform]="popoverPosition?.transform"
            (click)="$event.stopPropagation()">
         <div class="popover-arrow" 
-             [class.top]="popoverPosition?.arrowSide === 'top'"
-             [class.bottom]="popoverPosition?.arrowSide === 'bottom'"></div>
+             [class.top]="true"
+             [class.bottom]="false"></div>
         <div class="popover-content">
           <button class="popover-item" [class.active]="selectedCapacityYear === 'all'" (click)="selectYear('all')">
             Tout cumulé
@@ -1515,6 +1514,7 @@ export class PlanViewComponent implements OnInit {
   selectedStartDate: Date | null = null;
   showYearPopover = false;
   popoverPosition: PopoverPosition | null = null;
+  activeAnchorId: string | null = null;
 
   flatRows: FlatRow[] = [];
 
@@ -2702,29 +2702,27 @@ Cela supprimera toutes les charges associées à cette ${childType}.`;
     return `${this.selectedCapacityYear} :`;
   }
 
-  openYearPopover(event: MouseEvent) {
+  openYearPopover(event: MouseEvent, anchorId: string) {
     event.stopPropagation();
+    const targetElement = event.currentTarget as HTMLElement;
 
-    if (this.showYearPopover) {
+    if (this.showYearPopover && this.activeAnchorId === anchorId) {
       this.showYearPopover = false;
+      this.activeAnchorId = null;
       return;
     }
 
-    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    this.popoverPosition = calculateBestPopoverPosition({
-      rect,
-      viewportHeight: window.innerHeight,
-      viewportWidth: window.innerWidth
-    });
+    this.activeAnchorId = anchorId;
     this.showYearPopover = true;
 
-    // Close when clicking outside or scrolling
+    // Close when clicking outside
     const closeHandler = (e: MouseEvent | Event) => {
-      // Don't close if we clicked the toggle itself (it will be handled by the click handler above)
-      if (e instanceof MouseEvent && (event.currentTarget as HTMLElement).contains(e.target as Node)) {
+      // Don't close if we clicked the toggle itself
+      if (e instanceof MouseEvent && targetElement.contains(e.target as Node)) {
         return;
       }
       this.showYearPopover = false;
+      this.activeAnchorId = null;
       document.removeEventListener('click', closeHandler);
     };
     document.addEventListener('click', closeHandler);

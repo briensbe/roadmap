@@ -298,7 +298,19 @@ textarea:focus {
     0 8px 10px -6px rgba(0, 0, 0, 0.1);
   z-index: 1001;
   width: 160px;
+
+  /* Anchor Positioning */
+  position-anchor: --year-popover-anchor;
+  position-area: bottom span-right;
+  position-try-fallbacks: flip-block;
+  margin-top: 8px;
+  margin-bottom: 8px;
+
   animation: popOverIn 0.2s cubic-bezier(0, 0, 0.2, 1);
+}
+
+.anchor-active {
+  anchor-name: --year-popover-anchor;
 }
 
 @keyframes popOverIn {

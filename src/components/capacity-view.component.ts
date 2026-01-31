@@ -133,7 +133,8 @@ interface TeamRow {
                     </div>
                     <span class="resource-name">{{ resource.label }}</span>
                     <div class="resource-total-badge" 
-                         (click)="openYearPopover($event)" 
+                         [class.anchor-active]="activeAnchorId === resource.uniqueId"
+                         (click)="openYearPopover($event, resource.uniqueId)" 
                          [title]="'Cliquer pour filtrer par année'">
                       <span class="badge-prefix">{{ getBadgePrefix() }}</span>
                       <span class="badge-val">{{ getResourceTotalPlannedDays(resource) | number : '1.0-1' }}</span>
@@ -185,13 +186,10 @@ interface TeamRow {
       <!-- Year Selection Popover -->
       <div *ngIf="showYearPopover" 
            class="year-popover" 
-           [style.top.px]="popoverPosition?.top" 
-           [style.left.px]="popoverPosition?.left"
-           [style.transform]="popoverPosition?.transform"
            (click)="$event.stopPropagation()">
         <div class="popover-arrow" 
-             [class.top]="popoverPosition?.arrowSide === 'top'"
-             [class.bottom]="popoverPosition?.arrowSide === 'bottom'"></div>
+             [class.top]="true"
+             [class.bottom]="false"></div>
         <div class="popover-content">
           <button class="popover-item" [class.active]="selectedCapacityYear === 'all'" (click)="selectYear('all')">
             Tout cumulé
@@ -1257,29 +1255,29 @@ export class CapacityViewComponent implements OnInit {
     return `${this.selectedCapacityYear} :`;
   }
 
-  openYearPopover(event: MouseEvent) {
-    event.stopPropagation();
+  activeAnchorId: string | null = null;
 
-    if (this.showYearPopover) {
+  openYearPopover(event: MouseEvent, anchorId: string) {
+    event.stopPropagation();
+    const targetElement = event.currentTarget as HTMLElement;
+
+    if (this.showYearPopover && this.activeAnchorId === anchorId) {
       this.showYearPopover = false;
+      this.activeAnchorId = null;
       return;
     }
 
-    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    this.popoverPosition = calculateBestPopoverPosition({
-      rect,
-      viewportHeight: window.innerHeight,
-      viewportWidth: window.innerWidth
-    });
+    this.activeAnchorId = anchorId;
     this.showYearPopover = true;
 
-    // Close when clicking outside or scrolling
+    // Close when clicking outside
     const closeHandler = (e: MouseEvent | Event) => {
-      // Don't close if we clicked the toggle itself (it will be handled by the click handler above)
-      if (e instanceof MouseEvent && (event.currentTarget as HTMLElement).contains(e.target as Node)) {
+      // Don't close if we clicked the toggle itself
+      if (e instanceof MouseEvent && targetElement.contains(e.target as Node)) {
         return;
       }
       this.showYearPopover = false;
+      this.activeAnchorId = null;
       document.removeEventListener('click', closeHandler);
     };
     document.addEventListener('click', closeHandler);
