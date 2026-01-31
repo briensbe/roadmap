@@ -2712,12 +2712,14 @@ Cela supprimera toutes les charges associées à cette ${childType}.`;
     });
     this.showYearPopover = true;
 
-    // Close when clicking outside
+    // Close when clicking outside or scrolling
     const closeHandler = () => {
       this.showYearPopover = false;
       document.removeEventListener('click', closeHandler);
+      window.removeEventListener('scroll', closeHandler, true);
     };
     document.addEventListener('click', closeHandler);
+    window.addEventListener('scroll', closeHandler, true);
   }
 
   selectYear(year: 'all' | '2025' | '2026') {
