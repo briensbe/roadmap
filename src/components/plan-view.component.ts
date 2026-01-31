@@ -2846,7 +2846,20 @@ export class PlanViewComponent implements OnInit {
 
       const hasChildren = newParent.children.length > 0;
 
-      if (parentPassesEquipe && parentPassesProjet && hasChildren) {
+      // Allow showing empty parent if it was explicitly selected via the primary filter 
+      // and no other restrictive filters (resource or the other category) are active.
+      let showEmptyParent = false;
+      if (this.viewMode === 'project' && this.filterProjetIds.includes(parent.id)) {
+        if (this.filterEquipeIds.length === 0 && this.filterResourceIds.length === 0) {
+          showEmptyParent = true;
+        }
+      } else if (this.viewMode === 'team' && this.filterEquipeIds.includes(parent.id)) {
+        if (this.filterProjetIds.length === 0 && this.filterResourceIds.length === 0) {
+          showEmptyParent = true;
+        }
+      }
+
+      if (parentPassesEquipe && parentPassesProjet && (hasChildren || showEmptyParent)) {
         filteredParents.push(newParent);
       }
     }
