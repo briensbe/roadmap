@@ -229,3 +229,59 @@ textarea:focus {
 .modal-close:hover {
   background: #f3f4f6;
 }
+
+/* Shared Selection Toolbar Styles */
+.selection-toolbar {
+  position: fixed;
+  background: white;
+  padding: 16px 24px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  align-items: center;
+  gap: 16px;
+  z-index: 1000;
+  transition:
+    top 0.2s ease,
+    left 0.2s ease;
+  min-width: 260px;
+}
+
+.selection-info {
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.selection-total {
+  font-weight: 500;
+  font-size: 13px;
+  margin-top: 6px;
+  margin-bottom: 10px;
+  color: #065f46;
+}
+
+.selection-input-row {
+  margin-bottom: 12px;
+}
+
+.selection-input-row input {
+  width: 100%;
+}
+
+.selection-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+}
+
+.selection-actions button {
+  flex: 1;
+}
+
+.bulk-input {
+  width: 100%;
+  padding: 6px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+}

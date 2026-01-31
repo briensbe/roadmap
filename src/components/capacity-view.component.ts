@@ -1,11 +1,13 @@
-import { Component, OnInit, ViewChild, ElementRef, NgModule } from "@angular/core";
+import { Component, OnInit, NgModule } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
+import { SelectionToolbarComponent } from "./selection-toolbar.component";
 import { TeamService } from "../services/team.service";
 import { CalendarService } from "../services/calendar.service";
 import { Equipe, Role, Personne, Capacite, EquipeResource } from "../models/types";
 import { LucideAngularModule, ChevronDown, ChevronRight, Plus, User, Users, Contact } from "lucide-angular";
 import { getISOWeekYear } from "date-fns";
+import { calculateBestToolbarPosition, ToolbarPosition } from "../utils/selection-positioning";
 
 @NgModule({
   imports: [LucideAngularModule.pick({ ChevronDown, ChevronRight, Plus, User, Users, Contact })],
@@ -33,13 +35,13 @@ interface TeamRow {
 @Component({
   selector: "app-capacity-view",
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideIconsModule],
+  imports: [CommonModule, FormsModule, LucideIconsModule, SelectionToolbarComponent],
   template: `
     <div class="capacity-container">
       <div class="capacity-header">
         <h1>Gestion de Capacité par Équipe</h1>
         <div class="header-actions">
-          <button class="btn btn-secondary" (click)="goToToday()">Aujourd'hui</button>
+          <!-- <button class="btn btn-secondary" (click)="goToToday()">Aujourd'hui</button> -->
         </div>
       </div>
 
@@ -168,36 +170,17 @@ interface TeamRow {
         </div>
       </div>
 
-      <div 
-        *ngIf="selectedCells.length > 0 && isSelectionFinished" 
-        class="selection-toolbar"
-        [style.top.px]="toolbarPosition?.top"
-        [style.left.px]="toolbarPosition?.left"
-        [style.transform]="toolbarTransform"
-        [style.opacity]="toolbarVisible ? 1 : 0">
-        <div class="selection-info">
-          {{ selectedCells.length }} semaine(s) sélectionnée(s)
-          <div class="selection-total">
-            Total jours sélectionnés: {{ totalSelectedDays | number : "1.1-1" }}j
-          </div>
-        </div>
-        <div class="selection-input-row">
-          <input
-            #bulkCapaciteInput
-            type="number"
-            [(ngModel)]="bulkCapaciteValue"
-            placeholder="Capacité (unités)"
-            step="0.5"
-            min="0"
-            class="bulk-input"
-            (keydown.enter)="applyBulkCapacite()"
-          />
-        </div>
-        <div class="selection-actions">
-          <button class="btn btn-sm btn-secondary" (click)="clearSelection()">Annuler</button>
-          <button class="btn btn-sm btn-primary" (click)="applyBulkCapacite()">Appliquer</button>
-        </div>
-      </div>
+      <app-selection-toolbar
+        *ngIf="selectedCells.length > 0 && isSelectionFinished"
+        [position]="toolbarPosition"
+        [visible]="toolbarVisible"
+        [selectedCount]="selectedCells.length"
+        [totalDays]="totalSelectedDays"
+        [(value)]="bulkCapaciteValue"
+        placeholder="Capacité (unités)"
+        (apply)="applyBulkCapacite()"
+        (cancel)="clearSelection()">
+      </app-selection-toolbar>
 
       <!-- Year Selection Popover -->
       <div *ngIf="showYearPopover" 
@@ -614,65 +597,6 @@ interface TeamRow {
         padding: 40px;
       }
 
-      .selection-toolbar {
-        position: fixed;
-        /* bottom and left/transform are now handled dynamically via style binding, 
-           but we keep initial values or rely on overriding. 
-           Current update will use inline styles to position absolutely relative to viewport. */
-        background: white;
-        padding: 16px 24px;
-        border-radius: 12px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-        /*display: flex;*/
-        align-items: center;
-        gap: 16px;
-        z-index: 1000;
-        transition: top 0.2s ease, left 0.2s ease;
-        min-width: 260px;
-
-      }
-
-      .selection-info {
-        font-weight: 600;
-        color: #374151;
-      }
-      .selection-total {
-        font-weight: 500;
-        font-size: 13px;
-        margin-top: 6px;
-        margin-bottom: 10px;
-        color: #065f46;
-      }
-      .selection-input-row input {
-        flex: 1;
-        width: 100%;
-        display: flex;
-        gap: 8px;
-        align-items: center;
-        margin-bottom: 12px;
-        width: 100%;
-    }
-
-      .selection-actions {
-        display: flex;
-        flex: 1;
-        gap: 8px;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .selection-actions button  {
-        flex: 1;
-        
-      }
-
-      .bulk-input {
-        width: 150px;
-        padding: 6px 12px;
-        border: 1px solid #d1d5db;
-        border-radius: 6px;
-      }
-
       .modal-overlay {
         position: fixed;
         top: 0;
@@ -1005,16 +929,13 @@ export class CapacityViewComponent implements OnInit {
   dragEndWeekIndex: number = -1;
   selectedCells: Array<{ resource: ResourceRow; week: Date }> = [];
   isSelectionFinished: boolean = false;
-  toolbarPosition: { top: number; left: number } | null = null;
-  toolbarTransform: string = '';
+  toolbarPosition: ToolbarPosition | null = null;
   toolbarVisible: boolean = false; // Controls opacity to prevent flash
 
   bulkCapaciteValue: number | null = null;
 
   Contact = Contact;
   User = User;
-
-  @ViewChild('bulkCapaciteInput') bulkCapaciteInput?: ElementRef<HTMLInputElement>;
 
   // Toggle to show/hide the computed days inside cells. Default: hidden (user activates toggle to show)
   showDaysInCells: boolean = false;
@@ -1270,64 +1191,23 @@ export class CapacityViewComponent implements OnInit {
           let transform = 'translate(-50%, 10px)'; // Default: centered below
 
           // Check if we are too close to the bottom
-          if (spaceBelow < bottomSafetyMargin) {
-            const spaceRight = viewportWidth - rect.right;
-            const spaceLeft = rect.left;
+          const pos = calculateBestToolbarPosition({
+            rect,
+            viewportWidth,
+            viewportHeight,
+            dragStartWeekIndex: this.dragStartWeekIndex,
+            dragEndWeekIndex: this.dragEndWeekIndex,
+            bottomSafetyMargin: 150,
+            rightSafetyMargin: 320
+          });
 
-            ({ top, left, transform } = this.calculateBestPosition(spaceRight, rightSafetyMargin, spaceLeft, top, rect, left, transform, bottomSafetyMargin));
-          }
-
-          this.toolbarPosition = {
-            top: top,
-            left: left,
-          };
-          this.toolbarTransform = transform;
+          this.toolbarPosition = pos;
 
           // Make toolbar visible now that position is set
           this.toolbarVisible = true;
-
-          // Focus the input after the toolbar is displayed
-          setTimeout(() => {
-            this.bulkCapaciteInput?.nativeElement.focus();
-          }, 50);
         }
       }
     }, 0);
-  }
-
-  /**
-   * Calculate the best position for the toolbar based on the available space.
-   */
-  private calculateBestPosition(spaceRight: number, rightSafetyMargin: number, spaceLeft: number, top: number, rect: DOMRect, left: number, transform: string, bottomSafetyMargin: number) {
-    const preferRight = this.dragStartWeekIndex - this.dragEndWeekIndex <= 0;
-
-    let side: 'RIGHT' | 'LEFT' | null = null;
-
-    // Side selection
-    if (preferRight) {
-      if (spaceRight > rightSafetyMargin) side = 'RIGHT';
-      else if (spaceLeft > rightSafetyMargin) side = 'LEFT';
-    } else {
-      if (spaceLeft > rightSafetyMargin) side = 'LEFT';
-      else if (spaceRight > rightSafetyMargin) side = 'RIGHT';
-    }
-
-    // Positioning application
-    if (side === 'RIGHT') {
-      top = rect.top + rect.height / 2;
-      left = rect.right;
-      transform = 'translate(10px, -50%)';
-    } else if (side === 'LEFT') {
-      top = rect.top + rect.height / 2;
-      left = rect.left;
-      transform = 'translate(calc(-100% - 10px), -50%)';
-    } else if (rect.top > bottomSafetyMargin) {
-      // Fallback ABOVE
-      top = rect.top;
-      left = rect.left + rect.width / 2;
-      transform = 'translate(-50%, calc(-100% - 10px))';
-    }
-    return { top, left, transform };
   }
 
   updateSelection() {
