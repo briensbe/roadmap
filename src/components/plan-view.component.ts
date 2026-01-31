@@ -2755,6 +2755,8 @@ export class PlanViewComponent implements OnInit {
       const newParent: ParentRow = {
         id: parent.id,
         label: parent.label,
+        code: parent.code,
+        color: parent.color,
         expanded: parent.expanded,
         children: [],
         totalCharges: parent.totalCharges,
@@ -2808,6 +2810,8 @@ export class PlanViewComponent implements OnInit {
           newParent.children.push({
             id: child.id,
             label: child.label,
+            code: child.code,
+            color: child.color,
             expanded: child.expanded,
             resources: resourcesMatch,
             charges: child.charges,
