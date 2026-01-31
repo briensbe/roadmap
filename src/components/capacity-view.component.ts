@@ -53,6 +53,19 @@ interface TeamRow {
         </div>
 
         <div class="controls-right" style="display:flex;align-items:center;gap:12px;">
+          <div class="filters-group" style="display:flex;align-items:center;gap:12px;margin-right:12px;padding-right:12px;border-right:1px solid #e2e8f0;">
+            <div class="filter-item">
+              <select [(ngModel)]="teamFilter" class="form-control form-control-sm" style="width: 150px;">
+                <option value="all">Toutes les équipes</option>
+                <option *ngFor="let eq of allEquipes" [value]="eq.id">{{ eq.nom }}</option>
+              </select>
+            </div>
+            <div class="filter-item">
+              <div class="search-input-wrapper">
+                <input type="text" [(ngModel)]="resourceSearch" placeholder="Rechercher ressource..." class="form-control form-control-sm" style="width: 180px;" />
+              </div>
+            </div>
+          </div>
           <label class="ios-switch" title="Afficher les jours (j)">
             <input type="checkbox" [(ngModel)]="showDaysInCells" />
             <span class="ios-slider"></span>
@@ -78,7 +91,7 @@ interface TeamRow {
 
           <!-- Body Rows -->
           <div class="calendar-body">
-            <ng-container *ngFor="let teamRow of teamRows">
+            <ng-container *ngFor="let teamRow of filteredTeamRows">
               <!-- Team Row -->
               <div class="calendar-row team-row-container">
                 <div class="label-cell team-label-cell sticky-col" (click)="toggleTeam(teamRow)" [style.cursor]="teamRow.resources.length > 0 ? 'pointer' : 'default'">
@@ -163,8 +176,8 @@ interface TeamRow {
             </ng-container>
 
             <!-- Empty State -->
-            <div *ngIf="teamRows.length === 0" class="calendar-row empty-state-row">
-              <div class="label-cell empty-state-label sticky-col">Aucune équipe</div>
+            <div *ngIf="filteredTeamRows.length === 0" class="calendar-row empty-state-row">
+              <div class="label-cell empty-state-label sticky-col">Aucune équipe correspondante</div>
               <div class="weeks-cells-container empty-state-weeks">Aucune donnée</div>
             </div>
           </div>
@@ -836,6 +849,10 @@ export class CapacityViewComponent implements OnInit {
   currentDate: Date = new Date();
 
   teamRows: TeamRow[] = [];
+  allEquipes: Equipe[] = [];
+
+  teamFilter: string = "all";
+  resourceSearch: string = "";
 
   availableRoles: Role[] = [];
   availablePersonnes: Personne[] = [];
@@ -903,6 +920,7 @@ export class CapacityViewComponent implements OnInit {
 
       this.availableRoles = roles;
       this.availablePersonnes = personnes;
+      this.allEquipes = equipes;
 
       // Load all resources for all teams in parallel
       const allResourcesArrays = await Promise.all(
@@ -959,6 +977,26 @@ export class CapacityViewComponent implements OnInit {
     } catch (error) {
       console.error("Error loading data:", error);
     }
+  }
+
+  get filteredTeamRows(): TeamRow[] {
+    let rows = this.teamRows;
+
+    // Filter by team
+    if (this.teamFilter !== "all") {
+      rows = rows.filter(tr => tr.equipe.id === this.teamFilter);
+    }
+
+    // Filter by resource search
+    if (this.resourceSearch.trim()) {
+      const search = this.resourceSearch.toLowerCase().trim();
+      rows = rows.map(tr => ({
+        ...tr,
+        resources: tr.resources.filter(r => r.label.toLowerCase().includes(search))
+      })).filter(tr => tr.resources.length > 0);
+    }
+
+    return rows;
   }
 
   formatWeekHeader(date: Date): string {
