@@ -166,16 +166,33 @@ interface FlatRow {
           </div>
 
           <div class="filters-dropdown" *ngIf="openProjetDropdown" (click)="$event.stopPropagation()">
+            <div class="dropdown-search">
+              <input 
+                type="text" 
+                class="search-input" 
+                placeholder="Rechercher un projet..." 
+                [(ngModel)]="filterProjetSearch"
+                (click)="$event.stopPropagation()"
+              />
+              <lucide-icon [img]="X" [size]="14" class="clear-search" *ngIf="filterProjetSearch" (click)="filterProjetSearch = ''"></lucide-icon>
+            </div>
+            <div class="dropdown-actions" *ngIf="filteredProjectsForDropdown.length > 0">
+              <button class="btn-link" (click)="selectFilteredProjects()">Tout sélectionner</button>
+              <button class="btn-link text-danger" (click)="deselectFilteredProjects()">Tout désélectionner</button>
+            </div>
             <div class="dropdown-list">
-              <label *ngFor="let p of allProjects" class="dropdown-item">
+              <label *ngFor="let p of filteredProjectsForDropdown" class="dropdown-item">
                 <input
                   type="checkbox"
                   [value]="p.id"
                   (change)="onProjetToggle(p.id, $event)"
                   [checked]="filterProjetIds.includes(p.id!)"
                 />
-                {{ p.code_projet }} — {{ p.nom_projet }}
+                <span class="p-code">{{ p.code_projet }}</span> — {{ p.nom_projet }}
               </label>
+              <div *ngIf="filteredProjectsForDropdown.length === 0" class="no-results">
+                Aucun projet trouvé
+              </div>
             </div>
           </div>
 
@@ -752,6 +769,79 @@ interface FlatRow {
         font-size: 12px;
         color: #6b7280;
         padding: 8px 4px 2px;
+      }
+
+      .dropdown-search {
+        padding: 8px;
+        border-bottom: 1px solid #f1f5f9;
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .search-input {
+        width: 100%;
+        padding: 6px 10px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 13px;
+        outline: none;
+      }
+
+      .search-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+      }
+
+      .clear-search {
+        cursor: pointer;
+        color: #94a3b8;
+        padding: 2px;
+      }
+
+      .clear-search:hover {
+        color: #64748b;
+      }
+
+      .dropdown-actions {
+        padding: 8px;
+        display: flex;
+        gap: 12px;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 12px;
+      }
+
+      .btn-link {
+        background: none;
+        border: none;
+        color: #3b82f6;
+        padding: 0;
+        cursor: pointer;
+        font-weight: 500;
+      }
+
+      .btn-link:hover {
+        text-decoration: underline;
+      }
+
+      .btn-link.text-danger {
+        color: #ef4444;
+      }
+
+      .no-results {
+        padding: 12px;
+        text-align: center;
+        color: #94a3b8;
+        font-size: 13px;
+      }
+
+      .p-code {
+        font-weight: 600;
+        color: #475569;
       }
 
       .btn {
@@ -1538,6 +1628,7 @@ export class PlanViewComponent implements OnInit {
   rowsAll: ParentRow[] = [];
   filterEquipeIds: string[] = [];
   filterProjetIds: string[] = [];
+  filterProjetSearch: string = '';
   filterResourceIds: string[] = []; // values like 'role:<id>' or 'personne:<id>'
 
   // Dropdown states
@@ -2374,6 +2465,7 @@ export class PlanViewComponent implements OnInit {
       this.openEquipeDropdown = false;
       this.openProjetDropdown = false;
       this.openResourceDropdown = false;
+      this.filterProjetSearch = '';
     }
   }
 
@@ -2392,6 +2484,9 @@ export class PlanViewComponent implements OnInit {
       this.openEquipeDropdown = false;
       this.openProjetDropdown = false;
     }
+    if (!this.openProjetDropdown) {
+      this.filterProjetSearch = '';
+    }
   }
 
   onEquipeToggle(id: string | undefined, event: Event) {
@@ -2407,6 +2502,31 @@ export class PlanViewComponent implements OnInit {
     const checked = (event.target as HTMLInputElement).checked;
     if (checked) this.filterProjetIds.push(id);
     else this.filterProjetIds = this.filterProjetIds.filter((x) => x !== id);
+    this.applyFilters();
+  }
+
+  get filteredProjectsForDropdown(): Projet[] {
+    if (!this.filterProjetSearch) return this.allProjects;
+    const search = this.filterProjetSearch.toLowerCase();
+    return this.allProjects.filter(p =>
+      p.nom_projet.toLowerCase().includes(search) ||
+      (p.code_projet && p.code_projet.toLowerCase().includes(search))
+    );
+  }
+
+  selectFilteredProjects() {
+    const ids = this.filteredProjectsForDropdown.map(p => p.id).filter(id => !!id) as string[];
+    ids.forEach(id => {
+      if (!this.filterProjetIds.includes(id)) {
+        this.filterProjetIds.push(id);
+      }
+    });
+    this.applyFilters();
+  }
+
+  deselectFilteredProjects() {
+    const ids = this.filteredProjectsForDropdown.map(p => p.id).filter(id => !!id) as string[];
+    this.filterProjetIds = this.filterProjetIds.filter(id => !ids.includes(id));
     this.applyFilters();
   }
 
