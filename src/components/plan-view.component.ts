@@ -2726,10 +2726,8 @@ Cela supprimera toutes les charges associées à cette ${childType}.`;
       }
       this.showYearPopover = false;
       document.removeEventListener('click', closeHandler);
-      window.removeEventListener('scroll', closeHandler, true);
     };
     document.addEventListener('click', closeHandler);
-    window.addEventListener('scroll', closeHandler, true);
   }
 
   selectYear(year: 'all' | '2025' | '2026') {

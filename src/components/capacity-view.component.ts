@@ -1281,10 +1281,8 @@ export class CapacityViewComponent implements OnInit {
       }
       this.showYearPopover = false;
       document.removeEventListener('click', closeHandler);
-      window.removeEventListener('scroll', closeHandler, true);
     };
     document.addEventListener('click', closeHandler);
-    window.addEventListener('scroll', closeHandler, true);
   }
 
   selectYear(year: 'all' | '2025' | '2026') {
