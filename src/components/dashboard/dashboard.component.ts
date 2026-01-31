@@ -2,13 +2,13 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { LucideAngularModule, Calendar, FolderKanban, Users, Building2 } from 'lucide-angular';
-import { ProjetService } from '../services/projet.service';
-import { RolesService } from '../services/roles.service';
-import { PersonnesService } from '../services/personnes.service';
-import { ServicesService } from '../services/services.service';
-import { TeamService } from '../services/team.service';
-import { JalonService } from '../services/jalon.service';
-import { Projet, Jalon } from '../models/types';
+import { ProjetService } from '../../services/projet.service';
+import { RolesService } from '../../services/roles.service';
+import { PersonnesService } from '../../services/personnes.service';
+import { ServicesService } from '../../services/services.service';
+import { TeamService } from '../../services/team.service';
+import { JalonService } from '../../services/jalon.service';
+import { Projet, Jalon } from '../../models/types';
 
 interface StatusCount {
   statut: string;
