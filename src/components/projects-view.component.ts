@@ -239,7 +239,16 @@ import { ConfirmModalComponent } from "./confirm-modal.component";
               <input [(ngModel)]="newProjet.code_projet" name="code" />
             </div>
             <div class="form-group">
-              <label>Référence Externe</label>
+              <div class="label-with-link">
+                <label>Référence Externe</label>
+                <a *ngIf="newProjet.reference_externe && externalReferenceUrl" 
+                   [href]="externalReferenceUrl + newProjet.reference_externe" 
+                   target="_blank" 
+                   class="ref-link modal-ref-link">
+                  Ouvrir
+                  <lucide-icon [img]="ExternalLink" [size]="12"></lucide-icon>
+                </a>
+              </div>
               <input [(ngModel)]="newProjet.reference_externe" name="ref_ext" placeholder="ex: JIRA-123" />
             </div>
           </div>
@@ -1026,6 +1035,25 @@ import { ConfirmModalComponent } from "./confirm-modal.component";
         font-weight: 500;
         margin-top: 4px;
         display: block;
+      }
+
+      .label-with-link {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+
+      .label-with-link label {
+        margin-bottom: 0 !important;
+      }
+
+      .modal-ref-link {
+        font-size: 11px;
+        background: #f3f4f6;
+        padding: 2px 8px;
+        border-radius: 4px;
+        border: 1px solid #e5e7eb;
       }
 
       .grid {
