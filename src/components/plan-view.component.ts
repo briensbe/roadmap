@@ -13,6 +13,8 @@ import { calculateBestToolbarPosition, calculateBestPopoverPosition, ToolbarPosi
 import { SelectionToolbarComponent } from "./selection-toolbar.component";
 import { ProjectModalComponent } from "./project-modal.component";
 import { SettingsService } from "../services/settings.service";
+import { storageSignal } from "../utils/storage-signal";
+import { signal } from "@angular/core";
 
 @NgModule({
   imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink })],
@@ -80,16 +82,16 @@ interface FlatRow {
           <div class="view-mode-toggle">
             <button
               class="btn"
-              [class.btn-primary]="viewMode === 'project'"
-              [class.btn-secondary]="viewMode !== 'project'"
+              [class.btn-primary]="viewMode() === 'project'"
+              [class.btn-secondary]="viewMode() !== 'project'"
               (click)="switchViewMode('project')"
             >
               Par Projet
             </button>
             <button
               class="btn"
-              [class.btn-primary]="viewMode === 'team'"
-              [class.btn-secondary]="viewMode !== 'team'"
+              [class.btn-primary]="viewMode() === 'team'"
+              [class.btn-secondary]="viewMode() !== 'team'"
               (click)="switchViewMode('team')"
             >
               Par Équipe
@@ -99,16 +101,16 @@ interface FlatRow {
           <div class="view-mode-toggle">
             <button
               class="btn"
-              [class.btn-primary]="displayFormat === 'tree'"
-              [class.btn-secondary]="displayFormat !== 'tree'"
+              [class.btn-primary]="displayFormat() === 'tree'"
+              [class.btn-secondary]="displayFormat() !== 'tree'"
               (click)="toggleDisplayFormat('tree')"
             >
               Arborescence
             </button>
             <button
               class="btn"
-              [class.btn-primary]="displayFormat === 'flat'"
-              [class.btn-secondary]="displayFormat !== 'flat'"
+              [class.btn-primary]="displayFormat() === 'flat'"
+              [class.btn-secondary]="displayFormat() !== 'flat'"
               (click)="toggleDisplayFormat('flat')"
             >
               À plat
@@ -118,7 +120,7 @@ interface FlatRow {
           <div class="toggle-container">
             <span class="toggle-label">Dispo.</span>
             <label class="switch">
-              <input type="checkbox" [(ngModel)]="showAvailability">
+              <input type="checkbox" [ngModel]="showAvailability()" (ngModelChange)="showAvailability.set($event)">
               <span class="slider round"></span>
             </label>
           </div>
@@ -139,24 +141,24 @@ interface FlatRow {
           <div class="filter-pill" (click)="toggleDropdown('equipe', $event)">
             <span class="filter-title">Équipes</span>
             <span class="chip-list">
-              <span *ngFor="let id of filterEquipeIds" class="chip">{{ getEquipeName(id) }}</span>
-              <span *ngIf="filterEquipeIds.length === 0" class="chip placeholder">Tous</span>
+              <span *ngFor="let id of filterEquipeIds()" class="chip">{{ getEquipeName(id) }}</span>
+              <span *ngIf="filterEquipeIds().length === 0" class="chip placeholder">Tous</span>
             </span>
           </div>
 
           <div class="filter-pill" (click)="toggleDropdown('projet', $event)">
             <span class="filter-title">Projets</span>
             <span class="chip-list">
-              <span *ngFor="let id of filterProjetIds" class="chip">{{ getProjetLabel(id) }}</span>
-              <span *ngIf="filterProjetIds.length === 0" class="chip placeholder">Tous</span>
+              <span *ngFor="let id of filterProjetIds()" class="chip">{{ getProjetLabel(id) }}</span>
+              <span *ngIf="filterProjetIds().length === 0" class="chip placeholder">Tous</span>
             </span>
           </div>
 
           <div class="filter-pill" (click)="toggleDropdown('resource', $event)">
             <span class="filter-title">Rôle / Personne</span>
             <span class="chip-list">
-              <span *ngFor="let sel of filterResourceIds" class="chip">{{ getResourceLabel(sel) }}</span>
-              <span *ngIf="filterResourceIds.length === 0" class="chip placeholder">Tous</span>
+              <span *ngFor="let sel of filterResourceIds()" class="chip">{{ getResourceLabel(sel) }}</span>
+              <span *ngIf="filterResourceIds().length === 0" class="chip placeholder">Tous</span>
             </span>
           </div>
 
@@ -168,7 +170,7 @@ interface FlatRow {
                   type="checkbox"
                   [value]="e.id"
                   (change)="onEquipeToggle(e.id, $event)"
-                  [checked]="filterEquipeIds.includes(e.id!)"
+                  [checked]="filterEquipeIds().includes(e.id!)"
                 />
                 {{ e.nom }}
               </label>
@@ -181,10 +183,11 @@ interface FlatRow {
                 type="text" 
                 class="search-input" 
                 placeholder="Rechercher un projet..." 
-                [(ngModel)]="filterProjetSearch"
+                [ngModel]="filterProjetSearch()"
+                (ngModelChange)="filterProjetSearch.set($event)"
                 (click)="$event.stopPropagation()"
               />
-              <lucide-icon [img]="X" [size]="14" class="clear-search" *ngIf="filterProjetSearch" (click)="filterProjetSearch = ''"></lucide-icon>
+              <lucide-icon [img]="X" [size]="14" class="clear-search" *ngIf="filterProjetSearch()" (click)="filterProjetSearch.set('')"></lucide-icon>
             </div>
             <div class="dropdown-actions" *ngIf="filteredProjectsForDropdown.length > 0">
               <button class="btn-link" (click)="selectFilteredProjects()">Tout sélectionner</button>
@@ -196,7 +199,7 @@ interface FlatRow {
                   type="checkbox"
                   [value]="p.id"
                   (change)="onProjetToggle(p.id, $event)"
-                  [checked]="filterProjetIds.includes(p.id!)"
+                  [checked]="filterProjetIds().includes(p.id!)"
                 />
                 <span class="p-code">{{ p.code_projet }}</span> — {{ p.nom_projet }}
               </label>
@@ -214,7 +217,7 @@ interface FlatRow {
                   type="checkbox"
                   [value]="'role:' + r.id"
                   (change)="onResourceToggle('role:' + r.id, $event)"
-                  [checked]="filterResourceIds.includes('role:' + r.id)"
+                  [checked]="filterResourceIds().includes('role:' + r.id)"
                 />
                 {{ r.nom }}
               </label>
@@ -224,7 +227,7 @@ interface FlatRow {
                   type="checkbox"
                   [value]="'personne:' + p.id"
                   (change)="onResourceToggle('personne:' + p.id, $event)"
-                  [checked]="filterResourceIds.includes('personne:' + p.id)"
+                  [checked]="filterResourceIds().includes('personne:' + p.id)"
                 />
                 {{ p.prenom }} {{ p.nom }}
               </label>
@@ -241,7 +244,7 @@ interface FlatRow {
             <div class="label-cell header-label">
               <div class="header-label-content">
                 <span style="font-weight:600;">{{
-                  viewMode === "project" ? "Projets / Équipes" : "Équipes / Projets"
+                  viewMode() === "project" ? "Projets / Équipes" : "Équipes / Projets"
                 }}</span>
                 <div class="header-expand-controls">
                   <button class="btn-icon-s" (click)="toggleAllExpansion()" [title]="isAllExpanded ? 'Tout replier' : 'Tout déplier'">
@@ -282,7 +285,7 @@ interface FlatRow {
           <!-- Data rows -->
           <div class="calendar-body">
             <!-- Tree View -->
-            <ng-container *ngIf="displayFormat === 'tree'">
+            <ng-container *ngIf="displayFormat() === 'tree'">
             <ng-container *ngFor="let row of rows">
               <!-- Parent Row -->
               <div class="calendar-row">
@@ -351,7 +354,7 @@ interface FlatRow {
                          <button
                            class="btn-hover-delete"
                            (click)="removeChild(child, row); $event.stopPropagation()"
-                           [title]='viewMode === "project" ? "Retirer cette équipe du projet" : "Retirer ce projet de l&apos;équipe"'
+                           [title]='viewMode() === "project" ? "Retirer cette équipe du projet" : "Retirer ce projet de l&apos;équipe"'
                          >
                           <lucide-icon [img]="X" [size]="16"></lucide-icon>
                         </button>
@@ -414,9 +417,9 @@ interface FlatRow {
                           class="week-cell resource-detail-cell"
                           [class.selected]="isCellSelected(resource, week)"
                           [class.has-capacity]="getResourceValue(resource, week) > 0"
-                          [class.cell-positive]="shouldShowAvailability(resource, week, viewMode === 'project' ? child.id : row.id) && getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) > 0"
-                          [class.cell-zero]="shouldShowAvailability(resource, week, viewMode === 'project' ? child.id : row.id) && getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) === 0"
-                          [class.cell-negative]="shouldShowAvailability(resource, week, viewMode === 'project' ? child.id : row.id) && getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) < 0"
+                          [class.cell-positive]="shouldShowAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) && getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) > 0"
+                          [class.cell-zero]="shouldShowAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) && getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) === 0"
+                          [class.cell-negative]="shouldShowAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) && getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) < 0"
                           [attr.data-week-index]="i"
                         >
                           <div class="cell-content">
@@ -425,14 +428,14 @@ interface FlatRow {
                             </div>
                             <div
                               class="availability-indicator"
-                              *ngIf="shouldShowAvailability(resource, week, viewMode === 'project' ? child.id : row.id)"
+                              *ngIf="shouldShowAvailability(resource, week, viewMode() === 'project' ? child.id : row.id)"
                               [ngClass]="{
-                                'availability-positive': getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) > 0,
-                                'availability-zero': getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) === 0,
-                                'availability-negative': getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) < 0
+                                'availability-positive': getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) > 0,
+                                'availability-zero': getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) === 0,
+                                'availability-negative': getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) < 0
                               }"
                             >
-                              {{ getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) > 0 ? '+' : '' }}{{ getAvailability(resource, week, viewMode === 'project' ? child.id : row.id) | number : "1.0-1" }}
+                              {{ getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) > 0 ? '+' : '' }}{{ getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) | number : "1.0-1" }}
                             </div>
                           </div>
                         </div>
@@ -445,7 +448,7 @@ interface FlatRow {
             </ng-container>
 
             <!-- Flat View -->
-            <ng-container *ngIf="displayFormat === 'flat'">
+            <ng-container *ngIf="displayFormat() === 'flat'">
               <div
                 *ngFor="let row of flatRows"
                 class="calendar-row"
@@ -475,9 +478,9 @@ interface FlatRow {
                     class="week-cell resource-detail-cell"
                     [class.selected]="isCellSelected(row.resource, week)"
                     [class.has-capacity]="getResourceValue(row.resource, week) > 0"
-                    [class.cell-positive]="shouldShowAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) && getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) > 0"
-                    [class.cell-zero]="shouldShowAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) && getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) === 0"
-                    [class.cell-negative]="shouldShowAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) && getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) < 0"
+                    [class.cell-positive]="shouldShowAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id) && getAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id) > 0"
+                    [class.cell-zero]="shouldShowAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id) && getAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id) === 0"
+                    [class.cell-negative]="shouldShowAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id) && getAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id) < 0"
                     [attr.data-week-index]="i"
                   >
                     <div class="cell-content">
@@ -486,14 +489,14 @@ interface FlatRow {
                       </div>
                       <div
                         class="availability-indicator"
-                        *ngIf="shouldShowAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id)"
+                        *ngIf="shouldShowAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id)"
                         [ngClass]="{
-                          'availability-positive': getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) > 0,
-                          'availability-zero': getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) === 0,
-                          'availability-negative': getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) < 0
+                          'availability-positive': getAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id) > 0,
+                          'availability-zero': getAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id) === 0,
+                          'availability-negative': getAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id) < 0
                         }"
                       >
-                        {{ getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) > 0 ? '+' : '' }}{{ getAvailability(row.resource, week, viewMode === 'project' ? row.child.id : row.parent.id) | number : "1.0-1" }}
+                        {{ getAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id) > 0 ? '+' : '' }}{{ getAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id) | number : "1.0-1" }}
                       </div>
                     </div>
                   </div>
@@ -527,13 +530,13 @@ interface FlatRow {
       <div class="modal" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <h2>
-            {{ viewMode === "project" ? "Ajouter une équipe" : "Ajouter un projet" }} à {{ selectedParentRow?.label }}
+            {{ viewMode() === "project" ? "Ajouter une équipe" : "Ajouter un projet" }} à {{ selectedParentRow?.label }}
           </h2>
           <button class="modal-close" (click)="closeLinkModal()">×</button>
         </div>
         <div class="modal-body">
           <div class="form-group">
-            <label>{{ viewMode === "project" ? "Sélectionner une équipe" : "Sélectionner un projet" }}</label>
+            <label>{{ viewMode() === "project" ? "Sélectionner une équipe" : "Sélectionner un projet" }}</label>
             <select [(ngModel)]="selectedIdToLink" class="form-control">
               <option value="">-- Choisir --</option>
               <option *ngFor="let item of linkableItems" [value]="item.id">
@@ -1777,9 +1780,9 @@ export class PlanViewComponent implements OnInit {
     await this.loadData();
   }
 
-  viewMode: "project" | "team" = "project";
-  displayFormat: "tree" | "flat" = "tree";
-  showAvailability: boolean = false;
+  viewMode = storageSignal<"project" | "team">("plan-view-mode", "project");
+  displayFormat = storageSignal<"tree" | "flat">("plan-view-display-format", "tree");
+  showAvailability = storageSignal<boolean>("plan-view-show-availability", false);
 
   selectedCapacityYear: 'all' | '2025' | '2026' | 'custom' = 'all';
   selectedStartDate: Date | null = null;
@@ -1819,10 +1822,10 @@ export class PlanViewComponent implements OnInit {
 
   // Filters
   rowsAll: ParentRow[] = [];
-  filterEquipeIds: string[] = [];
-  filterProjetIds: string[] = [];
-  filterProjetSearch: string = '';
-  filterResourceIds: string[] = []; // values like 'role:<id>' or 'personne:<id>'
+  filterEquipeIds = storageSignal<string[]>("plan-view-filter-equipes", []);
+  filterProjetIds = storageSignal<string[]>("plan-view-filter-projets", []);
+  filterProjetSearch = storageSignal<string>("plan-view-filter-search", "");
+  filterResourceIds = storageSignal<string[]>("plan-view-filter-resources", []); // values like 'role:<id>' or 'personne:<id>'
 
   // Dropdown states
   openEquipeDropdown = false;
@@ -2044,7 +2047,7 @@ export class PlanViewComponent implements OnInit {
   shouldShowAvailability(resource: ResourceRow, week: Date, teamId: string): boolean {
     const charge = this.getResourceValue(resource, week);
     if (charge > 0) return true;
-    if (!this.showAvailability) return false;
+    if (!this.showAvailability()) return false;
 
     const availability = this.getAvailability(resource, week, teamId);
     if (availability !== 0) return true;
@@ -2059,7 +2062,7 @@ export class PlanViewComponent implements OnInit {
   }
 
   switchViewMode(mode: "project" | "team") {
-    this.viewMode = mode;
+    this.viewMode.set(mode);
     this.buildTree();
   }
 
@@ -2068,7 +2071,7 @@ export class PlanViewComponent implements OnInit {
     // Restore expanded state if re-building (optional, good UX)
     // For now reset to closed or keep simple.
 
-    if (this.viewMode === "project") {
+    if (this.viewMode() === "project") {
       // Parent = Project, Child = Team, GrandChild = Resource
       // Sort projects alphabetically
       const sortedProjects = [...this.allProjects].sort((a, b) => a.nom_projet.localeCompare(b.nom_projet));
@@ -2311,7 +2314,7 @@ export class PlanViewComponent implements OnInit {
   }
 
   toggleDisplayFormat(format: "tree" | "flat") {
-    this.displayFormat = format;
+    this.displayFormat.set(format);
   }
 
   buildFlatList() {
@@ -2322,7 +2325,7 @@ export class PlanViewComponent implements OnInit {
       for (const child of parent.children) {
         for (const resource of child.resources) {
           let label = "";
-          if (this.viewMode === "project") {
+          if (this.viewMode() === "project") {
             // Project > Team > Resource
             label = `${parent.label} / ${child.label} / ${resource.label}`;
           } else {
@@ -2402,7 +2405,7 @@ export class PlanViewComponent implements OnInit {
 
     const existingChildIds = new Set(row.children.map((c) => c.id));
 
-    if (this.viewMode === "project") {
+    if (this.viewMode() === "project") {
       // Parent is Project, we want to add Teams
       // Filter out teams that are already attached (via charges or existing link)
       this.linkableItems = this.allEquipes
@@ -2431,7 +2434,7 @@ export class PlanViewComponent implements OnInit {
       let projetId: string;
       let equipeId: string;
 
-      if (this.viewMode === "project") {
+      if (this.viewMode() === "project") {
         // Linking Team to Project
         projetId = this.selectedParentRow.id;
         equipeId = this.selectedIdToLink;
@@ -2482,7 +2485,7 @@ export class PlanViewComponent implements OnInit {
     if (this.showLinkModal) {
       if (!this.selectedParentRow && !this.selectedIdToLink) return undefined;
       let projetId: string | undefined;
-      if (this.viewMode === 'project') {
+      if (this.viewMode() === 'project') {
         projetId = this.selectedParentRow?.id;
       } else {
         projetId = this.selectedIdToLink;
@@ -2490,7 +2493,7 @@ export class PlanViewComponent implements OnInit {
       return this.allProjects.find(p => p.id === projetId);
     }
 
-    if (this.showAddResourceModal && this.viewMode === 'team' && this.selectedChildRow) {
+    if (this.showAddResourceModal && this.viewMode() === 'team' && this.selectedChildRow) {
       return this.allProjects.find(p => p.id === this.selectedChildRow?.id);
     }
 
@@ -2526,7 +2529,7 @@ export class PlanViewComponent implements OnInit {
     let projetId: string;
     let equipeId: string;
 
-    if (this.viewMode === "project") {
+    if (this.viewMode() === "project") {
       // Parent is Project, Child is Team
       projetId = parent.id;
       equipeId = child.id;
@@ -2563,7 +2566,7 @@ export class PlanViewComponent implements OnInit {
       let projetId: string;
       let equipeId: string;
 
-      if (this.viewMode === "project") {
+      if (this.viewMode() === "project") {
         // Parent is Project, Child is Team
         projetId = this.selectedParentForResource.id;
         equipeId = this.selectedChildRow.id;
@@ -2788,7 +2791,7 @@ export class PlanViewComponent implements OnInit {
         let projetId: string;
         let equipeId: string;
 
-        if (this.viewMode === "project") {
+        if (this.viewMode() === "project") {
           // Parent is Project, Child is Team
           projetId = cell.parentId;
           equipeId = cell.childId;
@@ -2834,7 +2837,7 @@ export class PlanViewComponent implements OnInit {
       this.openEquipeDropdown = false;
       this.openProjetDropdown = false;
       this.openResourceDropdown = false;
-      this.filterProjetSearch = '';
+      this.filterProjetSearch.set('');
     }
   }
 
@@ -2854,29 +2857,33 @@ export class PlanViewComponent implements OnInit {
       this.openProjetDropdown = false;
     }
     if (!this.openProjetDropdown) {
-      this.filterProjetSearch = '';
+      this.filterProjetSearch.set('');
     }
   }
 
   onEquipeToggle(id: string | undefined, event: Event) {
     if (!id) return;
     const checked = (event.target as HTMLInputElement).checked;
-    if (checked) this.filterEquipeIds.push(id);
-    else this.filterEquipeIds = this.filterEquipeIds.filter((x) => x !== id);
+    this.filterEquipeIds.update(ids => {
+      if (checked) return [...ids, id];
+      return ids.filter((x) => x !== id);
+    });
     this.applyFilters();
   }
 
   onProjetToggle(id: string | undefined, event: Event) {
     if (!id) return;
     const checked = (event.target as HTMLInputElement).checked;
-    if (checked) this.filterProjetIds.push(id);
-    else this.filterProjetIds = this.filterProjetIds.filter((x) => x !== id);
+    this.filterProjetIds.update(ids => {
+      if (checked) return [...ids, id];
+      return ids.filter((x) => x !== id);
+    });
     this.applyFilters();
   }
 
   get filteredProjectsForDropdown(): Projet[] {
-    if (!this.filterProjetSearch) return this.allProjects;
-    const search = this.filterProjetSearch.toLowerCase();
+    if (!this.filterProjetSearch()) return this.allProjects;
+    const search = this.filterProjetSearch().toLowerCase();
     return this.allProjects.filter(p =>
       p.nom_projet.toLowerCase().includes(search) ||
       (p.code_projet && p.code_projet.toLowerCase().includes(search))
@@ -2885,24 +2892,25 @@ export class PlanViewComponent implements OnInit {
 
   selectFilteredProjects() {
     const ids = this.filteredProjectsForDropdown.map(p => p.id).filter(id => !!id) as string[];
-    ids.forEach(id => {
-      if (!this.filterProjetIds.includes(id)) {
-        this.filterProjetIds.push(id);
-      }
+    this.filterProjetIds.update(current => {
+      const set = new Set([...current, ...ids]);
+      return Array.from(set);
     });
     this.applyFilters();
   }
 
   deselectFilteredProjects() {
     const ids = this.filteredProjectsForDropdown.map(p => p.id).filter(id => !!id) as string[];
-    this.filterProjetIds = this.filterProjetIds.filter(id => !ids.includes(id));
+    this.filterProjetIds.update(current => current.filter(id => !ids.includes(id)));
     this.applyFilters();
   }
 
   onResourceToggle(sel: string, event: Event) {
     const checked = (event.target as HTMLInputElement).checked;
-    if (checked) this.filterResourceIds.push(sel);
-    else this.filterResourceIds = this.filterResourceIds.filter((x) => x !== sel);
+    this.filterResourceIds.update(ids => {
+      if (checked) return [...ids, sel];
+      return ids.filter((x) => x !== sel);
+    });
     this.applyFilters();
   }
 
@@ -2928,7 +2936,7 @@ export class PlanViewComponent implements OnInit {
 
   applyFilters() {
     // If no active filters, show original rows
-    if (!this.filterEquipeIds.length && !this.filterProjetIds.length && !this.filterResourceIds.length) {
+    if (!this.filterEquipeIds().length && !this.filterProjetIds().length && !this.filterResourceIds().length) {
       this.rows = [...this.rowsAll];
       this.buildFlatList();
       return;
@@ -2951,9 +2959,9 @@ export class PlanViewComponent implements OnInit {
       for (const child of parent.children) {
         // Start with child's resources, then apply resource filter
         let resourcesMatch: ResourceRow[] = child.resources;
-        if (this.filterResourceIds.length) {
+        if (this.filterResourceIds().length) {
           resourcesMatch = child.resources.filter((r) =>
-            this.filterResourceIds.some((sel) => {
+            this.filterResourceIds().some((sel) => {
               const [t, id] = sel.split(":");
               return (
                 (t === "role" && r.type === "role" && r.id === id) ||
@@ -2967,20 +2975,20 @@ export class PlanViewComponent implements OnInit {
         let childPassesEquipe = true;
         let childPassesProjet = true;
 
-        if (this.filterEquipeIds.length) {
-          if (this.viewMode === "project") {
+        if (this.filterEquipeIds().length) {
+          if (this.viewMode() === "project") {
             // child.id is equipe id
-            childPassesEquipe = this.filterEquipeIds.includes(child.id);
+            childPassesEquipe = this.filterEquipeIds().includes(child.id);
           } else {
             // viewMode === 'team' -> parent is equipe; equipe filter applies to parent level
             childPassesEquipe = true;
           }
         }
 
-        if (this.filterProjetIds.length) {
-          if (this.viewMode === "team") {
+        if (this.filterProjetIds().length) {
+          if (this.viewMode() === "team") {
             // child.id is projet id
-            childPassesProjet = this.filterProjetIds.includes(child.id);
+            childPassesProjet = this.filterProjetIds().includes(child.id);
           } else {
             // viewMode === 'project' -> parent is projet; project filter applies at parent level
             childPassesProjet = true;
@@ -2988,7 +2996,7 @@ export class PlanViewComponent implements OnInit {
         }
 
         // A child is included only if it passes child-level equipe/project filters AND has at least one matching resource (if resource filters set)
-        const hasResourceMatch = this.filterResourceIds.length ? resourcesMatch.length > 0 : true;
+        const hasResourceMatch = this.filterResourceIds().length ? resourcesMatch.length > 0 : true;
         const includeChild = childPassesEquipe && childPassesProjet && hasResourceMatch;
 
         if (includeChild) {
@@ -3009,20 +3017,20 @@ export class PlanViewComponent implements OnInit {
       let parentPassesEquipe = true;
       let parentPassesProjet = true;
 
-      if (this.filterEquipeIds.length) {
-        if (this.viewMode === "team") {
+      if (this.filterEquipeIds().length) {
+        if (this.viewMode() === "team") {
           // parent.id is equipe id
-          parentPassesEquipe = this.filterEquipeIds.includes(parent.id);
+          parentPassesEquipe = this.filterEquipeIds().includes(parent.id);
         } else {
           // viewMode === 'project' -> equipes filter applied on children only; parent passes if it has children matching the equipe
           parentPassesEquipe = true;
         }
       }
 
-      if (this.filterProjetIds.length) {
-        if (this.viewMode === "project") {
+      if (this.filterProjetIds().length) {
+        if (this.viewMode() === "project") {
           // parent.id is projet id
-          parentPassesProjet = this.filterProjetIds.includes(parent.id);
+          parentPassesProjet = this.filterProjetIds().includes(parent.id);
         } else {
           // viewMode === 'team' -> projet filter applied on children
           parentPassesProjet = true;
@@ -3034,12 +3042,12 @@ export class PlanViewComponent implements OnInit {
       // Allow showing empty parent if it was explicitly selected via the primary filter 
       // and no other restrictive filters (resource or the other category) are active.
       let showEmptyParent = false;
-      if (this.viewMode === 'project' && this.filterProjetIds.includes(parent.id)) {
-        if (this.filterEquipeIds.length === 0 && this.filterResourceIds.length === 0) {
+      if (this.viewMode() === 'project' && this.filterProjetIds().includes(parent.id)) {
+        if (this.filterEquipeIds().length === 0 && this.filterResourceIds().length === 0) {
           showEmptyParent = true;
         }
-      } else if (this.viewMode === 'team' && this.filterEquipeIds.includes(parent.id)) {
-        if (this.filterProjetIds.length === 0 && this.filterResourceIds.length === 0) {
+      } else if (this.viewMode() === 'team' && this.filterEquipeIds().includes(parent.id)) {
+        if (this.filterProjetIds().length === 0 && this.filterResourceIds().length === 0) {
           showEmptyParent = true;
         }
       }
@@ -3106,7 +3114,7 @@ export class PlanViewComponent implements OnInit {
         let projetId: string;
         let equipeId: string;
 
-        if (this.viewMode === "project") {
+        if (this.viewMode() === "project") {
           projetId = parent.id;
           equipeId = child.id;
         } else {
@@ -3128,10 +3136,10 @@ export class PlanViewComponent implements OnInit {
   }
 
   async removeChild(child: ChildRow, parent: ParentRow) {
-    const childType = this.viewMode === "project" ? "équipe" : "projet";
-    const parentType = this.viewMode === "project" ? "projet" : "équipe";
+    const childType = this.viewMode() === "project" ? "équipe" : "projet";
+    const parentType = this.viewMode() === "project" ? "projet" : "équipe";
 
-    this.confirmTitle = "Retirer " + (this.viewMode === "project" ? "l'équipe" : "le projet");
+    this.confirmTitle = "Retirer " + (this.viewMode() === "project" ? "l'équipe" : "le projet");
     this.confirmMessage = `Êtes-vous sûr de vouloir retirer "${child.label}" ${childType === "équipe" ? "de l'" : "du "}${parentType} "${parent.label}" ?\nCela supprimera toutes les charges associées à cette ${childType}.`;
 
     this.pendingConfirmAction = async () => {
@@ -3139,7 +3147,7 @@ export class PlanViewComponent implements OnInit {
         let projetId: string;
         let equipeId: string;
 
-        if (this.viewMode === "project") {
+        if (this.viewMode() === "project") {
           projetId = parent.id;
           equipeId = child.id;
         } else {
