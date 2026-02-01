@@ -9,11 +9,12 @@ import { ChiffresModalComponent } from "./chiffres/chiffres-modal.component";
 import { Chiffre } from "../models/chiffres.type";
 import { LucideAngularModule, Plus, LucideCalculator, MoreVertical, Edit, Trash2, Copy, ExternalLink } from "lucide-angular";
 import { ConfirmModalComponent } from "./confirm-modal.component";
+import { ProjectModalComponent } from "./project-modal.component";
 
 @Component({
   selector: "app-projects-view",
   standalone: true,
-  imports: [CommonModule, FormsModule, ChiffresModalComponent, LucideAngularModule, ConfirmModalComponent],
+  imports: [CommonModule, FormsModule, ChiffresModalComponent, LucideAngularModule, ConfirmModalComponent, ProjectModalComponent],
   template: `
     <div class="projects-container">
       <div class="projects-header">
@@ -221,106 +222,13 @@ import { ConfirmModalComponent } from "./confirm-modal.component";
     </div>
 
     <!-- Project Modal -->
-    <div
+    <app-project-modal
       *ngIf="showProjectModal"
-      class="modal-overlay"
-      (mousedown)="onOverlayMouseDown($event)"
-      (mouseup)="onOverlayMouseUp($event)"
-    >
-      <div class="modal" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h2>{{ editingProjetId ? "Modifier le projet" : "Nouveau Projet" }}</h2>
-          <button class="modal-close" (click)="closeModal()">×</button>
-        </div>
-        <form (ngSubmit)="saveProjet()" class="form">
-          <div class="grid grid-2">
-            <div class="form-group">
-              <label>Code Projet</label>
-              <input [(ngModel)]="newProjet.code_projet" name="code" />
-            </div>
-            <div class="form-group">
-              <div class="label-with-link">
-                <label>Référence Externe</label>
-                <a *ngIf="newProjet.reference_externe && externalReferenceUrl" 
-                   [href]="externalReferenceUrl + newProjet.reference_externe" 
-                   target="_blank" 
-                   class="ref-link modal-ref-link">
-                  Ouvrir
-                  <lucide-icon [img]="ExternalLink" [size]="12"></lucide-icon>
-                </a>
-              </div>
-              <input [(ngModel)]="newProjet.reference_externe" name="ref_ext" placeholder="ex: JIRA-123" />
-            </div>
-          </div>
-            <div class="form-group full-width" [class.has-error]="formErrors.nom_projet">
-              <label>Nom Projet *</label>
-              <input [(ngModel)]="newProjet.nom_projet" name="nom" required (ngModelChange)="formErrors.nom_projet = false" />
-              <span class="error-message" *ngIf="formErrors.nom_projet">Le nom du projet est obligatoire</span>
-            </div>
+      [projet]="newProjet"
+      (saved)="onProjectSaved()"
+      (closed)="closeModal()"
+    ></app-project-modal>
 
-          <div class="grid grid-2">
-            
-            <div class="form-group">
-            <label>Statut</label>
-            <select [(ngModel)]="newProjet.statut" name="statut">
-              <option value="En cours">En cours</option>
-              <option value="Planifié">Planifié</option>
-              <option value="Terminé">Terminé</option>
-              <option value="En pause">En pause</option>
-              <option value="Actif">Actif</option>
-            </select>
-          </div>
-            <div class="form-group">
-              <label>Chef de Projet</label>
-              <input [(ngModel)]="newProjet.chef_projet" name="chef" />
-            </div>
-          </div>
-
-          
-          <div class="form-group full-width">
-            <label>Description</label>
-            <textarea [(ngModel)]="newProjet.description" name="desc" rows="3"></textarea>
-          </div>
-
-          <div class="form-group full-width">
-            <label>Couleur</label>
-            <div class="color-palette">
-              @for (color of predefinedColors; track color) {
-                <div 
-                  class="color-swatch" 
-                  [style.background-color]="color"
-                  [class.active]="newProjet.color === color"
-                  (click)="selectColor(color)"
-                ></div>
-              }
-              <div 
-                class="color-swatch custom-trigger" 
-                [class.active]="isCustomColor"
-                (click)="isCustomColor = true"
-              >
-                @if (isCustomColor) {
-                  <div class="custom-preview" [style.background-color]="newProjet.color"></div>
-                } @else {
-                  <lucide-icon [img]="Plus" [size]="16"></lucide-icon>
-                }
-              </div>
-            </div>
-
-            @if (isCustomColor) {
-              <div class="custom-color-input-wrapper">
-                <input type="color" [(ngModel)]="newProjet.color" name="customColor" class="color-input" />
-                <input type="text" [(ngModel)]="newProjet.color" name="customColorText" class="color-hex-input" placeholder="#HEXCODE" />
-              </div>
-            }
-          </div>
-
-          <div class="flex gap-2 mt-4">
-            <button type="submit" class="btn btn-primary">{{ editingProjetId ? "Mettre à jour" : "Créer" }}</button>
-            <button type="button" class="btn btn-secondary" (click)="closeModal()">Annuler</button>
-          </div>
-        </form>
-      </div>
-    </div>
     <!-- chiffres modal -->
     <div>
       <app-chiffres-modal
@@ -1101,21 +1009,9 @@ export class ProjectsViewComponent implements OnInit {
   externalReferenceUrl: string | null = null;
 
   showProjectModal = false;
-  editingProjetId: string | null = null;
   activeMenuId: string | null = null;
-  isMouseDownOnOverlay = false;
-
-  //ajout pour la modale des  chiffres
   showChiffresModal: boolean = false;
   selectedProjetId: number | null = null;
-
-  predefinedColors = [
-    '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16',
-    '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9',
-    '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef',
-    '#ec4899', '#f43f5e'
-  ];
-  isCustomColor = false;
 
   newProjet: Partial<Projet> = {
     code_projet: "",
@@ -1126,22 +1022,12 @@ export class ProjectsViewComponent implements OnInit {
     color: "#3b82f6",
   };
 
-  formErrors = {
-    nom_projet: false
-  };
-
   // Confirm Modal state
   showConfirmModal = false;
   confirmTitle = '';
   confirmMessage = '';
   private pendingConfirmAction: (() => void) | null = null;
 
-  onConfirmAction() {
-    if (this.pendingConfirmAction) {
-      this.pendingConfirmAction();
-    }
-    this.showConfirmModal = false;
-  }
 
   constructor(
     private projetService: ProjetService,
@@ -1214,7 +1100,6 @@ export class ProjectsViewComponent implements OnInit {
   }
 
   openCreateModal() {
-    this.editingProjetId = null;
     this.newProjet = {
       code_projet: "",
       nom_projet: "",
@@ -1223,32 +1108,20 @@ export class ProjectsViewComponent implements OnInit {
       reference_externe: "",
       color: "#3b82f6",
     };
-    this.isCustomColor = false;
-    this.formErrors = { nom_projet: false };
     this.showProjectModal = true;
     this.activeMenuId = null;
   }
 
-  selectColor(color: string) {
-    this.newProjet.color = color;
-    this.isCustomColor = false;
-  }
-
   openEditModal(projet: Projet) {
-    this.editingProjetId = projet.id!;
     this.newProjet = { ...projet };
-    this.isCustomColor = !this.predefinedColors.includes(this.newProjet.color!);
-    this.formErrors = { nom_projet: false };
     this.showProjectModal = true;
     this.activeMenuId = null;
   }
 
   duplicateProjet(projet: Projet) {
-    this.editingProjetId = null; // Treat as new project
     console.log("PROJET Origine : ", projet);
 
     // Destructure pour exclure les propriétés à ne pas copier
-    // On exclut id_projet pour en générer un nouveau (incrémenté)
     const { id, created_at, updated_at, id_projet, ...restProjet } = projet;
 
     // Trouver le prochain id_projet (max + 1)
@@ -1262,27 +1135,17 @@ export class ProjectsViewComponent implements OnInit {
     };
 
     console.log("PROJET Copie : ", this.newProjet);
-    this.formErrors = { nom_projet: false };
     this.showProjectModal = true;
     this.activeMenuId = null;
   }
 
-  onOverlayMouseDown(event: MouseEvent) {
-    if (event.target === event.currentTarget) {
-      this.isMouseDownOnOverlay = true;
-    }
-  }
-
-  onOverlayMouseUp(event: MouseEvent) {
-    if (this.isMouseDownOnOverlay && event.target === event.currentTarget) {
-      this.closeModal();
-    }
-    this.isMouseDownOnOverlay = false;
-  }
-
   closeModal() {
     this.showProjectModal = false;
-    this.editingProjetId = null;
+  }
+
+  async onProjectSaved() {
+    this.closeModal();
+    await this.loadProjects();
   }
 
   async deleteProjet(projet: Projet) {
@@ -1301,24 +1164,11 @@ export class ProjectsViewComponent implements OnInit {
     this.showConfirmModal = true;
   }
 
-  async saveProjet() {
-    // Validation
-    if (!this.newProjet.nom_projet || this.newProjet.nom_projet.trim() === "") {
-      this.formErrors.nom_projet = true;
-      return;
+  async onConfirmAction() {
+    if (this.pendingConfirmAction) {
+      await this.pendingConfirmAction();
     }
-
-    try {
-      if (this.editingProjetId) {
-        await this.projetService.updateProjet(this.editingProjetId, this.newProjet);
-      } else {
-        await this.projetService.createProjet(this.newProjet);
-      }
-      this.closeModal();
-      await this.loadProjects();
-    } catch (error) {
-      console.error("Error saving project:", error);
-    }
+    this.showConfirmModal = false;
   }
 
   // méthodes pour la gestion des chiffres d'un projet

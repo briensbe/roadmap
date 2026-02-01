@@ -7,13 +7,15 @@ import { ChargeService } from "../services/charge.service";
 import { JalonService } from "../services/jalon.service";
 import { Equipe, Projet, Charge, Role, Personne, Capacite, Jalon } from "../models/types";
 import { CalendarService } from "../services/calendar.service";
-import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus } from "lucide-angular";
+import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink } from "lucide-angular";
 import { getISOWeekYear } from "date-fns";
 import { calculateBestToolbarPosition, calculateBestPopoverPosition, ToolbarPosition, PopoverPosition } from "../utils/selection-positioning";
 import { SelectionToolbarComponent } from "./selection-toolbar.component";
+import { ProjectModalComponent } from "./project-modal.component";
+import { SettingsService } from "../services/settings.service";
 
 @NgModule({
-  imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus })],
+  imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink })],
   exports: [LucideAngularModule]
 })
 export class LucideIconsModule { }
@@ -62,7 +64,7 @@ interface FlatRow {
 @Component({
   selector: "app-plan-view",
   standalone: true,
-  imports: [CommonModule, NgIf, NgFor, FormsModule, LucideIconsModule, MilestoneModalComponent, SelectionToolbarComponent, ConfirmModalComponent],
+  imports: [CommonModule, NgIf, NgFor, FormsModule, LucideIconsModule, MilestoneModalComponent, SelectionToolbarComponent, ConfirmModalComponent, ProjectModalComponent],
   template: `
     <div class="capacity-container">
       <!-- Sexy Tooltip Singleton -->
@@ -540,6 +542,25 @@ interface FlatRow {
             </select>
           </div>
 
+          <div class="project-links-in-modal" *ngIf="getProjectForLinks() as project">
+            <div class="links-label-row">
+              <span class="links-title">Actions Projet:</span>
+              <div class="links-actions">
+                <button class="btn-link" (click)="openProjectEditFromLink()">
+                  <lucide-icon [img]="ExternalLink" [size]="14"></lucide-icon>
+                  Modifier Projet
+                </button>
+                <a *ngIf="project.reference_externe && externalReferenceUrl" 
+                   [href]="externalReferenceUrl + project.reference_externe" 
+                   target="_blank" 
+                   class="btn-link external-link">
+                  <lucide-icon [img]="ExternalLink" [size]="14"></lucide-icon>
+                  {{ project.reference_externe }}
+                </a>
+              </div>
+            </div>
+          </div>
+
           <div class="modal-actions">
             <button class="btn btn-primary" (click)="linkItem()" [disabled]="!selectedIdToLink">Ajouter</button>
             <button class="btn btn-secondary" (click)="closeLinkModal()">Annuler</button>
@@ -645,6 +666,13 @@ interface FlatRow {
       (confirm)="onConfirmAction()"
       (cancel)="showConfirmModal = false">
     </app-confirm-modal>
+
+    <app-project-modal
+      *ngIf="showProjectModal"
+      [projet]="projectToEdit"
+      (saved)="onProjectSaved()"
+      (closed)="closeProjectModal()"
+    ></app-project-modal>
   `,
   styles: [
     `
@@ -799,6 +827,52 @@ interface FlatRow {
         cursor: pointer;
         box-shadow: 0 1px 2px rgba(16, 24, 40, 0.03);
         min-width: 140px;
+      }
+
+      .project-links-in-modal {
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid #e5e7eb;
+      }
+
+      .links-label-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .links-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #64748b;
+      }
+
+      .links-actions {
+        display: flex;
+        gap: 12px;
+      }
+
+      .btn-link {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 13px;
+        color: #4f46e5;
+        background: none;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        transition: background 0.2s;
+      }
+
+      .btn-link:hover {
+        background: #f3f4f6;
+      }
+
+      .btn-link.external-link {
+        color: #0891b2;
       }
 
       .filter-title {
@@ -1793,7 +1867,8 @@ export class PlanViewComponent implements OnInit {
     private projetService: ProjetService,
     private chargeService: ChargeService,
     private calendarService: CalendarService,
-    private jalonService: JalonService
+    private jalonService: JalonService,
+    private settingsService: SettingsService
   ) { }
 
   expandAll() {
@@ -1826,6 +1901,7 @@ export class PlanViewComponent implements OnInit {
   async ngOnInit() {
     this.generateWeeks();
     await this.loadData();
+    this.externalReferenceUrl = await this.settingsService.getSettingValue("external_reference_url", "global");
   }
 
   generateWeeks() {
@@ -2378,6 +2454,42 @@ export class PlanViewComponent implements OnInit {
       console.error("Error linking item:", error);
       alert("Erreur lors de l'ajout du lien.");
     }
+  }
+
+  // --- Project Modal Integration ---
+  showProjectModal = false;
+  projectToEdit: Partial<Projet> | null = null;
+  externalReferenceUrl: string | null = null;
+  ExternalLink = ExternalLink;
+
+  getProjectForLinks(): Projet | undefined {
+    if (!this.selectedParentRow && !this.selectedIdToLink) return undefined;
+
+    let projetId: string | undefined;
+    if (this.viewMode === 'project') {
+      projetId = this.selectedParentRow?.id;
+    } else {
+      projetId = this.selectedIdToLink;
+    }
+
+    return this.allProjects.find(p => p.id === projetId);
+  }
+
+  openProjectEditFromLink() {
+    const project = this.getProjectForLinks();
+    if (project) {
+      this.projectToEdit = { ...project };
+      this.showProjectModal = true;
+    }
+  }
+
+  async onProjectSaved() {
+    this.showProjectModal = false;
+    await this.loadData();
+  }
+
+  closeProjectModal() {
+    this.showProjectModal = false;
   }
 
   // Resource Addition Modal Methods
