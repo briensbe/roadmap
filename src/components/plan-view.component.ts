@@ -2336,12 +2336,40 @@ export class PlanViewComponent implements OnInit {
     if (!this.selectedParentRow || !this.selectedIdToLink) return;
 
     try {
+      let projetId: string;
+      let equipeId: string;
+
       if (this.viewMode === "project") {
         // Linking Team to Project
-        await this.projetService.linkProjectToTeam(this.selectedParentRow.id, this.selectedIdToLink);
+        projetId = this.selectedParentRow.id;
+        equipeId = this.selectedIdToLink;
+        await this.projetService.linkProjectToTeam(projetId, equipeId);
       } else {
         // Linking Project to Team
-        await this.projetService.linkProjectToTeam(this.selectedIdToLink, this.selectedParentRow.id);
+        equipeId = this.selectedParentRow.id;
+        projetId = this.selectedIdToLink;
+        await this.projetService.linkProjectToTeam(projetId, equipeId);
+      }
+
+      // Automatically add resources from the team to the project
+      const teamResources = await this.teamService.getEquipeResources(equipeId);
+
+      // Filter resources to add only those not already present in the project for this team
+      // (This is a safety check, though unlikely for a fresh link)
+      const existingCharges = await this.chargeService.getChargesByProject(projetId);
+      const teamCharges = existingCharges.filter(c => c.equipe_id === equipeId);
+
+      for (const resource of teamResources) {
+        const isAlreadyAdded = teamCharges.some(c =>
+          (resource.type === 'role' && c.role_id === resource.id) ||
+          (resource.type === 'personne' && c.personne_id === resource.id)
+        );
+
+        if (!isAlreadyAdded) {
+          const roleId = resource.type === 'role' ? resource.id : undefined;
+          const personneId = resource.type === 'personne' ? resource.id : undefined;
+          await this.chargeService.createChargeWithoutDates(projetId, equipeId, roleId, personneId);
+        }
       }
 
       await this.loadData(); // Reload to refresh tree
