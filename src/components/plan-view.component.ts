@@ -600,15 +600,31 @@ interface FlatRow {
 
           <div class="form-group" *ngIf="resourceTypeToAdd === 'personne'">
             <label>Sélectionner une personne</label>
-            <div *ngIf="availablePersonnes.length === 0" class="no-roles-message">
-              <p>Aucune personne disponible. Tous les personnes sont déjà utilisées pour cette combinaison.</p>
-            </div>
             <select *ngIf="availablePersonnes.length > 0" [(ngModel)]="selectedResourceId" class="form-control">
               <option value="">-- Choisir une personne --</option>
               <option *ngFor="let personne of availablePersonnes" [value]="personne.id">
                 {{ personne.prenom }} {{ personne.nom }} ({{ personne.jours_par_semaine }}j/sem)
               </option>
             </select>
+          </div>
+
+          <div class="project-links-in-modal" *ngIf="getProjectForLinks() as project">
+            <div class="links-label-row">
+              <span class="links-title">Actions Projet:</span>
+              <div class="links-actions">
+                <button class="btn-link" (click)="openProjectEditFromLink()">
+                  <lucide-icon [img]="ExternalLink" [size]="14"></lucide-icon>
+                  Modifier Projet
+                </button>
+                <a *ngIf="project.reference_externe && externalReferenceUrl" 
+                   [href]="externalReferenceUrl + project.reference_externe" 
+                   target="_blank" 
+                   class="btn-link external-link">
+                  <lucide-icon [img]="ExternalLink" [size]="14"></lucide-icon>
+                  {{ project.reference_externe }}
+                </a>
+              </div>
+            </div>
           </div>
 
           <div class="modal-actions">
@@ -2463,16 +2479,22 @@ export class PlanViewComponent implements OnInit {
   ExternalLink = ExternalLink;
 
   getProjectForLinks(): Projet | undefined {
-    if (!this.selectedParentRow && !this.selectedIdToLink) return undefined;
-
-    let projetId: string | undefined;
-    if (this.viewMode === 'project') {
-      projetId = this.selectedParentRow?.id;
-    } else {
-      projetId = this.selectedIdToLink;
+    if (this.showLinkModal) {
+      if (!this.selectedParentRow && !this.selectedIdToLink) return undefined;
+      let projetId: string | undefined;
+      if (this.viewMode === 'project') {
+        projetId = this.selectedParentRow?.id;
+      } else {
+        projetId = this.selectedIdToLink;
+      }
+      return this.allProjects.find(p => p.id === projetId);
     }
 
-    return this.allProjects.find(p => p.id === projetId);
+    if (this.showAddResourceModal && this.viewMode === 'team' && this.selectedChildRow) {
+      return this.allProjects.find(p => p.id === this.selectedChildRow?.id);
+    }
+
+    return undefined;
   }
 
   openProjectEditFromLink() {
