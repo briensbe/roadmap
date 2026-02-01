@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit } from "@angular/core";
+import { Component, Input, Output, EventEmitter, OnInit, HostListener } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { ProjetService } from "../services/projet.service";
@@ -97,11 +97,14 @@ import { LucideAngularModule, Plus, ExternalLink } from "lucide-angular";
             </div>
           </div>
 
-          <div class="flex gap-2 mt-4">
-            <button type="submit" class="btn btn-primary" [disabled]="isSaving">
-              {{ isSaving ? "Sauvegarde..." : (projet?.id ? "Mettre à jour" : "Créer") }}
-            </button>
-            <button type="button" class="btn btn-secondary" (click)="close()">Annuler</button>
+          <div class="flex items-center gap-4 mt-4">
+            <div class="flex gap-2">
+              <button type="submit" class="btn btn-primary" [disabled]="isSaving">
+                {{ isSaving ? "Sauvegarde..." : (projet?.id ? "Mettre à jour" : "Créer") }}
+              </button>
+              <button type="button" class="btn btn-secondary" (click)="close()">Annuler</button>
+            </div>
+            <span class="shortcut-hint">Ctrl + Entrée pour valider</span>
           </div>
         </form>
       </div>
@@ -170,6 +173,12 @@ import { LucideAngularModule, Plus, ExternalLink } from "lucide-angular";
     .custom-color-input-wrapper { display: flex; gap: 12px; align-items: center; margin-top: 16px; padding: 12px; background: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb; }
     .color-input { width: 60px; height: 40px; padding: 2px; cursor: pointer; }
     .color-hex-input { flex: 1; text-transform: uppercase; }
+    .items-center { align-items: center; }
+    .shortcut-hint {
+      font-size: 12px;
+      color: #9ca3af;
+      font-style: italic;
+    }
   `]
 })
 export class ProjectModalComponent implements OnInit {
@@ -233,6 +242,13 @@ export class ProjectModalComponent implements OnInit {
   onOverlayMouseDown(event: MouseEvent) {
     if (event.target === event.currentTarget) {
       this.isMouseDownOnOverlay = true;
+    }
+  }
+
+  @HostListener('window:keydown.control.enter')
+  handleCtrlEnter() {
+    if (!this.isSaving) {
+      this.save();
     }
   }
 
