@@ -252,6 +252,11 @@ export class ProjectModalComponent implements OnInit {
     }
   }
 
+  @HostListener('window:keydown.escape')
+  handleEscape() {
+    this.close();
+  }
+
   onOverlayMouseUp(event: MouseEvent) {
     if (this.isMouseDownOnOverlay && event.target === event.currentTarget) {
       this.close();
