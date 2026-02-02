@@ -1,6 +1,7 @@
 import { Injectable } from "@angular/core";
 import { SupabaseService } from "./supabase.service";
 import { Projet } from "../models/types";
+import { LexoRank } from "lexorank";
 
 @Injectable({
   providedIn: "root"
@@ -25,7 +26,7 @@ export class ProjetService {
     const { data, error } = await this.supabase.client
       .from("projets")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("rank", { ascending: true });
 
     if (error) throw error;
     this._projetsCache = data || [];
@@ -69,6 +70,28 @@ export class ProjetService {
 
 
   async createProjet(projet: Partial<Projet>): Promise<Projet> {
+    // 1. Fetch only the project with the highest rank to calculate next rank
+    const { data: highestRankProject } = await this.supabase.client
+      .from("projets")
+      .select("rank")
+      .not("rank", "is", null)
+      .order("rank", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    let newRank: LexoRank;
+    if (highestRankProject && highestRankProject.rank) {
+      try {
+        newRank = LexoRank.parse(highestRankProject.rank).genNext();
+      } catch (e) {
+        newRank = LexoRank.middle();
+      }
+    } else {
+      newRank = LexoRank.middle();
+    }
+
+    projet.rank = newRank.toString();
+
     const { data, error } = await this.supabase.client
       .from("projets")
       .insert([projet])

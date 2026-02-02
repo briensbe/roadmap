@@ -100,6 +100,7 @@ export interface Projet {
   created_at?: string;
   updated_at?: string;
   color?: string;
+  rank?: string;
 }
 
 export interface Capacite {

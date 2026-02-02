@@ -15,6 +15,8 @@ import { ProjectModalComponent } from "./project-modal.component";
 import { SettingsService } from "../services/settings.service";
 import { storageSignal } from "../utils/storage-signal";
 import { signal } from "@angular/core";
+import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { LexoRank } from 'lexorank';
 
 @NgModule({
   imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink })],
@@ -53,6 +55,7 @@ interface ParentRow {
   expanded: boolean;
   children: ChildRow[];
   totalCharges: Map<string, number>; // week string -> amount
+  originalProject?: Projet;
 }
 
 interface FlatRow {
@@ -66,7 +69,7 @@ interface FlatRow {
 @Component({
   selector: "app-plan-view",
   standalone: true,
-  imports: [CommonModule, NgIf, NgFor, FormsModule, LucideIconsModule, MilestoneModalComponent, SelectionToolbarComponent, ConfirmModalComponent, ProjectModalComponent],
+  imports: [CommonModule, NgIf, NgFor, FormsModule, LucideIconsModule, MilestoneModalComponent, SelectionToolbarComponent, ConfirmModalComponent, ProjectModalComponent, DragDropModule],
   template: `
     <div class="capacity-container">
       <!-- Sexy Tooltip Singleton -->
@@ -285,10 +288,14 @@ interface FlatRow {
           <!-- Data rows -->
           <div class="calendar-body">
             <!-- Tree View -->
+            <!-- Tree View -->
             <ng-container *ngIf="displayFormat() === 'tree'">
-            <ng-container *ngFor="let row of rows">
+            <div cdkDropList (cdkDropListDropped)="drop($event)">
+            <div *ngFor="let row of rows" cdkDrag [cdkDragDisabled]="viewMode() !== 'project'" class="project-draggable-group">
+
               <!-- Parent Row -->
-              <div class="calendar-row">
+              <div class="calendar-row" cdkDragHandle>
+
                 <div class="label-cell row-label-parent">
                   <div class="row-label-content" (click)="toggleRow(row)">
                     <div class="color-bar-container">
@@ -444,7 +451,8 @@ interface FlatRow {
                   </ng-container>
                 </ng-container>
               </ng-container>
-            </ng-container>
+            </div>
+            </div>
             </ng-container>
 
             <!-- Flat View -->
@@ -695,6 +703,36 @@ interface FlatRow {
   `,
   styles: [
     `
+      .cdk-drag-preview {
+        box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
+                    0 8px 10px 1px rgba(0, 0, 0, 0.14),
+                    0 3px 14px 2px rgba(0, 0, 0, 0.12);
+        background: white;
+        opacity: 0.9;
+      }
+      .cdk-drag-placeholder {
+        opacity: 0;
+      }
+      .cdk-drag-animating {
+        transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+      }
+      .project-draggable-group {
+        display: block;
+      }
+      .project-draggable-group:last-child {
+        border: none;
+      }
+      .calendar-body.cdk-drop-list-dragging .project-draggable-group:not(.cdk-drag-placeholder) {
+        transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+      }
+      /* Ensure calendar row handles correctly */
+      .calendar-row {
+        cursor: grab;
+      }
+      .calendar-row:active {
+        cursor: grabbing;
+      }
+
       .capacity-container {
         padding: 20px;
         background: #f5f7fa;
@@ -2066,6 +2104,60 @@ export class PlanViewComponent implements OnInit {
     this.buildTree();
   }
 
+
+  async drop(event: CdkDragDrop<any[]>) {
+    if (this.viewMode() !== 'project' || this.displayFormat() !== 'tree') return;
+
+    // Move in UI first for responsiveness
+    moveItemInArray(this.rows, event.previousIndex, event.currentIndex);
+
+    const movedItem = this.rows[event.currentIndex];
+    const prevItem = this.rows[event.currentIndex - 1];
+    const nextItem = this.rows[event.currentIndex + 1];
+
+    if (!movedItem.originalProject) return;
+
+    let newRank: LexoRank;
+
+    // Helper to safely parse rank
+    const getRank = (item: ParentRow | undefined) => {
+      if (item && item.originalProject && item.originalProject.rank) {
+        return LexoRank.parse(item.originalProject.rank);
+      }
+      return LexoRank.middle();
+    };
+
+    try {
+      if (!prevItem && !nextItem) {
+        newRank = LexoRank.middle();
+      } else if (!prevItem) {
+        // Top of list
+        const nextRank = getRank(nextItem);
+        newRank = nextRank.genPrev();
+      } else if (!nextItem) {
+        // Bottom of list
+        const prevRank = getRank(prevItem);
+        newRank = prevRank.genNext();
+      } else {
+        // Middle
+        const prevRank = getRank(prevItem);
+        const nextRank = getRank(nextItem);
+        newRank = prevRank.between(nextRank);
+      }
+
+      const rankStr = newRank.toString();
+      movedItem.originalProject.rank = rankStr;
+
+      // Update in database
+      await this.projetService.updateProjet(movedItem.id, { rank: rankStr });
+
+    } catch (error) {
+      console.error('Error calculating rank:', error);
+      // Fallback: reload to reset order if calculation failed
+      this.loadData();
+    }
+  }
+
   buildTree() {
     this.rows = [];
     // Restore expanded state if re-building (optional, good UX)
@@ -2074,7 +2166,15 @@ export class PlanViewComponent implements OnInit {
     if (this.viewMode() === "project") {
       // Parent = Project, Child = Team, GrandChild = Resource
       // Sort projects alphabetically
-      const sortedProjects = [...this.allProjects].sort((a, b) => a.nom_projet.localeCompare(b.nom_projet));
+      // Sort projects by rank or alphabetically
+      const sortedProjects = [...this.allProjects].sort((a, b) => {
+        if (a.rank && b.rank) {
+          return a.rank.localeCompare(b.rank);
+        }
+        if (a.rank) return -1;
+        if (b.rank) return 1;
+        return a.nom_projet.localeCompare(b.nom_projet);
+      });
 
       for (const project of sortedProjects) {
         const projectCharges = this.allCharges.filter((c) => c.projet_id === project.id);
@@ -2187,6 +2287,7 @@ export class PlanViewComponent implements OnInit {
           expanded: true, // Expanded by default
           children: children,
           totalCharges: parentTotal,
+          originalProject: project,
         });
       }
     } else {
