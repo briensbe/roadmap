@@ -3054,6 +3054,7 @@ export class PlanViewComponent implements OnInit {
         expanded: parent.expanded,
         children: [],
         totalCharges: parent.totalCharges,
+        originalProject: parent.originalProject,
       };
 
       // Process each child and apply child/resource-level filters
