@@ -91,6 +91,7 @@ export class PlanViewComponent implements OnInit {
   viewMode = storageSignal<"project" | "team">("plan-view-mode", "project");
   displayFormat = storageSignal<"tree" | "flat">("plan-view-display-format", "tree");
   showAvailability = storageSignal<boolean>("plan-view-show-availability", false);
+  allExpanded = storageSignal<boolean>("plan-view-all-expanded", true);
 
   selectedCapacityYear: 'all' | '2025' | '2026' | 'custom' = 'all';
   selectedStartDate: Date | null = null;
@@ -218,10 +219,11 @@ export class PlanViewComponent implements OnInit {
   }
 
   toggleAllExpansion() {
-    if (this.isAllExpanded) {
-      this.collapseAll();
-    } else {
+    this.allExpanded.set(!this.allExpanded());
+    if (this.allExpanded()) {
       this.expandAll();
+    } else {
+      this.collapseAll();
     }
   }
 
@@ -535,7 +537,7 @@ export class PlanViewComponent implements OnInit {
             label: label,
             code: code,
             color: color,
-            expanded: true, // Expanded by default
+            expanded: this.allExpanded(), // Respect persisted preference
             resources: resources,
             charges: teamCharges,
           });
@@ -554,7 +556,7 @@ export class PlanViewComponent implements OnInit {
           label: project.nom_projet,
           code: project.code_projet,
           color: project.color,
-          expanded: true, // Expanded by default
+          expanded: this.allExpanded(), // Respect persisted preference
           children: children,
           totalCharges: parentTotal,
           originalProject: project,
@@ -654,7 +656,7 @@ export class PlanViewComponent implements OnInit {
             label: label,
             code: code,
             color: color,
-            expanded: true, // Expanded by default
+            expanded: this.allExpanded(), // Respect persisted preference
             resources: resources,
             charges: projectCharges,
           });
@@ -673,7 +675,7 @@ export class PlanViewComponent implements OnInit {
           label: team.nom,
           code: team.code,
           color: team.color,
-          expanded: true, // Expanded by default
+          expanded: this.allExpanded(), // Respect persisted preference
           children: children,
           totalCharges: parentTotal,
         });

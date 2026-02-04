@@ -8,6 +8,7 @@ import { CalendarService } from "../../services/calendar.service";
 import { Equipe, Role, Personne, Capacite, EquipeResource } from "../../models/types";
 import { LucideAngularModule, ChevronDown, ChevronRight, Plus, User, Users, Contact, SquarePlus, SquareMinus } from "lucide-angular";
 import { getISOWeekYear } from "date-fns";
+import { storageSignal } from "../../utils/storage-signal";
 import { calculateBestToolbarPosition, calculateBestPopoverPosition, ToolbarPosition, PopoverPosition } from "../../utils/selection-positioning";
 
 @NgModule({
@@ -99,6 +100,7 @@ export class CapacityViewComponent implements OnInit {
 
   // Toggle to show/hide the computed days inside cells. Default: hidden (user activates toggle to show)
   showDaysInCells: boolean = false;
+  allExpanded = storageSignal<boolean>("capacity-view-all-expanded", true);
 
   selectedCapacityYear: 'all' | '2025' | '2026' | 'custom' = 'all';
   selectedStartDate: Date | null = null;
@@ -125,10 +127,11 @@ export class CapacityViewComponent implements OnInit {
   }
 
   toggleAllExpansion() {
-    if (this.isAllExpanded) {
-      this.collapseAll();
-    } else {
+    this.allExpanded.set(!this.allExpanded());
+    if (this.allExpanded()) {
       this.expandAll();
+    } else {
+      this.collapseAll();
     }
   }
 
@@ -215,7 +218,7 @@ export class CapacityViewComponent implements OnInit {
         return {
           equipe,
           resources: resourceRows,
-          expanded: true,
+          expanded: this.allExpanded(),
         };
       });
 
