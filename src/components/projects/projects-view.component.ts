@@ -2,14 +2,14 @@ import { Component, OnInit, HostListener, ElementRef } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { ActivatedRoute } from "@angular/router";
-import { ProjetService } from "../services/projet.service";
-import { SettingsService } from "../services/settings.service";
-import { Projet } from "../models/types";
-import { ChiffresModalComponent } from "./chiffres/chiffres-modal.component";
-import { Chiffre } from "../models/chiffres.type";
+import { ProjetService } from "../../services/projet.service";
+import { SettingsService } from "../../services/settings.service";
+import { Projet } from "../../models/types";
+import { ChiffresModalComponent } from "../chiffres/chiffres-modal.component";
+import { Chiffre } from "../../models/chiffres.type";
 import { LucideAngularModule, Plus, LucideCalculator, MoreVertical, Edit, Trash2, Copy, ExternalLink } from "lucide-angular";
-import { ConfirmModalComponent } from "./confirm-modal.component";
-import { ProjectModalComponent } from "./project-modal.component";
+import { ConfirmModalComponent } from "../confirm-modal.component";
+import { ProjectModalComponent } from "../project-modal.component";
 
 @Component({
   selector: "app-projects-view",

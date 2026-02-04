@@ -1,14 +1,14 @@
 import { Component, OnInit, NgModule, HostListener } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
-import { SelectionToolbarComponent } from "./selection-toolbar.component";
-import { ConfirmModalComponent } from "./confirm-modal.component";
-import { TeamService } from "../services/team.service";
-import { CalendarService } from "../services/calendar.service";
-import { Equipe, Role, Personne, Capacite, EquipeResource } from "../models/types";
+import { SelectionToolbarComponent } from "../selection-toolbar.component";
+import { ConfirmModalComponent } from "../confirm-modal.component";
+import { TeamService } from "../../services/team.service";
+import { CalendarService } from "../../services/calendar.service";
+import { Equipe, Role, Personne, Capacite, EquipeResource } from "../../models/types";
 import { LucideAngularModule, ChevronDown, ChevronRight, Plus, User, Users, Contact, SquarePlus, SquareMinus } from "lucide-angular";
 import { getISOWeekYear } from "date-fns";
-import { calculateBestToolbarPosition, calculateBestPopoverPosition, ToolbarPosition, PopoverPosition } from "../utils/selection-positioning";
+import { calculateBestToolbarPosition, calculateBestPopoverPosition, ToolbarPosition, PopoverPosition } from "../../utils/selection-positioning";
 
 @NgModule({
   imports: [LucideAngularModule.pick({ ChevronDown, ChevronRight, Plus, User, Users, Contact, SquarePlus, SquareMinus })],

@@ -1,9 +1,9 @@
 import { Routes } from "@angular/router";
 import { OrganizationViewComponent } from "./components/organization-view.component";
 import { ResourceManagerComponent } from "./components/resource-manager.component";
-import { CapacityViewComponent } from "./components/capacity-view.component";
-import { ProjectsViewComponent } from "./components/projects-view.component";
-import { PlanViewComponent } from "./components/plan-view.component";
+import { CapacityViewComponent } from "./components/capacity-view/capacity-view.component";
+import { ProjectsViewComponent } from "./components/projects/projects-view.component";
+import { PlanViewComponent } from "./components/plan-view/plan-view.component";
 import { MilestonesViewComponent } from "./components/milestones-view.component";
 import { DashboardComponent } from "./components/dashboard/dashboard.component";
 import { LoginComponent } from "./auth/login/login.component";

@@ -1,19 +1,19 @@
 import { Component, OnInit, ViewChild, ElementRef, HostListener, NgModule } from "@angular/core";
 import { CommonModule, NgIf, NgFor } from "@angular/common";
 import { FormsModule } from "@angular/forms";
-import { TeamService } from "../services/team.service";
-import { ProjetService } from "../services/projet.service";
-import { ChargeService } from "../services/charge.service";
-import { JalonService } from "../services/jalon.service";
-import { Equipe, Projet, Charge, Role, Personne, Capacite, Jalon } from "../models/types";
-import { CalendarService } from "../services/calendar.service";
+import { TeamService } from "../../services/team.service";
+import { ProjetService } from "../../services/projet.service";
+import { ChargeService } from "../../services/charge.service";
+import { JalonService } from "../../services/jalon.service";
+import { Equipe, Projet, Charge, Role, Personne, Capacite, Jalon } from "../../models/types";
+import { CalendarService } from "../../services/calendar.service";
 import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink } from "lucide-angular";
 import { getISOWeekYear } from "date-fns";
-import { calculateBestToolbarPosition, calculateBestPopoverPosition, ToolbarPosition, PopoverPosition } from "../utils/selection-positioning";
-import { SelectionToolbarComponent } from "./selection-toolbar.component";
-import { ProjectModalComponent } from "./project-modal.component";
-import { SettingsService } from "../services/settings.service";
-import { storageSignal } from "../utils/storage-signal";
+import { calculateBestToolbarPosition, calculateBestPopoverPosition, ToolbarPosition, PopoverPosition } from "../../utils/selection-positioning";
+import { SelectionToolbarComponent } from "../selection-toolbar.component";
+import { ProjectModalComponent } from "../project-modal.component";
+import { SettingsService } from "../../services/settings.service";
+import { storageSignal } from "../../utils/storage-signal";
 import { signal } from "@angular/core";
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { LexoRank } from 'lexorank';
@@ -24,8 +24,8 @@ import { LexoRank } from 'lexorank';
 })
 export class LucideIconsModule { }
 
-import { MilestoneModalComponent } from './milestone-modal.component';
-import { ConfirmModalComponent } from './confirm-modal.component';
+import { MilestoneModalComponent } from '../milestone-modal.component';
+import { ConfirmModalComponent } from '../confirm-modal.component';
 
 interface ResourceRow {
   id: string;
