@@ -1,0 +1,330 @@
+<div class="capacity-container">
+  <!-- Sexy Tooltip Singleton -->
+  <div class="sexy-tooltip" [class.visible]="activeTooltip" [style.left.px]="tooltipX" [style.top.px]="tooltipY">
+    {{ activeTooltip }}
+  </div>
+  <div class="capacity-header">
+    <h1>Gestion de Capacité par Équipe</h1>
+    <div class="header-actions">
+      <!-- <button class="btn btn-secondary" (click)="goToToday()">Aujourd'hui</button> -->
+    </div>
+  </div>
+
+  <div class="calendar-controls">
+    <div class="date-navigation">
+      <button class="btn btn-sm" (click)="goToPreviousMonth()">← Mois précédent</button>
+      <button class="btn btn-sm btn-primary" (click)="goToToday()">Aujourd'hui</button>
+      <button class="btn btn-sm" (click)="goToNextMonth()">Mois suivant →</button>
+    </div>
+
+    <div class="controls-right" style="display: flex; align-items: center; gap: 12px">
+      <div
+        class="filters-group"
+        style="
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-right: 12px;
+          padding-right: 12px;
+          border-right: 1px solid #e2e8f0;
+        "
+      >
+        <div class="filter-item">
+          <select [(ngModel)]="teamFilter" class="form-control form-control-sm" style="width: 150px">
+            <option value="all">Toutes les équipes</option>
+            <option *ngFor="let eq of allEquipes" [value]="eq.id">{{ eq.nom }}</option>
+          </select>
+        </div>
+        <div class="filter-item">
+          <div class="filter-dropdown-container">
+            <input
+              type="text"
+              [(ngModel)]="resourceSearch"
+              placeholder="Filtrer ressources..."
+              class="form-control form-control-sm search-input"
+              (click)="toggleResourceDropdown($event)"
+            />
+
+            <div *ngIf="showResourceDropdown" class="resource-dropdown shadow-lg">
+              <div class="dropdown-header">
+                <span>{{ selectedResourceNames.size }} sélectionnée(s)</span>
+                <button
+                  class="btn-clear"
+                  *ngIf="selectedResourceNames.size > 0"
+                  (click)="selectedResourceNames.clear(); $event.stopPropagation()"
+                >
+                  Effacer
+                </button>
+              </div>
+              <div class="dropdown-list">
+                <div
+                  *ngFor="let res of filteredResourceList"
+                  class="dropdown-item"
+                  (click)="toggleResourceSelection(res.label); $event.stopPropagation()"
+                >
+                  <input type="checkbox" [checked]="isResourceSelected(res.label)" />
+                  <div class="item-icon" [style.background-color]="res.color || '#e2e8f0'">
+                    <lucide-icon [name]="res.type === 'role' ? 'contact' : 'user'" [size]="12"></lucide-icon>
+                  </div>
+                  <span class="item-label">{{ res.label }}</span>
+                </div>
+                <div *ngIf="filteredResourceList.length === 0" class="no-results">Aucun résultat</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <label class="ios-switch" title="Afficher les jours (j)">
+        <input type="checkbox" [(ngModel)]="showDaysInCells" />
+        <span class="ios-slider"></span>
+      </label>
+      <span style="user-select: none">Afficher les jours (j) dans les cellules</span>
+    </div>
+  </div>
+
+  <div class="calendar-wrapper">
+    <div class="calendar-grid">
+      <!-- Header Row -->
+      <div class="calendar-header-row sticky-top">
+        <div class="label-header-cell sticky-col">
+          <div class="header-label-content">
+            <span>Équipes / Ressources</span>
+            <div class="header-expand-controls">
+              <button
+                class="btn-icon-s"
+                (click)="toggleAllExpansion()"
+                [title]="isAllExpanded ? 'Tout replier' : 'Tout déplier'"
+              >
+                <lucide-icon [name]="isAllExpanded ? 'square-minus' : 'square-plus'" [size]="16"></lucide-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="weeks-header-container">
+          <div *ngFor="let week of displayedWeeks" class="week-header-cell" [class.current-week]="isCurrentWeek(week)">
+            <div class="week-date">{{ formatWeekHeader(week) }}</div>
+            <div class="week-number">S{{ getWeekNumber(week) }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Body Rows -->
+      <div class="calendar-body">
+        <ng-container *ngFor="let teamRow of filteredTeamRows">
+          <!-- Team Row -->
+          <div class="calendar-row team-row-container">
+            <div
+              class="label-cell team-label-cell sticky-col"
+              (click)="toggleTeam(teamRow)"
+              [style.cursor]="teamRow.resources.length > 0 ? 'pointer' : 'default'"
+            >
+              <div class="color-bar-container">
+                <div class="color-bar-v" [style.background-color]="teamRow.equipe.color || '#94a3b8'"></div>
+              </div>
+              <lucide-icon
+                [name]="teamRow.expanded ? 'chevron-down' : 'chevron-right'"
+                [size]="18"
+                class="expand-icon-l"
+                [style.visibility]="teamRow.resources.length > 0 ? 'visible' : 'hidden'"
+              ></lucide-icon>
+              <div class="row-info-stack-wrapper">
+                <div class="info-stack">
+                  <span
+                    class="info-label"
+                    (mouseenter)="showTooltip($event, teamRow.equipe.nom)"
+                    (mouseleave)="hideTooltip()"
+                    >{{ teamRow.equipe.nom }}</span
+                  >
+                </div>
+              </div>
+              <button class="btn-hover-add" (click)="openAddResourceModal(teamRow.equipe); $event.stopPropagation()">
+                <lucide-icon [name]="'plus'" [size]="14"></lucide-icon>
+                Ressource
+              </button>
+            </div>
+            <div class="weeks-cells-container">
+              <div *ngFor="let week of displayedWeeks" class="week-cell team-cell">
+                <div class="team-summary" *ngIf="getTeamTotalCapacity(teamRow, week) > 0">
+                  <div class="capacity-value">
+                    {{ getTeamTotalCapacity(teamRow, week) | number: "1.0-1" }}
+                  </div>
+                  <div class="days-value" *ngIf="showDaysInCells">
+                    {{ getTeamTotalDays(teamRow, week) | number: "1.1-1" }}j
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Resource Rows -->
+          <ng-container *ngIf="teamRow.expanded">
+            <div
+              *ngFor="let resource of teamRow.resources"
+              class="calendar-row resource-row-container"
+              [attr.data-resource-id]="resource.uniqueId"
+              (mousedown)="onMouseDown($event, resource)"
+              (mousemove)="onMouseMove($event, resource)"
+              (mouseup)="onMouseUp()"
+              (mouseleave)="onMouseUp()"
+            >
+              <div class="label-cell resource-label-cell sticky-col">
+                <div class="resource-icon-wrapper" [style.background-color]="resource.color || '#e2e8f0'">
+                  <lucide-icon
+                    [name]="resource.type === 'role' ? 'contact' : 'user'"
+                    [size]="14"
+                    class="resource-icon"
+                  ></lucide-icon>
+                </div>
+                <span
+                  class="resource-name"
+                  (mouseenter)="showTooltip($event, resource.label)"
+                  (mouseleave)="hideTooltip()"
+                  >{{ resource.label }}</span
+                >
+                <div
+                  class="resource-total-badge"
+                  [class.anchor-active]="activeAnchorId === resource.uniqueId"
+                  (click)="openYearPopover($event, resource.uniqueId)"
+                  (mouseenter)="$event.stopPropagation(); showTooltip($event, 'Cliquer pour filtrer par année')"
+                  (mouseleave)="hideTooltip()"
+                >
+                  <span class="badge-prefix">{{ getBadgePrefix() }}</span>
+                  <span class="badge-val">{{ getResourceTotalPlannedDays(resource) | number: "1.0-1" }}</span>
+                  <span class="badge-unit">j</span>
+                </div>
+                <button class="btn-hover-delete" (click)="removeResource(resource, teamRow.equipe)">×</button>
+              </div>
+              <div class="weeks-cells-container">
+                <div
+                  *ngFor="let week of displayedWeeks; let i = index"
+                  class="week-cell resource-cell"
+                  [class.selected]="isCellSelected(resource, week)"
+                  [class.has-capacity]="getCapacite(resource, week) > 0"
+                  [attr.data-week-index]="i"
+                >
+                  <div class="cell-content" *ngIf="getCapacite(resource, week) > 0">
+                    <div class="capacity-value">{{ getCapacite(resource, week) }}</div>
+                    <div class="days-value" *ngIf="showDaysInCells">
+                      {{ getCapacite(resource, week) * resource.jours_par_semaine | number: "1.1-1" }}j
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+        </ng-container>
+
+        <!-- Empty State -->
+        <div *ngIf="filteredTeamRows.length === 0" class="calendar-row empty-state-row">
+          <div class="label-cell empty-state-label sticky-col">Aucune équipe correspondante</div>
+          <div class="weeks-cells-container empty-state-weeks">Aucune donnée</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <app-selection-toolbar
+    *ngIf="selectedCells.length > 0 && isSelectionFinished"
+    [position]="toolbarPosition"
+    [visible]="toolbarVisible"
+    [selectedCount]="selectedCells.length"
+    [totalDays]="totalSelectedDays"
+    [(value)]="bulkCapaciteValue"
+    placeholder="Capacité (unités)"
+    (apply)="applyBulkCapacite()"
+    (cancel)="clearSelection()"
+  >
+  </app-selection-toolbar>
+
+  <!-- Year Selection Popover -->
+  <div *ngIf="showYearPopover" class="year-popover" (click)="$event.stopPropagation()">
+    <div
+      class="popover-arrow"
+      [class.top]="popoverArrowSide === 'top'"
+      [class.bottom]="popoverArrowSide === 'bottom'"
+    ></div>
+    <div class="popover-content">
+      <button class="popover-item" [class.active]="selectedCapacityYear === 'all'" (click)="selectYear('all')">
+        Tout cumulé
+      </button>
+      <button class="popover-item" [class.active]="selectedCapacityYear === '2025'" (click)="selectYear('2025')">
+        Année 2025
+      </button>
+      <button class="popover-item" [class.active]="selectedCapacityYear === '2026'" (click)="selectYear('2026')">
+        Année 2026
+      </button>
+      <div class="popover-date-jump">
+        <input type="date" class="jump-input" [value]="getSelectedStartDateISO()" (change)="onDateSelected($event)" />
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="showAddResourceModal" class="modal-overlay" (click)="showAddResourceModal = false">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Ajouter une Ressource à {{ selectedEquipe?.nom }}</h2>
+      <button class="modal-close" (click)="showAddResourceModal = false">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Type de ressource</label>
+        <select [(ngModel)]="resourceTypeToAdd" class="form-control">
+          <option value="role">Rôle</option>
+          <option value="personne">Personne</option>
+        </select>
+      </div>
+
+      <div class="form-group" *ngIf="resourceTypeToAdd === 'role'">
+        <label>Sélectionner un rôle</label>
+        <div *ngIf="availableRoles.length === 0" class="no-roles-message">
+          <p>Aucun rôle disponible. Tous les rôles sont déjà utilisés.</p>
+        </div>
+        <select *ngIf="availableRoles.length > 0" [(ngModel)]="selectedResourceId" class="form-control">
+          <option value="">-- Choisir un rôle --</option>
+          <option *ngFor="let role of availableRoles" [value]="role.id">
+            {{ role.nom }} ({{ role.jours_par_semaine }}j/sem)
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group" *ngIf="resourceTypeToAdd === 'personne'">
+        <label>Sélectionner une personne</label>
+        <div *ngIf="availablePersonnes.length === 0" class="no-roles-message">
+          <p>Aucune personne disponible.</p>
+        </div>
+        <select *ngIf="availablePersonnes.length > 0" [(ngModel)]="selectedResourceId" class="form-control">
+          <option value="">-- Choisir une personne --</option>
+          <option *ngFor="let personne of availablePersonnes" [value]="personne.id">
+            {{ personne.prenom }} {{ personne.nom }} ({{ personne.jours_par_semaine }}j/sem)
+          </option>
+        </select>
+      </div>
+
+      <div class="modal-actions">
+        <button
+          class="btn btn-primary"
+          (click)="addResourceToTeam()"
+          [disabled]="
+            !selectedResourceId ||
+            (resourceTypeToAdd === 'role' && availableRoles.length === 0) ||
+            (resourceTypeToAdd === 'personne' && availablePersonnes.length === 0)
+          "
+        >
+          Ajouter
+        </button>
+        <button class="btn btn-secondary" (click)="showAddResourceModal = false">Annuler</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-confirm-modal
+  [visible]="showConfirmModal"
+  [title]="confirmTitle"
+  [message]="confirmMessage"
+  confirmLabel="Retirer"
+  (confirm)="onConfirmAction()"
+  (cancel)="showConfirmModal = false"
+>
+</app-confirm-modal>
