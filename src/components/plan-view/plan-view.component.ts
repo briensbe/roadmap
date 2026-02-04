@@ -1077,11 +1077,11 @@ export class PlanViewComponent implements OnInit {
         { id: firstCell.parentId } as ParentRow
       );
 
-      const rowSelector = `[data - resource - id= "${uniqueId}"]`;
+      const rowSelector = `[data-resource-id="${uniqueId}"]`;
       const rowElement = document.querySelector(rowSelector);
 
       if (rowElement) {
-        const cellSelector = `[data - week - index= "${this.dragEndWeekIndex}"]`;
+        const cellSelector = `[data-week-index="${this.dragEndWeekIndex}"]`;
         const cellElement = rowElement.querySelector(cellSelector);
 
         if (cellElement) {
