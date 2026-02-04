@@ -1,0 +1,247 @@
+<div class="projects-container">
+  <div class="projects-header">
+    <div>
+      <h1>Projets</h1>
+      <p class="subtitle">Gérez vos projets et leur chiffrage</p>
+    </div>
+    <button class="btn btn-primary" (click)="openCreateModal()">+ Nouveau projet</button>
+  </div>
+
+  <div class="projects-controls">
+    <div class="search-box">
+      <input
+        type="text"
+        [(ngModel)]="searchQuery"
+        (ngModelChange)="filterProjects()"
+        placeholder="Rechercher un projet..."
+        class="search-input"
+      />
+    </div>
+
+    <div class="controls-right">
+      <select [(ngModel)]="statusFilter" (ngModelChange)="filterProjects()" class="filter-select">
+        <option value="">Tous les statuts</option>
+        <option value="Actif">Actif</option>
+        <option value="En cours">En cours</option>
+        <option value="Planifié">Planifié</option>
+        <option value="Terminé">Terminé</option>
+        <option value="En pause">En pause</option>
+      </select>
+
+      <div class="view-toggle">
+        <button
+          class="toggle-btn"
+          [class.active]="viewMode === 'card'"
+          (click)="viewMode = 'card'"
+          title="Vue en cartes"
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+            <rect x="2" y="2" width="7" height="7" rx="1" />
+            <rect x="11" y="2" width="7" height="7" rx="1" />
+            <rect x="2" y="11" width="7" height="7" rx="1" />
+            <rect x="11" y="11" width="7" height="7" rx="1" />
+          </svg>
+        </button>
+        <button
+          class="toggle-btn"
+          [class.active]="viewMode === 'list'"
+          (click)="viewMode = 'list'"
+          title="Vue en liste"
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+            <rect x="2" y="3" width="16" height="2" rx="1" />
+            <rect x="2" y="8" width="16" height="2" rx="1" />
+            <rect x="2" y="13" width="16" height="2" rx="1" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card View -->
+  <div *ngIf="viewMode === 'card'" class="projects-grid">
+    <div
+      *ngFor="let projet of filteredProjects"
+      class="project-card"
+      [style.border-left-color]="projet.color || '#3b82f6'"
+      [class.menu-active]="activeMenuId === projet.id"
+      (click)="openEditModal(projet)"
+    >
+      <div class="card-header">
+        <div class="card-header-top">
+          <div class="project-identifiers">
+            <span class="project-code" [style.color]="projet.color || '#3b82f6'">{{ projet.code_projet }}</span>
+            <span class="external-ref-tag" *ngIf="projet.reference_externe">
+              <ng-container *ngIf="externalReferenceUrl; else noLink">
+                <a
+                  [href]="externalReferenceUrl + projet.reference_externe"
+                  target="_blank"
+                  class="ref-link"
+                  (click)="$event.stopPropagation()"
+                >
+                  #{{ projet.reference_externe }}
+                  <lucide-icon [img]="ExternalLink" [size]="12"></lucide-icon>
+                </a>
+              </ng-container>
+              <ng-template #noLink> #{{ projet.reference_externe }} </ng-template>
+            </span>
+          </div>
+          <div class="header-actions">
+            <span class="status-badge" [attr.data-status]="projet.statut">{{ projet.statut }}</span>
+            <div class="menu-container" (click)="$event.stopPropagation()">
+              <button class="menu-btn" (click)="toggleMenu($event, projet.id!)">
+                <lucide-icon [img]="MoreVertical" [size]="20"></lucide-icon>
+              </button>
+              <div class="dropdown-menu" *ngIf="activeMenuId === projet.id">
+                <button class="dropdown-item" (click)="openEditModal(projet)">
+                  <lucide-icon [img]="Edit" [size]="14"></lucide-icon>
+                  Modifier
+                </button>
+                <button class="dropdown-item" (click)="openChiffresModal(projet.id_projet)">
+                  <lucide-icon [img]="LucideCalculator" [size]="14"></lucide-icon>
+                  Gérer les chiffres
+                </button>
+                <button class="dropdown-item" (click)="duplicateProjet(projet)">
+                  <lucide-icon [img]="Copy" [size]="14"></lucide-icon>
+                  Dupliquer
+                </button>
+                <button class="dropdown-item delete" (click)="deleteProjet(projet)">
+                  <lucide-icon [img]="Trash2" [size]="14"></lucide-icon>
+                  Supprimer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <h3 class="project-name">{{ projet.nom_projet }}</h3>
+        <p class="project-manager" *ngIf="projet.chef_projet">
+          <span class="label">Chef de projet:</span> {{ projet.chef_projet }}
+        </p>
+        <p class="project-description" *ngIf="projet.description">{{ projet.description }}</p>
+
+        <div class="progress-section">
+          <div class="progress-header">
+            <span class="progress-label">Progression</span>
+            <span class="progress-percent">{{ getProgressPercent(projet) }}%</span>
+          </div>
+          <div class="progress-bar">
+            <div
+              class="progress-fill"
+              [style.width.%]="getProgressPercent(projet)"
+              [class.warning]="getProgressPercent(projet) > 80 && getProgressPercent(projet) <= 100"
+              [class.danger]="getProgressPercent(projet) > 100"
+            ></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="filteredProjects.length === 0" class="empty-state">
+      <p>Aucun projet trouvé</p>
+    </div>
+  </div>
+
+  <!-- List View -->
+  <div *ngIf="viewMode === 'list'" class="projects-list-view">
+    <div
+      *ngFor="let projet of filteredProjects"
+      class="project-list-card"
+      [style.border-left-color]="projet.color || '#3b82f6'"
+      [class.menu-active]="activeMenuId === projet.id"
+      (click)="openEditModal(projet)"
+    >
+      <div class="card-left">
+        <div class="project-info">
+          <div class="project-name-row">
+            <span class="project-name">{{ projet.nom_projet }}</span>
+            <span class="status-badge small" [attr.data-status]="projet.statut">{{ projet.statut }}</span>
+          </div>
+          <div class="project-meta">
+            <span class="project-code">{{ projet.code_projet }}</span>
+            <span *ngIf="projet.reference_externe">
+              •
+              <span class="external-ref-tag">
+                <ng-container *ngIf="externalReferenceUrl; else noLinkList">
+                  <a
+                    [href]="externalReferenceUrl + projet.reference_externe"
+                    target="_blank"
+                    class="ref-link"
+                    (click)="$event.stopPropagation()"
+                  >
+                    #{{ projet.reference_externe }}
+                    <lucide-icon [img]="ExternalLink" [size]="12"></lucide-icon>
+                  </a>
+                </ng-container>
+                <ng-template #noLinkList> #{{ projet.reference_externe }} </ng-template>
+              </span>
+            </span>
+            <span *ngIf="projet.chef_projet">
+              • <span class="manager-name">{{ projet.chef_projet }}</span></span
+            >
+          </div>
+        </div>
+      </div>
+
+      <div class="card-right">
+        <div class="menu-container" (click)="$event.stopPropagation()">
+          <button class="menu-btn" (click)="toggleMenu($event, projet.id!)">
+            <lucide-icon [img]="MoreVertical" [size]="20"></lucide-icon>
+          </button>
+          <div class="dropdown-menu right" *ngIf="activeMenuId === projet.id">
+            <button class="dropdown-item" (click)="openEditModal(projet)">
+              <lucide-icon [img]="Edit" [size]="14"></lucide-icon>
+              Modifier
+            </button>
+            <button class="dropdown-item" (click)="openChiffresModal(projet.id_projet)">
+              <lucide-icon [img]="LucideCalculator" [size]="14"></lucide-icon>
+              Gérer les chiffres
+            </button>
+            <button class="dropdown-item" (click)="duplicateProjet(projet)">
+              <lucide-icon [img]="Copy" [size]="14"></lucide-icon>
+              Dupliquer
+            </button>
+            <button class="dropdown-item delete" (click)="deleteProjet(projet)">
+              <lucide-icon [img]="Trash2" [size]="14"></lucide-icon>
+              Supprimer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="filteredProjects.length === 0" class="empty-state">
+      <p>Aucun projet trouvé</p>
+    </div>
+  </div>
+</div>
+
+<!-- Project Modal -->
+<app-project-modal
+  *ngIf="showProjectModal"
+  [projet]="newProjet"
+  (saved)="onProjectSaved()"
+  (closed)="closeModal()"
+></app-project-modal>
+
+<!-- chiffres modal -->
+<div>
+  <app-chiffres-modal
+    [visible]="showChiffresModal"
+    [idProjet]="selectedProjetId"
+    (close)="closeChiffresModal()"
+    (saved)="onChiffresModalSaved($event)"
+  ></app-chiffres-modal>
+</div>
+
+<app-confirm-modal
+  [visible]="showConfirmModal"
+  [title]="confirmTitle"
+  [message]="confirmMessage"
+  confirmLabel="Supprimer"
+  (confirm)="onConfirmAction()"
+  (cancel)="showConfirmModal = false"
+>
+</app-confirm-modal>
