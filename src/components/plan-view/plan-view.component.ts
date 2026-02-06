@@ -94,7 +94,8 @@ export class PlanViewComponent implements OnInit {
   viewMode = storageSignal<"project" | "team" | "resource">("plan-view-mode", "project");
   displayFormat = storageSignal<"tree" | "flat">("plan-view-display-format", "tree");
   showAvailability = storageSignal<boolean>("plan-view-show-availability", false);
-  allExpanded = storageSignal<boolean>("plan-view-all-expanded", true);
+  private isDefaultExpanded = true;
+  private manualStates = new Map<string, boolean>();
 
   selectedCapacityYear: 'all' | '2025' | '2026' | 'custom' = 'all';
   selectedStartDate: Date | null = null;
@@ -206,6 +207,8 @@ export class PlanViewComponent implements OnInit {
   ) { }
 
   expandAll() {
+    this.isDefaultExpanded = true;
+    this.manualStates.clear();
     this.rows.forEach(r => {
       r.expanded = true;
       r.children.forEach(c => c.expanded = true);
@@ -213,24 +216,12 @@ export class PlanViewComponent implements OnInit {
   }
 
   collapseAll() {
+    this.isDefaultExpanded = false;
+    this.manualStates.clear();
     this.rows.forEach(r => {
       r.expanded = false;
       r.children.forEach(c => c.expanded = false);
     });
-  }
-
-  get isAllExpanded(): boolean {
-    if (this.rows.length === 0) return false;
-    return this.rows.every(r => r.expanded && r.children.every(c => c.expanded));
-  }
-
-  toggleAllExpansion() {
-    this.allExpanded.set(!this.allExpanded());
-    if (this.allExpanded()) {
-      this.expandAll();
-    } else {
-      this.collapseAll();
-    }
   }
 
   async ngOnInit() {
@@ -547,7 +538,7 @@ export class PlanViewComponent implements OnInit {
             label: label,
             code: code,
             color: color,
-            expanded: this.allExpanded(), // Respect persisted preference
+            expanded: this.manualStates.has(`${project.id}_${teamId}`) ? this.manualStates.get(`${project.id}_${teamId}`)! : this.isDefaultExpanded, // Respect persisted preference
             resources: resources,
             charges: teamCharges,
           });
@@ -566,7 +557,7 @@ export class PlanViewComponent implements OnInit {
           label: project.nom_projet,
           code: project.code_projet,
           color: project.color,
-          expanded: this.allExpanded(), // Respect persisted preference
+          expanded: this.manualStates.has(project.id!) ? this.manualStates.get(project.id!)! : this.isDefaultExpanded, // Respect persisted preference
           children: children,
           totalCharges: parentTotal,
           originalProject: project,
@@ -668,7 +659,7 @@ export class PlanViewComponent implements OnInit {
             label: label,
             code: code,
             color: color,
-            expanded: this.allExpanded(), // Respect persisted preference
+            expanded: this.manualStates.has(`${team.id}_${projectId}`) ? this.manualStates.get(`${team.id}_${projectId}`)! : this.isDefaultExpanded, // Respect persisted preference
             resources: resources,
             charges: projectCharges,
           });
@@ -687,7 +678,7 @@ export class PlanViewComponent implements OnInit {
           label: team.nom,
           code: team.code,
           color: team.color,
-          expanded: this.allExpanded(), // Respect persisted preference
+          expanded: this.manualStates.has(team.id!) ? this.manualStates.get(team.id!)! : this.isDefaultExpanded, // Respect persisted preference
           children: children,
           totalCharges: parentTotal,
         });
@@ -819,7 +810,7 @@ export class PlanViewComponent implements OnInit {
             id: rKey, // using rKey as id for interaction
             label: res.label,
             color: res.color,
-            expanded: this.allExpanded(),
+            expanded: this.manualStates.has(`${team.id}_${rKey}`) ? this.manualStates.get(`${team.id}_${rKey}`)! : this.isDefaultExpanded,
             charges: res.charges,
             resources: Array.from(res.projectDetailedMap.values()).sort((a, b) => a.label.localeCompare(b.label))
           });
@@ -832,7 +823,7 @@ export class PlanViewComponent implements OnInit {
           label: team.nom,
           code: team.code,
           color: team.color,
-          expanded: this.allExpanded(),
+          expanded: this.manualStates.has(team.id!) ? this.manualStates.get(team.id!)! : this.isDefaultExpanded,
           children: children,
           totalCharges: parentTotal,
         });
@@ -899,10 +890,12 @@ export class PlanViewComponent implements OnInit {
 
   toggleRow(row: ParentRow) {
     row.expanded = !row.expanded;
+    this.manualStates.set(row.id, row.expanded);
   }
 
-  toggleChild(child: ChildRow) {
+  toggleChild(child: ChildRow, parent: ParentRow) {
     child.expanded = !child.expanded;
+    this.manualStates.set(`${parent.id}_${child.id}`, child.expanded);
   }
 
   formatWeekHeader(date: Date): string {

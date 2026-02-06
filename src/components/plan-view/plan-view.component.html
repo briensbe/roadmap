@@ -186,12 +186,11 @@
               viewMode() === "project" ? "Projets / Équipes" : "Équipes / Projets"
             }}</span>
             <div class="header-expand-controls">
-              <button
-                class="btn-icon-s"
-                (click)="toggleAllExpansion()"
-                [title]="isAllExpanded ? 'Tout replier' : 'Tout déplier'"
-              >
-                <lucide-icon [name]="isAllExpanded ? 'square-minus' : 'square-plus'" [size]="16"></lucide-icon>
+              <button class="btn-icon-s" (click)="expandAll()" title="Tout déplier">
+                <lucide-icon name="square-plus" [size]="16"></lucide-icon>
+              </button>
+              <button class="btn-icon-s" (click)="collapseAll()" title="Tout replier">
+                <lucide-icon name="square-minus" [size]="16"></lucide-icon>
               </button>
             </div>
           </div>
@@ -296,7 +295,11 @@
                   <!-- Child Row (2nd level) -->
                   <div class="calendar-row">
                     <div class="label-cell row-label-child">
-                      <div class="row-label-content child-row" (click)="toggleChild(child)" style="padding-left: 24px">
+                      <div
+                        class="row-label-content child-row"
+                        (click)="toggleChild(child, row)"
+                        style="padding-left: 24px"
+                      >
                         <div class="color-bar-container">
                           <div class="color-bar-v small" [style.background-color]="child.color || '#cbd5e1'"></div>
                         </div>

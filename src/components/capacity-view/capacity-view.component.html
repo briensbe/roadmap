@@ -90,12 +90,11 @@
           <div class="header-label-content">
             <span>Équipes / Ressources</span>
             <div class="header-expand-controls">
-              <button
-                class="btn-icon-s"
-                (click)="toggleAllExpansion()"
-                [title]="isAllExpanded ? 'Tout replier' : 'Tout déplier'"
-              >
-                <lucide-icon [name]="isAllExpanded ? 'square-minus' : 'square-plus'" [size]="16"></lucide-icon>
+              <button class="btn-icon-s" (click)="expandAll()" title="Tout déplier">
+                <lucide-icon name="square-plus" [size]="16"></lucide-icon>
+              </button>
+              <button class="btn-icon-s" (click)="collapseAll()" title="Tout replier">
+                <lucide-icon name="square-minus" [size]="16"></lucide-icon>
               </button>
             </div>
           </div>

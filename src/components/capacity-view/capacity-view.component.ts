@@ -100,7 +100,8 @@ export class CapacityViewComponent implements OnInit {
 
   // Toggle to show/hide the computed days inside cells. Default: hidden (user activates toggle to show)
   showDaysInCells: boolean = false;
-  allExpanded = storageSignal<boolean>("capacity-view-all-expanded", true);
+  private isDefaultExpanded = true;
+  private manualStates = new Map<string, boolean>();
 
   selectedCapacityYear: 'all' | '2025' | '2026' | 'custom' = 'all';
   selectedStartDate: Date | null = null;
@@ -114,25 +115,15 @@ export class CapacityViewComponent implements OnInit {
   ) { }
 
   expandAll() {
+    this.isDefaultExpanded = true;
+    this.manualStates.clear();
     this.filteredTeamRows.forEach(r => r.expanded = true);
   }
 
   collapseAll() {
+    this.isDefaultExpanded = false;
+    this.manualStates.clear();
     this.filteredTeamRows.forEach(r => r.expanded = false);
-  }
-
-  get isAllExpanded(): boolean {
-    if (this.filteredTeamRows.length === 0) return false;
-    return this.filteredTeamRows.every(r => r.expanded);
-  }
-
-  toggleAllExpansion() {
-    this.allExpanded.set(!this.allExpanded());
-    if (this.allExpanded()) {
-      this.expandAll();
-    } else {
-      this.collapseAll();
-    }
   }
 
   async ngOnInit() {
@@ -218,7 +209,7 @@ export class CapacityViewComponent implements OnInit {
         return {
           equipe,
           resources: resourceRows,
-          expanded: this.allExpanded(),
+          expanded: this.manualStates.has(equipe.id!) ? this.manualStates.get(equipe.id!)! : this.isDefaultExpanded,
         };
       });
 
@@ -324,6 +315,7 @@ export class CapacityViewComponent implements OnInit {
   toggleTeam(teamRow: TeamRow) {
     if (teamRow.resources.length > 0) {
       teamRow.expanded = !teamRow.expanded;
+      this.manualStates.set(teamRow.equipe.id!, teamRow.expanded);
     }
   }
 
