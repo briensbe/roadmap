@@ -1741,7 +1741,7 @@ export class PlanViewComponent implements OnInit {
           const personneId = type === 'personne' ? resId : undefined;
           const equipeId = parent.id;
 
-          await this.chargeService.deleteChargesForResource(undefined as any, equipeId, roleId, personneId);
+          await this.chargeService.deleteChargesForResource(undefined, equipeId, roleId, personneId);
 
           // Also remove the attachment from the team
           if (type === 'role') {

@@ -239,7 +239,7 @@ export class ChargeService {
     }
 
     async deleteChargesForResource(
-        projetId: string,
+        projetId: string | undefined,
         equipeId: string,
         roleId?: string,
         personneId?: string
@@ -247,8 +247,11 @@ export class ChargeService {
         let query = this.supabase.client
             .from('charges')
             .delete()
-            .eq('projet_id', projetId)
             .eq('equipe_id', equipeId);
+
+        if (projetId) {
+            query = query.eq('projet_id', projetId);
+        }
 
         if (roleId) {
             query = query.eq('role_id', roleId);
