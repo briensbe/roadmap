@@ -35,6 +35,8 @@ interface ResourceRow {
   jours_par_semaine: number;
   charges: Map<string, number>; // week string -> amount
   color?: string;
+  resourceId?: string; // Always the role or personne id
+  projectId?: string; // Always the project id
 }
 
 interface ChildRow {
@@ -88,7 +90,7 @@ export class PlanViewComponent implements OnInit {
     await this.loadData();
   }
 
-  viewMode = storageSignal<"project" | "team">("plan-view-mode", "project");
+  viewMode = storageSignal<"project" | "team" | "resource">("plan-view-mode", "project");
   displayFormat = storageSignal<"tree" | "flat">("plan-view-display-format", "tree");
   showAvailability = storageSignal<boolean>("plan-view-show-availability", false);
   allExpanded = storageSignal<boolean>("plan-view-all-expanded", true);
@@ -320,14 +322,14 @@ export class PlanViewComponent implements OnInit {
 
       let resourceKey = "";
       if (charge.role_id) {
-        resourceKey = `role_${charge.role_id} `;
+        resourceKey = `role_${charge.role_id}`;
       } else if (charge.personne_id) {
-        resourceKey = `personne_${charge.personne_id} `;
+        resourceKey = `personne_${charge.personne_id}`;
       } else {
         continue;
       }
 
-      const mapKey = `${teamId}_${resourceKey}_${weekKey} `;
+      const mapKey = `${teamId}_${resourceKey}_${weekKey}`;
       const currentVal = this.usageMap.get(mapKey) || 0;
       this.usageMap.set(mapKey, currentVal + charge.unite_ressource);
     }
@@ -335,9 +337,9 @@ export class PlanViewComponent implements OnInit {
 
   getAvailability(resource: ResourceRow, week: Date, teamId: string): number {
     const weekKey = week.toISOString().split("T")[0];
-    // resource.id contains the ID, resource.type contains "role" or "personne"
-    const resourceKey = `${resource.type}_${resource.id} `;
-    const mapKey = `${teamId}_${resourceKey}_${weekKey} `;
+    const rId = resource.resourceId || resource.id;
+    const resourceKey = `${resource.type}_${rId}`;
+    const mapKey = `${teamId}_${resourceKey}_${weekKey}`;
 
     const usage = this.usageMap.get(mapKey) || 0;
 
@@ -346,7 +348,7 @@ export class PlanViewComponent implements OnInit {
     const customCap = this.allCapacities.find(c =>
       c.equipe_id === teamId &&
       c.semaine_debut.startsWith(weekKey) &&
-      (resource.type === 'role' ? c.role_id === resource.id : c.personne_id === resource.id)
+      (resource.type === 'role' ? c.role_id === rId : c.personne_id === rId)
     );
 
     const totalCapacity = customCap ? customCap.capacite : 0;
@@ -371,7 +373,7 @@ export class PlanViewComponent implements OnInit {
     );
   }
 
-  switchViewMode(mode: "project" | "team") {
+  switchViewMode(mode: "project" | "team" | "resource") {
     this.viewMode.set(mode);
     this.buildTree();
   }
@@ -482,16 +484,16 @@ export class PlanViewComponent implements OnInit {
             let resourceColor: string | undefined;
 
             if (charge.role_id) {
-              resourceKey = `role_${charge.role_id} `;
+              resourceKey = `role_${charge.role_id}`;
               const role = this.availableRoles.find((r) => r.id === charge.role_id);
               resourceLabel = role ? role.nom : "Unknown Role";
               joursParSemaine = role?.jours_par_semaine || 0;
               resourceType = "role";
               resourceColor = role?.color;
             } else if (charge.personne_id) {
-              resourceKey = `personne_${charge.personne_id} `;
+              resourceKey = `personne_${charge.personne_id}`;
               const personne = this.availablePersonnes.find((p) => p.id === charge.personne_id);
-              resourceLabel = personne ? `${personne.prenom} ${personne.nom} ` : "Unknown Person";
+              resourceLabel = personne ? `${personne.prenom} ${personne.nom}` : "Unknown Person";
               joursParSemaine = personne?.jours_par_semaine || 0;
               resourceType = "personne";
               resourceColor = personne?.color;
@@ -500,7 +502,7 @@ export class PlanViewComponent implements OnInit {
             }
 
             if (!resourceMap.has(resourceKey)) {
-              const uniqueId = `${project.id}_${teamId}_${charge.role_id || charge.personne_id}_${resourceType} `;
+              const uniqueId = `${project.id}_${teamId}_${charge.role_id || charge.personne_id}_${resourceType}`;
               resourceMap.set(resourceKey, {
                 id: charge.role_id || charge.personne_id || "",
                 uniqueId: uniqueId,
@@ -509,6 +511,8 @@ export class PlanViewComponent implements OnInit {
                 jours_par_semaine: joursParSemaine,
                 charges: new Map<string, number>(),
                 color: resourceColor,
+                resourceId: charge.role_id || charge.personne_id || "",
+                projectId: project.id
               });
             }
 
@@ -562,7 +566,7 @@ export class PlanViewComponent implements OnInit {
           originalProject: project,
         });
       }
-    } else {
+    } else if (this.viewMode() === "team") {
       // Parent = Team, Child = Project, GrandChild = Resource
       // Sort teams alphabetically
       const sortedTeams = [...this.allEquipes].sort((a, b) => a.nom.localeCompare(b.nom));
@@ -601,16 +605,16 @@ export class PlanViewComponent implements OnInit {
             let resourceColor: string | undefined;
 
             if (charge.role_id) {
-              resourceKey = `role_${charge.role_id} `;
+              resourceKey = `role_${charge.role_id}`;
               const role = this.availableRoles.find((r) => r.id === charge.role_id);
               resourceLabel = role ? role.nom : "Unknown Role";
               joursParSemaine = role?.jours_par_semaine || 0;
               resourceType = "role";
               resourceColor = role?.color;
             } else if (charge.personne_id) {
-              resourceKey = `personne_${charge.personne_id} `;
+              resourceKey = `personne_${charge.personne_id}`;
               const personne = this.availablePersonnes.find((p) => p.id === charge.personne_id);
-              resourceLabel = personne ? `${personne.prenom} ${personne.nom} ` : "Unknown Person";
+              resourceLabel = personne ? `${personne.prenom} ${personne.nom}` : "Unknown Person";
               joursParSemaine = personne?.jours_par_semaine || 0;
               resourceType = "personne";
               resourceColor = personne?.color;
@@ -619,7 +623,7 @@ export class PlanViewComponent implements OnInit {
             }
 
             if (!resourceMap.has(resourceKey)) {
-              const uniqueId = `${team.id}_${projectId}_${charge.role_id || charge.personne_id}_${resourceType} `;
+              const uniqueId = `${team.id}_${projectId}_${charge.role_id || charge.personne_id}_${resourceType}`;
               resourceMap.set(resourceKey, {
                 id: charge.role_id || charge.personne_id || "",
                 uniqueId: uniqueId,
@@ -628,6 +632,8 @@ export class PlanViewComponent implements OnInit {
                 jours_par_semaine: joursParSemaine,
                 charges: new Map<string, number>(),
                 color: resourceColor,
+                resourceId: charge.role_id || charge.personne_id || "",
+                projectId: projectId
               });
             }
 
@@ -680,7 +686,114 @@ export class PlanViewComponent implements OnInit {
           totalCharges: parentTotal,
         });
       }
+    } else if (this.viewMode() === "resource") {
+      // Parent = Team, Child = Resource, GrandChild = Project
+      const sortedTeams = [...this.allEquipes].sort((a, b) => a.nom.localeCompare(b.nom));
+
+      for (const team of sortedTeams) {
+        const teamCharges = this.allCharges.filter(c => c.equipe_id === team.id);
+        const children: ChildRow[] = [];
+        const parentTotal = new Map<string, number>();
+
+        // We need to identify ALL resources for this team
+        // Logic: resources present in charges OR potentially all team members if linked
+        // For now, let's use charges to identify active resources
+        const resourceMap = new Map<string, { label: string, type: 'role' | 'personne', jours_par_semaine: number, color?: string, charges: Map<string, number>, projectDetailedMap: Map<string, ResourceRow> }>();
+
+        teamCharges.forEach(charge => {
+          let rKey: string;
+          let rLabel: string;
+          let rType: 'role' | 'personne';
+          let rJours: number = 0;
+          let rColor: string | undefined;
+
+          if (charge.role_id) {
+            rKey = `role_${charge.role_id}`;
+            const role = this.availableRoles.find(r => r.id === charge.role_id);
+            rLabel = role ? role.nom : "Unknown Role";
+            rJours = role?.jours_par_semaine || 0;
+            rType = 'role';
+            rColor = role?.color;
+          } else if (charge.personne_id) {
+            rKey = `personne_${charge.personne_id}`;
+            const p = this.availablePersonnes.find(pers => pers.id === charge.personne_id);
+            rLabel = p ? `${p.prenom} ${p.nom}` : "Unknown Person";
+            rJours = p?.jours_par_semaine || 0;
+            rType = 'personne';
+            rColor = p?.color;
+          } else return;
+
+          if (!resourceMap.has(rKey)) {
+            resourceMap.set(rKey, {
+              label: rLabel,
+              type: rType,
+              jours_par_semaine: rJours,
+              color: rColor,
+              charges: new Map(),
+              projectDetailedMap: new Map()
+            });
+          }
+
+          const res = resourceMap.get(rKey)!;
+          const weekKey = charge.semaine_debut?.split("T")[0];
+
+          if (weekKey) {
+            // Aggregate in resource overview
+            const cur = res.charges.get(weekKey) || 0;
+            res.charges.set(weekKey, cur + charge.unite_ressource);
+
+            // Parent total
+            const pCur = parentTotal.get(weekKey) || 0;
+            parentTotal.set(weekKey, pCur + charge.unite_ressource);
+
+            // Detailed project row
+            const pId = charge.projet_id || "no_project";
+            if (!res.projectDetailedMap.has(pId)) {
+              const project = this.allProjects.find(p => p.id === pId);
+              res.projectDetailedMap.set(pId, {
+                id: pId,
+                uniqueId: `${team.id}_${rKey}_${pId}`,
+                label: project ? project.nom_projet : "Sans projet",
+                type: rType, // inheriting type for consistency in UI logic
+                jours_par_semaine: rJours,
+                charges: new Map(),
+                color: project?.color,
+                resourceId: res.projectDetailedMap.size === 0 ? rKey.split('_')[1] : res.projectDetailedMap.values().next().value?.resourceId, // Extract from rKey if first, otherwise copy
+                projectId: pId
+              });
+            }
+            const detRow = res.projectDetailedMap.get(pId)!;
+            const detCur = detRow.charges.get(weekKey) || 0;
+            detRow.charges.set(weekKey, detCur + charge.unite_ressource);
+          }
+        });
+
+        // Convert Map to Children structure
+        resourceMap.forEach((res, rKey) => {
+          children.push({
+            id: rKey, // using rKey as id for interaction
+            label: res.label,
+            color: res.color,
+            expanded: this.allExpanded(),
+            charges: res.charges,
+            resources: Array.from(res.projectDetailedMap.values()).sort((a, b) => a.label.localeCompare(b.label))
+          });
+        });
+
+        children.sort((a, b) => a.label.localeCompare(b.label));
+
+        this.rows.push({
+          id: team.id!,
+          label: team.nom,
+          code: team.code,
+          color: team.color,
+          expanded: this.allExpanded(),
+          children: children,
+          totalCharges: parentTotal,
+        });
+      }
     }
+
     // Keep a copy of unfiltered rows and apply active filters
     this.rowsAll = [...this.rows];
     this.applyFilters();
@@ -700,10 +813,13 @@ export class PlanViewComponent implements OnInit {
           let label = "";
           if (this.viewMode() === "project") {
             // Project > Team > Resource
-            label = `${parent.label} / ${child.label} / ${resource.label} `;
-          } else {
+            label = `${parent.label} / ${child.label} / ${resource.label}`;
+          } else if (this.viewMode() === "team") {
             // Team > Project > Resource
-            label = `${parent.label} / ${child.label} / ${resource.label} `;
+            label = `${parent.label} / ${child.label} / ${resource.label}`;
+          } else {
+            // Team > Resource > Project
+            label = `${parent.label} / ${child.label} / ${resource.label}`;
           }
 
           this.flatRows.push({
@@ -1168,14 +1284,19 @@ export class PlanViewComponent implements OnInit {
           // Parent is Project, Child is Team
           projetId = cell.parentId;
           equipeId = cell.childId;
-        } else {
+        } else if (this.viewMode() === "team") {
           // Parent is Team, Child is Project
           equipeId = cell.parentId;
           projetId = cell.childId;
+        } else {
+          // Parent is Team, Child is Resource, Grandchild is Project
+          equipeId = cell.parentId;
+          projetId = cell.resource.projectId!;
         }
 
-        const roleId = cell.resource.type === "role" ? cell.resource.id : undefined;
-        const personneId = cell.resource.type === "personne" ? cell.resource.id : undefined;
+        const rId = cell.resource.resourceId || cell.resource.id;
+        const roleId = cell.resource.type === "role" ? rId : undefined;
+        const personneId = cell.resource.type === "personne" ? rId : undefined;
 
         // Create or update charge
         await this.chargeService.createOrUpdateCharge(
@@ -1329,49 +1450,80 @@ export class PlanViewComponent implements OnInit {
         originalProject: parent.originalProject,
       };
 
+      // Decide if parent passes equipe filter (if in team or resource mode)
+      let parentPassesEquipe = true;
+      if (this.filterEquipeIds().length) {
+        if (this.viewMode() === "team" || this.viewMode() === "resource") {
+          parentPassesEquipe = this.filterEquipeIds().includes(parent.id);
+        }
+      }
+
+      // Decide if parent passes project filter (if in project mode)
+      let parentPassesProjet = true;
+      if (this.filterProjetIds().length) {
+        if (this.viewMode() === "project") {
+          parentPassesProjet = this.filterProjetIds().includes(parent.id);
+        }
+      }
+
       // Process each child and apply child/resource-level filters
       for (const child of parent.children) {
-        // Start with child's resources, then apply resource filter
-        let resourcesMatch: ResourceRow[] = child.resources;
-        if (this.filterResourceIds().length) {
-          resourcesMatch = child.resources.filter((r) =>
-            this.filterResourceIds().some((sel) => {
-              const [t, id] = sel.split(":");
-              return (
-                (t === "role" && r.type === "role" && r.id === id) ||
-                (t === "personne" && r.type === "personne" && r.id === id)
-              );
-            })
-          );
+        // Grandchild-level resources/projects
+        let grandchildrenMatch: ResourceRow[] = child.resources;
+
+        // Apply filters to grandchildren
+        if (this.filterResourceIds().length || this.filterProjetIds().length) {
+          grandchildrenMatch = child.resources.filter((gr) => {
+            let resMatch = true;
+            let projMatch = true;
+
+            // In resource mode, grandchild IS a project
+            if (this.viewMode() === 'resource') {
+              if (this.filterProjetIds().length) {
+                projMatch = this.filterProjetIds().includes(gr.id);
+              }
+              // Resource filter applies to CHILD level in resource mode (handled later)
+            } else {
+              // In other modes, grandchild IS a resource
+              if (this.filterResourceIds().length) {
+                resMatch = this.filterResourceIds().some((sel) => {
+                  const [t, id] = sel.split(":");
+                  return (
+                    (t === "role" && gr.type === "role" && gr.id === id) ||
+                    (t === "personne" && gr.type === "personne" && gr.id === id)
+                  );
+                });
+              }
+            }
+            return resMatch && projMatch;
+          });
         }
 
-        // Child-level filters for equipe/projet depend on viewMode
+        // Child-level filters
         let childPassesEquipe = true;
         let childPassesProjet = true;
+        let childPassesResource = true;
 
-        if (this.filterEquipeIds().length) {
-          if (this.viewMode() === "project") {
-            // child.id is equipe id
-            childPassesEquipe = this.filterEquipeIds().includes(child.id);
-          } else {
-            // viewMode === 'team' -> parent is equipe; equipe filter applies to parent level
-            childPassesEquipe = true;
-          }
+        if (this.filterEquipeIds().length && this.viewMode() === "project") {
+          childPassesEquipe = this.filterEquipeIds().includes(child.id);
         }
 
-        if (this.filterProjetIds().length) {
-          if (this.viewMode() === "team") {
-            // child.id is projet id
-            childPassesProjet = this.filterProjetIds().includes(child.id);
-          } else {
-            // viewMode === 'project' -> parent is projet; project filter applies at parent level
-            childPassesProjet = true;
-          }
+        if (this.filterProjetIds().length && this.viewMode() === "team") {
+          childPassesProjet = this.filterProjetIds().includes(child.id);
         }
 
-        // A child is included only if it passes child-level equipe/project filters AND has at least one matching resource (if resource filters set)
-        const hasResourceMatch = this.filterResourceIds().length ? resourcesMatch.length > 0 : true;
-        const includeChild = childPassesEquipe && childPassesProjet && hasResourceMatch;
+        if (this.filterResourceIds().length && this.viewMode() === "resource") {
+          childPassesResource = this.filterResourceIds().some((sel) => {
+            const rKeyForSel = sel.replace(':', '_');
+            return child.id === rKeyForSel;
+          });
+        }
+
+        // A child is included only if it passes child-level filters AND has matching grandchildren (if any filters active)
+        const hasRestrictiveFilters = this.filterResourceIds().length || this.filterProjetIds().length || (this.filterEquipeIds().length && this.viewMode() === "project");
+        const hasGrandchildrenMatch = hasRestrictiveFilters ? grandchildrenMatch.length > 0 : true;
+
+        const includeChild = childPassesEquipe && childPassesProjet && childPassesResource && hasGrandchildrenMatch;
 
         if (includeChild) {
           newParent.children.push({
@@ -1380,47 +1532,22 @@ export class PlanViewComponent implements OnInit {
             code: child.code,
             color: child.color,
             expanded: child.expanded,
-            resources: resourcesMatch,
+            resources: grandchildrenMatch,
             charges: child.charges,
           });
         }
       }
 
-      // Now decide whether to include parent
-      // Parent must pass parent-level filter (if any) and have at least one child after filtering
-      let parentPassesEquipe = true;
-      let parentPassesProjet = true;
-
-      if (this.filterEquipeIds().length) {
-        if (this.viewMode() === "team") {
-          // parent.id is equipe id
-          parentPassesEquipe = this.filterEquipeIds().includes(parent.id);
-        } else {
-          // viewMode === 'project' -> equipes filter applied on children only; parent passes if it has children matching the equipe
-          parentPassesEquipe = true;
-        }
-      }
-
-      if (this.filterProjetIds().length) {
-        if (this.viewMode() === "project") {
-          // parent.id is projet id
-          parentPassesProjet = this.filterProjetIds().includes(parent.id);
-        } else {
-          // viewMode === 'team' -> projet filter applied on children
-          parentPassesProjet = true;
-        }
-      }
-
+      // Final decision to include parent
       const hasChildren = newParent.children.length > 0;
 
       // Allow showing empty parent if it was explicitly selected via the primary filter 
-      // and no other restrictive filters (resource or the other category) are active.
       let showEmptyParent = false;
       if (this.viewMode() === 'project' && this.filterProjetIds().includes(parent.id)) {
         if (this.filterEquipeIds().length === 0 && this.filterResourceIds().length === 0) {
           showEmptyParent = true;
         }
-      } else if (this.viewMode() === 'team' && this.filterEquipeIds().includes(parent.id)) {
+      } else if ((this.viewMode() === 'team' || this.viewMode() === 'resource') && this.filterEquipeIds().includes(parent.id)) {
         if (this.filterProjetIds().length === 0 && this.filterResourceIds().length === 0) {
           showEmptyParent = true;
         }
@@ -1487,17 +1614,26 @@ export class PlanViewComponent implements OnInit {
       try {
         let projetId: string;
         let equipeId: string;
+        let roleId: string | undefined;
+        let personneId: string | undefined;
 
         if (this.viewMode() === "project") {
           projetId = parent.id;
           equipeId = child.id;
-        } else {
+          roleId = resource.type === 'role' ? resource.id : undefined;
+          personneId = resource.type === 'personne' ? resource.id : undefined;
+        } else if (this.viewMode() === "team") {
           equipeId = parent.id;
           projetId = child.id;
+          roleId = resource.type === 'role' ? resource.id : undefined;
+          personneId = resource.type === 'personne' ? resource.id : undefined;
+        } else {
+          // resource view mode: parent=team, child=resource, resource=project
+          equipeId = parent.id;
+          projetId = resource.id;
+          roleId = resource.type === 'role' ? resource.resourceId : undefined;
+          personneId = resource.type === 'personne' ? resource.resourceId : undefined;
         }
-
-        const roleId = resource.type === 'role' ? resource.id : undefined;
-        const personneId = resource.type === 'personne' ? resource.id : undefined;
 
         await this.chargeService.deleteChargesForResource(projetId, equipeId, roleId, personneId);
         await this.loadData();
@@ -1510,27 +1646,39 @@ export class PlanViewComponent implements OnInit {
   }
 
   async removeChild(child: ChildRow, parent: ParentRow) {
-    const childType = this.viewMode() === "project" ? "équipe" : "projet";
-    const parentType = this.viewMode() === "project" ? "projet" : "équipe";
-
-    this.confirmTitle = "Retirer " + (this.viewMode() === "project" ? "l'équipe" : "le projet");
-    this.confirmMessage = `Êtes - vous sûr de vouloir retirer "${child.label}" ${childType === "équipe" ? "de l'" : "du "}${parentType} "${parent.label}" ?\nCela supprimera toutes les charges associées à cette ${childType}.`;
+    this.confirmTitle = "Retirer " + (this.viewMode() === "resource" ? "la ressource" : (this.viewMode() === "project" ? "l'équipe" : "le projet"));
+    this.confirmMessage = `Êtes - vous sûr de vouloir retirer "${child.label}" ?\nCela supprimera toutes les charges associées.`;
 
     this.pendingConfirmAction = async () => {
       try {
-        let projetId: string;
-        let equipeId: string;
+        if (this.viewMode() === "resource") {
+          // Remove all charges for this resource in this team
+          const [type, resId] = child.id.split('_');
+          const roleId = type === 'role' ? resId : undefined;
+          const personneId = type === 'personne' ? resId : undefined;
+          const equipeId = parent.id;
 
-        if (this.viewMode() === "project") {
-          projetId = parent.id;
-          equipeId = child.id;
+          // We don't have a direct "delete all projects for resource in team" in one go that unlinks, 
+          // but we can delete charges for each project or use a broader service method if available.
+          // For now, let's delete charges for this resource in this team.
+          // Note: unlinkProjectFromTeam might not be appropriate here as it unlinks the whole project from the team.
+          // If the goal is to remove the resource from the team's planning:
+          await this.chargeService.deleteChargesForResource(undefined as any, equipeId, roleId, personneId);
         } else {
-          equipeId = parent.id;
-          projetId = child.id;
-        }
+          let projetId: string;
+          let equipeId: string;
 
-        await this.chargeService.deleteChargesForProjectTeam(projetId, equipeId);
-        await this.projetService.unlinkProjectFromTeam(projetId, equipeId);
+          if (this.viewMode() === "project") {
+            projetId = parent.id;
+            equipeId = child.id;
+          } else {
+            equipeId = parent.id;
+            projetId = child.id;
+          }
+
+          await this.chargeService.deleteChargesForProjectTeam(projetId, equipeId);
+          await this.projetService.unlinkProjectFromTeam(projetId, equipeId);
+        }
         await this.loadData();
       } catch (error) {
         console.error('Error removing child:', error);

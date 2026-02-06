@@ -23,6 +23,14 @@
         >
           Par Équipe
         </button>
+        <button
+          class="btn"
+          [class.btn-primary]="viewMode() === 'resource'"
+          [class.btn-secondary]="viewMode() !== 'resource'"
+          (click)="switchViewMode('resource')"
+        >
+          Par Ressources
+        </button>
       </div>
 
       <div class="view-mode-toggle">
