@@ -1,0 +1,750 @@
+<div class="capacity-container">
+  <!-- Sexy Tooltip Singleton -->
+  <div class="sexy-tooltip" [class.visible]="activeTooltip" [style.left.px]="tooltipX" [style.top.px]="tooltipY">
+    {{ activeTooltip }}
+  </div>
+  <div class="capacity-header">
+    <h1>Vue Planification</h1>
+    <div class="header-actions">
+      <div class="view-mode-toggle">
+        <button
+          class="btn"
+          [class.btn-primary]="viewMode() === 'project'"
+          [class.btn-secondary]="viewMode() !== 'project'"
+          (click)="switchViewMode('project')"
+        >
+          Par Projet
+        </button>
+        <button
+          class="btn"
+          [class.btn-primary]="viewMode() === 'team'"
+          [class.btn-secondary]="viewMode() !== 'team'"
+          (click)="switchViewMode('team')"
+        >
+          Par Équipe
+        </button>
+      </div>
+
+      <div class="view-mode-toggle">
+        <button
+          class="btn"
+          [class.btn-primary]="displayFormat() === 'tree'"
+          [class.btn-secondary]="displayFormat() !== 'tree'"
+          (click)="toggleDisplayFormat('tree')"
+        >
+          Arborescence
+        </button>
+        <button
+          class="btn"
+          [class.btn-primary]="displayFormat() === 'flat'"
+          [class.btn-secondary]="displayFormat() !== 'flat'"
+          (click)="toggleDisplayFormat('flat')"
+        >
+          À plat
+        </button>
+      </div>
+
+      <div class="toggle-container">
+        <span class="toggle-label">Dispo.</span>
+        <label class="switch">
+          <input type="checkbox" [ngModel]="showAvailability()" (ngModelChange)="showAvailability.set($event)" />
+          <span class="slider round"></span>
+        </label>
+      </div>
+
+      <button class="btn btn-secondary" (click)="goToToday()">Aujourd'hui</button>
+    </div>
+  </div>
+
+  <div class="calendar-controls">
+    <div class="date-navigation">
+      <button class="btn btn-sm" (click)="goToPreviousMonth()">← Mois précédent</button>
+      <button class="btn btn-sm btn-primary" (click)="goToToday()">Aujourd'hui</button>
+      <button class="btn btn-sm" (click)="goToNextMonth()">Mois suivant →</button>
+    </div>
+
+    <!-- Filters bar -->
+    <div class="filters-bar" #filtersContainer>
+      <div class="filter-pill" (click)="toggleDropdown('equipe', $event)">
+        <span class="filter-title">Équipes</span>
+        <span class="chip-list">
+          <span *ngFor="let id of filterEquipeIds()" class="chip">{{ getEquipeName(id) }}</span>
+          <span *ngIf="filterEquipeIds().length === 0" class="chip placeholder">Tous</span>
+        </span>
+      </div>
+
+      <div class="filter-pill" (click)="toggleDropdown('projet', $event)">
+        <span class="filter-title">Projets</span>
+        <span class="chip-list">
+          <span *ngFor="let id of filterProjetIds()" class="chip">{{ getProjetLabel(id) }}</span>
+          <span *ngIf="filterProjetIds().length === 0" class="chip placeholder">Tous</span>
+        </span>
+      </div>
+
+      <div class="filter-pill" (click)="toggleDropdown('resource', $event)">
+        <span class="filter-title">Rôle / Personne</span>
+        <span class="chip-list">
+          <span *ngFor="let sel of filterResourceIds()" class="chip">{{ getResourceLabel(sel) }}</span>
+          <span *ngIf="filterResourceIds().length === 0" class="chip placeholder">Tous</span>
+        </span>
+      </div>
+
+      <!-- Dropdowns -->
+      <div class="filters-dropdown" *ngIf="openEquipeDropdown" (click)="$event.stopPropagation()">
+        <div class="dropdown-list">
+          <label *ngFor="let e of allEquipes" class="dropdown-item">
+            <input
+              type="checkbox"
+              [value]="e.id"
+              (change)="onEquipeToggle(e.id, $event)"
+              [checked]="filterEquipeIds().includes(e.id!)"
+            />
+            {{ e.nom }}
+          </label>
+        </div>
+      </div>
+
+      <div class="filters-dropdown" *ngIf="openProjetDropdown" (click)="$event.stopPropagation()">
+        <div class="dropdown-search">
+          <input
+            type="text"
+            class="search-input"
+            placeholder="Rechercher un projet..."
+            [ngModel]="filterProjetSearch()"
+            (ngModelChange)="filterProjetSearch.set($event)"
+            (click)="$event.stopPropagation()"
+          />
+          <lucide-icon
+            [img]="X"
+            [size]="14"
+            class="clear-search"
+            *ngIf="filterProjetSearch()"
+            (click)="filterProjetSearch.set('')"
+          ></lucide-icon>
+        </div>
+        <div class="dropdown-actions" *ngIf="filteredProjectsForDropdown.length > 0">
+          <button class="btn-link" (click)="selectFilteredProjects()">Tout sélectionner</button>
+          <button class="btn-link text-danger" (click)="deselectFilteredProjects()">Tout désélectionner</button>
+        </div>
+        <div class="dropdown-list">
+          <label *ngFor="let p of filteredProjectsForDropdown" class="dropdown-item">
+            <input
+              type="checkbox"
+              [value]="p.id"
+              (change)="onProjetToggle(p.id, $event)"
+              [checked]="filterProjetIds().includes(p.id!)"
+            />
+            <span class="p-code">{{ p.code_projet }}</span> — {{ p.nom_projet }}
+          </label>
+          <div *ngIf="filteredProjectsForDropdown.length === 0" class="no-results">Aucun projet trouvé</div>
+        </div>
+      </div>
+
+      <div class="filters-dropdown" *ngIf="openResourceDropdown" (click)="$event.stopPropagation()">
+        <div class="dropdown-list">
+          <div class="dropdown-group">Rôles</div>
+          <label *ngFor="let r of availableRoles" class="dropdown-item">
+            <input
+              type="checkbox"
+              [value]="'role:' + r.id"
+              (change)="onResourceToggle('role:' + r.id, $event)"
+              [checked]="filterResourceIds().includes('role:' + r.id)"
+            />
+            {{ r.nom }}
+          </label>
+          <div class="dropdown-group">Personnes</div>
+          <label *ngFor="let p of availablePersonnes" class="dropdown-item">
+            <input
+              type="checkbox"
+              [value]="'personne:' + p.id"
+              (change)="onResourceToggle('personne:' + p.id, $event)"
+              [checked]="filterResourceIds().includes('personne:' + p.id)"
+            />
+            {{ p.prenom }} {{ p.nom }}
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main calendar with unified scroll -->
+  <div class="calendar-wrapper">
+    <div class="calendar-grid">
+      <!-- Header row (sticky top) -->
+      <div class="calendar-header-row">
+        <div class="label-cell header-label">
+          <div class="header-label-content">
+            <span style="font-weight: 600">{{
+              viewMode() === "project" ? "Projets / Équipes" : "Équipes / Projets"
+            }}</span>
+            <div class="header-expand-controls">
+              <button
+                class="btn-icon-s"
+                (click)="toggleAllExpansion()"
+                [title]="isAllExpanded ? 'Tout replier' : 'Tout déplier'"
+              >
+                <lucide-icon [name]="isAllExpanded ? 'square-minus' : 'square-plus'" [size]="16"></lucide-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="weeks-container">
+          <div *ngFor="let week of displayedWeeks" class="week-header-cell" [class.current-week]="isCurrentWeek(week)">
+            <div class="week-date">{{ formatWeekHeader(week) }}</div>
+            <div class="week-number">S{{ getWeekNumber(week) }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Milestones row (sticky top with offset) -->
+      <div class="milestones-header-row">
+        <div class="label-cell milestones-label">
+          <span style="font-weight: 600; font-size: 13px">Jalons</span>
+        </div>
+        <div class="weeks-container">
+          <div
+            *ngFor="let week of displayedWeeks"
+            class="week-cell milestone-cell"
+            [class.current-week]="isCurrentWeek(week)"
+          >
+            <div class="milestones-container">
+              <div
+                *ngFor="let jalon of getJalonsForWeek(week)"
+                class="jalon-item"
+                [style.background-color]="getJalonColor(jalon.type)"
+                [style.color]="getJalonTextColor(jalon.type)"
+                [title]="jalon.date_jalon"
+                (click)="openMilestoneModal(jalon, $event)"
+              >
+                {{ jalon.nom || "★" }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data rows -->
+      <div class="calendar-body">
+        <!-- Tree View -->
+        <!-- Tree View -->
+        <ng-container *ngIf="displayFormat() === 'tree'">
+          <div cdkDropList (cdkDropListDropped)="drop($event)">
+            <div
+              *ngFor="let row of rows"
+              cdkDrag
+              [cdkDragDisabled]="viewMode() !== 'project'"
+              class="project-draggable-group"
+            >
+              <!-- Parent Row -->
+              <div class="calendar-row" cdkDragHandle>
+                <div class="label-cell row-label-parent">
+                  <div class="row-label-content" (click)="toggleRow(row)">
+                    <div class="color-bar-container">
+                      <div class="color-bar-v" [style.background-color]="row.color || '#94a3b8'"></div>
+                    </div>
+
+                    <lucide-icon
+                      *ngIf="row.children.length > 0"
+                      [name]="row.expanded ? 'chevron-down' : 'chevron-right'"
+                      [size]="20"
+                      class="expand-icon-l"
+                    ></lucide-icon>
+
+                    <div class="row-info-stack-wrapper">
+                      <div class="info-stack">
+                        <span class="info-code" *ngIf="row.code">{{ row.code }}</span>
+                        <span
+                          class="info-label"
+                          (mouseenter)="showTooltip($event, row.label)"
+                          (mouseleave)="hideTooltip()"
+                          >{{ row.label }}</span
+                        >
+                      </div>
+                    </div>
+
+                    <button
+                      class="btn-hover-add"
+                      (click)="openLinkModal(row); $event.stopPropagation()"
+                      title="Ajouter"
+                    >
+                      <lucide-icon [img]="Plus" [size]="18"></lucide-icon>
+                    </button>
+                  </div>
+                </div>
+                <div class="weeks-container">
+                  <div *ngFor="let week of displayedWeeks" class="week-cell team-cell">
+                    <div class="team-summary" *ngIf="getParentTotal(row, week) > 0">
+                      <!-- <div class="capacity-value">
+                        {{ getParentTotal(row, week) | number : "1.0-1" }}
+                      </div> -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Children Rows -->
+              <ng-container *ngIf="row.expanded">
+                <ng-container *ngFor="let child of row.children">
+                  <!-- Child Row (2nd level) -->
+                  <div class="calendar-row">
+                    <div class="label-cell row-label-child">
+                      <div class="row-label-content child-row" (click)="toggleChild(child)" style="padding-left: 24px">
+                        <div class="color-bar-container">
+                          <div class="color-bar-v small" [style.background-color]="child.color || '#cbd5e1'"></div>
+                        </div>
+
+                        <lucide-icon
+                          *ngIf="child.resources.length > 0"
+                          [name]="child.expanded ? 'chevron-down' : 'chevron-right'"
+                          [size]="18"
+                          class="expand-icon-l"
+                        ></lucide-icon>
+
+                        <div class="row-info-stack-wrapper">
+                          <div class="info-stack">
+                            <span class="info-code" *ngIf="child.code">{{ child.code }}</span>
+                            <span
+                              class="info-label"
+                              (mouseenter)="showTooltip($event, child.label)"
+                              (mouseleave)="hideTooltip()"
+                              >{{ child.label }}</span
+                            >
+                          </div>
+                        </div>
+
+                        <button
+                          class="btn-hover-add"
+                          (click)="openAddResourceModal(child, row); $event.stopPropagation()"
+                          title="Ajouter ressource"
+                        >
+                          <lucide-icon [img]="Plus" [size]="16"></lucide-icon>
+                        </button>
+                        <button
+                          class="btn-hover-delete"
+                          (click)="removeChild(child, row); $event.stopPropagation()"
+                          [title]="
+                            viewMode() === 'project'
+                              ? 'Retirer cette équipe du projet'
+                              : 'Retirer ce projet de l\'équipe'
+                          "
+                        >
+                          <lucide-icon [img]="X" [size]="16"></lucide-icon>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="weeks-container">
+                      <div *ngFor="let week of displayedWeeks" class="week-cell resource-cell">
+                        <!-- 
+                      [class.has-capacity]="getChildValue(child, week) > 0"
+                      
+                        <div class="cell-content" *ngIf="getChildValue(child, week) > 0">
+                          <div class="capacity-value">{{ getChildValue(child, week) | number : "1.0-1" }}</div>
+                        </div> -->
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Resource Rows (3rd level) -->
+                  <ng-container *ngIf="child.expanded">
+                    <div
+                      *ngFor="let resource of child.resources"
+                      class="calendar-row"
+                      [attr.data-resource-id]="getResourceUniqueId(resource, child, row)"
+                      (mousedown)="onMouseDown($event, resource, child, row)"
+                      (mousemove)="onMouseMove($event, resource, child, row)"
+                      (mouseup)="onMouseUp()"
+                      (mouseleave)="onMouseUp()"
+                    >
+                      <div class="label-cell row-label-resource">
+                        <div class="row-label-content resource-row">
+                          <div class="resource-detail-label" style="padding-left: 40px">
+                            <div class="resource-icon-wrapper" [style.background-color]="resource.color || '#e2e8f0'">
+                              <lucide-icon
+                                [name]="resource.type === 'role' ? 'contact' : 'user'"
+                                [size]="14"
+                                class="resource-icon"
+                              ></lucide-icon>
+                            </div>
+                            <span
+                              class="resource-detail-name"
+                              (mouseenter)="showTooltip($event, resource.label)"
+                              (mouseleave)="hideTooltip()"
+                              >{{ resource.label }}</span
+                            >
+                            <div
+                              class="resource-total-badge"
+                              [class.anchor-active]="activeAnchorId === getResourceUniqueId(resource, child, row)"
+                              (click)="openYearPopover($event, getResourceUniqueId(resource, child, row))"
+                              [title]="'Cliquer pour filtrer par année'"
+                            >
+                              <span class="badge-prefix">{{ getBadgePrefix() }}</span>
+                              <span class="badge-val">{{
+                                getResourceTotalPlannedDays(resource) | number: "1.0-1"
+                              }}</span>
+                              <span class="badge-unit">j</span>
+                            </div>
+                          </div>
+                          <button
+                            class="btn-hover-delete"
+                            (click)="removeResource(resource, child, row); $event.stopPropagation()"
+                            title="Supprimer cette ressource"
+                          >
+                            <lucide-icon [img]="X" [size]="14"></lucide-icon>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="weeks-container">
+                        <div
+                          *ngFor="let week of displayedWeeks; let i = index"
+                          class="week-cell resource-detail-cell"
+                          [class.selected]="isCellSelected(resource, week)"
+                          [class.has-capacity]="getResourceValue(resource, week) > 0"
+                          [class.cell-positive]="
+                            shouldShowAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) &&
+                            getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) > 0
+                          "
+                          [class.cell-zero]="
+                            shouldShowAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) &&
+                            getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) === 0
+                          "
+                          [class.cell-negative]="
+                            shouldShowAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) &&
+                            getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) < 0
+                          "
+                          [attr.data-week-index]="i"
+                        >
+                          <div class="cell-content">
+                            <div *ngIf="getResourceValue(resource, week) > 0" class="capacity-value">
+                              {{ getResourceValue(resource, week) | number: "1.0-1" }}
+                            </div>
+                            <div
+                              class="availability-indicator"
+                              *ngIf="
+                                shouldShowAvailability(resource, week, viewMode() === 'project' ? child.id : row.id)
+                              "
+                              [ngClass]="{
+                                'availability-positive':
+                                  getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) > 0,
+                                'availability-zero':
+                                  getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) === 0,
+                                'availability-negative':
+                                  getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) < 0,
+                              }"
+                            >
+                              {{
+                                getAvailability(resource, week, viewMode() === "project" ? child.id : row.id) > 0
+                                  ? "+"
+                                  : ""
+                              }}{{
+                                getAvailability(resource, week, viewMode() === "project" ? child.id : row.id)
+                                  | number: "1.0-1"
+                              }}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </ng-container>
+                </ng-container>
+              </ng-container>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- Flat View -->
+        <ng-container *ngIf="displayFormat() === 'flat'">
+          <div
+            *ngFor="let row of flatRows"
+            class="calendar-row"
+            [attr.data-resource-id]="getResourceUniqueId(row.resource, row.child, row.parent)"
+            (mousedown)="onMouseDown($event, row.resource, row.child, row.parent)"
+            (mousemove)="onMouseMove($event, row.resource, row.child, row.parent)"
+            (mouseup)="onMouseUp()"
+            (mouseleave)="onMouseUp()"
+          >
+            <div class="label-cell row-label-flat">
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                  padding: 0 16px;
+                  font-weight: 500;
+                  font-size: 13px;
+                  white-space: nowrap;
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                "
+                (mouseenter)="showTooltip($event, row.fullLabel)"
+                (mouseleave)="hideTooltip()"
+              >
+                {{ row.fullLabel }}
+                <div
+                  class="resource-total-badge"
+                  [class.anchor-active]="activeAnchorId === getResourceUniqueId(row.resource, row.child, row.parent)"
+                  (click)="openYearPopover($event, getResourceUniqueId(row.resource, row.child, row.parent))"
+                  (mouseenter)="$event.stopPropagation(); showTooltip($event, 'Cliquer pour filtrer par année')"
+                  (mouseleave)="hideTooltip()"
+                >
+                  <span class="badge-prefix">{{ getBadgePrefix() }}</span>
+                  <span class="badge-val">{{ getResourceTotalPlannedDays(row.resource) | number: "1.0-1" }}</span>
+                  <span class="badge-unit">j</span>
+                </div>
+              </div>
+            </div>
+            <div class="weeks-container">
+              <div
+                *ngFor="let week of displayedWeeks; let i = index"
+                class="week-cell resource-detail-cell"
+                [class.selected]="isCellSelected(row.resource, week)"
+                [class.has-capacity]="getResourceValue(row.resource, week) > 0"
+                [class.cell-positive]="
+                  shouldShowAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id) &&
+                  getAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id) > 0
+                "
+                [class.cell-zero]="
+                  shouldShowAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id) &&
+                  getAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id) === 0
+                "
+                [class.cell-negative]="
+                  shouldShowAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id) &&
+                  getAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id) < 0
+                "
+                [attr.data-week-index]="i"
+              >
+                <div class="cell-content">
+                  <div *ngIf="getResourceValue(row.resource, week) > 0" class="capacity-value">
+                    {{ getResourceValue(row.resource, week) | number: "1.0-1" }}
+                  </div>
+                  <div
+                    class="availability-indicator"
+                    *ngIf="
+                      shouldShowAvailability(
+                        row.resource,
+                        week,
+                        viewMode() === 'project' ? row.child.id : row.parent.id
+                      )
+                    "
+                    [ngClass]="{
+                      'availability-positive':
+                        getAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id) >
+                        0,
+                      'availability-zero':
+                        getAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id) ===
+                        0,
+                      'availability-negative':
+                        getAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id) <
+                        0,
+                    }"
+                  >
+                    {{
+                      getAvailability(row.resource, week, viewMode() === "project" ? row.child.id : row.parent.id) > 0
+                        ? "+"
+                        : ""
+                    }}{{
+                      getAvailability(row.resource, week, viewMode() === "project" ? row.child.id : row.parent.id)
+                        | number: "1.0-1"
+                    }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+
+        <div *ngIf="rows.length === 0" class="empty-state">
+          <p>Aucune donnée</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <app-selection-toolbar
+    *ngIf="selectedCells.length > 0 && isSelectionFinished"
+    [position]="toolbarPosition"
+    [visible]="toolbarVisible"
+    [selectedCount]="selectedCells.length"
+    [totalDays]="totalSelectedDays"
+    [(value)]="bulkChargeValue"
+    [isSaving]="isSaving"
+    [applyLabel]="'Appliquer'"
+    [savingLabel]="'Application...'"
+    (apply)="applyBulkCharge()"
+    (cancel)="clearSelection()"
+  >
+  </app-selection-toolbar>
+
+  <!-- Modal for linking -->
+  <div *ngIf="showLinkModal" class="modal-overlay" (click)="closeLinkModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          {{ viewMode() === "project" ? "Ajouter une équipe" : "Ajouter un projet" }} à {{ selectedParentRow?.label }}
+        </h2>
+        <button class="modal-close" (click)="closeLinkModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>{{ viewMode() === "project" ? "Sélectionner une équipe" : "Sélectionner un projet" }}</label>
+          <select [(ngModel)]="selectedIdToLink" class="form-control">
+            <option value="">-- Choisir --</option>
+            <option *ngFor="let item of linkableItems" [value]="item.id">
+              {{ item.label }}
+            </option>
+          </select>
+        </div>
+
+        <div class="project-links-in-modal" *ngIf="getProjectForLinks() as project">
+          <div class="links-label-row">
+            <span class="links-title">Actions Projet:</span>
+            <div class="links-actions">
+              <button class="btn-link" (click)="openProjectEditFromLink()">
+                <lucide-icon [img]="ExternalLink" [size]="14"></lucide-icon>
+                Modifier Projet
+              </button>
+              <a
+                *ngIf="project.reference_externe && externalReferenceUrl"
+                [href]="externalReferenceUrl + project.reference_externe"
+                target="_blank"
+                class="btn-link external-link"
+              >
+                <lucide-icon [img]="ExternalLink" [size]="14"></lucide-icon>
+                {{ project.reference_externe }}
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn btn-primary" (click)="linkItem()" [disabled]="!selectedIdToLink">Ajouter</button>
+          <button class="btn btn-secondary" (click)="closeLinkModal()">Annuler</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for adding resource -->
+  <div *ngIf="showAddResourceModal" class="modal-overlay" (click)="closeAddResourceModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Ajouter une Ressource à {{ selectedChildRow?.label }}</h2>
+        <button class="modal-close" (click)="closeAddResourceModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Type de ressource</label>
+          <select [(ngModel)]="resourceTypeToAdd" class="form-control">
+            <option value="role">Rôle</option>
+            <option value="personne">Personne</option>
+          </select>
+        </div>
+
+        <div class="form-group" *ngIf="resourceTypeToAdd === 'role'">
+          <label>Sélectionner un rôle</label>
+          <div *ngIf="availableRoles.length === 0" class="no-roles-message">
+            <p>Aucun rôle disponible. Tous les rôles sont déjà utilisés pour cette combinaison.</p>
+          </div>
+          <select *ngIf="availableRoles.length > 0" [(ngModel)]="selectedResourceId" class="form-control">
+            <option value="">-- Choisir un rôle --</option>
+            <option *ngFor="let role of availableRoles" [value]="role.id">
+              {{ role.nom }} ({{ role.jours_par_semaine }}j/sem)
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group" *ngIf="resourceTypeToAdd === 'personne'">
+          <label>Sélectionner une personne</label>
+          <select *ngIf="availablePersonnes.length > 0" [(ngModel)]="selectedResourceId" class="form-control">
+            <option value="">-- Choisir une personne --</option>
+            <option *ngFor="let personne of availablePersonnes" [value]="personne.id">
+              {{ personne.prenom }} {{ personne.nom }} ({{ personne.jours_par_semaine }}j/sem)
+            </option>
+          </select>
+        </div>
+
+        <div class="project-links-in-modal" *ngIf="getProjectForLinks() as project">
+          <div class="links-label-row">
+            <span class="links-title">Actions Projet:</span>
+            <div class="links-actions">
+              <button class="btn-link" (click)="openProjectEditFromLink()">
+                <lucide-icon [img]="ExternalLink" [size]="14"></lucide-icon>
+                Modifier Projet
+              </button>
+              <a
+                *ngIf="project.reference_externe && externalReferenceUrl"
+                [href]="externalReferenceUrl + project.reference_externe"
+                target="_blank"
+                class="btn-link external-link"
+              >
+                <lucide-icon [img]="ExternalLink" [size]="14"></lucide-icon>
+                {{ project.reference_externe }}
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button
+            class="btn btn-primary"
+            (click)="addResourceToCharge()"
+            [disabled]="
+              !selectedResourceId ||
+              (resourceTypeToAdd === 'role' && availableRoles.length === 0) ||
+              (resourceTypeToAdd === 'personne' && availablePersonnes.length === 0)
+            "
+          >
+            Ajouter
+          </button>
+          <button class="btn btn-secondary" (click)="closeAddResourceModal()">Annuler</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="showYearPopover" class="year-popover" (click)="$event.stopPropagation()">
+    <div
+      class="popover-arrow"
+      [class.top]="popoverArrowSide === 'top'"
+      [class.bottom]="popoverArrowSide === 'bottom'"
+    ></div>
+    <div class="popover-content">
+      <button class="popover-item" [class.active]="selectedCapacityYear === 'all'" (click)="selectYear('all')">
+        Tout cumulé
+      </button>
+      <button class="popover-item" [class.active]="selectedCapacityYear === '2025'" (click)="selectYear('2025')">
+        Année 2025
+      </button>
+      <button class="popover-item" [class.active]="selectedCapacityYear === '2026'" (click)="selectYear('2026')">
+        Année 2026
+      </button>
+      <div class="popover-date-jump">
+        <input type="date" class="jump-input" [value]="getSelectedStartDateISO()" (change)="onDateSelected($event)" />
+      </div>
+    </div>
+  </div>
+
+  <app-milestone-modal
+    [(visible)]="showMilestoneModal"
+    [jalon]="selectedJalon"
+    [projets]="allProjects"
+    (saved)="onMilestoneSaved()"
+  >
+  </app-milestone-modal>
+
+  <app-confirm-modal
+    [visible]="showConfirmModal"
+    [title]="confirmTitle"
+    [message]="confirmMessage"
+    confirmLabel="Supprimer"
+    (confirm)="onConfirmAction()"
+    (cancel)="showConfirmModal = false"
+  >
+  </app-confirm-modal>
+
+  <app-project-modal
+    *ngIf="showProjectModal"
+    [projet]="projectToEdit"
+    (saved)="onProjectSaved()"
+    (closed)="closeProjectModal()"
+  ></app-project-modal>
+</div>
