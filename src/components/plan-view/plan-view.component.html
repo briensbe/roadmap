@@ -273,7 +273,7 @@
                     <button
                       class="btn-hover-add"
                       (click)="openLinkModal(row); $event.stopPropagation()"
-                      title="Ajouter"
+                      [title]="viewMode() === 'resource' ? 'Ajouter une ressource' : 'Ajouter'"
                     >
                       <lucide-icon [img]="Plus" [size]="18"></lucide-icon>
                     </button>
@@ -322,8 +322,11 @@
 
                         <button
                           class="btn-hover-add"
-                          (click)="openAddResourceModal(child, row); $event.stopPropagation()"
-                          title="Ajouter ressource"
+                          (click)="
+                            viewMode() === 'resource' ? openLinkModal(row, child) : openAddResourceModal(child, row);
+                            $event.stopPropagation()
+                          "
+                          [title]="viewMode() === 'resource' ? 'Ajouter un projet' : 'Ajouter une ressource'"
                         >
                           <lucide-icon [img]="Plus" [size]="16"></lucide-icon>
                         </button>
@@ -333,7 +336,9 @@
                           [title]="
                             viewMode() === 'project'
                               ? 'Retirer cette équipe du projet'
-                              : 'Retirer ce projet de l\'équipe'
+                              : viewMode() === 'team'
+                                ? 'Retirer ce projet de l\'équipe'
+                                : 'Retirer cette ressource de l\'équipe'
                           "
                         >
                           <lucide-icon [img]="X" [size]="16"></lucide-icon>
@@ -395,7 +400,7 @@
                           <button
                             class="btn-hover-delete"
                             (click)="removeResource(resource, child, row); $event.stopPropagation()"
-                            title="Supprimer cette ressource"
+                            [title]="viewMode() === 'resource' ? 'Retirer ce projet' : 'Supprimer cette ressource'"
                           >
                             <lucide-icon [img]="X" [size]="14"></lucide-icon>
                           </button>
@@ -586,14 +591,34 @@
   <div *ngIf="showLinkModal" class="modal-overlay" (click)="closeLinkModal()">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2>
-          {{ viewMode() === "project" ? "Ajouter une équipe" : "Ajouter un projet" }} à {{ selectedParentRow?.label }}
+        <h2 *ngIf="viewMode() !== 'resource' || !selectedChildRowToLink">
+          {{
+            viewMode() === "project"
+              ? "Ajouter une équipe"
+              : viewMode() === "team"
+                ? "Ajouter un projet"
+                : "Ajouter une ressource"
+          }}
+          à {{ selectedParentRow?.label }}
+        </h2>
+        <h2 *ngIf="viewMode() === 'resource' && selectedChildRowToLink">
+          Ajouter un projet à {{ selectedChildRowToLink.label }}
         </h2>
         <button class="modal-close" (click)="closeLinkModal()">×</button>
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label>{{ viewMode() === "project" ? "Sélectionner une équipe" : "Sélectionner un projet" }}</label>
+          <label>
+            {{
+              viewMode() === "project"
+                ? "Sélectionner une équipe"
+                : viewMode() === "team"
+                  ? "Sélectionner un projet"
+                  : selectedChildRowToLink
+                    ? "Sélectionner un projet"
+                    : "Sélectionner une ressource"
+            }}
+          </label>
           <select [(ngModel)]="selectedIdToLink" class="form-control">
             <option value="">-- Choisir --</option>
             <option *ngFor="let item of linkableItems" [value]="item.id">

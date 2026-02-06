@@ -4,6 +4,7 @@ import { FormsModule } from "@angular/forms";
 import { TeamService } from "../../services/team.service";
 import { ProjetService } from "../../services/projet.service";
 import { ChargeService } from "../../services/charge.service";
+import { RolesService } from "../../services/roles.service";
 import { JalonService } from "../../services/jalon.service";
 import { Equipe, Projet, Charge, Role, Personne, Capacite, Jalon } from "../../models/types";
 import { CalendarService } from "../../services/calendar.service";
@@ -130,6 +131,7 @@ export class PlanViewComponent implements OnInit {
 
   allCapacities: Capacite[] = [];
   allLinks: { equipe_id: string; projet_id: string }[] = [];
+  allRoleAttachments: any[] = [];
 
   // Filters
   rowsAll: ParentRow[] = [];
@@ -146,7 +148,8 @@ export class PlanViewComponent implements OnInit {
   // Link Modal State
   showLinkModal = false;
   selectedParentRow: ParentRow | null = null;
-  linkableItems: { id: string; label: string }[] = [];
+  selectedChildRowToLink: ChildRow | null = null;
+  linkableItems: { id: string; label: string; type?: 'role' | 'personne' }[] = [];
   selectedIdToLink: string = "";
 
   // Resource Modal State
@@ -196,6 +199,7 @@ export class PlanViewComponent implements OnInit {
     private teamService: TeamService,
     private projetService: ProjetService,
     private chargeService: ChargeService,
+    private rolesService: RolesService,
     private calendarService: CalendarService,
     private jalonService: JalonService,
     private settingsService: SettingsService
@@ -252,7 +256,7 @@ export class PlanViewComponent implements OnInit {
 
   async loadData() {
     try {
-      const [projects, equipes, charges, capacities, links, roles, personnes, jalons] = await Promise.all([
+      const [projects, equipes, charges, capacities, links, roles, personnes, jalons, roleAttachments] = await Promise.all([
         this.projetService.getAllProjets(),
         this.teamService.getAllEquipes(),
         this.chargeService.getAllCharges(),
@@ -260,7 +264,8 @@ export class PlanViewComponent implements OnInit {
         this.projetService.getAllEquipeProjetLinks(),
         this.teamService.getAllRoles(),
         this.teamService.getAllPersonnes(),
-        this.jalonService.getAllJalons()
+        this.jalonService.getAllJalons(),
+        this.rolesService.getAllRoleAttachments()
       ]);
 
       this.allProjects = projects;
@@ -271,6 +276,7 @@ export class PlanViewComponent implements OnInit {
       this.availableRoles = roles;
       this.availablePersonnes = personnes;
       this.jalons = jalons;
+      this.allRoleAttachments = roleAttachments;
 
       this.calculateUsage();
       this.buildTree();
@@ -700,30 +706,68 @@ export class PlanViewComponent implements OnInit {
         // For now, let's use charges to identify active resources
         const resourceMap = new Map<string, { label: string, type: 'role' | 'personne', jours_par_semaine: number, color?: string, charges: Map<string, number>, projectDetailedMap: Map<string, ResourceRow> }>();
 
+        // Pre-populate with all resources linked to this team
+        // Roles
+        this.allRoleAttachments
+          .filter(a => a.equipe_id === team.id)
+          .forEach(att => {
+            const role = this.availableRoles.find(r => r.id === att.role_id);
+            if (role) {
+              const rKey = `role_${role.id}`;
+              resourceMap.set(rKey, {
+                label: role.nom,
+                type: 'role',
+                jours_par_semaine: role.jours_par_semaine,
+                color: role.color,
+                charges: new Map(),
+                projectDetailedMap: new Map()
+              });
+            }
+          });
+        // Persons
+        this.availablePersonnes
+          .filter(p => p.equipe_id === team.id)
+          .forEach(p => {
+            const rKey = `personne_${p.id}`;
+            resourceMap.set(rKey, {
+              label: `${p.prenom} ${p.nom}`,
+              type: 'personne',
+              jours_par_semaine: p.jours_par_semaine,
+              color: p.color,
+              charges: new Map(),
+              projectDetailedMap: new Map()
+            });
+          });
+
         teamCharges.forEach(charge => {
           let rKey: string;
-          let rLabel: string;
-          let rType: 'role' | 'personne';
-          let rJours: number = 0;
-          let rColor: string | undefined;
-
           if (charge.role_id) {
             rKey = `role_${charge.role_id}`;
-            const role = this.availableRoles.find(r => r.id === charge.role_id);
-            rLabel = role ? role.nom : "Unknown Role";
-            rJours = role?.jours_par_semaine || 0;
-            rType = 'role';
-            rColor = role?.color;
           } else if (charge.personne_id) {
             rKey = `personne_${charge.personne_id}`;
-            const p = this.availablePersonnes.find(pers => pers.id === charge.personne_id);
-            rLabel = p ? `${p.prenom} ${p.nom}` : "Unknown Person";
-            rJours = p?.jours_par_semaine || 0;
-            rType = 'personne';
-            rColor = p?.color;
           } else return;
 
           if (!resourceMap.has(rKey)) {
+            // This should not happen now as we pre-populated, but for safety:
+            let rLabel: string;
+            let rType: 'role' | 'personne';
+            let rJours: number = 0;
+            let rColor: string | undefined;
+
+            if (charge.role_id) {
+              const role = this.availableRoles.find(r => r.id === charge.role_id);
+              rLabel = role ? role.nom : "Unknown Role";
+              rJours = role?.jours_par_semaine || 0;
+              rType = 'role';
+              rColor = role?.color;
+            } else {
+              const p = this.availablePersonnes.find(pers => pers.id === charge.personne_id);
+              rLabel = p ? `${p.prenom} ${p.nom}` : "Unknown Person";
+              rJours = p?.jours_par_semaine || 0;
+              rType = 'personne';
+              rColor = p?.color;
+            }
+
             resourceMap.set(rKey, {
               label: rLabel,
               type: rType,
@@ -737,6 +781,23 @@ export class PlanViewComponent implements OnInit {
           const res = resourceMap.get(rKey)!;
           const weekKey = charge.semaine_debut?.split("T")[0];
 
+          // Detailed project row - ensure it exists if there is a projet_id
+          const pId = charge.projet_id || "no_project";
+          if (!res.projectDetailedMap.has(pId)) {
+            const project = this.allProjects.find(p => p.id === pId);
+            res.projectDetailedMap.set(pId, {
+              id: pId,
+              uniqueId: `${team.id}_${rKey}_${pId}`,
+              label: project ? project.nom_projet : "Sans projet",
+              type: res.type,
+              jours_par_semaine: res.jours_par_semaine,
+              charges: new Map(),
+              color: project?.color,
+              resourceId: rKey.split('_')[1],
+              projectId: pId
+            });
+          }
+
           if (weekKey) {
             // Aggregate in resource overview
             const cur = res.charges.get(weekKey) || 0;
@@ -746,22 +807,6 @@ export class PlanViewComponent implements OnInit {
             const pCur = parentTotal.get(weekKey) || 0;
             parentTotal.set(weekKey, pCur + charge.unite_ressource);
 
-            // Detailed project row
-            const pId = charge.projet_id || "no_project";
-            if (!res.projectDetailedMap.has(pId)) {
-              const project = this.allProjects.find(p => p.id === pId);
-              res.projectDetailedMap.set(pId, {
-                id: pId,
-                uniqueId: `${team.id}_${rKey}_${pId}`,
-                label: project ? project.nom_projet : "Sans projet",
-                type: rType, // inheriting type for consistency in UI logic
-                jours_par_semaine: rJours,
-                charges: new Map(),
-                color: project?.color,
-                resourceId: res.projectDetailedMap.size === 0 ? rKey.split('_')[1] : res.projectDetailedMap.values().next().value?.resourceId, // Extract from rKey if first, otherwise copy
-                projectId: pId
-              });
-            }
             const detRow = res.projectDetailedMap.get(pId)!;
             const detCur = detRow.charges.get(weekKey) || 0;
             detRow.charges.set(weekKey, detCur + charge.unite_ressource);
@@ -888,23 +933,44 @@ export class PlanViewComponent implements OnInit {
   }
 
   // Modal & Linking Logic
-  openLinkModal(row: ParentRow) {
+  openLinkModal(row: ParentRow, child?: ChildRow) {
     this.selectedParentRow = row;
+    this.selectedChildRowToLink = child || null;
     this.selectedIdToLink = "";
-
-    const existingChildIds = new Set(row.children.map((c) => c.id));
 
     if (this.viewMode() === "project") {
       // Parent is Project, we want to add Teams
-      // Filter out teams that are already attached (via charges or existing link)
+      const existingChildIds = new Set(row.children.map((c) => c.id));
       this.linkableItems = this.allEquipes
         .filter((e) => !existingChildIds.has(e.id!))
         .map((e) => ({ id: e.id!, label: e.nom }));
-    } else {
+    } else if (this.viewMode() === "team") {
       // Parent is Team, we want to add Projects
+      const existingChildIds = new Set(row.children.map((c) => c.id));
       this.linkableItems = this.allProjects
         .filter((p) => !existingChildIds.has(p.id!))
         .map((p) => ({ id: p.id!, label: p.nom_projet }));
+    } else if (this.viewMode() === "resource") {
+      if (!child) {
+        // Level 1: Parent is Team, we want to add a Resource
+        const existingResourceIds = new Set(row.children.map(c => c.id)); // in resource mode, child.id is rKey ('role_id' or 'personne_id')
+
+        const roles = this.availableRoles
+          .filter(r => !existingResourceIds.has(`role_${r.id}`))
+          .map(r => ({ id: `role_${r.id}`, label: `Rôle: ${r.nom}`, type: 'role' as const }));
+
+        const persons = this.availablePersonnes
+          .filter(p => !existingResourceIds.has(`personne_${p.id}`))
+          .map(p => ({ id: `personne_${p.id}`, label: `Pers: ${p.prenom} ${p.nom}`, type: 'personne' as const }));
+
+        this.linkableItems = [...roles, ...persons];
+      } else {
+        // Level 2: Child is Resource, we want to add a Project
+        const existingProjectIds = new Set(child.resources.map(r => r.projectId));
+        this.linkableItems = this.allProjects
+          .filter(p => !existingProjectIds.has(p.id!))
+          .map(p => ({ id: p.id!, label: p.nom_projet }));
+      }
     }
 
     this.showLinkModal = true;
@@ -913,6 +979,7 @@ export class PlanViewComponent implements OnInit {
   closeLinkModal() {
     this.showLinkModal = false;
     this.selectedParentRow = null;
+    this.selectedChildRowToLink = null;
     this.selectedIdToLink = "";
   }
 
@@ -920,47 +987,63 @@ export class PlanViewComponent implements OnInit {
     if (!this.selectedParentRow || !this.selectedIdToLink) return;
 
     try {
-      let projetId: string;
-      let equipeId: string;
-
       if (this.viewMode() === "project") {
-        // Linking Team to Project
-        projetId = this.selectedParentRow.id;
-        equipeId = this.selectedIdToLink;
+        const projetId = this.selectedParentRow.id;
+        const equipeId = this.selectedIdToLink;
         await this.projetService.linkProjectToTeam(projetId, equipeId);
-      } else {
-        // Linking Project to Team
-        equipeId = this.selectedParentRow.id;
-        projetId = this.selectedIdToLink;
+        await this.addAllTeamResourcesToProject(equipeId, projetId);
+      } else if (this.viewMode() === "team") {
+        const equipeId = this.selectedParentRow.id;
+        const projetId = this.selectedIdToLink;
         await this.projetService.linkProjectToTeam(projetId, equipeId);
-      }
+        await this.addAllTeamResourcesToProject(equipeId, projetId);
+      } else if (this.viewMode() === "resource") {
+        if (!this.selectedChildRowToLink) {
+          // Level 1: Add Resource to Team
+          const [type, id] = this.selectedIdToLink.split('_');
+          const equipeId = this.selectedParentRow.id;
+          if (type === 'role') {
+            await this.teamService.addRoleToEquipe(equipeId, id);
+          } else {
+            await this.teamService.addPersonneToEquipe(equipeId, id);
+          }
+        } else {
+          // Level 2: Add Project to Resource
+          const equipeId = this.selectedParentRow.id;
+          const [type, resId] = this.selectedChildRowToLink.id.split('_');
+          const projetId = this.selectedIdToLink;
 
-      // Automatically add resources from the team to the project
-      const teamResources = await this.teamService.getEquipeResources(equipeId);
+          const roleId = type === 'role' ? resId : undefined;
+          const personneId = type === 'personne' ? resId : undefined;
 
-      // Filter resources to add only those not already present in the project for this team
-      // (This is a safety check, though unlikely for a fresh link)
-      const existingCharges = await this.chargeService.getChargesByProject(projetId);
-      const teamCharges = existingCharges.filter(c => c.equipe_id === equipeId);
-
-      for (const resource of teamResources) {
-        const isAlreadyAdded = teamCharges.some(c =>
-          (resource.type === 'role' && c.role_id === resource.id) ||
-          (resource.type === 'personne' && c.personne_id === resource.id)
-        );
-
-        if (!isAlreadyAdded) {
-          const roleId = resource.type === 'role' ? resource.id : undefined;
-          const personneId = resource.type === 'personne' ? resource.id : undefined;
           await this.chargeService.createChargeWithoutDates(projetId, equipeId, roleId, personneId);
         }
       }
 
-      await this.loadData(); // Reload to refresh tree
+      await this.loadData();
       this.closeLinkModal();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error linking item:", error);
-      alert("Erreur lors de l'ajout du lien.");
+      alert(error.message || "Erreur lors de l'ajout du lien.");
+    }
+  }
+
+  private async addAllTeamResourcesToProject(equipeId: string, projetId: string) {
+    const teamResources = await this.teamService.getEquipeResources(equipeId);
+    const existingCharges = await this.chargeService.getChargesByProject(projetId);
+    const teamCharges = existingCharges.filter(c => c.equipe_id === equipeId);
+
+    for (const resource of teamResources) {
+      const isAlreadyAdded = teamCharges.some(c =>
+        (resource.type === 'role' && c.role_id === resource.id) ||
+        (resource.type === 'personne' && c.personne_id === resource.id)
+      );
+
+      if (!isAlreadyAdded) {
+        const roleId = resource.type === 'role' ? resource.id : undefined;
+        const personneId = resource.type === 'personne' ? resource.id : undefined;
+        await this.chargeService.createChargeWithoutDates(projetId, equipeId, roleId, personneId);
+      }
     }
   }
 
@@ -1658,12 +1741,14 @@ export class PlanViewComponent implements OnInit {
           const personneId = type === 'personne' ? resId : undefined;
           const equipeId = parent.id;
 
-          // We don't have a direct "delete all projects for resource in team" in one go that unlinks, 
-          // but we can delete charges for each project or use a broader service method if available.
-          // For now, let's delete charges for this resource in this team.
-          // Note: unlinkProjectFromTeam might not be appropriate here as it unlinks the whole project from the team.
-          // If the goal is to remove the resource from the team's planning:
           await this.chargeService.deleteChargesForResource(undefined as any, equipeId, roleId, personneId);
+
+          // Also remove the attachment from the team
+          if (type === 'role') {
+            await this.teamService.removeRoleFromEquipe(resId, equipeId);
+          } else {
+            await this.teamService.removePersonneFromEquipe(resId);
+          }
         } else {
           let projetId: string;
           let equipeId: string;
