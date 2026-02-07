@@ -18,6 +18,27 @@
 .project-draggable-group:last-child {
   border: none;
 }
+
+/* Sticky Parent Rows in Tree View */
+.project-draggable-group > .calendar-row:first-child {
+  position: sticky;
+  top: 100px; /* Offset for Header (60px) + Milestones (40px) */
+  z-index: 80;
+  background: #f9fafb;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.calendar-body.cdk-drop-list-dragging .project-draggable-group > .calendar-row:first-child {
+  position: relative; /* Disable stickiness during drag */
+  top: auto;
+  z-index: auto;
+}
+
+.project-draggable-group > .calendar-row:first-child .label-cell {
+  background: #f9fafb;
+  z-index: 85;
+}
+
 .calendar-body.cdk-drop-list-dragging .project-draggable-group:not(.cdk-drag-placeholder) {
   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }
