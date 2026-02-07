@@ -735,7 +735,7 @@
           {{
             viewMode() === "project"
               ? "Ajouter une équipe"
-              : viewMode() === "team"
+              : viewMode() === "team" || viewMode() === "resource"
                 ? "Ajouter un projet"
                 : "Ajouter une ressource"
           }}
@@ -752,11 +752,9 @@
             {{
               viewMode() === "project"
                 ? "Sélectionner une équipe"
-                : viewMode() === "team"
+                : viewMode() === "team" || viewMode() === "resource"
                   ? "Sélectionner un projet"
-                  : selectedChildRowToLink
-                    ? "Sélectionner un projet"
-                    : "Sélectionner une ressource"
+                  : "Sélectionner une ressource"
             }}
           </label>
           <select [(ngModel)]="selectedIdToLink" class="form-control">
