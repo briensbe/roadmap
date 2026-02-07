@@ -835,6 +835,65 @@
   user-select: none; /* Prevent text selection */
 }
 
+/* Summary main row: charge / capacity */
+.summary-main {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  font-size: 12px;
+}
+
+.summary-charge {
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.summary-separator {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.summary-capacity {
+  font-weight: 500;
+  font-size: 10px;
+  color: #64748b;
+}
+
+/* Availability indicator in aggregated cells */
+.summary-availability {
+  font-size: 10px;
+  font-weight: 500;
+  margin-top: 1px;
+}
+
+.summary-availability.availability-positive {
+  color: #059669;
+}
+
+.summary-availability.availability-zero {
+  color: #d97706;
+}
+
+.summary-availability.availability-negative {
+  color: #dc2626;
+}
+
+/* Team cell availability states - subtle left border indicator */
+.team-cell-positive {
+  border-left: 3px solid #10b981 !important;
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.08) 0%, #f9fafb 30%) !important;
+}
+
+.team-cell-zero {
+  border-left: 3px solid #f59e0b !important;
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.08) 0%, #f9fafb 30%) !important;
+}
+
+.team-cell-negative {
+  border-left: 3px solid #ef4444 !important;
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.08) 0%, #f9fafb 30%) !important;
+}
+
 .empty-state-weeks {
   padding: 40px;
   text-align: center;

@@ -292,11 +292,44 @@
                   </div>
                 </div>
                 <div class="weeks-container">
-                  <div *ngFor="let week of displayedWeeks" class="week-cell team-cell">
-                    <div class="team-summary" *ngIf="getParentTotal(row, week) > 0">
-                      <!-- <div class="capacity-value">
-                        {{ getParentTotal(row, week) | number : "1.0-1" }}
-                      </div> -->
+                  <div
+                    *ngFor="let week of displayedWeeks"
+                    class="week-cell team-cell"
+                    [class.team-cell-positive]="
+                      viewMode() === 'resource' && getParentAvailabilityStatus(row, week) === 'positive'
+                    "
+                    [class.team-cell-zero]="
+                      viewMode() === 'resource' && getParentAvailabilityStatus(row, week) === 'zero'
+                    "
+                    [class.team-cell-negative]="
+                      viewMode() === 'resource' && getParentAvailabilityStatus(row, week) === 'negative'
+                    "
+                  >
+                    <!-- Resource View: Show cumulative data -->
+                    <div
+                      class="team-summary"
+                      *ngIf="
+                        viewMode() === 'resource' && (getParentTotal(row, week) > 0 || getParentCapacity(row, week) > 0)
+                      "
+                    >
+                      <div class="summary-main">
+                        <span class="summary-charge">{{ getParentTotal(row, week) | number: "1.0-1" }}</span>
+                        <span class="summary-separator">/</span>
+                        <span class="summary-capacity">{{ getParentCapacity(row, week) | number: "1.0-1" }}</span>
+                      </div>
+                      <div
+                        class="summary-availability"
+                        [class.availability-positive]="getParentAvailabilityStatus(row, week) === 'positive'"
+                        [class.availability-zero]="getParentAvailabilityStatus(row, week) === 'zero'"
+                        [class.availability-negative]="getParentAvailabilityStatus(row, week) === 'negative'"
+                      >
+                        {{ getParentAvailabilityStatus(row, week) === "positive" ? "+" : ""
+                        }}{{ getParentAvailability(row, week) | number: "1.0-1" }}
+                      </div>
+                    </div>
+                    <!-- Other views: Keep empty or simple display -->
+                    <div class="team-summary" *ngIf="viewMode() !== 'resource' && getParentTotal(row, week) > 0">
+                      <div class="capacity-value">{{ getParentTotal(row, week) | number: "1.0-1" }}</div>
                     </div>
                   </div>
                 </div>

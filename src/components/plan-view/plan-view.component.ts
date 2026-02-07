@@ -1049,6 +1049,57 @@ export class PlanViewComponent implements OnInit, OnDestroy {
     return row.totalCharges.get(weekKey) || 0;
   }
 
+  /**
+   * Calculate cumulative capacity for a parent row in Resource view.
+   * In Resource mode, parent.id is `${team.id}_${rKey}` where rKey is role_xxx or personne_xxx.
+   */
+  getParentCapacity(row: ParentRow, week: Date): number {
+    const weekKey = week.toISOString().split("T")[0];
+    const parts = row.id.split('_');
+    if (parts.length < 2) return 0;
+
+    const teamId = parts[0];
+    const resourceType = parts[1]; // 'role' or 'personne'
+    const resourceId = parts.slice(2).join('_'); // Handle IDs with underscores
+
+    // Find matching capacity record
+    const cap = this.allCapacities.find(c =>
+      c.equipe_id === teamId &&
+      c.semaine_debut.startsWith(weekKey) &&
+      (resourceType === 'role' ? c.role_id === resourceId : c.personne_id === resourceId)
+    );
+
+    return cap ? cap.capacite : 0;
+  }
+
+  /**
+   * Calculate cumulative availability for a parent row in Resource view.
+   */
+  getParentAvailability(row: ParentRow, week: Date): number {
+    const capacity = this.getParentCapacity(row, week);
+    const charges = this.getParentTotal(row, week);
+    return capacity - charges;
+  }
+
+  /**
+   * Get availability status for color indication.
+   * Returns 'positive', 'zero', 'negative', or 'none' (no data).
+   */
+  getParentAvailabilityStatus(row: ParentRow, week: Date): 'positive' | 'zero' | 'negative' | 'none' {
+    const capacity = this.getParentCapacity(row, week);
+    const charges = this.getParentTotal(row, week);
+
+    // If neither capacity nor charges exist for this week, return 'none'
+    if (capacity === 0 && charges === 0) {
+      return 'none';
+    }
+
+    const availability = capacity - charges;
+    if (availability > 0) return 'positive';
+    if (availability === 0) return 'zero';
+    return 'negative';
+  }
+
   getChildValue(child: ChildRow, week: Date): number {
     const weekKey = week.toISOString().split("T")[0];
     return child.charges.get(weekKey) || 0;
@@ -1519,8 +1570,12 @@ export class PlanViewComponent implements OnInit, OnDestroy {
           equipeId = cell.parentId;
           projetId = cell.childId;
         } else {
-          // Parent is Team, Child is Resource, Grandchild is Project
-          equipeId = cell.parentId;
+          // Resource mode: Parent.id is `${team.id}_${resourceType}_${resourceId}`
+          // We need to extract just the team.id (first part before the first underscore that separates it from 'role_' or 'personne_')
+          const parentIdParts = cell.parentId.split('_');
+          // The team ID is a UUID, which doesn't contain underscores in its format (8-4-4-4-12 hex)
+          // So team.id is parentIdParts[0], and the rest is the resource key
+          equipeId = parentIdParts[0];
           projetId = cell.resource.projectId!;
         }
 
