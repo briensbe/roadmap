@@ -1,6 +1,6 @@
 <div class="capacity-container">
   <!-- Sexy Tooltip Singleton -->
-  <div class="sexy-tooltip" [class.visible]="activeTooltip" [style.left.px]="tooltipX" [style.top.px]="tooltipY">
+  <div #tooltipElement class="sexy-tooltip" [class.visible]="activeTooltip">
     {{ activeTooltip }}
   </div>
   <div class="capacity-header">
@@ -285,7 +285,7 @@
                     <button
                       class="btn-hover-add"
                       (click)="openLinkModal(row); $event.stopPropagation()"
-                      [title]="viewMode() === 'resource' ? 'Ajouter une ressource' : 'Ajouter'"
+                      [title]="viewMode() === 'resource' ? 'Ajouter un projet' : 'Ajouter'"
                     >
                       <lucide-icon [img]="Plus" [size]="18"></lucide-icon>
                     </button>
@@ -312,7 +312,6 @@
                       class="calendar-row"
                       [attr.data-resource-id]="getResourceUniqueId(resource, child, row)"
                       (mousedown)="onMouseDown($event, resource, child, row)"
-                      (mousemove)="onMouseMove($event, resource, child, row)"
                       (mouseup)="onMouseUp()"
                       (mouseleave)="onMouseUp()"
                     >
@@ -378,36 +377,48 @@
                           *ngFor="let week of displayedWeeks; let i = index"
                           class="week-cell resource-detail-cell"
                           [class.selected]="isCellSelected(resource, week)"
-                          [class.has-capacity]="getResourceValue(resource, week) > 0"
+                          [class.has-capacity]="resource.cellData?.[i]?.value! > 0"
                           [class.cell-positive]="
-                            shouldShowAvailability(resource, week, child.id) &&
-                            getAvailability(resource, week, child.id) > 0
+                            resource.cellData?.[i]?.showAvailability &&
+                            resource.cellData?.[i]?.hasCapRecord &&
+                            (resource.cellData?.[i]?.value! > 0 || showAvailability()) &&
+                            resource.cellData?.[i]?.isPositive
                           "
                           [class.cell-zero]="
-                            shouldShowAvailability(resource, week, child.id) &&
-                            getAvailability(resource, week, child.id) === 0
+                            resource.cellData?.[i]?.showAvailability &&
+                            resource.cellData?.[i]?.hasCapRecord &&
+                            (resource.cellData?.[i]?.value! > 0 || showAvailability()) &&
+                            resource.cellData?.[i]?.isZero
                           "
                           [class.cell-negative]="
-                            shouldShowAvailability(resource, week, child.id) &&
-                            getAvailability(resource, week, child.id) < 0
+                            resource.cellData?.[i]?.showAvailability &&
+                            resource.cellData?.[i]?.hasCapRecord &&
+                            (resource.cellData?.[i]?.value! > 0 || showAvailability()) &&
+                            resource.cellData?.[i]?.isNegative
                           "
                           [attr.data-week-index]="i"
                         >
                           <div class="cell-content">
-                            <div *ngIf="getResourceValue(resource, week) > 0" class="capacity-value">
-                              {{ getResourceValue(resource, week) | number: "1.0-1" }}
+                            <div *ngIf="resource.cellData?.[i]?.value! > 0" class="capacity-value">
+                              {{ resource.cellData?.[i]?.value | number: "1.0-1" }}
                             </div>
                             <div
                               class="availability-indicator"
-                              *ngIf="shouldShowAvailability(resource, week, child.id)"
+                              *ngIf="
+                                resource.cellData?.[i]?.showAvailability &&
+                                (resource.cellData?.[i]?.value! > 0 ||
+                                  (showAvailability() &&
+                                    (resource.cellData?.[i]?.availability !== 0 ||
+                                      resource.cellData?.[i]?.hasCapRecord)))
+                              "
                               [ngClass]="{
-                                'availability-positive': getAvailability(resource, week, child.id) > 0,
-                                'availability-zero': getAvailability(resource, week, child.id) === 0,
-                                'availability-negative': getAvailability(resource, week, child.id) < 0,
+                                'availability-positive': resource.cellData?.[i]?.isPositive,
+                                'availability-zero': resource.cellData?.[i]?.isZero,
+                                'availability-negative': resource.cellData?.[i]?.isNegative,
                               }"
                             >
-                              {{ getAvailability(resource, week, child.id) > 0 ? "+" : ""
-                              }}{{ getAvailability(resource, week, child.id) | number: "1.0-1" }}
+                              {{ resource.cellData?.[i]?.isPositive ? "+" : ""
+                              }}{{ resource.cellData?.[i]?.availability | number: "1.0-1" }}
                             </div>
                           </div>
                         </div>
@@ -489,7 +500,6 @@
                         class="calendar-row"
                         [attr.data-resource-id]="getResourceUniqueId(resource, child, row)"
                         (mousedown)="onMouseDown($event, resource, child, row)"
-                        (mousemove)="onMouseMove($event, resource, child, row)"
                         (mouseup)="onMouseUp()"
                         (mouseleave)="onMouseUp()"
                       >
@@ -543,47 +553,48 @@
                             *ngFor="let week of displayedWeeks; let i = index"
                             class="week-cell resource-detail-cell"
                             [class.selected]="isCellSelected(resource, week)"
-                            [class.has-capacity]="getResourceValue(resource, week) > 0"
+                            [class.has-capacity]="resource.cellData?.[i]?.value! > 0"
                             [class.cell-positive]="
-                              shouldShowAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) &&
-                              getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) > 0
+                              resource.cellData?.[i]?.showAvailability &&
+                              resource.cellData?.[i]?.hasCapRecord &&
+                              (resource.cellData?.[i]?.value! > 0 || showAvailability()) &&
+                              resource.cellData?.[i]?.isPositive
                             "
                             [class.cell-zero]="
-                              shouldShowAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) &&
-                              getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) === 0
+                              resource.cellData?.[i]?.showAvailability &&
+                              resource.cellData?.[i]?.hasCapRecord &&
+                              (resource.cellData?.[i]?.value! > 0 || showAvailability()) &&
+                              resource.cellData?.[i]?.isZero
                             "
                             [class.cell-negative]="
-                              shouldShowAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) &&
-                              getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) < 0
+                              resource.cellData?.[i]?.showAvailability &&
+                              resource.cellData?.[i]?.hasCapRecord &&
+                              (resource.cellData?.[i]?.value! > 0 || showAvailability()) &&
+                              resource.cellData?.[i]?.isNegative
                             "
                             [attr.data-week-index]="i"
                           >
                             <div class="cell-content">
-                              <div *ngIf="getResourceValue(resource, week) > 0" class="capacity-value">
-                                {{ getResourceValue(resource, week) | number: "1.0-1" }}
+                              <div *ngIf="resource.cellData?.[i]?.value! > 0" class="capacity-value">
+                                {{ resource.cellData?.[i]?.value | number: "1.0-1" }}
                               </div>
                               <div
                                 class="availability-indicator"
                                 *ngIf="
-                                  shouldShowAvailability(resource, week, viewMode() === 'project' ? child.id : row.id)
+                                  resource.cellData?.[i]?.showAvailability &&
+                                  (resource.cellData?.[i]?.value! > 0 ||
+                                    (showAvailability() &&
+                                      (resource.cellData?.[i]?.availability !== 0 ||
+                                        resource.cellData?.[i]?.hasCapRecord)))
                                 "
                                 [ngClass]="{
-                                  'availability-positive':
-                                    getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) > 0,
-                                  'availability-zero':
-                                    getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) === 0,
-                                  'availability-negative':
-                                    getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) < 0,
+                                  'availability-positive': resource.cellData?.[i]?.isPositive,
+                                  'availability-zero': resource.cellData?.[i]?.isZero,
+                                  'availability-negative': resource.cellData?.[i]?.isNegative,
                                 }"
                               >
-                                {{
-                                  getAvailability(resource, week, viewMode() === "project" ? child.id : row.id) > 0
-                                    ? "+"
-                                    : ""
-                                }}{{
-                                  getAvailability(resource, week, viewMode() === "project" ? child.id : row.id)
-                                    | number: "1.0-1"
-                                }}
+                                {{ resource.cellData?.[i]?.isPositive ? "+" : ""
+                                }}{{ resource.cellData?.[i]?.availability | number: "1.0-1" }}
                               </div>
                             </div>
                           </div>
@@ -604,7 +615,6 @@
             class="calendar-row"
             [attr.data-resource-id]="getResourceUniqueId(row.resource, row.child, row.parent)"
             (mousedown)="onMouseDown($event, row.resource, row.child, row.parent)"
-            (mousemove)="onMouseMove($event, row.resource, row.child, row.parent)"
             (mouseup)="onMouseUp()"
             (mouseleave)="onMouseUp()"
           >
@@ -647,54 +657,47 @@
                 *ngFor="let week of displayedWeeks; let i = index"
                 class="week-cell resource-detail-cell"
                 [class.selected]="isCellSelected(row.resource, week)"
-                [class.has-capacity]="getResourceValue(row.resource, week) > 0"
+                [class.has-capacity]="row.resource.cellData?.[i]?.value! > 0"
                 [class.cell-positive]="
-                  shouldShowAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id) &&
-                  getAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id) > 0
+                  row.resource.cellData?.[i]?.showAvailability &&
+                  row.resource.cellData?.[i]?.hasCapRecord &&
+                  (row.resource.cellData?.[i]?.value! > 0 || showAvailability()) &&
+                  row.resource.cellData?.[i]?.isPositive
                 "
                 [class.cell-zero]="
-                  shouldShowAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id) &&
-                  getAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id) === 0
+                  row.resource.cellData?.[i]?.showAvailability &&
+                  row.resource.cellData?.[i]?.hasCapRecord &&
+                  (row.resource.cellData?.[i]?.value! > 0 || showAvailability()) &&
+                  row.resource.cellData?.[i]?.isZero
                 "
                 [class.cell-negative]="
-                  shouldShowAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id) &&
-                  getAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id) < 0
+                  row.resource.cellData?.[i]?.showAvailability &&
+                  row.resource.cellData?.[i]?.hasCapRecord &&
+                  (row.resource.cellData?.[i]?.value! > 0 || showAvailability()) &&
+                  row.resource.cellData?.[i]?.isNegative
                 "
                 [attr.data-week-index]="i"
               >
                 <div class="cell-content">
-                  <div *ngIf="getResourceValue(row.resource, week) > 0" class="capacity-value">
-                    {{ getResourceValue(row.resource, week) | number: "1.0-1" }}
+                  <div *ngIf="row.resource.cellData?.[i]?.value! > 0" class="capacity-value">
+                    {{ row.resource.cellData?.[i]?.value | number: "1.0-1" }}
                   </div>
                   <div
                     class="availability-indicator"
                     *ngIf="
-                      shouldShowAvailability(
-                        row.resource,
-                        week,
-                        viewMode() === 'project' ? row.child.id : row.parent.id
-                      )
+                      row.resource.cellData?.[i]?.showAvailability &&
+                      (row.resource.cellData?.[i]?.value! > 0 ||
+                        (showAvailability() &&
+                          (row.resource.cellData?.[i]?.availability !== 0 || row.resource.cellData?.[i]?.hasCapRecord)))
                     "
                     [ngClass]="{
-                      'availability-positive':
-                        getAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id) >
-                        0,
-                      'availability-zero':
-                        getAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id) ===
-                        0,
-                      'availability-negative':
-                        getAvailability(row.resource, week, viewMode() === 'project' ? row.child.id : row.parent.id) <
-                        0,
+                      'availability-positive': row.resource.cellData?.[i]?.isPositive,
+                      'availability-zero': row.resource.cellData?.[i]?.isZero,
+                      'availability-negative': row.resource.cellData?.[i]?.isNegative,
                     }"
                   >
-                    {{
-                      getAvailability(row.resource, week, viewMode() === "project" ? row.child.id : row.parent.id) > 0
-                        ? "+"
-                        : ""
-                    }}{{
-                      getAvailability(row.resource, week, viewMode() === "project" ? row.child.id : row.parent.id)
-                        | number: "1.0-1"
-                    }}
+                    {{ row.resource.cellData?.[i]?.isPositive ? "+" : ""
+                    }}{{ row.resource.cellData?.[i]?.availability | number: "1.0-1" }}
                   </div>
                 </div>
               </div>

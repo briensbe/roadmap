@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef, HostListener, NgModule } from "@angular/core";
+import { Component, OnInit, ViewChild, ElementRef, HostListener, NgModule, ChangeDetectionStrategy, ChangeDetectorRef, NgZone, OnDestroy } from "@angular/core";
 import { CommonModule, NgIf, NgFor } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { TeamService } from "../../services/team.service";
@@ -8,6 +8,8 @@ import { RolesService } from "../../services/roles.service";
 import { JalonService } from "../../services/jalon.service";
 import { Equipe, Projet, Charge, Role, Personne, Capacite, Jalon } from "../../models/types";
 import { CalendarService } from "../../services/calendar.service";
+import { PersonnesService } from "../../services/personnes.service";
+
 import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink } from "lucide-angular";
 import { getISOWeekYear } from "date-fns";
 import { calculateBestToolbarPosition, calculateBestPopoverPosition, ToolbarPosition, PopoverPosition } from "../../utils/selection-positioning";
@@ -28,6 +30,16 @@ export class LucideIconsModule { }
 import { MilestoneModalComponent } from '../milestone-modal.component';
 import { ConfirmModalComponent } from '../confirm-modal.component';
 
+interface ResourceCellData {
+  value: number;
+  availability: number;
+  showAvailability: boolean;
+  isPositive: boolean;
+  isZero: boolean;
+  isNegative: boolean;
+  hasCapRecord: boolean;
+}
+
 interface ResourceRow {
   id: string;
   uniqueId: string; // Unique identifier combining parent, child, and resource context
@@ -38,6 +50,7 @@ interface ResourceRow {
   color?: string;
   resourceId?: string; // Always the role or personne id
   projectId?: string; // Always the project id
+  cellData?: ResourceCellData[];
 }
 
 interface ChildRow {
@@ -74,9 +87,12 @@ interface FlatRow {
   standalone: true,
   imports: [CommonModule, NgIf, NgFor, FormsModule, LucideIconsModule, MilestoneModalComponent, SelectionToolbarComponent, ConfirmModalComponent, ProjectModalComponent, DragDropModule],
   templateUrl: "./plan-view.component.html",
-  styleUrl: "./plan-view.component.css"
+  styleUrl: "./plan-view.component.css",
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class PlanViewComponent implements OnInit {
+export class PlanViewComponent implements OnInit, OnDestroy {
+  @ViewChild('tooltipElement') tooltipElement?: ElementRef<HTMLElement>;
+
   // Milestone Modal props
   showMilestoneModal = false;
   selectedJalon: Jalon | null = null;
@@ -98,6 +114,8 @@ export class PlanViewComponent implements OnInit {
   private manualStates = new Map<string, boolean>();
 
   selectedCapacityYear: 'all' | '2025' | '2026' | 'custom' = 'all';
+  private globalMouseMoveListener?: () => void;
+
   selectedStartDate: Date | null = null;
   showYearPopover = false;
   popoverPosition: PopoverPosition | null = null;
@@ -191,6 +209,9 @@ export class PlanViewComponent implements OnInit {
   // Drag selection
   isDragging = false;
   dragStartResource: ResourceRow | null = null;
+  private dragStartChild?: ChildRow;
+  private dragStartParent?: ParentRow;
+
   dragStartWeekIndex: number = -1;
   dragEndWeekIndex: number = -1;
   selectedCells: Array<{ resource: ResourceRow; week: Date; childId: string; parentId: string }> = [];
@@ -201,7 +222,6 @@ export class PlanViewComponent implements OnInit {
   bulkChargeValue: number | null = null;
   isSaving = false;
 
-  jalons: Jalon[] = [];
 
   // Confirm Modal state
   showConfirmModal = false;
@@ -229,8 +249,12 @@ export class PlanViewComponent implements OnInit {
     private rolesService: RolesService,
     private calendarService: CalendarService,
     private jalonService: JalonService,
-    private settingsService: SettingsService
+    private settingsService: SettingsService,
+    private personnesService: PersonnesService,
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone
   ) { }
+
 
   expandAll() {
     this.isDefaultExpanded = true;
@@ -250,11 +274,28 @@ export class PlanViewComponent implements OnInit {
     });
   }
 
-  async ngOnInit() {
+  ngOnInit() {
+    this.loadData();
     this.generateWeeks();
-    await this.loadData();
-    this.externalReferenceUrl = await this.settingsService.getSettingValue("external_reference_url", "global");
+
+    this.settingsService.getSettingValue("external_reference_url", "global").then(value => {
+      this.externalReferenceUrl = value;
+      this.cdr.markForCheck();
+    });
+
+    this.ngZone.runOutsideAngular(() => {
+      const listener = (event: MouseEvent) => this.onGlobalMouseMove(event);
+      window.addEventListener('mousemove', listener);
+      this.globalMouseMoveListener = () => window.removeEventListener('mousemove', listener);
+    });
   }
+
+  ngOnDestroy() {
+    if (this.globalMouseMoveListener) {
+      this.globalMouseMoveListener();
+    }
+  }
+
 
   generateWeeks() {
     this.displayedWeeks = [];
@@ -273,33 +314,92 @@ export class PlanViewComponent implements OnInit {
 
   async loadData() {
     try {
-      const [projects, equipes, charges, capacities, links, roles, personnes, jalons, roleAttachments] = await Promise.all([
-        this.projetService.getAllProjets(),
+      const [equipes, charges, projects, roles, personnes, jalons, links, roleAttachments, capacities] = await Promise.all([
         this.teamService.getAllEquipes(),
         this.chargeService.getAllCharges(),
-        this.teamService.getAllCapacities(),
-        this.projetService.getAllEquipeProjetLinks(),
-        this.teamService.getAllRoles(),
-        this.teamService.getAllPersonnes(),
+        this.projetService.getAllProjets(),
+        this.rolesService.getAllRoles(),
+        this.personnesService.getAllPersonnes(),
         this.jalonService.getAllJalons(),
-        this.rolesService.getAllRoleAttachments()
+        this.projetService.getAllEquipeProjetLinks(),
+        this.rolesService.getAllRoleAttachments(),
+        this.teamService.getAllCapacities()
       ]);
 
-      this.allProjects = projects;
       this.allEquipes = equipes;
       this.allCharges = charges;
-      this.allCapacities = capacities;
-      this.allLinks = links;
+      this.allProjects = projects;
       this.availableRoles = roles;
       this.availablePersonnes = personnes;
-      this.jalons = jalons;
+      this.allJalons = jalons;
+      this.allLinks = links;
       this.allRoleAttachments = roleAttachments;
+      this.allCapacities = capacities;
 
-      this.calculateUsage();
       this.buildTree();
+      this.cdr.markForCheck();
     } catch (error) {
-      console.error("Error loading data", error);
+      console.error("Error loading data:", error);
     }
+  }
+
+  precalculateResources() {
+    this.rowsAll.forEach(parent => {
+      // In resource mode, parent.id is `${team.id}_${rKey}`.
+      // In team mode, parent.id is just `${team.id}`.
+      const teamIdFromParent = this.viewMode() === 'resource' ? parent.id.split('_')[0] : parent.id;
+
+      parent.children.forEach(child => {
+        // In project mode, children are teams, so teamId is child.id
+        // In team/resource mode, teamId comes from parent
+        const teamId = this.viewMode() === 'project' ? child.id : teamIdFromParent;
+
+        child.resources.forEach(resource => {
+          this.precalculateResource(resource, teamId);
+        });
+      });
+    });
+  }
+
+  precalculateResource(resource: ResourceRow, teamId: string) {
+    resource.cellData = [];
+    for (const week of this.displayedWeeks) {
+      const value = this.getResourceValue(resource, week);
+      const availability = this.getAvailability(resource, week, teamId);
+
+      const weekKey = week.toISOString().split("T")[0];
+      const hasCapRecord = this.allCapacities.some(c =>
+        c.equipe_id === teamId &&
+        c.semaine_debut.startsWith(weekKey) &&
+        (resource.type === 'role' ? c.role_id === (resource.resourceId || resource.id) : c.personne_id === (resource.resourceId || resource.id))
+      );
+
+      // Relevance check for persons
+      let isRelevant = true;
+      if (resource.type === "personne") {
+        const personne = this.availablePersonnes.find((p) => p.id === (resource.resourceId || resource.id));
+        isRelevant = personne ? personne.equipe_id === teamId : false;
+      }
+
+      resource.cellData.push({
+        value,
+        availability,
+        showAvailability: isRelevant,
+        isPositive: availability > 0,
+        isZero: availability === 0,
+        isNegative: availability < 0,
+        hasCapRecord: hasCapRecord
+      });
+    }
+  }
+
+
+  private shouldShowAvailabilityInternal(resource: ResourceRow, week: Date, teamId: string): boolean {
+    // Exact same logic as shouldShowAvailability but without the this.showAvailability() check
+    if (resource.type === "role") return true;
+    const personne = this.availablePersonnes.find((p) => p.id === resource.id);
+    if (!personne) return false;
+    return personne.equipe_id === teamId;
   }
 
 
@@ -310,7 +410,7 @@ export class PlanViewComponent implements OnInit {
     endOfWeek.setDate(startOfWeek.getDate() + 6);
     endOfWeek.setHours(23, 59, 59, 999);
 
-    return this.jalons.filter(j => {
+    return this.allJalons.filter(j => {
       const jDate = new Date(j.date_jalon);
       return jDate >= startOfWeek && jDate <= endOfWeek;
     });
@@ -857,7 +957,9 @@ export class PlanViewComponent implements OnInit {
     }
 
     // Keep a copy of unfiltered rows and apply active filters
+    this.calculateUsage(); // Ensure usage is fresh
     this.rowsAll = [...this.rows];
+    this.precalculateResources();
     this.applyFilters();
   }
 
@@ -902,16 +1004,22 @@ export class PlanViewComponent implements OnInit {
   goToToday() {
     this.currentDate = new Date();
     this.generateWeeks();
+    this.precalculateResources();
+    this.cdr.markForCheck();
   }
 
   goToPreviousMonth() {
     this.currentDate.setMonth(this.currentDate.getMonth() - 1);
     this.generateWeeks();
+    this.precalculateResources();
+    this.cdr.markForCheck();
   }
 
   goToNextMonth() {
     this.currentDate.setMonth(this.currentDate.getMonth() + 1);
     this.generateWeeks();
+    this.precalculateResources();
+    this.cdr.markForCheck();
   }
 
   toggleRow(row: ParentRow) {
@@ -971,20 +1079,15 @@ export class PlanViewComponent implements OnInit {
         .map((p) => ({ id: p.id!, label: p.nom_projet }));
     } else if (this.viewMode() === "resource") {
       if (!child) {
-        // Level 1: Parent is Team, we want to add a Resource
-        const existingResourceIds = new Set(row.children.map(c => c.id)); // in resource mode, child.id is rKey ('role_id' or 'personne_id')
-
-        const roles = this.availableRoles
-          .filter(r => !existingResourceIds.has(`role_${r.id}`))
-          .map(r => ({ id: `role_${r.id}`, label: `Rôle: ${r.nom}`, type: 'role' as const }));
-
-        const persons = this.availablePersonnes
-          .filter(p => !existingResourceIds.has(`personne_${p.id}`))
-          .map(p => ({ id: `personne_${p.id}`, label: `Pers: ${p.prenom} ${p.nom}`, type: 'personne' as const }));
-
-        this.linkableItems = [...roles, ...persons];
+        // Level 1 Parent: [Team - Resource]
+        // We want to add a PROJECT to this resource
+        const existingProjectIds = new Set(row.children[0]?.resources.map(r => r.projectId) || []);
+        this.linkableItems = this.allProjects
+          .filter(p => !existingProjectIds.has(p.id!))
+          .map(p => ({ id: p.id!, label: p.nom_projet }));
       } else {
-        // Level 2: Child is Resource, we want to add a Project
+        // Level 2 Child: Resource (already expanded)
+        // We want to add a PROJECT to this resource
         const existingProjectIds = new Set(child.resources.map(r => r.projectId));
         this.linkableItems = this.allProjects
           .filter(p => !existingProjectIds.has(p.id!))
@@ -1018,24 +1121,24 @@ export class PlanViewComponent implements OnInit {
         await this.addAllTeamResourcesToProject(equipeId, projetId);
       } else if (this.viewMode() === "resource") {
         if (!this.selectedChildRowToLink) {
-          // Level 1: Add Resource to Team
-          const [type, id] = this.selectedIdToLink.split('_');
-          const equipeId = this.selectedParentRow.id;
-          if (type === 'role') {
-            await this.teamService.addRoleToEquipe(equipeId, id);
-          } else {
-            await this.teamService.addPersonneToEquipe(equipeId, id);
-          }
+          // Level 1: Add Project to Resource
+          // selectedParentRow.id is `${teamId}_${rKey}`
+          const [equipeId, type, rawResId] = this.selectedParentRow.id.split('_');
+          const projetId = this.selectedIdToLink;
+
+          const roleId = type === 'role' ? rawResId : undefined;
+          const personneId = type === 'personne' ? rawResId : undefined;
+
+          await this.chargeService.createChargeWithoutDates(projetId, equipeId, roleId, personneId);
         } else {
-          // Level 2: Add Project to Resource
-          const equipeId = this.selectedParentRow.id;
+          // Level 2: Add Project to Resource (already filtered)
+          const equipeId = this.selectedParentRow.id.split('_')[0];
           const [type, resId] = this.selectedChildRowToLink.id.split('_');
           const projetId = this.selectedIdToLink;
 
           const roleId = type === 'role' ? resId : undefined;
-          const personneId = type === 'personne' ? resId : undefined;
 
-          await this.chargeService.createChargeWithoutDates(projetId, equipeId, roleId, personneId);
+          await this.chargeService.createChargeWithoutDates(projetId, equipeId, roleId, type === 'personne' ? resId : undefined);
         }
       }
 
@@ -1211,9 +1314,43 @@ export class PlanViewComponent implements OnInit {
     }, this.HIDE_DELAY);
   }
 
-  @HostListener('mousemove', ['$event'])
+  onGlobalMouseMove(event: MouseEvent) {
+    // 1. Tooltip update
+    if (this.activeTooltip) {
+      this.updateTooltipPosition(event);
+    }
+
+    // 2. Drag Selection update
+    if (this.isDragging && this.dragStartResource) {
+      const target = event.target as HTMLElement;
+      const cell = target.closest(".week-cell");
+      if (cell) {
+        // We need to verify if we are over the same row to keep selection consistent
+        const row = target.closest(".calendar-row");
+        if (row) {
+          const resId = row.getAttribute("data-resource-id");
+          const expectedId = this.getResourceUniqueId(this.dragStartResource, this.dragStartChild!, this.dragStartParent!);
+
+          if (resId === expectedId) {
+            const indexStr = cell.getAttribute("data-week-index");
+            if (indexStr) {
+              const newIndex = parseInt(indexStr, 10);
+              if (newIndex !== this.dragEndWeekIndex) {
+                this.ngZone.run(() => {
+                  this.dragEndWeekIndex = newIndex;
+                  this.updateSelection(this.dragStartChild!, this.dragStartParent!);
+                  this.cdr.markForCheck();
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
   updateTooltipPosition(event: MouseEvent) {
-    if (!this.activeTooltip) return;
+    if (!this.activeTooltip || !this.tooltipElement) return;
 
     // Offset from cursor to avoid overlap
     const offsetX = 15;
@@ -1234,14 +1371,17 @@ export class PlanViewComponent implements OnInit {
       y = event.clientY - tooltipHeight - offsetY;
     }
 
-    this.tooltipX = x;
-    this.tooltipY = y;
+    // Direct DOM manipulation for fast updates outside Angular zone
+    this.tooltipElement.nativeElement.style.left = `${x}px`;
+    this.tooltipElement.nativeElement.style.top = `${y}px`;
   }
 
   onMouseDown(event: MouseEvent, resource: ResourceRow, child: ChildRow, parent: ParentRow) {
     this.isDragging = true;
     this.isSelectionFinished = false;
     this.dragStartResource = resource;
+    this.dragStartChild = child;
+    this.dragStartParent = parent;
 
     const target = event.target as HTMLElement;
     const cell = target.closest(".week-cell");
@@ -1256,31 +1396,19 @@ export class PlanViewComponent implements OnInit {
   }
 
   onMouseMove(event: MouseEvent, resource: ResourceRow, child: ChildRow, parent: ParentRow) {
-    if (!this.isDragging || !this.dragStartResource) return;
-
-    if (resource.uniqueId !== this.dragStartResource.uniqueId) return;
-
-    const target = event.target as HTMLElement;
-    const cell = target.closest(".week-cell");
-    if (cell) {
-      const indexStr = cell.getAttribute("data-week-index");
-      if (indexStr) {
-        const newIndex = parseInt(indexStr, 10);
-        if (newIndex !== this.dragEndWeekIndex) {
-          this.dragEndWeekIndex = newIndex;
-          this.updateSelection(child, parent);
-        }
-      }
-    }
+    // This method is now obsolete as we use onGlobalMouseMove
   }
 
   onMouseUp() {
+    if (!this.isDragging) return;
     this.isDragging = false;
     if (this.selectedCells.length > 0) {
       this.isSelectionFinished = true;
       this.updateToolbarPosition();
+      this.cdr.markForCheck();
     }
   }
+
 
   updateToolbarPosition() {
     if (!this.dragStartResource || this.dragEndWeekIndex < 0) return;
@@ -1633,10 +1761,13 @@ export class PlanViewComponent implements OnInit {
           childPassesResource = parentPassesResource;
         }
 
-        // A child is included only if it passes child-level filters AND has matching grandchildren (if any filters active)
-        const hasRestrictiveFilters = this.filterResourceIds().length || this.filterProjetIds().length || (this.filterEquipeIds().length && this.viewMode() === "project");
-        const hasGrandchildrenMatch = hasRestrictiveFilters ? grandchildrenMatch.length > 0 : true;
+        // A child is included if it passes child-level filters. 
+        // We only prune empty children if a filter targeting the grandchildren (Resources in project/team mode, Projects in resource mode) is active.
+        const hasGrandchildFilter = (this.viewMode() === 'resource')
+          ? this.filterProjetIds().length > 0
+          : this.filterResourceIds().length > 0;
 
+        const hasGrandchildrenMatch = hasGrandchildFilter ? grandchildrenMatch.length > 0 : true;
         const includeChild = childPassesEquipe && childPassesProjet && childPassesResource && hasGrandchildrenMatch;
 
         if (includeChild) {
@@ -1743,7 +1874,7 @@ export class PlanViewComponent implements OnInit {
           personneId = resource.type === 'personne' ? resource.id : undefined;
         } else {
           // resource view mode: parent=team, child=resource, resource=project
-          equipeId = parent.id;
+          equipeId = parent.id.split('_')[0];
           projetId = resource.id;
           roleId = resource.type === 'role' ? resource.resourceId : undefined;
           personneId = resource.type === 'personne' ? resource.resourceId : undefined;
@@ -1770,7 +1901,7 @@ export class PlanViewComponent implements OnInit {
           const [type, resId] = child.id.split('_');
           const roleId = type === 'role' ? resId : undefined;
           const personneId = type === 'personne' ? resId : undefined;
-          const equipeId = parent.id;
+          const equipeId = parent.id.split('_')[0];
 
           await this.chargeService.deleteChargesForResource(undefined, equipeId, roleId, personneId);
 
