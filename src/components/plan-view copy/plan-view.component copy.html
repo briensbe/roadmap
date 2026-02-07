@@ -23,6 +23,14 @@
         >
           Par Équipe
         </button>
+        <button
+          class="btn"
+          [class.btn-primary]="viewMode() === 'resource'"
+          [class.btn-secondary]="viewMode() !== 'resource'"
+          (click)="switchViewMode('resource')"
+        >
+          Par Ressources
+        </button>
       </div>
 
       <div class="view-mode-toggle">
@@ -169,24 +177,28 @@
 
   <!-- Main calendar with unified scroll -->
   <div class="calendar-wrapper">
-    <div class="calendar-grid">
+    <div class="calendar-grid" [class.resizing]="isResizing">
       <!-- Header row (sticky top) -->
       <div class="calendar-header-row">
-        <div class="label-cell header-label">
+        <div
+          class="label-cell header-label"
+          [style.width.px]="labelColumnWidth()"
+          [style.minWidth.px]="labelColumnWidth()"
+        >
           <div class="header-label-content">
             <span style="font-weight: 600">{{
               viewMode() === "project" ? "Projets / Équipes" : "Équipes / Projets"
             }}</span>
             <div class="header-expand-controls">
-              <button
-                class="btn-icon-s"
-                (click)="toggleAllExpansion()"
-                [title]="isAllExpanded ? 'Tout replier' : 'Tout déplier'"
-              >
-                <lucide-icon [name]="isAllExpanded ? 'square-minus' : 'square-plus'" [size]="16"></lucide-icon>
+              <button class="btn-icon-s" (click)="expandAll()" title="Tout déplier">
+                <lucide-icon name="square-plus" [size]="16"></lucide-icon>
+              </button>
+              <button class="btn-icon-s" (click)="collapseAll()" title="Tout replier">
+                <lucide-icon name="square-minus" [size]="16"></lucide-icon>
               </button>
             </div>
           </div>
+          <div class="resize-handle" (mousedown)="onResizeStart($event)"></div>
         </div>
         <div class="weeks-container">
           <div *ngFor="let week of displayedWeeks" class="week-header-cell" [class.current-week]="isCurrentWeek(week)">
@@ -198,7 +210,11 @@
 
       <!-- Milestones row (sticky top with offset) -->
       <div class="milestones-header-row">
-        <div class="label-cell milestones-label">
+        <div
+          class="label-cell milestones-label"
+          [style.width.px]="labelColumnWidth()"
+          [style.minWidth.px]="labelColumnWidth()"
+        >
           <span style="font-weight: 600; font-size: 13px">Jalons</span>
         </div>
         <div class="weeks-container">
@@ -237,7 +253,11 @@
             >
               <!-- Parent Row -->
               <div class="calendar-row" cdkDragHandle>
-                <div class="label-cell row-label-parent">
+                <div
+                  class="label-cell row-label-parent"
+                  [style.width.px]="labelColumnWidth()"
+                  [style.minWidth.px]="labelColumnWidth()"
+                >
                   <div class="row-label-content" (click)="toggleRow(row)">
                     <div class="color-bar-container">
                       <div class="color-bar-v" [style.background-color]="row.color || '#94a3b8'"></div>
@@ -265,7 +285,7 @@
                     <button
                       class="btn-hover-add"
                       (click)="openLinkModal(row); $event.stopPropagation()"
-                      title="Ajouter"
+                      [title]="viewMode() === 'resource' ? 'Ajouter une ressource' : 'Ajouter'"
                     >
                       <lucide-icon [img]="Plus" [size]="18"></lucide-icon>
                     </button>
@@ -287,8 +307,16 @@
                 <ng-container *ngFor="let child of row.children">
                   <!-- Child Row (2nd level) -->
                   <div class="calendar-row">
-                    <div class="label-cell row-label-child">
-                      <div class="row-label-content child-row" (click)="toggleChild(child)" style="padding-left: 24px">
+                    <div
+                      class="label-cell row-label-child"
+                      [style.width.px]="labelColumnWidth()"
+                      [style.minWidth.px]="labelColumnWidth()"
+                    >
+                      <div
+                        class="row-label-content child-row"
+                        (click)="toggleChild(child, row)"
+                        style="padding-left: 24px"
+                      >
                         <div class="color-bar-container">
                           <div class="color-bar-v small" [style.background-color]="child.color || '#cbd5e1'"></div>
                         </div>
@@ -314,8 +342,11 @@
 
                         <button
                           class="btn-hover-add"
-                          (click)="openAddResourceModal(child, row); $event.stopPropagation()"
-                          title="Ajouter ressource"
+                          (click)="
+                            viewMode() === 'resource' ? openLinkModal(row, child) : openAddResourceModal(child, row);
+                            $event.stopPropagation()
+                          "
+                          [title]="viewMode() === 'resource' ? 'Ajouter un projet' : 'Ajouter une ressource'"
                         >
                           <lucide-icon [img]="Plus" [size]="16"></lucide-icon>
                         </button>
@@ -325,7 +356,9 @@
                           [title]="
                             viewMode() === 'project'
                               ? 'Retirer cette équipe du projet'
-                              : 'Retirer ce projet de l\'équipe'
+                              : viewMode() === 'team'
+                                ? 'Retirer ce projet de l\'équipe'
+                                : 'Retirer cette ressource de l\'équipe'
                           "
                         >
                           <lucide-icon [img]="X" [size]="16"></lucide-icon>
@@ -355,7 +388,11 @@
                       (mouseup)="onMouseUp()"
                       (mouseleave)="onMouseUp()"
                     >
-                      <div class="label-cell row-label-resource">
+                      <div
+                        class="label-cell row-label-resource"
+                        [style.width.px]="labelColumnWidth()"
+                        [style.minWidth.px]="labelColumnWidth()"
+                      >
                         <div class="row-label-content resource-row">
                           <div class="resource-detail-label" style="padding-left: 40px">
                             <div class="resource-icon-wrapper" [style.background-color]="resource.color || '#e2e8f0'">
@@ -387,7 +424,7 @@
                           <button
                             class="btn-hover-delete"
                             (click)="removeResource(resource, child, row); $event.stopPropagation()"
-                            title="Supprimer cette ressource"
+                            [title]="viewMode() === 'resource' ? 'Retirer ce projet' : 'Supprimer cette ressource'"
                           >
                             <lucide-icon [img]="X" [size]="14"></lucide-icon>
                           </button>
@@ -462,7 +499,11 @@
             (mouseup)="onMouseUp()"
             (mouseleave)="onMouseUp()"
           >
-            <div class="label-cell row-label-flat">
+            <div
+              class="label-cell row-label-flat"
+              [style.width.px]="labelColumnWidth()"
+              [style.minWidth.px]="labelColumnWidth()"
+            >
               <div
                 style="
                   display: flex;
@@ -578,14 +619,34 @@
   <div *ngIf="showLinkModal" class="modal-overlay" (click)="closeLinkModal()">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2>
-          {{ viewMode() === "project" ? "Ajouter une équipe" : "Ajouter un projet" }} à {{ selectedParentRow?.label }}
+        <h2 *ngIf="viewMode() !== 'resource' || !selectedChildRowToLink">
+          {{
+            viewMode() === "project"
+              ? "Ajouter une équipe"
+              : viewMode() === "team"
+                ? "Ajouter un projet"
+                : "Ajouter une ressource"
+          }}
+          à {{ selectedParentRow?.label }}
+        </h2>
+        <h2 *ngIf="viewMode() === 'resource' && selectedChildRowToLink">
+          Ajouter un projet à {{ selectedChildRowToLink.label }}
         </h2>
         <button class="modal-close" (click)="closeLinkModal()">×</button>
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label>{{ viewMode() === "project" ? "Sélectionner une équipe" : "Sélectionner un projet" }}</label>
+          <label>
+            {{
+              viewMode() === "project"
+                ? "Sélectionner une équipe"
+                : viewMode() === "team"
+                  ? "Sélectionner un projet"
+                  : selectedChildRowToLink
+                    ? "Sélectionner un projet"
+                    : "Sélectionner une ressource"
+            }}
+          </label>
           <select [(ngModel)]="selectedIdToLink" class="form-control">
             <option value="">-- Choisir --</option>
             <option *ngFor="let item of linkableItems" [value]="item.id">
