@@ -10,7 +10,7 @@ import { Equipe, Projet, Charge, Role, Personne, Capacite, Jalon } from "../../m
 import { CalendarService } from "../../services/calendar.service";
 import { PersonnesService } from "../../services/personnes.service";
 
-import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink } from "lucide-angular";
+import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX } from "lucide-angular";
 import { getISOWeekYear } from "date-fns";
 import { calculateBestToolbarPosition, calculateBestPopoverPosition, ToolbarPosition, PopoverPosition } from "../../utils/selection-positioning";
 import { SelectionToolbarComponent } from "../selection-toolbar.component";
@@ -22,7 +22,7 @@ import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-
 import { LexoRank } from 'lexorank';
 
 @NgModule({
-  imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink })],
+  imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX })],
   exports: [LucideAngularModule]
 })
 export class LucideIconsModule { }
@@ -110,6 +110,7 @@ export class PlanViewComponent implements OnInit, OnDestroy {
   viewMode = storageSignal<"project" | "team" | "resource">("plan-view-mode", "project");
   displayFormat = storageSignal<"tree" | "flat">("plan-view-display-format", "tree");
   showAvailability = storageSignal<boolean>("plan-view-show-availability", false);
+  weekFilters = storageSignal<number[]>("plan-view-week-filters", []);
   private isDefaultExpanded = true;
   private manualStates = new Map<string, boolean>();
 
@@ -659,13 +660,16 @@ export class PlanViewComponent implements OnInit, OnDestroy {
 
           resources.push(...resourceMap.values());
 
+          // Apply week filters to resources
+          const filteredResources = resources.filter(r => this.shouldShowResource(r));
+
           children.push({
             id: teamId!,
             label: label,
             code: code,
             color: color,
             expanded: this.manualStates.has(`${project.id}_${teamId}`) ? this.manualStates.get(`${project.id}_${teamId}`)! : this.isDefaultExpanded, // Respect persisted preference
-            resources: resources,
+            resources: filteredResources,
             charges: teamCharges,
           });
         });
@@ -780,13 +784,16 @@ export class PlanViewComponent implements OnInit, OnDestroy {
 
           resources.push(...resourceMap.values());
 
+          // Apply week filters to resources
+          const filteredResources = resources.filter(r => this.shouldShowResource(r));
+
           children.push({
             id: projectId!,
             label: label,
             code: code,
             color: color,
             expanded: this.manualStates.has(`${team.id}_${projectId}`) ? this.manualStates.get(`${team.id}_${projectId}`)! : this.isDefaultExpanded, // Respect persisted preference
-            resources: resources,
+            resources: filteredResources,
             charges: projectCharges,
           });
         });
@@ -934,6 +941,9 @@ export class PlanViewComponent implements OnInit, OnDestroy {
         resourceMap.forEach((res, rKey) => {
           const projectResources = Array.from(res.projectDetailedMap.values()).sort((a, b) => a.label.localeCompare(b.label));
 
+          // Apply week filters to project resources
+          const filteredProjectResources = projectResources.filter(r => this.shouldShowResource(r));
+
           this.rows.push({
             id: `${team.id}_${rKey}`,
             label: `${team.nom} - ${res.label}`,
@@ -947,7 +957,7 @@ export class PlanViewComponent implements OnInit, OnDestroy {
                 color: res.color,
                 expanded: true, // Auto-expand this dummy level to show projects
                 charges: res.charges,
-                resources: projectResources
+                resources: filteredProjectResources
               }
             ],
             totalCharges: res.charges,
@@ -1000,6 +1010,66 @@ export class PlanViewComponent implements OnInit, OnDestroy {
     // Sort flattened rows alphabetically by full label
     this.flatRows.sort((a, b) => a.fullLabel.localeCompare(b.fullLabel));
   }
+
+  // Week Filter Methods
+  toggleWeekFilter(weekIndex: number) {
+    const current = this.weekFilters();
+    const index = current.indexOf(weekIndex);
+
+    if (index > -1) {
+      // Remove filter
+      this.weekFilters.set(current.filter(i => i !== weekIndex));
+    } else {
+      // Add filter
+      this.weekFilters.set([...current, weekIndex]);
+    }
+
+    // Rebuild tree/flat list with new filters
+    this.buildTree();
+    this.buildFlatList();
+    this.cdr.markForCheck();
+  }
+
+  clearAllWeekFilters() {
+    this.weekFilters.set([]);
+    this.buildTree();
+    this.buildFlatList();
+    this.cdr.markForCheck();
+  }
+
+  isWeekFiltered(weekIndex: number): boolean {
+    return this.weekFilters().includes(weekIndex);
+  }
+
+  getFilteredWeekCount(): number {
+    return this.weekFilters().length;
+  }
+
+  shouldShowResource(resource: ResourceRow): boolean {
+    const filters = this.weekFilters();
+
+    // No filters active - show all resources
+    if (filters.length === 0) {
+      return true;
+    }
+
+    // Check if resource has charges for ALL filtered weeks
+    for (const weekIndex of filters) {
+      const week = this.displayedWeeks[weekIndex];
+      if (!week) continue;
+
+      const weekKey = week.toISOString().split("T")[0];
+      const charge = resource.charges.get(weekKey) || 0;
+
+      // If resource has no charge for this filtered week, hide it
+      if (charge === 0) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
 
   goToToday() {
     this.currentDate = new Date();

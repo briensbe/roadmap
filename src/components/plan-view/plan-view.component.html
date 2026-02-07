@@ -69,6 +69,18 @@
       <button class="btn btn-sm" (click)="goToPreviousMonth()">← Mois précédent</button>
       <button class="btn btn-sm btn-primary" (click)="goToToday()">Aujourd'hui</button>
       <button class="btn btn-sm" (click)="goToNextMonth()">Mois suivant →</button>
+
+      <div *ngIf="getFilteredWeekCount() > 0" class="filter-status-badge">
+        <lucide-icon name="funnel-plus" [size]="14"></lucide-icon>
+        <span
+          >{{ getFilteredWeekCount() }} semaine{{ getFilteredWeekCount() > 1 ? "s" : "" }} filtrée{{
+            getFilteredWeekCount() > 1 ? "s" : ""
+          }}</span
+        >
+        <button class="filter-clear-btn" (click)="clearAllWeekFilters()" title="Effacer tous les filtres">
+          Effacer
+        </button>
+      </div>
     </div>
 
     <!-- Filters bar -->
@@ -201,9 +213,21 @@
           <div class="resize-handle" (mousedown)="onResizeStart($event)"></div>
         </div>
         <div class="weeks-container">
-          <div *ngFor="let week of displayedWeeks" class="week-header-cell" [class.current-week]="isCurrentWeek(week)">
+          <div
+            *ngFor="let week of displayedWeeks; let i = index"
+            class="week-header-cell"
+            [class.current-week]="isCurrentWeek(week)"
+          >
             <div class="week-date">{{ formatWeekHeader(week) }}</div>
             <div class="week-number">S{{ getWeekNumber(week) }}</div>
+            <button
+              class="week-filter-icon"
+              [class.active]="isWeekFiltered(i)"
+              (click)="toggleWeekFilter(i); $event.stopPropagation()"
+              [title]="isWeekFiltered(i) ? 'Retirer le filtre' : 'Filtrer les lignes sans charge'"
+            >
+              <lucide-icon [name]="isWeekFiltered(i) ? 'funnel-x' : 'funnel-plus'" [size]="14"></lucide-icon>
+            </button>
           </div>
         </div>
       </div>
