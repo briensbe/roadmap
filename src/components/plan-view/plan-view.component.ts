@@ -104,6 +104,32 @@ export class PlanViewComponent implements OnInit {
   popoverArrowSide: 'top' | 'bottom' = 'top';
   activeAnchorId: string | null = null;
 
+  labelColumnWidth = storageSignal<number>("plan-view-label-column-width", 300);
+  isResizing = false;
+  private startX = 0;
+  private startWidth = 0;
+
+  onResizeStart(event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isResizing = true;
+    this.startX = event.clientX;
+    this.startWidth = this.labelColumnWidth();
+  }
+
+  @HostListener("document:mousemove", ["$event"])
+  onResizing(event: MouseEvent) {
+    if (!this.isResizing) return;
+    const deltaX = event.clientX - this.startX;
+    const newWidth = Math.max(150, Math.min(600, this.startWidth + deltaX));
+    this.labelColumnWidth.set(newWidth);
+  }
+
+  @HostListener("document:mouseup")
+  onResizeEnd() {
+    this.isResizing = false;
+  }
+
   flatRows: FlatRow[] = [];
 
   // Usage Map

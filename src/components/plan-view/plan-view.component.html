@@ -177,10 +177,14 @@
 
   <!-- Main calendar with unified scroll -->
   <div class="calendar-wrapper">
-    <div class="calendar-grid">
+    <div class="calendar-grid" [class.resizing]="isResizing">
       <!-- Header row (sticky top) -->
       <div class="calendar-header-row">
-        <div class="label-cell header-label">
+        <div
+          class="label-cell header-label"
+          [style.width.px]="labelColumnWidth()"
+          [style.minWidth.px]="labelColumnWidth()"
+        >
           <div class="header-label-content">
             <span style="font-weight: 600">{{
               viewMode() === "project" ? "Projets / Équipes" : "Équipes / Projets"
@@ -194,6 +198,7 @@
               </button>
             </div>
           </div>
+          <div class="resize-handle" (mousedown)="onResizeStart($event)"></div>
         </div>
         <div class="weeks-container">
           <div *ngFor="let week of displayedWeeks" class="week-header-cell" [class.current-week]="isCurrentWeek(week)">
@@ -205,7 +210,11 @@
 
       <!-- Milestones row (sticky top with offset) -->
       <div class="milestones-header-row">
-        <div class="label-cell milestones-label">
+        <div
+          class="label-cell milestones-label"
+          [style.width.px]="labelColumnWidth()"
+          [style.minWidth.px]="labelColumnWidth()"
+        >
           <span style="font-weight: 600; font-size: 13px">Jalons</span>
         </div>
         <div class="weeks-container">
@@ -244,7 +253,11 @@
             >
               <!-- Parent Row -->
               <div class="calendar-row" cdkDragHandle>
-                <div class="label-cell row-label-parent">
+                <div
+                  class="label-cell row-label-parent"
+                  [style.width.px]="labelColumnWidth()"
+                  [style.minWidth.px]="labelColumnWidth()"
+                >
                   <div class="row-label-content" (click)="toggleRow(row)">
                     <div class="color-bar-container">
                       <div class="color-bar-v" [style.background-color]="row.color || '#94a3b8'"></div>
@@ -294,7 +307,11 @@
                 <ng-container *ngFor="let child of row.children">
                   <!-- Child Row (2nd level) -->
                   <div class="calendar-row">
-                    <div class="label-cell row-label-child">
+                    <div
+                      class="label-cell row-label-child"
+                      [style.width.px]="labelColumnWidth()"
+                      [style.minWidth.px]="labelColumnWidth()"
+                    >
                       <div
                         class="row-label-content child-row"
                         (click)="toggleChild(child, row)"
@@ -371,7 +388,11 @@
                       (mouseup)="onMouseUp()"
                       (mouseleave)="onMouseUp()"
                     >
-                      <div class="label-cell row-label-resource">
+                      <div
+                        class="label-cell row-label-resource"
+                        [style.width.px]="labelColumnWidth()"
+                        [style.minWidth.px]="labelColumnWidth()"
+                      >
                         <div class="row-label-content resource-row">
                           <div class="resource-detail-label" style="padding-left: 40px">
                             <div class="resource-icon-wrapper" [style.background-color]="resource.color || '#e2e8f0'">
@@ -478,7 +499,11 @@
             (mouseup)="onMouseUp()"
             (mouseleave)="onMouseUp()"
           >
-            <div class="label-cell row-label-flat">
+            <div
+              class="label-cell row-label-flat"
+              [style.width.px]="labelColumnWidth()"
+              [style.minWidth.px]="labelColumnWidth()"
+            >
               <div
                 style="
                   display: flex;
