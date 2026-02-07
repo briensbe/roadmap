@@ -878,20 +878,20 @@
   color: #dc2626;
 }
 
-/* Team cell availability states - subtle left border indicator */
+/* Team cell availability states - bottom border indicator */
 .team-cell-positive {
-  border-left: 3px solid #10b981 !important;
-  background: linear-gradient(90deg, rgba(16, 185, 129, 0.08) 0%, #f9fafb 30%) !important;
+  border-bottom: 3px solid #10b981 !important;
+  background: rgba(16, 185, 129, 0.04) !important;
 }
 
 .team-cell-zero {
-  border-left: 3px solid #f59e0b !important;
-  background: linear-gradient(90deg, rgba(245, 158, 11, 0.08) 0%, #f9fafb 30%) !important;
+  border-bottom: 3px solid #f59e0b !important;
+  background: rgba(245, 158, 11, 0.04) !important;
 }
 
 .team-cell-negative {
-  border-left: 3px solid #ef4444 !important;
-  background: linear-gradient(90deg, rgba(239, 68, 68, 0.08) 0%, #f9fafb 30%) !important;
+  border-bottom: 3px solid #ef4444 !important;
+  background: rgba(239, 68, 68, 0.04) !important;
 }
 
 .empty-state-weeks {
