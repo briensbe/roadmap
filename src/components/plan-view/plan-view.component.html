@@ -305,80 +305,8 @@
               <!-- Children Rows -->
               <ng-container *ngIf="row.expanded">
                 <ng-container *ngFor="let child of row.children">
-                  <!-- Child Row (2nd level) -->
-                  <div class="calendar-row">
-                    <div
-                      class="label-cell row-label-child"
-                      [style.width.px]="labelColumnWidth()"
-                      [style.minWidth.px]="labelColumnWidth()"
-                    >
-                      <div
-                        class="row-label-content child-row"
-                        (click)="toggleChild(child, row)"
-                        style="padding-left: 24px"
-                      >
-                        <div class="color-bar-container">
-                          <div class="color-bar-v small" [style.background-color]="child.color || '#cbd5e1'"></div>
-                        </div>
-
-                        <lucide-icon
-                          *ngIf="child.resources.length > 0"
-                          [name]="child.expanded ? 'chevron-down' : 'chevron-right'"
-                          [size]="18"
-                          class="expand-icon-l"
-                        ></lucide-icon>
-
-                        <div class="row-info-stack-wrapper">
-                          <div class="info-stack">
-                            <span class="info-code" *ngIf="child.code">{{ child.code }}</span>
-                            <span
-                              class="info-label"
-                              (mouseenter)="showTooltip($event, child.label)"
-                              (mouseleave)="hideTooltip()"
-                              >{{ child.label }}</span
-                            >
-                          </div>
-                        </div>
-
-                        <button
-                          class="btn-hover-add"
-                          (click)="
-                            viewMode() === 'resource' ? openLinkModal(row, child) : openAddResourceModal(child, row);
-                            $event.stopPropagation()
-                          "
-                          [title]="viewMode() === 'resource' ? 'Ajouter un projet' : 'Ajouter une ressource'"
-                        >
-                          <lucide-icon [img]="Plus" [size]="16"></lucide-icon>
-                        </button>
-                        <button
-                          class="btn-hover-delete"
-                          (click)="removeChild(child, row); $event.stopPropagation()"
-                          [title]="
-                            viewMode() === 'project'
-                              ? 'Retirer cette équipe du projet'
-                              : viewMode() === 'team'
-                                ? 'Retirer ce projet de l\'équipe'
-                                : 'Retirer cette ressource de l\'équipe'
-                          "
-                        >
-                          <lucide-icon [img]="X" [size]="16"></lucide-icon>
-                        </button>
-                      </div>
-                    </div>
-                    <div class="weeks-container">
-                      <div *ngFor="let week of displayedWeeks" class="week-cell resource-cell">
-                        <!-- 
-                      [class.has-capacity]="getChildValue(child, week) > 0"
-                      
-                        <div class="cell-content" *ngIf="getChildValue(child, week) > 0">
-                          <div class="capacity-value">{{ getChildValue(child, week) | number : "1.0-1" }}</div>
-                        </div> -->
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Resource Rows (3rd level) -->
-                  <ng-container *ngIf="child.expanded">
+                  <!-- CASE 1: Combined Team-Resource row in Project View -->
+                  <ng-container *ngIf="viewMode() === 'project' && child.resources.length > 0">
                     <div
                       *ngFor="let resource of child.resources"
                       class="calendar-row"
@@ -389,44 +317,59 @@
                       (mouseleave)="onMouseUp()"
                     >
                       <div
-                        class="label-cell row-label-resource"
+                        class="label-cell row-label-child"
                         [style.width.px]="labelColumnWidth()"
                         [style.minWidth.px]="labelColumnWidth()"
                       >
-                        <div class="row-label-content resource-row">
-                          <div class="resource-detail-label" style="padding-left: 40px">
-                            <div class="resource-icon-wrapper" [style.background-color]="resource.color || '#e2e8f0'">
-                              <lucide-icon
-                                [name]="resource.type === 'role' ? 'contact' : 'user'"
-                                [size]="14"
-                                class="resource-icon"
-                              ></lucide-icon>
-                            </div>
-                            <span
-                              class="resource-detail-name"
-                              (mouseenter)="showTooltip($event, resource.label)"
-                              (mouseleave)="hideTooltip()"
-                              >{{ resource.label }}</span
-                            >
-                            <div
-                              class="resource-total-badge"
-                              [class.anchor-active]="activeAnchorId === getResourceUniqueId(resource, child, row)"
-                              (click)="openYearPopover($event, getResourceUniqueId(resource, child, row))"
-                              [title]="'Cliquer pour filtrer par année'"
-                            >
-                              <span class="badge-prefix">{{ getBadgePrefix() }}</span>
-                              <span class="badge-val">{{
-                                getResourceTotalPlannedDays(resource) | number: "1.0-1"
-                              }}</span>
-                              <span class="badge-unit">j</span>
+                        <div class="row-label-content child-row" style="padding-left: 24px">
+                          <div class="color-bar-container">
+                            <div class="color-bar-v small" [style.background-color]="child.color || '#cbd5e1'"></div>
+                          </div>
+
+                          <div class="row-info-stack-wrapper">
+                            <div class="info-stack" style="flex-direction: row; align-items: center; gap: 8px">
+                              <span class="info-label">{{ child.label }}</span>
+                              <span style="color: #94a3b8; font-weight: 400">-</span>
+                              <div class="resource-detail-label" style="padding-left: 0">
+                                <div
+                                  class="resource-icon-wrapper"
+                                  [style.background-color]="resource.color || '#e2e8f0'"
+                                >
+                                  <lucide-icon
+                                    [name]="resource.type === 'role' ? 'contact' : 'user'"
+                                    [size]="14"
+                                    class="resource-icon"
+                                  ></lucide-icon>
+                                </div>
+                                <span class="resource-detail-name">{{ resource.label }}</span>
+                                <div
+                                  class="resource-total-badge"
+                                  [class.anchor-active]="activeAnchorId === getResourceUniqueId(resource, child, row)"
+                                  (click)="openYearPopover($event, getResourceUniqueId(resource, child, row))"
+                                >
+                                  <span class="badge-prefix">{{ getBadgePrefix() }}</span>
+                                  <span class="badge-val">{{
+                                    getResourceTotalPlannedDays(resource) | number: "1.0-1"
+                                  }}</span>
+                                  <span class="badge-unit">j</span>
+                                </div>
+                              </div>
                             </div>
                           </div>
+
+                          <button
+                            class="btn-hover-add"
+                            (click)="openAddResourceModal(child, row); $event.stopPropagation()"
+                            title="Ajouter une ressource"
+                          >
+                            <lucide-icon [img]="Plus" [size]="16"></lucide-icon>
+                          </button>
                           <button
                             class="btn-hover-delete"
                             (click)="removeResource(resource, child, row); $event.stopPropagation()"
-                            [title]="viewMode() === 'resource' ? 'Retirer ce projet' : 'Supprimer cette ressource'"
+                            title="Supprimer cette ressource"
                           >
-                            <lucide-icon [img]="X" [size]="14"></lucide-icon>
+                            <lucide-icon [img]="X" [size]="16"></lucide-icon>
                           </button>
                         </div>
                       </div>
@@ -437,16 +380,16 @@
                           [class.selected]="isCellSelected(resource, week)"
                           [class.has-capacity]="getResourceValue(resource, week) > 0"
                           [class.cell-positive]="
-                            shouldShowAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) &&
-                            getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) > 0
+                            shouldShowAvailability(resource, week, child.id) &&
+                            getAvailability(resource, week, child.id) > 0
                           "
                           [class.cell-zero]="
-                            shouldShowAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) &&
-                            getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) === 0
+                            shouldShowAvailability(resource, week, child.id) &&
+                            getAvailability(resource, week, child.id) === 0
                           "
                           [class.cell-negative]="
-                            shouldShowAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) &&
-                            getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) < 0
+                            shouldShowAvailability(resource, week, child.id) &&
+                            getAvailability(resource, week, child.id) < 0
                           "
                           [attr.data-week-index]="i"
                         >
@@ -456,31 +399,197 @@
                             </div>
                             <div
                               class="availability-indicator"
-                              *ngIf="
-                                shouldShowAvailability(resource, week, viewMode() === 'project' ? child.id : row.id)
-                              "
+                              *ngIf="shouldShowAvailability(resource, week, child.id)"
                               [ngClass]="{
-                                'availability-positive':
-                                  getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) > 0,
-                                'availability-zero':
-                                  getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) === 0,
-                                'availability-negative':
-                                  getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) < 0,
+                                'availability-positive': getAvailability(resource, week, child.id) > 0,
+                                'availability-zero': getAvailability(resource, week, child.id) === 0,
+                                'availability-negative': getAvailability(resource, week, child.id) < 0,
                               }"
                             >
-                              {{
-                                getAvailability(resource, week, viewMode() === "project" ? child.id : row.id) > 0
-                                  ? "+"
-                                  : ""
-                              }}{{
-                                getAvailability(resource, week, viewMode() === "project" ? child.id : row.id)
-                                  | number: "1.0-1"
-                              }}
+                              {{ getAvailability(resource, week, child.id) > 0 ? "+" : ""
+                              }}{{ getAvailability(resource, week, child.id) | number: "1.0-1" }}
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
+                  </ng-container>
+
+                  <!-- CASE 2: Standard/Other Views (Team view, or Project view with no resources, or Resource view projects) -->
+                  <ng-container *ngIf="viewMode() !== 'project' || child.resources.length === 0">
+                    <!-- Standard Child Row -->
+                    <div class="calendar-row" *ngIf="viewMode() !== 'resource'">
+                      <div
+                        class="label-cell row-label-child"
+                        [style.width.px]="labelColumnWidth()"
+                        [style.minWidth.px]="labelColumnWidth()"
+                      >
+                        <div
+                          class="row-label-content child-row"
+                          (click)="toggleChild(child, row)"
+                          style="padding-left: 24px"
+                        >
+                          <div class="color-bar-container">
+                            <div class="color-bar-v small" [style.background-color]="child.color || '#cbd5e1'"></div>
+                          </div>
+
+                          <lucide-icon
+                            *ngIf="child.resources.length > 0"
+                            [name]="child.expanded ? 'chevron-down' : 'chevron-right'"
+                            [size]="18"
+                            class="expand-icon-l"
+                          ></lucide-icon>
+
+                          <div class="row-info-stack-wrapper">
+                            <div class="info-stack">
+                              <span class="info-code" *ngIf="child.code">{{ child.code }}</span>
+                              <span
+                                class="info-label"
+                                (mouseenter)="showTooltip($event, child.label)"
+                                (mouseleave)="hideTooltip()"
+                                >{{ child.label }}</span
+                              >
+                            </div>
+                          </div>
+
+                          <button
+                            class="btn-hover-add"
+                            (click)="
+                              viewMode() === 'resource' ? openLinkModal(row, child) : openAddResourceModal(child, row);
+                              $event.stopPropagation()
+                            "
+                            [title]="viewMode() === 'resource' ? 'Ajouter un projet' : 'Ajouter une ressource'"
+                          >
+                            <lucide-icon [img]="Plus" [size]="16"></lucide-icon>
+                          </button>
+                          <button
+                            class="btn-hover-delete"
+                            (click)="removeChild(child, row); $event.stopPropagation()"
+                            [title]="
+                              viewMode() === 'project'
+                                ? 'Retirer cette équipe du projet'
+                                : viewMode() === 'team'
+                                  ? 'Retirer ce projet de l\'équipe'
+                                  : 'Retirer cette ressource de l\'équipe'
+                            "
+                          >
+                            <lucide-icon [img]="X" [size]="16"></lucide-icon>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="weeks-container">
+                        <div *ngFor="let week of displayedWeeks" class="week-cell resource-cell"></div>
+                      </div>
+                    </div>
+
+                    <!-- Resource Rows (3rd level OR 2nd level in resource mode) -->
+                    <ng-container *ngIf="child.expanded">
+                      <div
+                        *ngFor="let resource of child.resources"
+                        class="calendar-row"
+                        [attr.data-resource-id]="getResourceUniqueId(resource, child, row)"
+                        (mousedown)="onMouseDown($event, resource, child, row)"
+                        (mousemove)="onMouseMove($event, resource, child, row)"
+                        (mouseup)="onMouseUp()"
+                        (mouseleave)="onMouseUp()"
+                      >
+                        <div
+                          class="label-cell row-label-resource"
+                          [style.width.px]="labelColumnWidth()"
+                          [style.minWidth.px]="labelColumnWidth()"
+                        >
+                          <div class="row-label-content resource-row">
+                            <div
+                              class="resource-detail-label"
+                              [style.padding-left.px]="viewMode() === 'resource' ? 24 : 40"
+                            >
+                              <div class="resource-icon-wrapper" [style.background-color]="resource.color || '#e2e8f0'">
+                                <lucide-icon
+                                  [name]="resource.type === 'role' ? 'contact' : 'user'"
+                                  [size]="14"
+                                  class="resource-icon"
+                                ></lucide-icon>
+                              </div>
+                              <span
+                                class="resource-detail-name"
+                                (mouseenter)="showTooltip($event, resource.label)"
+                                (mouseleave)="hideTooltip()"
+                                >{{ resource.label }}</span
+                              >
+                              <div
+                                class="resource-total-badge"
+                                [class.anchor-active]="activeAnchorId === getResourceUniqueId(resource, child, row)"
+                                (click)="openYearPopover($event, getResourceUniqueId(resource, child, row))"
+                                [title]="'Cliquer pour filtrer par année'"
+                              >
+                                <span class="badge-prefix">{{ getBadgePrefix() }}</span>
+                                <span class="badge-val">{{
+                                  getResourceTotalPlannedDays(resource) | number: "1.0-1"
+                                }}</span>
+                                <span class="badge-unit">j</span>
+                              </div>
+                            </div>
+                            <button
+                              class="btn-hover-delete"
+                              (click)="removeResource(resource, child, row); $event.stopPropagation()"
+                              [title]="viewMode() === 'resource' ? 'Retirer ce projet' : 'Supprimer cette ressource'"
+                            >
+                              <lucide-icon [img]="X" [size]="14"></lucide-icon>
+                            </button>
+                          </div>
+                        </div>
+                        <div class="weeks-container">
+                          <div
+                            *ngFor="let week of displayedWeeks; let i = index"
+                            class="week-cell resource-detail-cell"
+                            [class.selected]="isCellSelected(resource, week)"
+                            [class.has-capacity]="getResourceValue(resource, week) > 0"
+                            [class.cell-positive]="
+                              shouldShowAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) &&
+                              getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) > 0
+                            "
+                            [class.cell-zero]="
+                              shouldShowAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) &&
+                              getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) === 0
+                            "
+                            [class.cell-negative]="
+                              shouldShowAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) &&
+                              getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) < 0
+                            "
+                            [attr.data-week-index]="i"
+                          >
+                            <div class="cell-content">
+                              <div *ngIf="getResourceValue(resource, week) > 0" class="capacity-value">
+                                {{ getResourceValue(resource, week) | number: "1.0-1" }}
+                              </div>
+                              <div
+                                class="availability-indicator"
+                                *ngIf="
+                                  shouldShowAvailability(resource, week, viewMode() === 'project' ? child.id : row.id)
+                                "
+                                [ngClass]="{
+                                  'availability-positive':
+                                    getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) > 0,
+                                  'availability-zero':
+                                    getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) === 0,
+                                  'availability-negative':
+                                    getAvailability(resource, week, viewMode() === 'project' ? child.id : row.id) < 0,
+                                }"
+                              >
+                                {{
+                                  getAvailability(resource, week, viewMode() === "project" ? child.id : row.id) > 0
+                                    ? "+"
+                                    : ""
+                                }}{{
+                                  getAvailability(resource, week, viewMode() === "project" ? child.id : row.id)
+                                    | number: "1.0-1"
+                                }}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </ng-container>
                   </ng-container>
                 </ng-container>
               </ng-container>

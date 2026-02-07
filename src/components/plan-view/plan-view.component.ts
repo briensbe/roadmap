@@ -830,28 +830,28 @@ export class PlanViewComponent implements OnInit {
           }
         });
 
-        // Convert Map to Children structure
+        // In resource mode, we flatten Team and Resource into single level ParentRows
         resourceMap.forEach((res, rKey) => {
-          children.push({
-            id: rKey, // using rKey as id for interaction
-            label: res.label,
-            color: res.color,
+          const projectResources = Array.from(res.projectDetailedMap.values()).sort((a, b) => a.label.localeCompare(b.label));
+
+          this.rows.push({
+            id: `${team.id}_${rKey}`,
+            label: `${team.nom} - ${res.label}`,
+            code: team.code,
+            color: team.color,
             expanded: this.manualStates.has(`${team.id}_${rKey}`) ? this.manualStates.get(`${team.id}_${rKey}`)! : this.isDefaultExpanded,
-            charges: res.charges,
-            resources: Array.from(res.projectDetailedMap.values()).sort((a, b) => a.label.localeCompare(b.label))
+            children: [
+              {
+                id: rKey,
+                label: res.label,
+                color: res.color,
+                expanded: true, // Auto-expand this dummy level to show projects
+                charges: res.charges,
+                resources: projectResources
+              }
+            ],
+            totalCharges: res.charges,
           });
-        });
-
-        children.sort((a, b) => a.label.localeCompare(b.label));
-
-        this.rows.push({
-          id: team.id!,
-          label: team.nom,
-          code: team.code,
-          color: team.color,
-          expanded: this.manualStates.has(team.id!) ? this.manualStates.get(team.id!)! : this.isDefaultExpanded,
-          children: children,
-          totalCharges: parentTotal,
         });
       }
     }
@@ -1555,9 +1555,23 @@ export class PlanViewComponent implements OnInit {
       // Decide if parent passes equipe filter (if in team or resource mode)
       let parentPassesEquipe = true;
       if (this.filterEquipeIds().length) {
-        if (this.viewMode() === "team" || this.viewMode() === "resource") {
+        if (this.viewMode() === "team") {
           parentPassesEquipe = this.filterEquipeIds().includes(parent.id);
+        } else if (this.viewMode() === "resource") {
+          // parent.id is "teamId_resourceKey"
+          const teamId = parent.id.split('_')[0];
+          parentPassesEquipe = this.filterEquipeIds().includes(teamId);
         }
+      }
+
+      // Decide if parent passes resource filter (ONLY in resource mode where parent IS the resource)
+      let parentPassesResource = true;
+      if (this.filterResourceIds().length && this.viewMode() === "resource") {
+        parentPassesResource = this.filterResourceIds().some((sel) => {
+          const rKeyForSel = sel.replace(':', '_');
+          // parent.id is "teamId_resourceKey", we check if it ends with resourceKey
+          return parent.id.endsWith(rKeyForSel);
+        });
       }
 
       // Decide if parent passes project filter (if in project mode)
@@ -1615,10 +1629,8 @@ export class PlanViewComponent implements OnInit {
         }
 
         if (this.filterResourceIds().length && this.viewMode() === "resource") {
-          childPassesResource = this.filterResourceIds().some((sel) => {
-            const rKeyForSel = sel.replace(':', '_');
-            return child.id === rKeyForSel;
-          });
+          // In resource mode, the resource filter already applied to the parent
+          childPassesResource = parentPassesResource;
         }
 
         // A child is included only if it passes child-level filters AND has matching grandchildren (if any filters active)
@@ -1655,7 +1667,7 @@ export class PlanViewComponent implements OnInit {
         }
       }
 
-      if (parentPassesEquipe && parentPassesProjet && (hasChildren || showEmptyParent)) {
+      if (parentPassesEquipe && parentPassesResource && parentPassesProjet && (hasChildren || showEmptyParent)) {
         filteredParents.push(newParent);
       }
     }
