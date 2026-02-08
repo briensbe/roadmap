@@ -1484,6 +1484,7 @@ export class PlanViewComponent implements OnInit, OnDestroy {
         this.dragStartWeekIndex = parseInt(indexStr, 10);
         this.dragEndWeekIndex = this.dragStartWeekIndex;
         this.updateSelection(child, parent);
+        this.cdr.markForCheck();
       }
     }
   }
@@ -1553,6 +1554,7 @@ export class PlanViewComponent implements OnInit, OnDestroy {
 
           // Make toolbar visible now that position is set
           this.toolbarVisible = true;
+          this.cdr.markForCheck();
         }
       }
     }, 0);

@@ -1,4 +1,4 @@
-import { Component, OnInit, NgModule, HostListener } from "@angular/core";
+import { Component, OnInit, NgModule, HostListener, ChangeDetectorRef } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { SelectionToolbarComponent } from "../selection-toolbar.component";
@@ -111,7 +111,8 @@ export class CapacityViewComponent implements OnInit {
 
   constructor(
     private teamService: TeamService,
-    private calendarService: CalendarService
+    private calendarService: CalendarService,
+    private cdr: ChangeDetectorRef
   ) { }
 
   expandAll() {
@@ -440,6 +441,7 @@ export class CapacityViewComponent implements OnInit {
         this.dragStartWeekIndex = parseInt(indexStr, 10);
         this.dragEndWeekIndex = this.dragStartWeekIndex;
         this.updateSelection();
+        this.cdr.markForCheck();
       }
     }
   }
@@ -515,6 +517,7 @@ export class CapacityViewComponent implements OnInit {
 
           // Make toolbar visible now that position is set
           this.toolbarVisible = true;
+          this.cdr.markForCheck();
         }
       }
     }, 0);
