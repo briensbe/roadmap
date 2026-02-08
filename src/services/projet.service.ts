@@ -1,16 +1,123 @@
-import { Injectable, inject } from "@angular/core";
+import { Injectable, inject, OnDestroy } from "@angular/core";
 import { SupabaseService } from "./supabase.service";
 import { Projet } from "../models/types";
 import { LexoRank } from "lexorank";
 import { QueryClient, injectQuery, injectMutation } from "@tanstack/angular-query-experimental";
 import { projetQueryKeys } from "./projet.query-keys";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 @Injectable({
   providedIn: "root"
 })
-export class ProjetService {
+export class ProjetService implements OnDestroy {
   private supabase = inject(SupabaseService);
   private queryClient = inject(QueryClient);
+  private realtimeChannel: RealtimeChannel | null = null;
+
+  constructor() {
+    // Setup realtime subscription on service initialization
+    this.setupRealtimeSubscription();
+  }
+
+  // ============================================
+  // REALTIME SUBSCRIPTION
+  // ============================================
+
+  /**
+   * Setup Supabase realtime subscription for the projets table
+   * Automatically updates TanStack Query cache on INSERT, UPDATE, DELETE events
+   */
+  private setupRealtimeSubscription(): void {
+    this.realtimeChannel = this.supabase.client
+      .channel('projets-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'projets'
+        },
+        (payload) => {
+          console.log('Realtime event received:', payload);
+
+          switch (payload.eventType) {
+            case 'INSERT':
+              this.handleInsert(payload.new as Projet);
+              break;
+            case 'UPDATE':
+              this.handleUpdate(payload.new as Projet);
+              break;
+            case 'DELETE':
+              this.handleDelete(payload.old as Projet);
+              break;
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status);
+      });
+  }
+
+  /**
+   * Handle INSERT events from realtime subscription
+   */
+  private handleInsert(newProjet: Projet): void {
+    // Add to list cache, maintaining sort order by rank
+    this.queryClient.setQueryData(projetQueryKeys.list(), (old: Projet[] | undefined) => {
+      if (!old) return [newProjet];
+
+      // Check if project already exists (avoid duplicates)
+      if (old.some(p => p.id === newProjet.id)) return old;
+
+      // Add and sort by rank
+      const updated = [...old, newProjet];
+      return updated.sort((a, b) => (a.rank || '').localeCompare(b.rank || ''));
+    });
+
+    // Add to detail cache
+    this.queryClient.setQueryData(projetQueryKeys.detail(newProjet.id!), newProjet);
+  }
+
+  /**
+   * Handle UPDATE events from realtime subscription
+   */
+  private handleUpdate(updatedProjet: Projet): void {
+    // Update in list cache
+    this.queryClient.setQueryData(projetQueryKeys.list(), (old: Projet[] | undefined) => {
+      if (!old) return old;
+
+      const updated = old.map(p => p.id === updatedProjet.id ? updatedProjet : p);
+      // Re-sort in case rank changed
+      return updated.sort((a, b) => (a.rank || '').localeCompare(b.rank || ''));
+    });
+
+    // Update detail cache
+    this.queryClient.setQueryData(projetQueryKeys.detail(updatedProjet.id!), updatedProjet);
+  }
+
+  /**
+   * Handle DELETE events from realtime subscription
+   */
+  private handleDelete(deletedProjet: Projet): void {
+    // Remove from list cache
+    this.queryClient.setQueryData(projetQueryKeys.list(), (old: Projet[] | undefined) => {
+      if (!old) return old;
+      return old.filter(p => p.id !== deletedProjet.id);
+    });
+
+    // Remove detail cache
+    this.queryClient.removeQueries({ queryKey: projetQueryKeys.detail(deletedProjet.id!) });
+  }
+
+  /**
+   * Cleanup realtime subscription when service is destroyed
+   */
+  ngOnDestroy(): void {
+    if (this.realtimeChannel) {
+      this.supabase.client.removeChannel(this.realtimeChannel);
+      this.realtimeChannel = null;
+    }
+  }
 
   // ============================================
   // REACTIVE QUERIES - For component use
