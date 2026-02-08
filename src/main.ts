@@ -5,6 +5,7 @@ import { CommonModule } from "@angular/common";
 import { SidebarNavigationComponent } from "./components/sidebar-navigation.component";
 import { SidebarService } from "./services/sidebar.service";
 import { routes } from "../src/app.routes";
+import { provideAngularQuery, QueryClient } from "@tanstack/angular-query-experimental";
 
 @Component({
   selector: "app-root",
@@ -52,5 +53,17 @@ export class App implements OnInit {
 }
 
 bootstrapApplication(App, {
-  providers: [provideRouter(routes)],
+  providers: [
+    provideRouter(routes),
+    provideAngularQuery(new QueryClient({
+      defaultOptions: {
+        queries: {
+          staleTime: 1000 * 60 * 5, // 5 minutes
+          gcTime: 1000 * 60 * 10, // 10 minutes (formerly cacheTime)
+          retry: 1,
+          refetchOnWindowFocus: false,
+        },
+      },
+    })),
+  ],
 });

@@ -1,4 +1,4 @@
-import { Component, OnInit, HostListener, ElementRef } from "@angular/core";
+import { Component, OnInit, HostListener, ElementRef, computed, signal } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { ActivatedRoute } from "@angular/router";
@@ -22,8 +22,8 @@ import { calculateNewRank, sortByRank } from "../../utils/lexorank.utils";
 })
 export class ProjectsViewComponent implements OnInit {
   viewMode: "list" | "card" = "list";
-  searchQuery = "";
-  statusFilter = "";
+  searchQuery = signal("");
+  statusFilter = signal("");
 
   LucideCalculator = LucideCalculator;
   MoreVertical = MoreVertical;
@@ -33,8 +33,39 @@ export class ProjectsViewComponent implements OnInit {
   ExternalLink = ExternalLink;
   Plus = Plus;
 
-  projets: Projet[] = [];
-  filteredProjects: Projet[] = [];
+  // TanStack Query - Reactive data
+  projetsQuery = this.projetService.getAllProjetsQuery();
+  createMutation = this.projetService.createProjetMutation();
+  updateMutation = this.projetService.updateProjetMutation();
+  deleteMutation = this.projetService.deleteProjetMutation();
+
+  // Computed filtered projects based on query data
+  filteredProjects = computed(() => {
+    const projects = this.projetsQuery.data() || [];
+    const sorted = sortByRank(
+      projects,
+      (p) => p.rank,
+      (a, b) => a.nom_projet.localeCompare(b.nom_projet)
+    );
+
+    const search = this.searchQuery();
+    const status = this.statusFilter();
+
+    return sorted.filter((projet) => {
+      const matchesSearch =
+        !search ||
+        projet.nom_projet.toLowerCase().includes(search.toLowerCase()) ||
+        projet.code_projet.toLowerCase().includes(search.toLowerCase()) ||
+        (projet.reference_externe && projet.reference_externe.toLowerCase().includes(search.toLowerCase())) ||
+        (projet.description && projet.description.toLowerCase().includes(search.toLowerCase())) ||
+        (projet.chef_projet && projet.chef_projet.toLowerCase().includes(search.toLowerCase()));
+
+      const matchesStatus = !status || projet.statut === status;
+
+      return matchesSearch && matchesStatus;
+    });
+  });
+
   externalReferenceUrl: string | null = null;
 
   showProjectModal = false;
@@ -85,78 +116,41 @@ export class ProjectsViewComponent implements OnInit {
     // Read query params for status filter
     this.route.queryParams.subscribe(params => {
       if (params['status']) {
-        this.statusFilter = params['status'];
+        this.statusFilter.set(params['status']);
       }
     });
 
-    await this.loadProjects();
+    // Load settings
     this.externalReferenceUrl = await this.settingsService.getSettingValue("external_reference_url", "global");
   }
 
-  async loadProjects() {
-    try {
-      this.projets = await this.projetService.getAllProjets();
-      // Sort by rank using utility function
-      this.projets = sortByRank(
-        this.projets,
-        (p) => p.rank,
-        (a, b) => a.nom_projet.localeCompare(b.nom_projet)
-      );
-      this.filterProjects();
-    } catch (error) {
-      console.error("Error loading projects:", error);
-    }
-  }
-
   async drop(event: CdkDragDrop<Projet[]>) {
+    const projects = [...this.filteredProjects()];
     // Move in UI first for responsiveness
-    moveItemInArray(this.filteredProjects, event.previousIndex, event.currentIndex);
+    moveItemInArray(projects, event.previousIndex, event.currentIndex);
 
-    const movedItem = this.filteredProjects[event.currentIndex];
+    const movedItem = projects[event.currentIndex];
     if (!movedItem) return;
 
     try {
       // Calculate new rank using utility function
       const rankStr = calculateNewRank(
-        this.filteredProjects,
+        projects,
         event.currentIndex,
         (p) => p.rank
       );
 
       movedItem.rank = rankStr;
 
-      // Update in database
+      // Update in database - mutation will auto-invalidate cache
       await this.projetService.updateProjet(movedItem.id!, { rank: rankStr });
-
-      // Also update in the main projets array
-      const mainIndex = this.projets.findIndex(p => p.id === movedItem.id);
-      if (mainIndex !== -1) {
-        this.projets[mainIndex].rank = rankStr;
-      }
-
     } catch (error) {
       console.error('Error calculating rank:', error);
-      // Fallback: reload to reset order if calculation failed
-      await this.loadProjects();
     }
   }
 
 
-  filterProjects() {
-    this.filteredProjects = this.projets.filter((projet) => {
-      const matchesSearch =
-        !this.searchQuery ||
-        projet.nom_projet.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-        projet.code_projet.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-        (projet.reference_externe && projet.reference_externe.toLowerCase().includes(this.searchQuery.toLowerCase())) ||
-        (projet.description && projet.description.toLowerCase().includes(this.searchQuery.toLowerCase())) ||
-        (projet.chef_projet && projet.chef_projet.toLowerCase().includes(this.searchQuery.toLowerCase()));
 
-      const matchesStatus = !this.statusFilter || projet.statut === this.statusFilter;
-
-      return matchesSearch && matchesStatus;
-    });
-  }
 
   getProgressPercent(projet: Projet): number {
     if (projet.chiffrage_previsionnel === 0) return 0;
@@ -193,8 +187,9 @@ export class ProjectsViewComponent implements OnInit {
     // Destructure pour exclure les propriétés à ne pas copier
     const { id, created_at, updated_at, id_projet, ...restProjet } = projet;
 
-    // Trouver le prochain id_projet (max + 1)
-    const maxId = this.projets.reduce((max, p) => (p.id_projet > max ? p.id_projet : max), 0);
+    // Trouver le prochain id_projet (max + 1) from query data
+    const projects = this.projetsQuery.data() || [];
+    const maxId = projects.reduce((max: number, p: Projet) => (p.id_projet > max ? p.id_projet : max), 0);
 
     this.newProjet = {
       ...restProjet,
@@ -212,20 +207,20 @@ export class ProjectsViewComponent implements OnInit {
     this.showProjectModal = false;
   }
 
-  async onProjectSaved() {
+  onProjectSaved() {
+    // No need to manually reload - mutations auto-invalidate cache!
     this.closeModal();
-    await this.loadProjects();
   }
 
-  async deleteProjet(projet: Projet) {
+  deleteProjet(projet: Projet) {
     this.activeMenuId = null;
     this.confirmTitle = "Supprimer le projet";
     this.confirmMessage = `Êtes-vous sûr de vouloir supprimer le projet "${projet.nom_projet}" ?`;
 
     this.pendingConfirmAction = async () => {
       try {
+        // Use legacy method for now (mutations will auto-invalidate cache)
         await this.projetService.deleteProjet(projet.id!);
-        await this.loadProjects();
       } catch (error) {
         console.error("Error deleting project:", error);
       }

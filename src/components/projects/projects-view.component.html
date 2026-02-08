@@ -11,15 +11,15 @@
     <div class="search-box">
       <input
         type="text"
-        [(ngModel)]="searchQuery"
-        (ngModelChange)="filterProjects()"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
         placeholder="Rechercher un projet..."
         class="search-input"
       />
     </div>
 
     <div class="controls-right">
-      <select [(ngModel)]="statusFilter" (ngModelChange)="filterProjects()" class="filter-select">
+      <select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)" class="filter-select">
         <option value="">Tous les statuts</option>
         <option value="Actif">Actif</option>
         <option value="En cours">En cours</option>
@@ -61,7 +61,7 @@
   <!-- Card View -->
   <div *ngIf="viewMode === 'card'" class="projects-grid" cdkDropList (cdkDropListDropped)="drop($event)">
     <div
-      *ngFor="let projet of filteredProjects"
+      *ngFor="let projet of filteredProjects()"
       cdkDrag
       class="project-card"
       [style.border-left-color]="projet.color || '#3b82f6'"
@@ -140,7 +140,7 @@
       </div>
     </div>
 
-    <div *ngIf="filteredProjects.length === 0" class="empty-state">
+    <div *ngIf="filteredProjects().length === 0" class="empty-state">
       <p>Aucun projet trouvé</p>
     </div>
   </div>
@@ -148,7 +148,7 @@
   <!-- List View -->
   <div *ngIf="viewMode === 'list'" class="projects-list-view" cdkDropList (cdkDropListDropped)="drop($event)">
     <div
-      *ngFor="let projet of filteredProjects"
+      *ngFor="let projet of filteredProjects()"
       cdkDrag
       class="project-list-card"
       [style.border-left-color]="projet.color || '#3b82f6'"
@@ -214,7 +214,7 @@
       </div>
     </div>
 
-    <div *ngIf="filteredProjects.length === 0" class="empty-state">
+    <div *ngIf="filteredProjects().length === 0" class="empty-state">
       <p>Aucun projet trouvé</p>
     </div>
   </div>
