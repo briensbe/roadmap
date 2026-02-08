@@ -331,15 +331,50 @@ export class ProjetService implements OnDestroy {
         if (error) throw error;
         return data;
       },
-      onSuccess: (data) => {
-        // Optimistic update: update in list cache
-        this.queryClient.setQueryData(projetQueryKeys.list(), (old: Projet[] | undefined) => {
-          if (!old) return old;
-          return old.map(p => p.id === data.id ? data : p);
-        });
-        this.queryClient.setQueryData(projetQueryKeys.detail(data.id!), data);
-      },
+      onMutate: async ({ id, projet }) => {
+        // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+        await this.queryClient.cancelQueries({ queryKey: projetQueryKeys.list() });
+        await this.queryClient.cancelQueries({ queryKey: projetQueryKeys.detail(id) });
 
+        // Snapshot the previous value
+        const previousList = this.queryClient.getQueryData<Projet[]>(projetQueryKeys.list());
+        const previousDetail = this.queryClient.getQueryData<Projet>(projetQueryKeys.detail(id));
+
+        // Optimistically update to the new value
+        if (previousList) {
+          const updatedList = previousList.map((p) =>
+            p.id === id ? { ...p, ...projet } : p
+          );
+          // Vital: Sort the list so the UI reflects the new rank immediately
+          updatedList.sort((a, b) => (a.rank || "").localeCompare(b.rank || ""));
+
+          this.queryClient.setQueryData(projetQueryKeys.list(), updatedList);
+        }
+
+        if (previousDetail) {
+          this.queryClient.setQueryData(projetQueryKeys.detail(id), {
+            ...previousDetail,
+            ...projet,
+          });
+        }
+
+        // Return a context object with the snapshotted value
+        return { previousList, previousDetail };
+      },
+      onError: (err, newTodo, context) => {
+        // If the mutation fails, use the context returned from onMutate to roll back
+        if (context?.previousList) {
+          this.queryClient.setQueryData(projetQueryKeys.list(), context.previousList);
+        }
+        if (context?.previousDetail) {
+          this.queryClient.setQueryData(projetQueryKeys.detail(newTodo.id), context.previousDetail);
+        }
+      },
+      onSettled: (data, error, variables) => {
+        // Always refetch after error or success:
+        this.queryClient.invalidateQueries({ queryKey: projetQueryKeys.list() });
+        this.queryClient.invalidateQueries({ queryKey: projetQueryKeys.detail(variables.id) });
+      },
     }));
   }
 

@@ -126,24 +126,26 @@ export class ProjectsViewComponent implements OnInit {
 
   async drop(event: CdkDragDrop<Projet[]>) {
     const projects = [...this.filteredProjects()];
-    // Move in UI first for responsiveness
+    // Move in local array first to correctly calculate rank neighbors
     moveItemInArray(projects, event.previousIndex, event.currentIndex);
 
     const movedItem = projects[event.currentIndex];
     if (!movedItem) return;
 
     try {
-      // Calculate new rank using utility function
       const rankStr = calculateNewRank(
         projects,
         event.currentIndex,
         (p) => p.rank
       );
 
-      movedItem.rank = rankStr;
+      // Perform optimistic update via mutation
+      // The Service handles updating the cache immediately, which drives this.filteredProjects()
+      this.updateMutation.mutate({
+        id: movedItem.id!,
+        projet: { rank: rankStr }
+      });
 
-      // Update in database - mutation will auto-invalidate cache
-      await this.projetService.updateProjet(movedItem.id!, { rank: rankStr });
     } catch (error) {
       console.error('Error calculating rank:', error);
     }
