@@ -73,9 +73,9 @@
           <div class="project-identifiers">
             <span class="project-code" [style.color]="projet.color || '#3b82f6'">{{ projet.code_projet }}</span>
             <span class="external-ref-tag" *ngIf="projet.reference_externe">
-              <ng-container *ngIf="externalReferenceUrl; else noLink">
+              <ng-container *ngIf="externalReferenceUrl(); else noLink">
                 <a
-                  [href]="externalReferenceUrl + projet.reference_externe"
+                  [href]="externalReferenceUrl() + projet.reference_externe"
                   target="_blank"
                   class="ref-link"
                   (click)="$event.stopPropagation()"
@@ -166,9 +166,9 @@
             <span *ngIf="projet.reference_externe">
               •
               <span class="external-ref-tag">
-                <ng-container *ngIf="externalReferenceUrl; else noLinkList">
+                <ng-container *ngIf="externalReferenceUrl(); else noLinkList">
                   <a
-                    [href]="externalReferenceUrl + projet.reference_externe"
+                    [href]="externalReferenceUrl() + projet.reference_externe"
                     target="_blank"
                     class="ref-link"
                     (click)="$event.stopPropagation()"

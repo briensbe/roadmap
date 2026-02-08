@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, computed, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -42,7 +42,6 @@ import { ConfirmModalComponent } from '../confirm-modal.component';
               type="text" 
               placeholder="Rechercher une clé..." 
               [(ngModel)]="searchQuery"
-              (input)="filterSettings()"
             >
           </div>
           <button class="btn-primary" (click)="openCreateModal()">
@@ -66,42 +65,56 @@ import { ConfirmModalComponent } from '../confirm-modal.component';
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let setting of filteredSettings" class="setting-row">
-                  <td>
-                    <div class="key-scope">
-                      <span class="setting-key">{{ setting.key }}</span>
-                      <div class="scope-badge" [class.global]="setting.scope === 'global'">
-                        <lucide-icon [img]="setting.scope === 'global' ? GlobeIcon : UserIcon" size="12"></lucide-icon>
-                        {{ setting.scope }}
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <code class="value-preview">{{ setting.value }}</code>
-                  </td>
-                  <td>
-                    <span class="type-tag" [attr.data-type]="setting.type">
-                      {{ setting.type }}
-                    </span>
-                  </td>
-                  <td>
-                    <span class="description-text">{{ setting.description || '-' }}</span>
-                  </td>
-                  <td class="actions-cell">
-                    <button class="action-btn edit" (click)="editSetting(setting)" title="Modifier">
-                      <lucide-icon [img]="EditIcon" size="16"></lucide-icon>
-                    </button>
-                    <button class="action-btn delete" (click)="deleteSetting(setting)" title="Supprimer">
-                      <lucide-icon [img]="TrashIcon" size="16"></lucide-icon>
-                    </button>
-                  </td>
-                </tr>
-                <tr *ngIf="filteredSettings.length === 0">
-                  <td colspan="5" class="empty-state">
-                    <lucide-icon [img]="SearchIcon" size="48"></lucide-icon>
-                    <p>Aucun paramètre trouvé</p>
-                  </td>
-                </tr>
+                @if (settingsQuery.isPending()) {
+                  <tr>
+                    <td colspan="5" class="empty-state">Chargement des paramètres...</td>
+                  </tr>
+                } @else if (settingsQuery.isError()) {
+                  <tr>
+                    <td colspan="5" class="empty-state">Erreur lors du chargement des paramètres</td>
+                  </tr>
+                } @else {
+                  @for (setting of filteredSettings(); track setting.id) {
+                    <tr class="setting-row">
+                      <td>
+                        <div class="key-scope">
+                          <span class="setting-key">{{ setting.key }}</span>
+                          <div class="scope-badge" [class.global]="setting.scope === 'global'">
+                            <lucide-icon [img]="setting.scope === 'global' ? GlobeIcon : UserIcon" size="12"></lucide-icon>
+                            {{ setting.scope }}
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <code class="value-preview">{{ setting.value }}</code>
+                      </td>
+                      <td>
+                        <span class="type-tag" [attr.data-type]="setting.type">
+                          {{ setting.type }}
+                        </span>
+                      </td>
+                      <td>
+                        <span class="description-text">{{ setting.description || '-' }}</span>
+                      </td>
+                      <td class="actions-cell">
+                        <button class="action-btn edit" (click)="editSetting(setting)" title="Modifier">
+                          <lucide-icon [img]="EditIcon" size="16"></lucide-icon>
+                        </button>
+                        <button class="action-btn delete" (click)="deleteSetting(setting)" title="Supprimer">
+                          <lucide-icon [img]="TrashIcon" size="16"></lucide-icon>
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                  @if (filteredSettings().length === 0) {
+                    <tr>
+                      <td colspan="5" class="empty-state">
+                        <lucide-icon [img]="SearchIcon" size="48"></lucide-icon>
+                        <p>Aucun paramètre trouvé</p>
+                      </td>
+                    </tr>
+                  }
+                }
               </tbody>
             </table>
           </div>
@@ -109,64 +122,66 @@ import { ConfirmModalComponent } from '../confirm-modal.component';
       </div>
 
       <!-- Modal Add/Edit -->
-      <div class="modal-overlay" *ngIf="isModalOpen" (click)="closeModal()">
-        <div class="modal-content" (click)="$event.stopPropagation()">
-          <div class="modal-header">
-            <h2>{{ editingSetting?.id ? 'Modifier le paramètre' : 'Nouveau paramètre' }}</h2>
-            <button class="close-btn" (click)="closeModal()">
-              <lucide-icon [img]="XIcon" size="20"></lucide-icon>
-            </button>
-          </div>
-          <form (ngSubmit)="saveSetting()" #settingsForm="ngForm">
-            <div class="modal-body">
-              <div class="form-group">
-                <label for="key">Clé</label>
-                <input type="text" id="key" name="key" [(ngModel)]="currentSetting.key" required placeholder="ex: api_timeout">
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="type">Type</label>
-                  <select id="type" name="type" [(ngModel)]="currentSetting.type" required>
-                    <option value="string">String</option>
-                    <option value="number">Number</option>
-                    <option value="boolean">Boolean</option>
-                    <option value="json">JSON</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label for="scope">Scope</label>
-                  <input type="text" id="scope" name="scope" [(ngModel)]="currentSetting.scope" required placeholder="global">
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label for="value">Valeur</label>
-                <textarea 
-                  id="value" 
-                  name="value" 
-                  [(ngModel)]="currentSetting.value" 
-                  required 
-                  rows="3"
-                  [placeholder]="valuePlaceholder"
-                ></textarea>
-              </div>
-
-              <div class="form-group">
-                <label for="description">Description</label>
-                <textarea id="description" name="description" [(ngModel)]="currentSetting.description" rows="2" placeholder="À quoi sert ce paramètre ?"></textarea>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn-secondary" (click)="closeModal()">Annuler</button>
-              <button type="submit" class="btn-primary" [disabled]="!settingsForm.form.valid">
-                <lucide-icon [img]="SaveIcon" size="18"></lucide-icon>
-                Enregistrer
+      @if (isModalOpen) {
+        <div class="modal-overlay" (click)="closeModal()">
+          <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h2>{{ editingSetting?.id ? 'Modifier le paramètre' : 'Nouveau paramètre' }}</h2>
+              <button class="close-btn" (click)="closeModal()">
+                <lucide-icon [img]="XIcon" size="20"></lucide-icon>
               </button>
             </div>
-          </form>
+            <form (ngSubmit)="saveSetting()" #settingsForm="ngForm">
+              <div class="modal-body">
+                <div class="form-group">
+                  <label for="key">Clé</label>
+                  <input type="text" id="key" name="key" [(ngModel)]="currentSetting.key" required placeholder="ex: api_timeout">
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="type">Type</label>
+                    <select id="type" name="type" [(ngModel)]="currentSetting.type" required>
+                      <option value="string">String</option>
+                      <option value="number">Number</option>
+                      <option value="boolean">Boolean</option>
+                      <option value="json">JSON</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="scope">Scope</label>
+                    <input type="text" id="scope" name="scope" [(ngModel)]="currentSetting.scope" required placeholder="global">
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="value">Valeur</label>
+                  <textarea 
+                    id="value" 
+                    name="value" 
+                    [(ngModel)]="currentSetting.value" 
+                    required 
+                    rows="3"
+                    [placeholder]="valuePlaceholder"
+                  ></textarea>
+                </div>
+
+                <div class="form-group">
+                  <label for="description">Description</label>
+                  <textarea id="description" name="description" [(ngModel)]="currentSetting.description" rows="2" placeholder="À quoi sert ce paramètre ?"></textarea>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn-secondary" (click)="closeModal()">Annuler</button>
+                <button type="submit" class="btn-primary" [disabled]="!settingsForm.form.valid">
+                  <lucide-icon [img]="SaveIcon" size="18"></lucide-icon>
+                  Enregistrer
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-      </div>
+      }
 
       <app-confirm-modal
         [visible]="showConfirmModal"
@@ -550,9 +565,26 @@ import { ConfirmModalComponent } from '../confirm-modal.component';
   `]
 })
 export class SettingsComponent implements OnInit {
-  settings: Setting[] = [];
-  filteredSettings: Setting[] = [];
-  searchQuery = '';
+  private settingsService = inject(SettingsService);
+
+  searchQuery = signal('');
+  settingsQuery = this.settingsService.getAllSettingsQuery();
+  createSettingMutation = this.settingsService.createSettingMutation();
+  updateSettingMutation = this.settingsService.updateSettingMutation();
+  deleteSettingMutation = this.settingsService.deleteSettingMutation();
+
+  filteredSettings = computed(() => {
+    const settings = this.settingsQuery.data() || [];
+    const query = this.searchQuery().toLowerCase();
+
+    if (!query) return settings;
+
+    return settings.filter((s: Setting) =>
+      s.key.toLowerCase().includes(query) ||
+      s.scope.toLowerCase().includes(query) ||
+      (s.description && s.description.toLowerCase().includes(query))
+    );
+  });
 
   isModalOpen = false;
   editingSetting: Setting | null = null;
@@ -586,32 +618,8 @@ export class SettingsComponent implements OnInit {
     return this.currentSetting.type === 'json' ? '{ "key": "value" }' : 'Entrez la valeur...';
   }
 
-  constructor(private settingsService: SettingsService) { }
-
   ngOnInit() {
-    this.loadSettings();
-  }
-
-  async loadSettings() {
-    try {
-      this.settings = await this.settingsService.getAllSettings();
-      this.filterSettings();
-    } catch (error) {
-      console.error('Error loading settings:', error);
-    }
-  }
-
-  filterSettings() {
-    if (!this.searchQuery) {
-      this.filteredSettings = [...this.settings];
-    } else {
-      const query = this.searchQuery.toLowerCase();
-      this.filteredSettings = this.settings.filter(s =>
-        s.key.toLowerCase().includes(query) ||
-        s.scope.toLowerCase().includes(query) ||
-        (s.description && s.description.toLowerCase().includes(query))
-      );
-    }
+    // No need to manually load, settingsQuery does it
   }
 
   getDefaultSetting(): Setting {
@@ -640,14 +648,9 @@ export class SettingsComponent implements OnInit {
     this.confirmTitle = "Supprimer le paramètre";
     this.confirmMessage = `Êtes-vous sûr de vouloir supprimer le paramètre "${setting.key}" ?`;
 
-    this.pendingConfirmAction = async () => {
-      try {
-        if (setting.id) {
-          await this.settingsService.deleteSetting(setting.id);
-          this.loadSettings();
-        }
-      } catch (error) {
-        console.error('Error deleting setting:', error);
+    this.pendingConfirmAction = () => {
+      if (setting.id) {
+        this.deleteSettingMutation.mutate(setting.id);
       }
     };
     this.showConfirmModal = true;
@@ -659,16 +662,17 @@ export class SettingsComponent implements OnInit {
   }
 
   async saveSetting() {
-    try {
-      if (this.editingSetting?.id) {
-        await this.settingsService.updateSetting(this.editingSetting.id, this.currentSetting);
-      } else {
-        await this.settingsService.createSetting(this.currentSetting);
-      }
-      this.closeModal();
-      this.loadSettings();
-    } catch (error) {
-      console.error('Error saving setting:', error);
+    if (this.editingSetting?.id) {
+      this.updateSettingMutation.mutate({
+        id: this.editingSetting.id,
+        setting: this.currentSetting
+      }, {
+        onSuccess: () => this.closeModal()
+      });
+    } else {
+      this.createSettingMutation.mutate(this.currentSetting, {
+        onSuccess: () => this.closeModal()
+      });
     }
   }
 }

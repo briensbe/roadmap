@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef, HostListener, NgModule, ChangeDetectionStrategy, ChangeDetectorRef, NgZone, OnDestroy } from "@angular/core";
+import { Component, OnInit, ViewChild, ElementRef, HostListener, NgModule, ChangeDetectionStrategy, ChangeDetectorRef, NgZone, OnDestroy, computed } from "@angular/core";
 import { CommonModule, NgIf, NgFor } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { TeamService } from "../../services/team.service";
@@ -275,14 +275,12 @@ export class PlanViewComponent implements OnInit, OnDestroy {
     });
   }
 
+  private externalReferenceUrlQuery = this.settingsService.getSettingQuery("external_reference_url", "global");
+  externalReferenceUrl = computed(() => this.externalReferenceUrlQuery.data()?.value || null);
+
   ngOnInit() {
     this.loadData();
     this.generateWeeks();
-
-    this.settingsService.getSettingValue("external_reference_url", "global").then(value => {
-      this.externalReferenceUrl = value;
-      this.cdr.markForCheck();
-    });
 
     this.ngZone.runOutsideAngular(() => {
       const listener = (event: MouseEvent) => this.onGlobalMouseMove(event);
@@ -1265,7 +1263,6 @@ export class PlanViewComponent implements OnInit, OnDestroy {
   // --- Project Modal Integration ---
   showProjectModal = false;
   projectToEdit: Partial<Projet> | null = null;
-  externalReferenceUrl: string | null = null;
   ExternalLink = ExternalLink;
 
   getProjectForLinks(): Projet | undefined {

@@ -66,7 +66,8 @@ export class ProjectsViewComponent implements OnInit {
     });
   });
 
-  externalReferenceUrl: string | null = null;
+  private externalReferenceUrlQuery = this.settingsService.getSettingQuery("external_reference_url", "global");
+  externalReferenceUrl = computed(() => this.externalReferenceUrlQuery.data()?.value || null);
 
   showProjectModal = false;
   activeMenuId: string | null = null;
@@ -119,9 +120,6 @@ export class ProjectsViewComponent implements OnInit {
         this.statusFilter.set(params['status']);
       }
     });
-
-    // Load settings
-    this.externalReferenceUrl = await this.settingsService.getSettingValue("external_reference_url", "global");
   }
 
   async drop(event: CdkDragDrop<Projet[]>) {

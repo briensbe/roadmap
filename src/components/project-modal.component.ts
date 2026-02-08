@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, HostListener } from "@angular/core";
+import { Component, Input, Output, EventEmitter, OnInit, HostListener, computed } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { ProjetService } from "../services/projet.service";
@@ -30,8 +30,8 @@ import { LucideAngularModule, Plus, ExternalLink } from "lucide-angular";
             <div class="form-group">
               <div class="label-with-link">
                 <label>Référence Externe</label>
-                <a *ngIf="editableProjet.reference_externe && externalReferenceUrl" 
-                   [href]="externalReferenceUrl + editableProjet.reference_externe" 
+                <a *ngIf="editableProjet.reference_externe && externalReferenceUrl()" 
+                   [href]="externalReferenceUrl() + editableProjet.reference_externe" 
                    target="_blank" 
                    class="ref-link modal-ref-link">
                   Ouvrir
@@ -188,7 +188,8 @@ export class ProjectModalComponent implements OnInit {
 
   editableProjet: Partial<Projet> = {};
   isSaving = false;
-  externalReferenceUrl: string | null = null;
+  private externalReferenceUrlQuery = this.settingsService.getSettingQuery("external_reference_url", "global");
+  externalReferenceUrl = computed(() => this.externalReferenceUrlQuery.data()?.value || null);
   isCustomColor = false;
   formErrors = { nom_projet: false };
 
@@ -217,7 +218,6 @@ export class ProjectModalComponent implements OnInit {
     };
 
     this.isCustomColor = this.editableProjet.color ? !this.predefinedColors.includes(this.editableProjet.color) : false;
-    this.externalReferenceUrl = await this.settingsService.getSettingValue("external_reference_url", "global");
   }
 
   get ngModelColor(): string {

@@ -831,8 +831,8 @@
                 Modifier Projet
               </button>
               <a
-                *ngIf="project.reference_externe && externalReferenceUrl"
-                [href]="externalReferenceUrl + project.reference_externe"
+                *ngIf="project.reference_externe && externalReferenceUrl()"
+                [href]="externalReferenceUrl() + project.reference_externe"
                 target="_blank"
                 class="btn-link external-link"
               >
@@ -899,8 +899,8 @@
                 Modifier Projet
               </button>
               <a
-                *ngIf="project.reference_externe && externalReferenceUrl"
-                [href]="externalReferenceUrl + project.reference_externe"
+                *ngIf="project.reference_externe && externalReferenceUrl()"
+                [href]="externalReferenceUrl() + project.reference_externe"
                 target="_blank"
                 class="btn-link external-link"
               >

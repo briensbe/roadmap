@@ -54,7 +54,7 @@ export class ProjetService implements OnDestroy {
         }
       )
       .subscribe((status) => {
-        console.log('Realtime subscription status:', status);
+        console.log('Realtime subscription status for projets :', status);
       });
   }
 
