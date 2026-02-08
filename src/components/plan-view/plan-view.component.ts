@@ -19,7 +19,7 @@ import { SettingsService } from "../../services/settings.service";
 import { storageSignal } from "../../utils/storage-signal";
 import { signal } from "@angular/core";
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
-import { LexoRank } from 'lexorank';
+import { calculateNewRank, sortByRank } from '../../utils/lexorank.utils';
 
 @NgModule({
   imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX })],
@@ -510,40 +510,16 @@ export class PlanViewComponent implements OnInit, OnDestroy {
     moveItemInArray(this.rows, event.previousIndex, event.currentIndex);
 
     const movedItem = this.rows[event.currentIndex];
-    const prevItem = this.rows[event.currentIndex - 1];
-    const nextItem = this.rows[event.currentIndex + 1];
-
     if (!movedItem.originalProject) return;
 
-    let newRank: LexoRank;
-
-    // Helper to safely parse rank
-    const getRank = (item: ParentRow | undefined) => {
-      if (item && item.originalProject && item.originalProject.rank) {
-        return LexoRank.parse(item.originalProject.rank);
-      }
-      return LexoRank.middle();
-    };
-
     try {
-      if (!prevItem && !nextItem) {
-        newRank = LexoRank.middle();
-      } else if (!prevItem) {
-        // Top of list
-        const nextRank = getRank(nextItem);
-        newRank = nextRank.genPrev();
-      } else if (!nextItem) {
-        // Bottom of list
-        const prevRank = getRank(prevItem);
-        newRank = prevRank.genNext();
-      } else {
-        // Middle
-        const prevRank = getRank(prevItem);
-        const nextRank = getRank(nextItem);
-        newRank = prevRank.between(nextRank);
-      }
+      // Calculate new rank using utility function
+      const rankStr = calculateNewRank(
+        this.rows,
+        event.currentIndex,
+        (row) => row.originalProject?.rank
+      );
 
-      const rankStr = newRank.toString();
       movedItem.originalProject.rank = rankStr;
 
       // Update in database
@@ -563,16 +539,12 @@ export class PlanViewComponent implements OnInit, OnDestroy {
 
     if (this.viewMode() === "project") {
       // Parent = Project, Child = Team, GrandChild = Resource
-      // Sort projects alphabetically
-      // Sort projects by rank or alphabetically
-      const sortedProjects = [...this.allProjects].sort((a, b) => {
-        if (a.rank && b.rank) {
-          return a.rank.localeCompare(b.rank);
-        }
-        if (a.rank) return -1;
-        if (b.rank) return 1;
-        return a.nom_projet.localeCompare(b.nom_projet);
-      });
+      // Sort projects by rank using utility function
+      const sortedProjects = sortByRank(
+        this.allProjects,
+        (p) => p.rank,
+        (a, b) => a.nom_projet.localeCompare(b.nom_projet)
+      );
 
       for (const project of sortedProjects) {
         const projectCharges = this.allCharges.filter((c) => c.projet_id === project.id);

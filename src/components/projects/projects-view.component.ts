@@ -11,7 +11,7 @@ import { LucideAngularModule, Plus, LucideCalculator, MoreVertical, Edit, Trash2
 import { ConfirmModalComponent } from "../confirm-modal.component";
 import { ProjectModalComponent } from "../project-modal.component";
 import { CdkDragDrop, DragDropModule, moveItemInArray } from "@angular/cdk/drag-drop";
-import { LexoRank } from "lexorank";
+import { calculateNewRank, sortByRank } from "../../utils/lexorank.utils";
 
 @Component({
   selector: "app-projects-view",
@@ -96,15 +96,12 @@ export class ProjectsViewComponent implements OnInit {
   async loadProjects() {
     try {
       this.projets = await this.projetService.getAllProjets();
-      // Sort by rank
-      this.projets.sort((a, b) => {
-        if (a.rank && b.rank) {
-          return a.rank.localeCompare(b.rank);
-        }
-        if (a.rank) return -1;
-        if (b.rank) return 1;
-        return a.nom_projet.localeCompare(b.nom_projet);
-      });
+      // Sort by rank using utility function
+      this.projets = sortByRank(
+        this.projets,
+        (p) => p.rank,
+        (a, b) => a.nom_projet.localeCompare(b.nom_projet)
+      );
       this.filterProjects();
     } catch (error) {
       console.error("Error loading projects:", error);
@@ -116,40 +113,16 @@ export class ProjectsViewComponent implements OnInit {
     moveItemInArray(this.filteredProjects, event.previousIndex, event.currentIndex);
 
     const movedItem = this.filteredProjects[event.currentIndex];
-    const prevItem = this.filteredProjects[event.currentIndex - 1];
-    const nextItem = this.filteredProjects[event.currentIndex + 1];
-
     if (!movedItem) return;
 
-    let newRank: LexoRank;
-
-    // Helper to safely parse rank
-    const getRank = (item: Projet | undefined) => {
-      if (item && item.rank) {
-        return LexoRank.parse(item.rank);
-      }
-      return LexoRank.middle();
-    };
-
     try {
-      if (!prevItem && !nextItem) {
-        newRank = LexoRank.middle();
-      } else if (!prevItem) {
-        // Top of list
-        const nextRank = getRank(nextItem);
-        newRank = nextRank.genPrev();
-      } else if (!nextItem) {
-        // Bottom of list
-        const prevRank = getRank(prevItem);
-        newRank = prevRank.genNext();
-      } else {
-        // Middle
-        const prevRank = getRank(prevItem);
-        const nextRank = getRank(nextItem);
-        newRank = prevRank.between(nextRank);
-      }
+      // Calculate new rank using utility function
+      const rankStr = calculateNewRank(
+        this.filteredProjects,
+        event.currentIndex,
+        (p) => p.rank
+      );
 
-      const rankStr = newRank.toString();
       movedItem.rank = rankStr;
 
       // Update in database
