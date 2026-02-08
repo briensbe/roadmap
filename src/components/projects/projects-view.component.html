@@ -59,9 +59,10 @@
   </div>
 
   <!-- Card View -->
-  <div *ngIf="viewMode === 'card'" class="projects-grid">
+  <div *ngIf="viewMode === 'card'" class="projects-grid" cdkDropList (cdkDropListDropped)="drop($event)">
     <div
       *ngFor="let projet of filteredProjects"
+      cdkDrag
       class="project-card"
       [style.border-left-color]="projet.color || '#3b82f6'"
       [class.menu-active]="activeMenuId === projet.id"
@@ -145,9 +146,10 @@
   </div>
 
   <!-- List View -->
-  <div *ngIf="viewMode === 'list'" class="projects-list-view">
+  <div *ngIf="viewMode === 'list'" class="projects-list-view" cdkDropList (cdkDropListDropped)="drop($event)">
     <div
       *ngFor="let projet of filteredProjects"
+      cdkDrag
       class="project-list-card"
       [style.border-left-color]="projet.color || '#3b82f6'"
       [class.menu-active]="activeMenuId === projet.id"

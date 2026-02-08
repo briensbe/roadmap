@@ -10,11 +10,13 @@ import { Chiffre } from "../../models/chiffres.type";
 import { LucideAngularModule, Plus, LucideCalculator, MoreVertical, Edit, Trash2, Copy, ExternalLink } from "lucide-angular";
 import { ConfirmModalComponent } from "../confirm-modal.component";
 import { ProjectModalComponent } from "../project-modal.component";
+import { CdkDragDrop, DragDropModule, moveItemInArray } from "@angular/cdk/drag-drop";
+import { LexoRank } from "lexorank";
 
 @Component({
   selector: "app-projects-view",
   standalone: true,
-  imports: [CommonModule, FormsModule, ChiffresModalComponent, LucideAngularModule, ConfirmModalComponent, ProjectModalComponent],
+  imports: [CommonModule, FormsModule, ChiffresModalComponent, LucideAngularModule, ConfirmModalComponent, ProjectModalComponent, DragDropModule],
   templateUrl: "./projects-view.component.html",
   styleUrl: "./projects-view.component.css"
 })
@@ -94,11 +96,78 @@ export class ProjectsViewComponent implements OnInit {
   async loadProjects() {
     try {
       this.projets = await this.projetService.getAllProjets();
+      // Sort by rank
+      this.projets.sort((a, b) => {
+        if (a.rank && b.rank) {
+          return a.rank.localeCompare(b.rank);
+        }
+        if (a.rank) return -1;
+        if (b.rank) return 1;
+        return a.nom_projet.localeCompare(b.nom_projet);
+      });
       this.filterProjects();
     } catch (error) {
       console.error("Error loading projects:", error);
     }
   }
+
+  async drop(event: CdkDragDrop<Projet[]>) {
+    // Move in UI first for responsiveness
+    moveItemInArray(this.filteredProjects, event.previousIndex, event.currentIndex);
+
+    const movedItem = this.filteredProjects[event.currentIndex];
+    const prevItem = this.filteredProjects[event.currentIndex - 1];
+    const nextItem = this.filteredProjects[event.currentIndex + 1];
+
+    if (!movedItem) return;
+
+    let newRank: LexoRank;
+
+    // Helper to safely parse rank
+    const getRank = (item: Projet | undefined) => {
+      if (item && item.rank) {
+        return LexoRank.parse(item.rank);
+      }
+      return LexoRank.middle();
+    };
+
+    try {
+      if (!prevItem && !nextItem) {
+        newRank = LexoRank.middle();
+      } else if (!prevItem) {
+        // Top of list
+        const nextRank = getRank(nextItem);
+        newRank = nextRank.genPrev();
+      } else if (!nextItem) {
+        // Bottom of list
+        const prevRank = getRank(prevItem);
+        newRank = prevRank.genNext();
+      } else {
+        // Middle
+        const prevRank = getRank(prevItem);
+        const nextRank = getRank(nextItem);
+        newRank = prevRank.between(nextRank);
+      }
+
+      const rankStr = newRank.toString();
+      movedItem.rank = rankStr;
+
+      // Update in database
+      await this.projetService.updateProjet(movedItem.id!, { rank: rankStr });
+
+      // Also update in the main projets array
+      const mainIndex = this.projets.findIndex(p => p.id === movedItem.id);
+      if (mainIndex !== -1) {
+        this.projets[mainIndex].rank = rankStr;
+      }
+
+    } catch (error) {
+      console.error('Error calculating rank:', error);
+      // Fallback: reload to reset order if calculation failed
+      await this.loadProjects();
+    }
+  }
+
 
   filterProjects() {
     this.filteredProjects = this.projets.filter((projet) => {
