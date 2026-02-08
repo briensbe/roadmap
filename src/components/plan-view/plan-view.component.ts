@@ -107,7 +107,7 @@ export class PlanViewComponent implements OnInit, OnDestroy {
     await this.loadData();
   }
 
-  viewMode = storageSignal<"project" | "team" | "resource">("plan-view-mode", "project");
+  viewMode = storageSignal<"project" | "team" | "resource">("plan-view-mode", "resource");
   displayFormat = storageSignal<"tree" | "flat">("plan-view-display-format", "tree");
   showAvailability = storageSignal<boolean>("plan-view-show-availability", false);
   weekFilters = storageSignal<number[]>("plan-view-week-filters", []);
