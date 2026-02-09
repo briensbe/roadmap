@@ -1,5 +1,6 @@
 import { Injectable } from "@angular/core";
 import { AuthTokenResponse, createClient, SupabaseClient, UserResponse } from "@supabase/supabase-js";
+import { BehaviorSubject } from "rxjs";
 import { LoginPayload, SignupPayload } from "../auth/types/user.type";
 import { environment } from "../environments/environment";
 
@@ -17,6 +18,7 @@ export class SupabaseService {
       },
     });
 
+    this.initializeAuthListener();
   }
 
   private async safeLock<T>(name: string, acquireFn: () => Promise<T>, retries = 5, delayMs = 50): Promise<T> {
@@ -160,5 +162,37 @@ export class SupabaseService {
 
   async getSession() {
     return this.supabase.auth.getSession();
+  }
+
+  /**
+   * Observable pour suivre l'état de l'authentification
+   */
+  readonly authState$ = new BehaviorSubject<{ event: string, session: any } | null>(null);
+
+  private initializeAuthListener() {
+    this.supabase.auth.onAuthStateChange((event, session) => {
+      this.authState$.next({ event, session });
+      if (session?.user) {
+        sessionStorage.setItem("releaseflowUser", JSON.stringify(session.user));
+      } else {
+        sessionStorage.removeItem("releaseflowUser");
+      }
+    });
+  }
+
+  /**
+   * Connexion via Google (OAuth)
+   */
+  async signInWithGoogle() {
+    return await this.supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: environment.authRedirectUrl,
+        queryParams: {
+          access_type: "offline",
+          prompt: "consent",
+        },
+      },
+    });
   }
 }

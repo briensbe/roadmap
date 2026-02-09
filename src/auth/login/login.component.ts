@@ -38,8 +38,20 @@ export class LoginComponent {
         alert('Error signing in: ' + error.message);
       } else {
         this.router.navigate(['/']); // Redirige vers la route par défaut
-        // TODO -> rediriger vers la page d'origine
       }
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  async signInWithGoogle() {
+    this.loading = true;
+    try {
+      const { error } = await this.supabaseService.signInWithGoogle();
+      if (error) {
+        alert('Error signing in with Google: ' + error.message);
+      }
+      // Note: redirection is handled by Supabase for OAuth
     } finally {
       this.loading = false;
     }

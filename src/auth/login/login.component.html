@@ -19,6 +19,15 @@
       {{ loading ? "Loading..." : "Sign In" }}
     </button>
   </form>
+
+  <div class="divider">
+    <span>or</span>
+  </div>
+
+  <button type="button" class="google-btn" (click)="signInWithGoogle()" [disabled]="loading">
+    <img src="assets/google-logo.svg" alt="Google logo" />
+    Sign in with Google
+  </button>
   <p>Don't have an account? <a (click)="navigateToSignup()">Sign Up</a></p>
   <p>Forgot your password ? <a (click)="navigateToForgot()">Send me a link</a></p>
 </div>
