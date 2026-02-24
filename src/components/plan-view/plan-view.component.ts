@@ -1065,6 +1065,12 @@ export class PlanViewComponent implements OnInit, OnDestroy {
   toggleRow(row: ParentRow) {
     row.expanded = !row.expanded;
     this.manualStates.set(row.id, row.expanded);
+
+    // In resource view, the child level is a hidden dummy intermediary.
+    // Sync children expanded state so resources behind *ngIf="child.expanded" are shown.
+    if (this.viewMode() === 'resource') {
+      row.children.forEach(c => c.expanded = row.expanded);
+    }
   }
 
   toggleChild(child: ChildRow, parent: ParentRow) {
