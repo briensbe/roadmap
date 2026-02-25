@@ -61,6 +61,11 @@
       </div>
 
       <button class="btn btn-secondary" (click)="goToToday()">Aujourd'hui</button>
+
+      <button class="btn btn-export" (click)="exportToExcel()" title="Exporter en Excel">
+        <lucide-icon [img]="FileDown" [size]="16"></lucide-icon>
+        Export Excel
+      </button>
     </div>
   </div>
 

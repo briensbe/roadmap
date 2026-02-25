@@ -10,7 +10,8 @@ import { Equipe, Projet, Charge, Role, Personne, Capacite, Jalon } from "../../m
 import { CalendarService } from "../../services/calendar.service";
 import { PersonnesService } from "../../services/personnes.service";
 
-import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX } from "lucide-angular";
+import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown } from "lucide-angular";
+import * as XLSX from 'xlsx';
 import { getISOWeekYear } from "date-fns";
 import { calculateBestToolbarPosition, calculateBestPopoverPosition, ToolbarPosition, PopoverPosition } from "../../utils/selection-positioning";
 import { SelectionToolbarComponent } from "../selection-toolbar.component";
@@ -22,7 +23,7 @@ import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-
 import { calculateNewRank, sortByRank } from '../../utils/lexorank.utils';
 
 @NgModule({
-  imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX })],
+  imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown })],
   exports: [LucideAngularModule]
 })
 export class LucideIconsModule { }
@@ -242,6 +243,7 @@ export class PlanViewComponent implements OnInit, OnDestroy {
   X = X;
   Contact = Contact;
   User = User;
+  FileDown = FileDown;
 
   constructor(
     private teamService: TeamService,
@@ -273,6 +275,95 @@ export class PlanViewComponent implements OnInit, OnDestroy {
       r.expanded = false;
       r.children.forEach(c => c.expanded = false);
     });
+  }
+
+  exportToExcel() {
+    // Build header row: fixed columns + one column per displayed week
+    const weekHeaders = this.displayedWeeks.map(w => {
+      const d = w.getDate().toString().padStart(2, '0');
+      const m = (w.getMonth() + 1).toString().padStart(2, '0');
+      const y = w.getFullYear();
+      return `${d}/${m}/${y}`;
+    });
+
+    const headers = ['Projet', 'Code Projet', 'Équipe', 'Code Équipe', 'Ressource', 'Type', ...weekHeaders];
+
+    const dataRows: (string | number)[][] = [];
+
+    // Always iterate in project > team > resource order (mode-agnostic)
+    // We iterate over allProjects sorted as in the tree, using the built rows
+    for (const parent of this.rowsAll) {
+      for (const child of parent.children) {
+        for (const resource of child.resources) {
+          // Determine Projet / Équipe / Ressource columns depending on viewMode
+          let projet: string;
+          let codeProjet: string;
+          let equipe: string;
+          let codeEquipe: string;
+          let ressource: string;
+
+          if (this.viewMode() === 'project') {
+            // parent = project, child = team
+            projet = parent.label;
+            codeProjet = parent.code || '';
+            equipe = child.label;
+            codeEquipe = child.code || '';
+            ressource = resource.label;
+          } else if (this.viewMode() === 'team') {
+            // parent = team, child = project
+            projet = child.label;
+            codeProjet = child.code || '';
+            equipe = parent.label;
+            codeEquipe = parent.code || '';
+            ressource = resource.label;
+          } else {
+            // resource mode: parent = team, child = resource (label), resource = project
+            projet = resource.label;
+            codeProjet = '';
+            equipe = parent.label;
+            codeEquipe = parent.code || '';
+            ressource = child.label;
+          }
+
+          const weekValues = this.displayedWeeks.map(w => {
+            const weekKey = w.toISOString().split('T')[0];
+            return resource.charges.get(weekKey) || 0;
+          });
+
+          dataRows.push([projet, codeProjet, equipe, codeEquipe, ressource, resource.type, ...weekValues]);
+        }
+      }
+    }
+
+    // Sort by Projet > Équipe > Ressource
+    dataRows.sort((a, b) => {
+      const pa = (a[0] as string).localeCompare(b[0] as string);
+      if (pa !== 0) return pa;
+      const ea = (a[2] as string).localeCompare(b[2] as string);
+      if (ea !== 0) return ea;
+      return (a[4] as string).localeCompare(b[4] as string);
+    });
+
+    const aoa = [headers, ...dataRows];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+    // Auto-width for fixed columns
+    ws['!cols'] = [
+      { wch: 30 }, // Projet
+      { wch: 12 }, // Code Projet
+      { wch: 20 }, // Équipe
+      { wch: 12 }, // Code Équipe
+      { wch: 24 }, // Ressource
+      { wch: 10 }, // Type
+      ...weekHeaders.map(() => ({ wch: 12 }))
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Planification');
+
+    const today = new Date();
+    const dateStr = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
+    XLSX.writeFile(wb, `planification_${dateStr}.xlsx`);
   }
 
   private externalReferenceUrlQuery = this.settingsService.getSettingQuery("external_reference_url", "global");
