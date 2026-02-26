@@ -2200,10 +2200,26 @@ export class PlanViewComponent implements OnInit, OnDestroy {
 
   /**
    * Retourne la valeur chiffre (selon chiffreMode) pour une équipe et un projet donnés (UUIDs).
+   * Peut aussi prendre en compte une ressource spécifique pour une résolution plus granulaire du service.
    * Retourne null si aucun chiffre trouvé.
    */
-  getChiffreValue(teamId: string, projectId: string): number | null {
-    const idService = this.getIdServiceForTeam(teamId);
+  getChiffreValue(teamId: string, projectId: string, resourceId?: string, resourceType?: 'role' | 'personne'): number | null {
+    let idService: number | null = null;
+
+    if (resourceType === 'personne' && resourceId) {
+      const personne = this.availablePersonnes.find(p => p.id === resourceId);
+      idService = personne?.id_service ?? null;
+    } else if (resourceType === 'role' && resourceId) {
+      // Pour un rôle, on cherche l'attachement qui lie ce rôle à cette équipe
+      const attachment = this.allRoleAttachments.find(a => a.role_id === resourceId && a.equipe_id === teamId);
+      idService = attachment?.id_service ?? null;
+    }
+
+    // Fallback sur le service de l'équipe si non résolu par la ressource
+    if (idService === null) {
+      idService = this.getIdServiceForTeam(teamId);
+    }
+
     const idProjet = this.getIdProjetNumeric(projectId);
     if (idService === null || idProjet === null) return null;
 
@@ -2211,7 +2227,7 @@ export class PlanViewComponent implements OnInit, OnDestroy {
     if (!chiffre) return null;
 
     const mode = this.chiffreMode();
-    const value = chiffre[mode];
+    const value = (chiffre as any)[mode];
     return value !== undefined ? value : null;
   }
 

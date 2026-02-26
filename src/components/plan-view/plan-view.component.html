@@ -451,7 +451,9 @@
                                   <span class="badge-unit">j</span>
                                 </div>
                                 <!-- Chiffre Badge (project mode: parent=projet child=equipe) -->
-                                <ng-container *ngIf="getChiffreValue(child.id, row.id) !== null">
+                                <ng-container
+                                  *ngIf="getChiffreValue(child.id, row.id, resource.resourceId, resource.type) !== null"
+                                >
                                   <span class="chiffre-badge-sep">/</span>
                                   <div
                                     class="chiffre-badge"
@@ -465,7 +467,8 @@
                                   >
                                     <span class="chiffre-badge-prefix">{{ getChiffreBadgeLabel() }}</span>
                                     <span class="chiffre-badge-val">{{
-                                      getChiffreValue(child.id, row.id) | number: "1.0-1"
+                                      getChiffreValue(child.id, row.id, resource.resourceId, resource.type)
+                                        | number: "1.0-1"
                                     }}</span>
                                     <span class="chiffre-badge-unit">j</span>
                                   </div>
@@ -657,29 +660,10 @@
                                 <span class="badge-unit">j</span>
                               </div>
                               <!-- Chiffre Badge (team mode: parent=equipe child=projet; resource mode: resource=projet parent starts with teamId) -->
-                              <ng-container *ngIf="viewMode() === 'team' && getChiffreValue(row.id, child.id) !== null">
-                                <span class="chiffre-badge-sep">/</span>
-                                <div
-                                  class="chiffre-badge"
-                                  [class.anchor-active-chiffre]="
-                                    activeChiffreAnchorId === 'chiffre-' + getResourceUniqueId(resource, child, row)
-                                  "
-                                  (click)="
-                                    openChiffrePopover($event, 'chiffre-' + getResourceUniqueId(resource, child, row))
-                                  "
-                                  title="Cliquer pour changer la catégorie"
-                                >
-                                  <span class="chiffre-badge-prefix">{{ getChiffreBadgeLabel() }}</span>
-                                  <span class="chiffre-badge-val">{{
-                                    getChiffreValue(row.id, child.id) | number: "1.0-1"
-                                  }}</span>
-                                  <span class="chiffre-badge-unit">j</span>
-                                </div>
-                              </ng-container>
                               <ng-container
                                 *ngIf="
-                                  viewMode() === 'resource' &&
-                                  getChiffreValue(row.id.split('_')[0], resource.id) !== null
+                                  viewMode() === 'team' &&
+                                  getChiffreValue(row.id, child.id, resource.resourceId, resource.type) !== null
                                 "
                               >
                                 <span class="chiffre-badge-sep">/</span>
@@ -695,7 +679,42 @@
                                 >
                                   <span class="chiffre-badge-prefix">{{ getChiffreBadgeLabel() }}</span>
                                   <span class="chiffre-badge-val">{{
-                                    getChiffreValue(row.id.split("_")[0], resource.id) | number: "1.0-1"
+                                    getChiffreValue(row.id, child.id, resource.resourceId, resource.type)
+                                      | number: "1.0-1"
+                                  }}</span>
+                                  <span class="chiffre-badge-unit">j</span>
+                                </div>
+                              </ng-container>
+                              <ng-container
+                                *ngIf="
+                                  viewMode() === 'resource' &&
+                                  getChiffreValue(
+                                    row.id.split('_')[0],
+                                    resource.id,
+                                    resource.resourceId,
+                                    resource.type
+                                  ) !== null
+                                "
+                              >
+                                <span class="chiffre-badge-sep">/</span>
+                                <div
+                                  class="chiffre-badge"
+                                  [class.anchor-active-chiffre]="
+                                    activeChiffreAnchorId === 'chiffre-' + getResourceUniqueId(resource, child, row)
+                                  "
+                                  (click)="
+                                    openChiffrePopover($event, 'chiffre-' + getResourceUniqueId(resource, child, row))
+                                  "
+                                  title="Cliquer pour changer la catégorie"
+                                >
+                                  <span class="chiffre-badge-prefix">{{ getChiffreBadgeLabel() }}</span>
+                                  <span class="chiffre-badge-val">{{
+                                    getChiffreValue(
+                                      row.id.split("_")[0],
+                                      resource.id,
+                                      resource.resourceId,
+                                      resource.type
+                                    ) | number: "1.0-1"
                                   }}</span>
                                   <span class="chiffre-badge-unit">j</span>
                                 </div>
@@ -813,47 +832,10 @@
                   <span class="badge-unit">j</span>
                 </div>
                 <!-- Chiffre Badge (flat view) -->
-                <ng-container *ngIf="viewMode() === 'project' && getChiffreValue(row.child.id, row.parent.id) !== null">
-                  <span class="chiffre-badge-sep">/</span>
-                  <div
-                    class="chiffre-badge"
-                    [class.anchor-active-chiffre]="
-                      activeChiffreAnchorId === 'chiffre-' + getResourceUniqueId(row.resource, row.child, row.parent)
-                    "
-                    (click)="
-                      openChiffrePopover($event, 'chiffre-' + getResourceUniqueId(row.resource, row.child, row.parent))
-                    "
-                    title="Cliquer pour changer la catégorie"
-                  >
-                    <span class="chiffre-badge-prefix">{{ getChiffreBadgeLabel() }}</span>
-                    <span class="chiffre-badge-val">{{
-                      getChiffreValue(row.child.id, row.parent.id) | number: "1.0-1"
-                    }}</span>
-                    <span class="chiffre-badge-unit">j</span>
-                  </div>
-                </ng-container>
-                <ng-container *ngIf="viewMode() === 'team' && getChiffreValue(row.parent.id, row.child.id) !== null">
-                  <span class="chiffre-badge-sep">/</span>
-                  <div
-                    class="chiffre-badge"
-                    [class.anchor-active-chiffre]="
-                      activeChiffreAnchorId === 'chiffre-' + getResourceUniqueId(row.resource, row.child, row.parent)
-                    "
-                    (click)="
-                      openChiffrePopover($event, 'chiffre-' + getResourceUniqueId(row.resource, row.child, row.parent))
-                    "
-                    title="Cliquer pour changer la catégorie"
-                  >
-                    <span class="chiffre-badge-prefix">{{ getChiffreBadgeLabel() }}</span>
-                    <span class="chiffre-badge-val">{{
-                      getChiffreValue(row.parent.id, row.child.id) | number: "1.0-1"
-                    }}</span>
-                    <span class="chiffre-badge-unit">j</span>
-                  </div>
-                </ng-container>
                 <ng-container
                   *ngIf="
-                    viewMode() === 'resource' && getChiffreValue(row.parent.id.split('_')[0], row.resource.id) !== null
+                    viewMode() === 'project' &&
+                    getChiffreValue(row.child.id, row.parent.id, row.resource.resourceId, row.resource.type) !== null
                   "
                 >
                   <span class="chiffre-badge-sep">/</span>
@@ -869,7 +851,67 @@
                   >
                     <span class="chiffre-badge-prefix">{{ getChiffreBadgeLabel() }}</span>
                     <span class="chiffre-badge-val">{{
-                      getChiffreValue(row.parent.id.split("_")[0], row.resource.id) | number: "1.0-1"
+                      getChiffreValue(row.child.id, row.parent.id, row.resource.resourceId, row.resource.type)
+                        | number: "1.0-1"
+                    }}</span>
+                    <span class="chiffre-badge-unit">j</span>
+                  </div>
+                </ng-container>
+                <ng-container
+                  *ngIf="
+                    viewMode() === 'team' &&
+                    getChiffreValue(row.parent.id, row.child.id, row.resource.resourceId, row.resource.type) !== null
+                  "
+                >
+                  <span class="chiffre-badge-sep">/</span>
+                  <div
+                    class="chiffre-badge"
+                    [class.anchor-active-chiffre]="
+                      activeChiffreAnchorId === 'chiffre-' + getResourceUniqueId(row.resource, row.child, row.parent)
+                    "
+                    (click)="
+                      openChiffrePopover($event, 'chiffre-' + getResourceUniqueId(row.resource, row.child, row.parent))
+                    "
+                    title="Cliquer pour changer la catégorie"
+                  >
+                    <span class="chiffre-badge-prefix">{{ getChiffreBadgeLabel() }}</span>
+                    <span class="chiffre-badge-val">{{
+                      getChiffreValue(row.parent.id, row.child.id, row.resource.resourceId, row.resource.type)
+                        | number: "1.0-1"
+                    }}</span>
+                    <span class="chiffre-badge-unit">j</span>
+                  </div>
+                </ng-container>
+                <ng-container
+                  *ngIf="
+                    viewMode() === 'resource' &&
+                    getChiffreValue(
+                      row.parent.id.split('_')[0],
+                      row.resource.id,
+                      row.resource.resourceId,
+                      row.resource.type
+                    ) !== null
+                  "
+                >
+                  <span class="chiffre-badge-sep">/</span>
+                  <div
+                    class="chiffre-badge"
+                    [class.anchor-active-chiffre]="
+                      activeChiffreAnchorId === 'chiffre-' + getResourceUniqueId(row.resource, row.child, row.parent)
+                    "
+                    (click)="
+                      openChiffrePopover($event, 'chiffre-' + getResourceUniqueId(row.resource, row.child, row.parent))
+                    "
+                    title="Cliquer pour changer la catégorie"
+                  >
+                    <span class="chiffre-badge-prefix">{{ getChiffreBadgeLabel() }}</span>
+                    <span class="chiffre-badge-val">{{
+                      getChiffreValue(
+                        row.parent.id.split("_")[0],
+                        row.resource.id,
+                        row.resource.resourceId,
+                        row.resource.type
+                      ) | number: "1.0-1"
                     }}</span>
                     <span class="chiffre-badge-unit">j</span>
                   </div>
