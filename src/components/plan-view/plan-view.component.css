@@ -456,7 +456,7 @@
   width: 100%;
   height: 100%;
   cursor: pointer;
-  padding: 0 12px;
+  padding: 0 80px 0 12px; /* 80px right padding to prevent overlap with hover add/delete buttons */
   position: relative;
 }
 .row-label-content:hover {
