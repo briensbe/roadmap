@@ -1003,6 +1003,10 @@
                 <lucide-icon [img]="ExternalLink" [size]="14"></lucide-icon>
                 Modifier Projet
               </button>
+              <button class="btn-link" (click)="onOpenChiffresFromProject(project.id_projet)">
+                <lucide-icon [img]="LucideCalculator" [size]="14"></lucide-icon>
+                Modifier chiffres
+              </button>
               <a
                 *ngIf="project.reference_externe && externalReferenceUrl()"
                 [href]="externalReferenceUrl() + project.reference_externe"
@@ -1070,6 +1074,10 @@
               <button class="btn-link" (click)="openProjectEditFromLink()">
                 <lucide-icon [img]="ExternalLink" [size]="14"></lucide-icon>
                 Modifier Projet
+              </button>
+              <button class="btn-link" (click)="onOpenChiffresFromProject(project.id_projet)">
+                <lucide-icon [img]="LucideCalculator" [size]="14"></lucide-icon>
+                Modifier chiffres
               </button>
               <a
                 *ngIf="project.reference_externe && externalReferenceUrl()"

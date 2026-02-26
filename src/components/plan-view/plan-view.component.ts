@@ -13,7 +13,7 @@ import { ChiffresService } from "../../services/chiffres.service";
 import { Chiffre } from "../../models/chiffres.type";
 import { ResourceService } from "../../services/resource.service";
 
-import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown } from "lucide-angular";
+import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown, LucideCalculator } from "lucide-angular";
 import * as XLSX from 'xlsx';
 import { getISOWeekYear } from "date-fns";
 import { calculateBestToolbarPosition, calculateBestPopoverPosition, ToolbarPosition, PopoverPosition } from "../../utils/selection-positioning";
@@ -26,7 +26,7 @@ import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-
 import { calculateNewRank, sortByRank } from '../../utils/lexorank.utils';
 
 @NgModule({
-  imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown })],
+  imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown, LucideCalculator })],
   exports: [LucideAngularModule]
 })
 export class LucideIconsModule { }
@@ -2341,5 +2341,6 @@ export class PlanViewComponent implements OnInit, OnDestroy {
     this.selectedCapacityYear = 'custom';
     this.showYearPopover = false;
   }
+  LucideCalculator = LucideCalculator;
 }
 
