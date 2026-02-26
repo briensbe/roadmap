@@ -6,9 +6,12 @@ import { ProjetService } from "../../services/projet.service";
 import { ChargeService } from "../../services/charge.service";
 import { RolesService } from "../../services/roles.service";
 import { JalonService } from "../../services/jalon.service";
-import { Equipe, Projet, Charge, Role, Personne, Capacite, Jalon } from "../../models/types";
+import { Equipe, Projet, Charge, Role, Personne, Capacite, Jalon, Service } from "../../models/types";
 import { CalendarService } from "../../services/calendar.service";
 import { PersonnesService } from "../../services/personnes.service";
+import { ChiffresService } from "../../services/chiffres.service";
+import { Chiffre } from "../../models/chiffres.type";
+import { ResourceService } from "../../services/resource.service";
 
 import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown } from "lucide-angular";
 import * as XLSX from 'xlsx';
@@ -112,6 +115,7 @@ export class PlanViewComponent implements OnInit, OnDestroy {
   displayFormat = storageSignal<"tree" | "flat">("plan-view-display-format", "tree");
   showAvailability = storageSignal<boolean>("plan-view-show-availability", false);
   weekFilters = storageSignal<number[]>("plan-view-week-filters", []);
+  chiffreMode = storageSignal<'initial' | 'revise' | 'previsionnel' | 'consomme'>("plan-view-chiffre-mode", "previsionnel");
   private isDefaultExpanded = true;
   private manualStates = new Map<string, boolean>();
 
@@ -120,6 +124,10 @@ export class PlanViewComponent implements OnInit, OnDestroy {
 
   selectedStartDate: Date | null = null;
   showYearPopover = false;
+  showChiffrePopover = false;
+  chiffrePopoverPosition: PopoverPosition | null = null;
+  chiffrePopoverArrowSide: 'top' | 'bottom' = 'top';
+  activeChiffreAnchorId: string | null = null;
   popoverPosition: PopoverPosition | null = null;
   popoverArrowSide: 'top' | 'bottom' = 'top';
   activeAnchorId: string | null = null;
@@ -179,6 +187,10 @@ export class PlanViewComponent implements OnInit, OnDestroy {
   allCapacities: Capacite[] = [];
   allLinks: { equipe_id: string; projet_id: string }[] = [];
   allRoleAttachments: any[] = [];
+
+  // Chiffres Triskell
+  allChiffres: Chiffre[] = [];
+  allServices: Service[] = [];
 
   // Filters
   rowsAll: ParentRow[] = [];
@@ -254,6 +266,8 @@ export class PlanViewComponent implements OnInit, OnDestroy {
     private jalonService: JalonService,
     private settingsService: SettingsService,
     private personnesService: PersonnesService,
+    private chiffresService: ChiffresService,
+    private resourceService: ResourceService,
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone
   ) { }
@@ -404,7 +418,7 @@ export class PlanViewComponent implements OnInit, OnDestroy {
 
   async loadData() {
     try {
-      const [equipes, charges, projects, roles, personnes, jalons, links, roleAttachments, capacities] = await Promise.all([
+      const [equipes, charges, projects, roles, personnes, jalons, links, roleAttachments, capacities, chiffres, services] = await Promise.all([
         this.teamService.getAllEquipes(),
         this.chargeService.getAllCharges(),
         this.projetService.getAllProjets(),
@@ -413,7 +427,9 @@ export class PlanViewComponent implements OnInit, OnDestroy {
         this.jalonService.getAllJalons(),
         this.projetService.getAllEquipeProjetLinks(),
         this.rolesService.getAllRoleAttachments(),
-        this.teamService.getAllCapacities()
+        this.teamService.getAllCapacities(),
+        this.chiffresService.getAllChiffres(),
+        this.resourceService.getAllServices()
       ]);
 
       this.allEquipes = equipes;
@@ -425,6 +441,8 @@ export class PlanViewComponent implements OnInit, OnDestroy {
       this.allLinks = links;
       this.allRoleAttachments = roleAttachments;
       this.allCapacities = capacities;
+      this.allChiffres = chiffres;
+      this.allServices = services;
 
       this.buildTree();
       this.cdr.markForCheck();
@@ -2162,6 +2180,80 @@ export class PlanViewComponent implements OnInit, OnDestroy {
       return `Dès le ${formatted} :`;
     }
     return `${this.selectedCapacityYear} :`;
+  }
+
+  // --- Chiffres Triskell badge helpers ---
+
+  /** Résout le id_service numérique Triskell depuis l'UUID d'une équipe. */
+  private getIdServiceForTeam(teamId: string): number | null {
+    const team = this.allEquipes.find(e => e.id === teamId);
+    if (!team?.service_id) return null;
+    const service = this.allServices.find(s => s.id === team.service_id);
+    return service?.id_service ?? null;
+  }
+
+  /** Résout le id_projet numérique Triskell depuis l'UUID d'un projet. */
+  private getIdProjetNumeric(projectId: string): number | null {
+    const project = this.allProjects.find(p => p.id === projectId);
+    return project?.id_projet ?? null;
+  }
+
+  /**
+   * Retourne la valeur chiffre (selon chiffreMode) pour une équipe et un projet donnés (UUIDs).
+   * Retourne null si aucun chiffre trouvé.
+   */
+  getChiffreValue(teamId: string, projectId: string): number | null {
+    const idService = this.getIdServiceForTeam(teamId);
+    const idProjet = this.getIdProjetNumeric(projectId);
+    if (idService === null || idProjet === null) return null;
+
+    const chiffre = this.allChiffres.find(c => c.id_projet === idProjet && c.id_service === idService);
+    if (!chiffre) return null;
+
+    const mode = this.chiffreMode();
+    const value = chiffre[mode];
+    return value !== undefined ? value : null;
+  }
+
+  /** Libellé court du mode actif pour le badge chiffre. */
+  getChiffreBadgeLabel(): string {
+    switch (this.chiffreMode()) {
+      case 'initial': return 'Init.';
+      case 'revise': return 'Rév.';
+      case 'previsionnel': return 'Prév.';
+      case 'consomme': return 'Conso.';
+    }
+  }
+
+  switchChiffreMode(mode: 'initial' | 'revise' | 'previsionnel' | 'consomme') {
+    this.chiffreMode.set(mode);
+    this.showChiffrePopover = false;
+  }
+
+  openChiffrePopover(event: MouseEvent, anchorId: string) {
+    event.stopPropagation();
+    const targetElement = event.currentTarget as HTMLElement;
+
+    if (this.showChiffrePopover && this.activeChiffreAnchorId === anchorId) {
+      this.showChiffrePopover = false;
+      this.activeChiffreAnchorId = null;
+      return;
+    }
+
+    this.activeChiffreAnchorId = anchorId;
+    this.showChiffrePopover = true;
+    this.cdr.markForCheck();
+
+    const closeHandler = (e: MouseEvent | Event) => {
+      if (e instanceof MouseEvent && targetElement.contains(e.target as Node)) {
+        return;
+      }
+      this.showChiffrePopover = false;
+      this.activeChiffreAnchorId = null;
+      this.cdr.markForCheck();
+      document.removeEventListener('click', closeHandler);
+    };
+    document.addEventListener('click', closeHandler);
   }
 
   openYearPopover(event: MouseEvent, anchorId: string) {

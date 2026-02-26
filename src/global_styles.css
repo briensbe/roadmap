@@ -313,6 +313,16 @@ textarea:focus {
   anchor-name: --year-popover-anchor;
 }
 
+.anchor-active-chiffre {
+  anchor-name: --chiffre-popover-anchor;
+}
+
+.chiffre-popover {
+  position-anchor: --chiffre-popover-anchor !important;
+  position-area: bottom span-right !important;
+  position-try-fallbacks: flip-block !important;
+}
+
 @keyframes popOverIn {
   from {
     opacity: 0;

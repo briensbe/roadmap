@@ -1249,6 +1249,93 @@
   text-transform: lowercase;
 }
 
+/* ===== Chiffre Triskell Badge ===== */
+.chiffre-badge-sep {
+  font-size: 12px;
+  font-weight: 400;
+  color: #cbd5e1;
+  margin: 0 3px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.chiffre-badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  padding: 2px 8px;
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  border: 1px solid #ddd6fe;
+  border-radius: 999px;
+  box-shadow: 0 1px 2px rgba(109, 40, 217, 0.06);
+  color: #6d28d9;
+  font-family: "Inter", system-ui, sans-serif;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.chiffre-badge:hover {
+  border-color: #c4b5fd;
+  background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(109, 40, 217, 0.12);
+}
+
+.chiffre-badge-prefix {
+  font-size: 9px;
+  font-weight: 600;
+  color: #7c3aed;
+  margin-right: 2px;
+}
+
+.chiffre-badge-val {
+  font-size: 11px;
+  font-weight: 700;
+  color: #4c1d95;
+}
+
+.chiffre-badge-unit {
+  font-size: 9px;
+  font-weight: 600;
+  color: #7c3aed;
+}
+
+/* ===== Chiffre Mode Pill Switcher (header) ===== */
+.chiffre-mode-pill {
+  display: flex;
+  align-items: center;
+  background: #f5f3ff;
+  border: 1px solid #ddd6fe;
+  border-radius: 999px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.chiffre-pill-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  color: #7c3aed;
+  background: transparent;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.chiffre-pill-btn:hover {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.chiffre-pill-btn.active {
+  background: white;
+  color: #4c1d95;
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(109, 40, 217, 0.12);
+}
+
 .jump-input:focus {
   border-color: #2563eb;
 }
