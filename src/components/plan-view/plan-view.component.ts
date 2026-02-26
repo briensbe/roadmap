@@ -804,11 +804,17 @@ export class PlanViewComponent implements OnInit, OnDestroy {
         const children: ChildRow[] = [];
         const parentTotal = new Map<string, number>();
 
-        involvedProjectIds.forEach((projectId) => {
-          const project = this.allProjects.find((p) => p.id === projectId);
+        const sortedInvolvedProjects = sortByRank(
+          this.allProjects.filter(p => involvedProjectIds.has(p.id!)),
+          (p) => p.rank,
+          (a, b) => a.nom_projet.localeCompare(b.nom_projet)
+        );
+
+        sortedInvolvedProjects.forEach((project) => {
           const label = project ? project.nom_projet : "Unknown Project";
           const color = project ? project.color : undefined;
           const code = project ? project.code_projet : undefined;
+          const projectId = project.id;
           const projectCharges = new Map<string, number>();
 
           // Get charges for this project on this team
@@ -892,8 +898,7 @@ export class PlanViewComponent implements OnInit, OnDestroy {
           });
         });
 
-        // Sort children (projects) alphabetically
-        children.sort((a, b) => a.label.localeCompare(b.label));
+        // Resources are already pushed in order of projects
 
         // Sort resources within each child alphabetically
         children.forEach((child) => {
@@ -1033,7 +1038,11 @@ export class PlanViewComponent implements OnInit, OnDestroy {
 
         // In resource mode, we flatten Team and Resource into single level ParentRows
         resourceMap.forEach((res, rKey) => {
-          const projectResources = Array.from(res.projectDetailedMap.values()).sort((a, b) => a.label.localeCompare(b.label));
+          const projectResources = sortByRank(
+            Array.from(res.projectDetailedMap.values()),
+            (r) => this.allProjects.find(p => p.id === r.projectId)?.rank,
+            (a, b) => a.label.localeCompare(b.label)
+          );
 
           // Apply week filters to project resources
           const filteredProjectResources = projectResources.filter(r => this.shouldShowResource(r));
