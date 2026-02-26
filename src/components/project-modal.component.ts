@@ -4,7 +4,7 @@ import { FormsModule } from "@angular/forms";
 import { ProjetService } from "../services/projet.service";
 import { SettingsService } from "../services/settings.service";
 import { Projet } from "../models/types";
-import { LucideAngularModule, Plus, ExternalLink } from "lucide-angular";
+import { LucideAngularModule, Plus, ExternalLink, LucideCalculator } from "lucide-angular";
 
 @Component({
   selector: "app-project-modal",
@@ -24,7 +24,19 @@ import { LucideAngularModule, Plus, ExternalLink } from "lucide-angular";
         <form (ngSubmit)="save()" class="form">
           <div class="grid grid-2">
             <div class="form-group">
-              <label>Code Projet</label>
+              <div class="label-with-link">
+                <label>Code Projet</label>
+                <button
+                  *ngIf="editableProjet.id_projet"
+                  type="button"
+                  (click)="onOpenChiffres($event)"
+                  class="ref-link modal-ref-link"
+                  title="Modifier les chiffres du projet"
+                >
+                  Modifier chiffres
+                  <lucide-icon [img]="LucideCalculator" [size]="12"></lucide-icon>
+                </button>
+              </div>
               <input [(ngModel)]="editableProjet.code_projet" name="code" />
             </div>
             <div class="form-group">
@@ -185,6 +197,7 @@ export class ProjectModalComponent implements OnInit {
   @Input() projet: Partial<Projet> | null = null;
   @Output() saved = new EventEmitter<void>();
   @Output() closed = new EventEmitter<void>();
+  @Output() openChiffres = new EventEmitter<number>();
 
   editableProjet: Partial<Projet> = {};
   isSaving = false;
@@ -268,6 +281,14 @@ export class ProjectModalComponent implements OnInit {
     this.closed.emit();
   }
 
+  onOpenChiffres(event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (this.editableProjet.id_projet) {
+      this.openChiffres.emit(this.editableProjet.id_projet);
+    }
+  }
+
   async save() {
     if (!this.editableProjet.nom_projet || this.editableProjet.nom_projet.trim() === "") {
       this.formErrors.nom_projet = true;
@@ -291,4 +312,5 @@ export class ProjectModalComponent implements OnInit {
 
   Plus = Plus;
   ExternalLink = ExternalLink;
+  LucideCalculator = LucideCalculator;
 }

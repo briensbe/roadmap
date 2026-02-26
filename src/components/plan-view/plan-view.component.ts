@@ -33,6 +33,7 @@ export class LucideIconsModule { }
 
 import { MilestoneModalComponent } from '../milestone-modal.component';
 import { ConfirmModalComponent } from '../confirm-modal.component';
+import { ChiffresModalComponent } from '../chiffres/chiffres-modal.component';
 
 interface ResourceCellData {
   value: number;
@@ -89,7 +90,7 @@ interface FlatRow {
 @Component({
   selector: "app-plan-view",
   standalone: true,
-  imports: [CommonModule, NgIf, NgFor, FormsModule, LucideIconsModule, MilestoneModalComponent, SelectionToolbarComponent, ConfirmModalComponent, ProjectModalComponent, DragDropModule],
+  imports: [CommonModule, NgIf, NgFor, FormsModule, LucideIconsModule, MilestoneModalComponent, SelectionToolbarComponent, ConfirmModalComponent, ProjectModalComponent, DragDropModule, ChiffresModalComponent],
   templateUrl: "./plan-view.component.html",
   styleUrl: "./plan-view.component.css",
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -107,8 +108,22 @@ export class PlanViewComponent implements OnInit, OnDestroy {
     this.showMilestoneModal = true;
   }
 
+  // Chiffres Modal props
+  showChiffresModal = false;
+  selectedProjetId: number | null = null;
+
   async onMilestoneSaved() {
     await this.loadData();
+  }
+
+  onOpenChiffresFromProject(idProjet: number) {
+    this.selectedProjetId = idProjet;
+    this.showChiffresModal = true;
+  }
+
+  closeChiffresModal() {
+    this.showChiffresModal = false;
+    this.selectedProjetId = null;
   }
 
   viewMode = storageSignal<"project" | "team" | "resource">("plan-view-mode", "resource");

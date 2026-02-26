@@ -1178,5 +1178,13 @@
     [projet]="projectToEdit"
     (saved)="onProjectSaved()"
     (closed)="closeProjectModal()"
+    (openChiffres)="onOpenChiffresFromProject($event)"
   ></app-project-modal>
+
+  <app-chiffres-modal
+    [visible]="showChiffresModal"
+    [idProjet]="selectedProjetId"
+    (close)="closeChiffresModal()"
+    (saved)="loadData()"
+  ></app-chiffres-modal>
 </div>
