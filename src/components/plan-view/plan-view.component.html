@@ -685,6 +685,13 @@
                               </ng-container>
                             </div>
                             <button
+                              class="btn-hover-search"
+                              (click)="openProjectEditByResource(resource); $event.stopPropagation()"
+                              title="Ouvrir le projet"
+                            >
+                              <lucide-icon [img]="Search" [size]="14"></lucide-icon>
+                            </button>
+                            <button
                               class="btn-hover-delete"
                               (click)="removeResource(resource, child, row); $event.stopPropagation()"
                               [title]="viewMode() === 'resource' ? 'Retirer ce projet' : 'Supprimer cette ressource'"

@@ -549,7 +549,8 @@
 }
 
 .btn-hover-add,
-.btn-hover-delete {
+.btn-hover-delete,
+.btn-hover-search {
   background: transparent;
   border: none;
   cursor: pointer;
@@ -577,8 +578,19 @@
 }
 
 .row-label-content:hover .btn-hover-add,
-.row-label-content:hover .btn-hover-delete {
+.row-label-content:hover .btn-hover-delete,
+.row-label-content:hover .btn-hover-search {
   opacity: 1;
+}
+
+.btn-hover-search {
+  color: #6366f1;
+  right: 44px;
+}
+
+.btn-hover-search:hover {
+  background-color: #f0f1ff;
+  color: #4f46e5;
 }
 
 .btn-hover-add:hover {
@@ -596,7 +608,12 @@
   right: 44px; /* Room for delete button */
 }
 
-.child-row .btn-hover-delete {
+/* Three buttons in resource view project row */
+.resource-row .btn-hover-search {
+  right: 44px;
+}
+
+.resource-row .btn-hover-delete {
   right: 12px;
 }
 
