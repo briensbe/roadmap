@@ -3,6 +3,7 @@
     "version": "2026.02.27.2",
     "date": "2026-02-27",
     "title": "Historique des versions",
+    "imageUrl": "assets/release-notes/2026-02-27-histo-release-notes.gif",
     "items": [
       "Vous pouvez désormais consulter l'historique complet des mises à jour à tout moment.",
       "Cliquez sur le numéro de version situé tout en bas du menu de navigation gauche pour réafficher cette fenêtre."
@@ -19,5 +20,19 @@
       "Ajout d’un lien “Modifier chiffres ” vers la modification des chiffres du projet, à la fois dans la modale projet et dans la vue d’ajout de projet/équipe/ressource",
       "Correction du tri des projets par lexorank dans la vue planification “Par équipe” et “Par Ressources"
     ]
+  },
+  {
+    "version": "2026.02.26",
+    "date": "2026-02-26",
+    "title": "L'export Excel est là !",
+    "imageUrl": "assets/release-notes/2026-02-26-export-excel.png",
+    "items": ["création de l'export Excel des projets"]
+  },
+  {
+    "version": "2026.02.26",
+    "date": "2026-02-26",
+    "title": "Les chiffres projets s'affichent dans la planification",
+    "imageUrl": "assets/release-notes/2026-02-26-badge-chiffres.png",
+    "items": ["ajout du badge sur les chiffres projets dans la vue planification"]
   }
 ]

@@ -8,6 +8,7 @@ interface ReleaseNote {
   version: string;
   date: string;
   title: string;
+  imageUrl?: string;
   items: string[];
 }
 
@@ -16,41 +17,69 @@ interface ReleaseNote {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div *ngIf="show" class="release-notes-overlay">
-      <div class="release-notes-card" [class.history-mode]="showHistory">
-        <div class="header">
-          <h3>{{ showHistory ? 'Historique des versions' : notes[0]?.title }}</h3>
-          <button (click)="close()" class="close-btn">&times;</button>
-        </div>
-        
-        <div class="content" *ngIf="!showHistory">
-          <!-- Latest Version View -->
-          <p class="date">{{ notes[0]?.date | date:'longDate' }} - Version {{ notes[0]?.version }}</p>
-          <ul>
-            <li *ngFor="let item of notes[0]?.items">{{ item }}</li>
-          </ul>
-        </div>
-
-        <div class="content history-list" *ngIf="showHistory">
-          <!-- History View -->
-          <div *ngFor="let note of notes" class="history-item">
-            <h4 class="history-title">{{ note.title }}</h4>
-            <p class="date">{{ note.date | date:'longDate' }} - Version {{ note.version }}</p>
-            <ul>
-              <li *ngFor="let item of note.items">{{ item }}</li>
-            </ul>
+    @if (show) {
+      <div class="release-notes-overlay">
+        <div class="release-notes-card" [class.history-mode]="showHistory">
+          <div class="header">
+            <h3>{{ showHistory ? 'Historique des versions' : notes[0]?.title }}</h3>
+            <button (click)="close()" class="close-btn">&times;</button>
           </div>
-        </div>
+          
+          <div class="content" [class.history-list]="showHistory">
+            @if (!showHistory) {
+              <!-- Latest Version View -->
+              <div class="latest-update">
+                <p class="date">{{ notes[0]?.date | date:'longDate' }} - Version {{ notes[0]?.version }}</p>
+                
+                
+                <ul>
+                  @for (item of notes[0]?.items; track item) {
+                    <li>{{ item }}</li>
+                  }
+                </ul>
+                @if (notes[0]?.imageUrl) {
+                  <div class="image-container">
+                    <img [src]="notes[0].imageUrl" [alt]="notes[0].title" class="release-image">
+                  </div>
+                }
+              </div>
+            } @else {
+              <!-- History View -->
+              @for (note of notes; track note.version) {
+                <div class="history-item">
+                  <h4 class="history-title">{{ note.title }}</h4>
+                  <p class="date">{{ note.date | date:'longDate' }} - Version {{ note.version }}</p>
+                  
+                  
+                  <ul>
+                    @for (item of note.items; track item) {
+                      <li>{{ item }}</li>
+                    }
+                  </ul>
+                  @if (note.imageUrl) {
+                    <div class="image-container mini">
+                      <img [src]="note.imageUrl" [alt]="note.title" class="release-image">
+                    </div>
+                  }
+                </div>
+              }
+            }
+          </div>
 
-        <div class="footer">
-          <button *ngIf="!showHistory" (click)="toggleHistory()" class="secondary-btn">Voir l'historique</button>
-          <div class="actions">
-             <button *ngIf="!showHistory" (click)="dontShowAgain()" class="secondary-btn">Ne plus afficher</button>
-             <button (click)="close()" class="primary-btn">Fermer</button>
+          <div class="footer">
+            @if (!showHistory) {
+              <button (click)="toggleHistory()" class="secondary-btn">Voir l'historique</button>
+            }
+            <div class="actions">
+               @if (!showHistory) {
+                 <button (click)="dontShowAgain()" class="secondary-btn">Ne plus afficher</button>
+               }
+               <button (click)="close()" class="primary-btn">Fermer</button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    }
   `,
   styles: [`
     .release-notes-overlay {
@@ -72,7 +101,7 @@ interface ReleaseNote {
       padding: 24px;
       width: 90%;
       max-width: 450px;
-      max-height: 80vh;
+      max-height: 85vh;
       display: flex;
       flex-direction: column;
       box-shadow: 0 10px 25px rgba(0,0,0,0.2);
@@ -110,20 +139,42 @@ interface ReleaseNote {
     }
     .history-list {
        padding-right: 8px;
-       overscroll-behavior: contain;
     }
+    
+    .image-container {
+      margin: 12px 0 20px 0;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border: 1px solid #f0f0f0;
+      line-height: 0;
+    }
+    .image-container.mini {
+      max-width: 300px;
+      margin: 12px 0;
+    }
+    .release-image {
+      width: 100%;
+      height: auto;
+      display: block;
+      transition: transform 0.3s ease;
+    }
+    .release-image:hover {
+      transform: scale(1.02);
+    }
+
     /* Scrollbar styling for history */
-    .history-list::-webkit-scrollbar {
+    .content::-webkit-scrollbar {
       width: 6px;
     }
-    .history-list::-webkit-scrollbar-track {
+    .content::-webkit-scrollbar-track {
       background: transparent;
     }
-    .history-list::-webkit-scrollbar-thumb {
+    .content::-webkit-scrollbar-thumb {
       background: #d1d5db;
       border-radius: 3px;
     }
-    .history-list::-webkit-scrollbar-thumb:hover {
+    .content::-webkit-scrollbar-thumb:hover {
       background: #9ca3af;
     }
     .history-item {
