@@ -1117,7 +1117,14 @@
     </div>
   </div>
 
-  <div *ngIf="showYearPopover" class="year-popover" (click)="$event.stopPropagation()">
+  <div
+    *ngIf="showYearPopover && popoverPosition"
+    class="year-popover"
+    [style.top.px]="popoverPosition.top"
+    [style.left.px]="popoverPosition.left"
+    [style.transform]="popoverPosition.transform"
+    (click)="$event.stopPropagation()"
+  >
     <div
       class="popover-arrow"
       [class.top]="popoverArrowSide === 'top'"
@@ -1140,7 +1147,14 @@
   </div>
 
   <!-- Chiffre mode popover -->
-  <div *ngIf="showChiffrePopover" class="year-popover chiffre-popover" (click)="$event.stopPropagation()">
+  <div
+    *ngIf="showChiffrePopover && chiffrePopoverPosition"
+    class="year-popover chiffre-popover"
+    [style.top.px]="chiffrePopoverPosition.top"
+    [style.left.px]="chiffrePopoverPosition.left"
+    [style.transform]="chiffrePopoverPosition.transform"
+    (click)="$event.stopPropagation()"
+  >
     <div
       class="popover-arrow"
       [class.top]="chiffrePopoverArrowSide === 'top'"

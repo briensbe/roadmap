@@ -136,6 +136,7 @@ export class PlanViewComponent implements OnInit, OnDestroy {
 
   selectedCapacityYear: 'all' | '2025' | '2026' | 'custom' = 'all';
   private globalMouseMoveListener?: () => void;
+  private scrollCloseListener?: () => void;
 
   selectedStartDate: Date | null = null;
   showYearPopover = false;
@@ -403,15 +404,35 @@ export class PlanViewComponent implements OnInit, OnDestroy {
     this.generateWeeks();
 
     this.ngZone.runOutsideAngular(() => {
-      const listener = (event: MouseEvent) => this.onGlobalMouseMove(event);
-      window.addEventListener('mousemove', listener);
-      this.globalMouseMoveListener = () => window.removeEventListener('mousemove', listener);
+      const mouseListener = (event: MouseEvent) => this.onGlobalMouseMove(event);
+      window.addEventListener('mousemove', mouseListener);
+      this.globalMouseMoveListener = () => window.removeEventListener('mousemove', mouseListener);
+
+      // Close popovers on scroll so they don't detach from their anchor badge
+      const scrollHandler = () => {
+        if (this.showYearPopover || this.showChiffrePopover) {
+          this.ngZone.run(() => {
+            this.showYearPopover = false;
+            this.activeAnchorId = null;
+            this.showChiffrePopover = false;
+            this.activeChiffreAnchorId = null;
+            this.cdr.markForCheck();
+          });
+        }
+      };
+      // Attach to the calendar wrapper (the scrollable container)
+      // Use capture phase to catch scroll on any child element
+      document.addEventListener('scroll', scrollHandler, true);
+      this.scrollCloseListener = () => document.removeEventListener('scroll', scrollHandler, true);
     });
   }
 
   ngOnDestroy() {
     if (this.globalMouseMoveListener) {
       this.globalMouseMoveListener();
+    }
+    if (this.scrollCloseListener) {
+      this.scrollCloseListener();
     }
   }
 
@@ -2282,6 +2303,19 @@ export class PlanViewComponent implements OnInit, OnDestroy {
 
     this.activeChiffreAnchorId = anchorId;
     this.showChiffrePopover = true;
+
+    // Calculate best position
+    const rect = targetElement.getBoundingClientRect();
+    const pos = calculateBestPopoverPosition({
+      rect,
+      viewportHeight: window.innerHeight,
+      viewportWidth: window.innerWidth,
+      popoverHeight: 180, // Estimated height of the chiffre popover
+      popoverWidth: 160
+    });
+    this.chiffrePopoverPosition = pos;
+    this.chiffrePopoverArrowSide = pos.arrowSide;
+
     this.cdr.markForCheck();
 
     const closeHandler = (e: MouseEvent | Event) => {
@@ -2309,7 +2343,7 @@ export class PlanViewComponent implements OnInit, OnDestroy {
     this.activeAnchorId = anchorId;
     this.showYearPopover = true;
 
-    // Calculate best position to determine arrow side
+    // Calculate best position
     const rect = targetElement.getBoundingClientRect();
     const pos = calculateBestPopoverPosition({
       rect,
@@ -2318,6 +2352,7 @@ export class PlanViewComponent implements OnInit, OnDestroy {
       popoverHeight: 200, // Estimated height of the popover
       popoverWidth: 160
     });
+    this.popoverPosition = pos;
     this.popoverArrowSide = pos.arrowSide;
 
     // Close when clicking outside

@@ -299,28 +299,14 @@ textarea:focus {
   z-index: 1001;
   width: 160px;
 
-  /* Anchor Positioning */
-  position-anchor: --year-popover-anchor;
-  position-area: bottom span-right;
-  position-try-fallbacks: flip-block;
+  /* Manual Positioning (JS calculates top/left) */
+  /* position-anchor: --year-popover-anchor; */
+  /* position-area: bottom span-right; */
+  /* position-try-fallbacks: flip-block; */
   margin-top: 8px;
   margin-bottom: 8px;
 
   animation: popOverIn 0.2s cubic-bezier(0, 0, 0.2, 1);
-}
-
-.anchor-active {
-  anchor-name: --year-popover-anchor;
-}
-
-.anchor-active-chiffre {
-  anchor-name: --chiffre-popover-anchor;
-}
-
-.chiffre-popover {
-  position-anchor: --chiffre-popover-anchor !important;
-  position-area: bottom span-right !important;
-  position-try-fallbacks: flip-block !important;
 }
 
 @keyframes popOverIn {
