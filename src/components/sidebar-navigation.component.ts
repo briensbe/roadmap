@@ -17,6 +17,7 @@ import {
   User
 } from 'lucide-angular';
 import { SidebarService } from '../services/sidebar.service';
+import { ReleaseNotesService } from '../services/release-notes.service';
 import { environment } from '../environments/environment';
 
 interface NavigationItem {
@@ -58,7 +59,7 @@ interface NavigationItem {
       </div>
 
       <div class="sidebar-footer">
-        <span class="version-text">{{ version }}</span>
+        <span class="version-text clickable" (click)="openReleaseNotes()" title="Voir l'historique des versions">{{ version }}</span>
       </div>
     </nav>
   `,
@@ -232,6 +233,16 @@ interface NavigationItem {
       color: #9ca3af;
       font-family: monospace;
     }
+    
+    .version-text.clickable {
+       cursor: pointer;
+       transition: color 0.2s;
+    }
+    
+    .version-text.clickable:hover {
+       color: #4f46e5;
+       text-decoration: underline;
+    }
 
     .sidebar.collapsed .version-text {
       font-size: 8px;
@@ -268,10 +279,17 @@ export class SidebarNavigationComponent {
     { label: 'Profil', icon: this.User, route: '/profile' }
   ];
 
-  constructor(private sidebarService: SidebarService) { }
+  constructor(
+    private sidebarService: SidebarService,
+    private releaseNotesService: ReleaseNotesService
+  ) { }
 
   toggleSidebar() {
     this.isCollapsed = !this.isCollapsed;
     this.sidebarService.setCollapsed(this.isCollapsed);
+  }
+
+  openReleaseNotes() {
+    this.releaseNotesService.openNotes();
   }
 }
