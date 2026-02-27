@@ -106,9 +106,11 @@ interface ReleaseNote {
     .content {
       margin-bottom: 24px;
       overflow-y: auto;
+      overscroll-behavior: contain;
     }
     .history-list {
        padding-right: 8px;
+       overscroll-behavior: contain;
     }
     /* Scrollbar styling for history */
     .history-list::-webkit-scrollbar {
@@ -196,7 +198,16 @@ interface ReleaseNote {
 })
 export class ReleaseNotesComponent implements OnInit, OnDestroy {
   notes: ReleaseNote[] = [];
-  show = false;
+  private _show = false;
+  get show() { return this._show; }
+  set show(value: boolean) {
+    this._show = value;
+    if (value) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+  }
   showHistory = false;
   private readonly STORAGE_KEY = 'last_seen_release_version';
   private subscription: Subscription | null = null;
@@ -229,6 +240,7 @@ export class ReleaseNotesComponent implements OnInit, OnDestroy {
     if (this.subscription) {
       this.subscription.unsubscribe();
     }
+    document.body.style.overflow = '';
   }
 
   private checkVisibility() {
