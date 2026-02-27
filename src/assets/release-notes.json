@@ -24,15 +24,46 @@
   {
     "version": "2026.02.26",
     "date": "2026-02-26",
+    "title": "Les chiffres projets s'affichent dans la planification",
+    "imageUrl": "assets/release-notes/2026-02-26-badge-chiffres.png",
+    "items": ["ajout du badge sur les chiffres projets dans la vue planification"]
+  },
+  {
+    "version": "2026.02.25",
+    "date": "2026-02-25",
     "title": "L'export Excel est là !",
     "imageUrl": "assets/release-notes/2026-02-26-export-excel.png",
     "items": ["création de l'export Excel des projets"]
   },
   {
-    "version": "2026.02.26",
-    "date": "2026-02-26",
-    "title": "Les chiffres projets s'affichent dans la planification",
-    "imageUrl": "assets/release-notes/2026-02-26-badge-chiffres.png",
-    "items": ["ajout du badge sur les chiffres projets dans la vue planification"]
+    "version": "2026.02.24",
+    "date": "2026-02-24",
+    "title": "Correction drag and drop des projets + molette",
+    "items": ["Correction drag and drop des projets + molette"]
+  },
+  {
+    "version": "2026.02.09",
+    "date": "2026-02-09",
+    "title": "Implémentation de Google OAuth",
+    "items": ["Implémentation de Google OAuth"]
+  },
+  {
+    "version": "2026.02.08",
+    "date": "2026-02-08",
+    "title": "Evolutions Utilisateurs du week-end",
+    "items": [
+      "1ere colonne ajustable en largeur",
+      "Nouvelle vue “Par ressources”",
+      "attention aux potentiels cas qui paraissent “sans issue” → normalement il y a bien u moyen de résoudre ces cas (via la vue Capacités notamment) ",
+      "Vues condensées - Equipe-Rôle sur une même ligne et pas sur 2",
+      "lignes de premier niveau sticky",
+      "ajout des données cumulées dans la vue “Par ressources”",
+      "filtre “semaine non vide”",
+      "boutons expand all/collapse all distincts",
+      "conservation de l'état ouvert/fermé des lignes",
+      "Drag and drop sur la vue Projets",
+      "correction clic souris sur vue Planification",
+      "mise à jour multi-utilisateurs en temps réel sur projets et paramètres"
+    ]
   }
 ]
