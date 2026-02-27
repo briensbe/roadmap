@@ -1,5 +1,17 @@
 [
   {
+    "version": "2026.02.27.3",
+    "date": "2026-02-27",
+    "title": "Semaine en cours par défaut",
+    "imageUrl": "assets/release-notes/2026-02-27-semaine-en-cours.png",
+    "imageMaxHeight": 200,
+    "items": [
+      "Dans le filtre par année pour les projections (year popover), ajout du choix Semaine en cours ",
+      "De plus le choix dans ce filtre sera désormais persistant entre les sessions via le LocalStorage",
+      " Et aussi gestion de la taille des images dans les notes via imageMaxHeight "
+    ]
+  },
+  {
     "version": "2026.02.27.2",
     "date": "2026-02-27",
     "title": "Historique des versions",
@@ -33,6 +45,7 @@
     "date": "2026-02-25",
     "title": "L'export Excel est là !",
     "imageUrl": "assets/release-notes/2026-02-26-export-excel.png",
+    "imageMaxHeight": 50,
     "items": ["création de l'export Excel des projets"]
   },
   {

@@ -9,6 +9,7 @@ interface ReleaseNote {
   date: string;
   title: string;
   imageUrl?: string;
+  imageMaxHeight?: number;
   items: string[];
 }
 
@@ -39,7 +40,8 @@ interface ReleaseNote {
                 </ul>
                 @if (notes[0]?.imageUrl) {
                   <div class="image-container">
-                    <img [src]="notes[0].imageUrl" [alt]="notes[0].title" class="release-image">
+                    <img [src]="notes[0].imageUrl" [alt]="notes[0].title" class="release-image"
+                         [style.max-height]="notes[0].imageMaxHeight ? notes[0].imageMaxHeight + 'px' : null">
                   </div>
                 }
               </div>
@@ -58,7 +60,8 @@ interface ReleaseNote {
                   </ul>
                   @if (note.imageUrl) {
                     <div class="image-container mini">
-                      <img [src]="note.imageUrl" [alt]="note.title" class="release-image">
+                      <img [src]="note.imageUrl" [alt]="note.title" class="release-image"
+                           [style.max-height]="note.imageMaxHeight ? note.imageMaxHeight + 'px' : null">
                     </div>
                   }
                 </div>
@@ -157,6 +160,7 @@ interface ReleaseNote {
       width: 100%;
       height: auto;
       display: block;
+      object-fit: contain;
       transition: transform 0.3s ease;
     }
     .release-image:hover {
