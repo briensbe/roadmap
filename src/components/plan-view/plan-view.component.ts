@@ -134,7 +134,7 @@ export class PlanViewComponent implements OnInit, OnDestroy {
   private isDefaultExpanded = true;
   private manualStates = new Map<string, boolean>();
 
-  selectedCapacityYear: 'all' | '2025' | '2026' | 'custom' = 'all';
+  selectedCapacityYear = storageSignal<'today' | 'all' | '2025' | '2026' | 'custom'>("plan-view-capacity-year", "today");
   private globalMouseMoveListener?: () => void;
   private scrollCloseListener?: () => void;
 
@@ -2203,13 +2203,19 @@ export class PlanViewComponent implements OnInit, OnDestroy {
     resource.charges.forEach((val, weekStr) => {
       const date = new Date(weekStr);
 
-      if (this.selectedCapacityYear === 'custom' && this.selectedStartDate) {
+      const yearSel = this.selectedCapacityYear();
+      if (yearSel === 'today') {
+        const todayWeekStart = this.calendarService.getWeekStart(new Date());
+        if (date >= todayWeekStart) {
+          total += val * resource.jours_par_semaine;
+        }
+      } else if (yearSel === 'custom' && this.selectedStartDate) {
         if (date >= this.selectedStartDate) {
           total += val * resource.jours_par_semaine;
         }
       } else {
         const isoYear = getISOWeekYear(date).toString();
-        if (this.selectedCapacityYear === 'all' || isoYear === this.selectedCapacityYear) {
+        if (yearSel === 'all' || isoYear === yearSel) {
           total += val * resource.jours_par_semaine;
         }
       }
@@ -2218,13 +2224,19 @@ export class PlanViewComponent implements OnInit, OnDestroy {
   }
 
   getBadgePrefix(): string {
-    if (this.selectedCapacityYear === 'all') return 'Tout :';
-    if (this.selectedCapacityYear === 'custom' && this.selectedStartDate) {
+    const yearSel = this.selectedCapacityYear();
+    if (yearSel === 'today') {
+      const d = this.calendarService.getWeekStart(new Date());
+      const formatted = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+      return `Dès le ${formatted} :`;
+    }
+    if (yearSel === 'all') return 'Tout :';
+    if (yearSel === 'custom' && this.selectedStartDate) {
       const d = this.selectedStartDate;
       const formatted = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`;
       return `Dès le ${formatted} :`;
     }
-    return `${this.selectedCapacityYear} :`;
+    return `${yearSel} :`;
   }
 
   // --- Chiffres Triskell badge helpers ---
@@ -2368,8 +2380,8 @@ export class PlanViewComponent implements OnInit, OnDestroy {
     document.addEventListener('click', closeHandler);
   }
 
-  selectYear(year: 'all' | '2025' | '2026') {
-    this.selectedCapacityYear = year;
+  selectYear(year: 'today' | 'all' | '2025' | '2026') {
+    this.selectedCapacityYear.set(year);
     this.selectedStartDate = null;
     this.showYearPopover = false;
   }
@@ -2382,7 +2394,7 @@ export class PlanViewComponent implements OnInit, OnDestroy {
     const mondayOfSelectedWeek = this.calendarService.getWeekStart(selectedDate);
 
     this.selectedStartDate = mondayOfSelectedWeek;
-    this.selectedCapacityYear = 'custom';
+    this.selectedCapacityYear.set('custom');
     this.showYearPopover = false;
   }
   openProjectEditByResource(resource: ResourceRow) {

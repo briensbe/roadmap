@@ -1131,13 +1131,16 @@
       [class.bottom]="popoverArrowSide === 'bottom'"
     ></div>
     <div class="popover-content">
-      <button class="popover-item" [class.active]="selectedCapacityYear === 'all'" (click)="selectYear('all')">
+      <button class="popover-item" [class.active]="selectedCapacityYear() === 'today'" (click)="selectYear('today')">
+        Semaine en cours
+      </button>
+      <button class="popover-item" [class.active]="selectedCapacityYear() === 'all'" (click)="selectYear('all')">
         Tout cumulé
       </button>
-      <button class="popover-item" [class.active]="selectedCapacityYear === '2025'" (click)="selectYear('2025')">
+      <button class="popover-item" [class.active]="selectedCapacityYear() === '2025'" (click)="selectYear('2025')">
         Année 2025
       </button>
-      <button class="popover-item" [class.active]="selectedCapacityYear === '2026'" (click)="selectYear('2026')">
+      <button class="popover-item" [class.active]="selectedCapacityYear() === '2026'" (click)="selectYear('2026')">
         Année 2026
       </button>
       <div class="popover-date-jump">
