@@ -6,17 +6,20 @@ import { SidebarNavigationComponent } from "./components/sidebar-navigation.comp
 import { SidebarService } from "./services/sidebar.service";
 import { routes } from "../src/app.routes";
 import { provideAngularQuery, QueryClient } from "@tanstack/angular-query-experimental";
+import { provideHttpClient } from "@angular/common/http";
+import { ReleaseNotesComponent } from "./components/release-notes.component";
 
 @Component({
   selector: "app-root",
   standalone: true,
-  imports: [CommonModule, RouterOutlet, SidebarNavigationComponent],
+  imports: [CommonModule, RouterOutlet, SidebarNavigationComponent, ReleaseNotesComponent],
   template: `
     <div class="app-layout">
       <app-sidebar-navigation></app-sidebar-navigation>
       <main class="main-content" [class.sidebar-collapsed]="sidebarCollapsed">
         <router-outlet></router-outlet>
       </main>
+      <app-release-notes></app-release-notes>
     </div>
   `,
   styles: [
@@ -54,6 +57,7 @@ export class App implements OnInit {
 
 bootstrapApplication(App, {
   providers: [
+    provideHttpClient(),
     provideRouter(routes),
     provideAngularQuery(new QueryClient({
       defaultOptions: {

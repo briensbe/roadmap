@@ -1,0 +1,12 @@
+{
+  "version": "2026.02.27",
+  "date": "2026-02-27",
+  "title": "Nouveautés de l'application",
+  "items": [
+    "Bienvenue sur la nouvelle version ! Vous pouvez maintenant suivre les dernières évolutions directement depuis cette vignette.",
+    "Présentation des chiffres projets dans la vue planification via un nouveau badge",
+    "Ajout d’une loupe dans la vue planification “Par Ressources” pour aller directement sur la modification du projet",
+    "Ajout d’un lien “Modifier chiffres ” vers la modification des chiffres du projet, à la fois dans la modale projet et dans la vue d’ajout de projet/équipe/ressource",
+    "Correction du tri des projets par lexorank dans la vue planification “Par équipe” et “Par Ressources"
+  ]
+}
