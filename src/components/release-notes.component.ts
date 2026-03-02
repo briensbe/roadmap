@@ -2,7 +2,9 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ReleaseNotesService } from '../services/release-notes.service';
+import { SupabaseService } from '../services/supabase.service';
 import { Subscription } from 'rxjs';
+import { environment } from '../environments/environment';
 
 interface ReleaseNote {
   version: string;
@@ -269,26 +271,56 @@ export class ReleaseNotesComponent implements OnInit, OnDestroy {
 
   constructor(
     private http: HttpClient,
-    private releaseNotesService: ReleaseNotesService
+    private releaseNotesService: ReleaseNotesService,
+    private supabaseService: SupabaseService
   ) { }
 
-  ngOnInit() {
+  async ngOnInit() {
     this.http.get<ReleaseNote[]>('assets/release-notes.json').subscribe({
-      next: (data) => {
+      next: async (data) => {
         if (data && data.length > 0) {
           this.notes = data;
-          this.checkVisibility();
+          // On ne vérifie la visibilité que si on est déjà connecté au démarrage
+          if (await this.isAuthenticated()) {
+            this.checkVisibility();
+          }
         }
       },
       error: (err) => console.error('Error loading release notes:', err)
     });
 
-    this.subscription = this.releaseNotesService.showNotes$.subscribe((show) => {
-      if (show && this.notes.length > 0) {
-        this.showHistory = true;
-        this.show = true;
+    // Écouter les changements d'état d'authentification
+    const authSub = this.supabaseService.authState$.subscribe(async (state) => {
+      if (this.notes.length > 0) {
+        if (await this.isAuthenticated()) {
+          this.checkVisibility();
+        } else {
+          this.show = false;
+        }
       }
     });
+
+    this.subscription = this.releaseNotesService.showNotes$.subscribe(async (show) => {
+      if (show && this.notes.length > 0) {
+        // On ne permet l'ouverture manuelle que si connecté
+        if (await this.isAuthenticated()) {
+          this.showHistory = true;
+          this.show = true;
+        }
+      }
+    });
+
+    if (this.subscription) {
+      this.subscription.add(authSub);
+    }
+  }
+
+  private async isAuthenticated(): Promise<boolean> {
+    if (!environment.enableAuth) {
+      return true;
+    }
+    const { data } = await this.supabaseService.getUser();
+    return !!data.user;
   }
 
   ngOnDestroy() {
