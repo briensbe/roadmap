@@ -92,7 +92,7 @@ export class ServicesService {
 
     async createService(service: Partial<Service>): Promise<Service> {
         const { data, error } = await this.supabase.client
-            .from("services")
+            .from(DB_TABLES.SERVICES)
             .insert([service])
             .select()
             .single();
@@ -104,7 +104,7 @@ export class ServicesService {
 
     async updateService(id: string, service: Partial<Service>): Promise<Service> {
         const { data, error } = await this.supabase.client
-            .from("services")
+            .from(DB_TABLES.SERVICES)
             .update(service)
             .eq("id", id)
             .select()

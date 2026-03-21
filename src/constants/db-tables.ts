@@ -1,5 +1,4 @@
-//const DB_PREFIX = 'roadmap_';
-const DB_PREFIX = '';
+const DB_PREFIX = 'roadmap_';
 
 
 export const DB_TABLES = {

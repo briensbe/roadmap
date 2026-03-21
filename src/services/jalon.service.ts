@@ -21,7 +21,7 @@ export class JalonService {
         }
 
         const { data, error } = await this.supabase.client
-            .from('jalons')
+            .from(DB_TABLES.JALONS)
             .select('*')
             .order('date_jalon', { ascending: true });
 
@@ -32,7 +32,7 @@ export class JalonService {
 
     async getJalonsByProject(projetId: string): Promise<Jalon[]> {
         const { data, error } = await this.supabase.client
-            .from('jalons')
+            .from(DB_TABLES.JALONS)
             .select('*')
             .eq('projet_id', projetId)
             .order('date_jalon', { ascending: true });
@@ -43,7 +43,7 @@ export class JalonService {
 
     async createJalon(jalon: Partial<Jalon>): Promise<Jalon> {
         const { data, error } = await this.supabase.client
-            .from('jalons')
+            .from(DB_TABLES.JALONS)
             .insert([jalon])
             .select()
             .single();
@@ -55,7 +55,7 @@ export class JalonService {
 
     async updateJalon(id: string, jalon: Partial<Jalon>): Promise<Jalon> {
         const { data, error } = await this.supabase.client
-            .from('jalons')
+            .from(DB_TABLES.JALONS)
             .update(jalon)
             .eq('id', id)
             .select()

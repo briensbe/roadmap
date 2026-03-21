@@ -37,7 +37,7 @@ export class RolesService {
         }
 
         const { data, error } = await this.supabase.client
-            .from("roles")
+            .from(DB_TABLES.ROLES)
             .select("*")
             .order("nom", { ascending: true });
 
@@ -55,7 +55,7 @@ export class RolesService {
         }
 
         const { data, error } = await this.supabase.client
-            .from("role_attachments")
+            .from(DB_TABLES.ROLE_ATTACHMENTS)
             .select("*");
 
         if (error) throw error;
@@ -100,7 +100,7 @@ export class RolesService {
 
     async createRole(role: Partial<Role>): Promise<Role> {
         const { data, error } = await this.supabase.client
-            .from("roles")
+            .from(DB_TABLES.ROLES)
             .insert([role])
             .select()
             .single();
@@ -112,7 +112,7 @@ export class RolesService {
 
     async updateRole(id: string, role: Partial<Role>): Promise<Role> {
         const { data, error } = await this.supabase.client
-            .from("roles")
+            .from(DB_TABLES.ROLES)
             .update(role)
             .eq("id", id)
             .select()
@@ -135,7 +135,7 @@ export class RolesService {
 
     async createRoleAttachment(attachment: Partial<RoleAttachment>): Promise<RoleAttachment> {
         const { data, error } = await this.supabase.client
-            .from("role_attachments")
+            .from(DB_TABLES.ROLE_ATTACHMENTS)
             .insert([attachment])
             .select()
             .single();
@@ -157,7 +157,7 @@ export class RolesService {
 
     async updateRoleAttachment(id: string, attachment: Partial<RoleAttachment>): Promise<RoleAttachment> {
         const { data, error } = await this.supabase.client
-            .from("role_attachments")
+            .from(DB_TABLES.ROLE_ATTACHMENTS)
             .update(attachment)
             .eq("id", id)
             .select()

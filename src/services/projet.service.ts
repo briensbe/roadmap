@@ -162,7 +162,7 @@ export class ProjetService implements OnDestroy {
 
     // Fetch and cache
     const { data, error } = await this.supabase.client
-      .from("projets")
+      .from(DB_TABLES.PROJETS)
       .select("*")
       .order("rank", { ascending: true });
 
@@ -193,7 +193,7 @@ export class ProjetService implements OnDestroy {
 
     // Fetch from database
     const { data, error } = await this.supabase.client
-      .from("projets")
+      .from(DB_TABLES.PROJETS)
       .select("*")
       .eq("id", id)
       .maybeSingle();
@@ -225,7 +225,7 @@ export class ProjetService implements OnDestroy {
 
     // Fetch from database
     const { data, error } = await this.supabase.client
-      .from("projets")
+      .from(DB_TABLES.PROJETS)
       .select("id")
       .eq("id_projet", idProjet)
       .single();
@@ -294,7 +294,7 @@ export class ProjetService implements OnDestroy {
 
         // 2. Insert the project
         const { data, error } = await this.supabase.client
-          .from("projets")
+          .from(DB_TABLES.PROJETS)
           .insert([projet])
           .select()
           .single();
@@ -323,7 +323,7 @@ export class ProjetService implements OnDestroy {
     return injectMutation(() => ({
       mutationFn: async ({ id, projet }: { id: string; projet: Partial<Projet> }) => {
         const { data, error } = await this.supabase.client
-          .from("projets")
+          .from(DB_TABLES.PROJETS)
           .update({ ...projet, updated_at: new Date().toISOString() })
           .eq("id", id)
           .select()
@@ -417,7 +417,7 @@ export class ProjetService implements OnDestroy {
   async createProjet(projet: Partial<Projet>): Promise<Projet> {
     // 1. Fetch only the project with the highest rank to calculate next rank
     const { data: highestRankProject } = await this.supabase.client
-      .from("projets")
+      .from(DB_TABLES.PROJETS)
       .select("rank")
       .not("rank", "is", null)
       .order("rank", { ascending: false })
@@ -439,7 +439,7 @@ export class ProjetService implements OnDestroy {
 
     // 2. Insert the project
     const { data, error } = await this.supabase.client
-      .from("projets")
+      .from(DB_TABLES.PROJETS)
       .insert([projet])
       .select()
       .single();
@@ -458,7 +458,7 @@ export class ProjetService implements OnDestroy {
    */
   async updateProjet(id: string, projet: Partial<Projet>): Promise<Projet> {
     const { data, error } = await this.supabase.client
-      .from("projets")
+      .from(DB_TABLES.PROJETS)
       .update({ ...projet, updated_at: new Date().toISOString() })
       .eq("id", id)
       .select()
@@ -478,7 +478,7 @@ export class ProjetService implements OnDestroy {
    */
   async deleteProjet(id: string): Promise<void> {
     const { error } = await this.supabase.client
-      .from("projets")
+      .from(DB_TABLES.PROJETS)
       .delete()
       .eq("id", id);
 
@@ -510,7 +510,7 @@ export class ProjetService implements OnDestroy {
    */
   async unlinkProjectFromTeam(projetId: string, equipeId: string): Promise<void> {
     const { error } = await this.supabase.client
-      .from("equipes_projets")
+      .from(DB_TABLES.EQUIPES_PROJETS)
       .delete()
       .eq("projet_id", projetId)
       .eq("equipe_id", equipeId);

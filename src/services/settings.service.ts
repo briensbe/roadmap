@@ -127,7 +127,7 @@ export class SettingsService implements OnDestroy {
 
     async getAllSettings(): Promise<Setting[]> {
         const { data, error } = await this.supabase.client
-            .from("settings")
+            .from(DB_TABLES.SETTINGS)
             .select("*")
             .order("key");
 
@@ -138,7 +138,7 @@ export class SettingsService implements OnDestroy {
 
     async getSettingByKey(key: string, scope: string = 'global'): Promise<Setting | null> {
         const { data, error } = await this.supabase.client
-            .from("settings")
+            .from(DB_TABLES.SETTINGS)
             .select("*")
             .eq("key", key)
             .eq("scope", scope)
@@ -158,7 +158,7 @@ export class SettingsService implements OnDestroy {
         return injectMutation(() => ({
             mutationFn: async (setting: Setting) => {
                 const { data, error } = await this.supabase.client
-                    .from("settings")
+                    .from(DB_TABLES.SETTINGS)
                     .insert([
                         {
                             key: setting.key,
@@ -189,7 +189,7 @@ export class SettingsService implements OnDestroy {
                 updateData.updated_at = new Date().toISOString();
 
                 const { data, error } = await this.supabase.client
-                    .from("settings")
+                    .from(DB_TABLES.SETTINGS)
                     .update(updateData)
                     .eq("id", id)
                     .select()
@@ -208,7 +208,7 @@ export class SettingsService implements OnDestroy {
         return injectMutation(() => ({
             mutationFn: async (id: string) => {
                 const { error } = await this.supabase.client
-                    .from("settings")
+                    .from(DB_TABLES.SETTINGS)
                     .delete()
                     .eq("id", id);
 

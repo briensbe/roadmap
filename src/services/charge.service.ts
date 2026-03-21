@@ -21,7 +21,7 @@ export class ChargeService {
         if (this._chargesCache) return this._chargesCache;
 
         const { data, error } = await this.supabase.client
-            .from('charges')
+            .from(DB_TABLES.CHARGES)
             .select('*')
             .order('semaine_debut');
 
@@ -37,7 +37,7 @@ export class ChargeService {
         }
 
         const { data, error } = await this.supabase.client
-            .from('charges')
+            .from(DB_TABLES.CHARGES)
             .select('*')
             .eq('projet_id', projectId)
             .order('semaine_debut');
@@ -52,7 +52,7 @@ export class ChargeService {
         }
 
         const { data, error } = await this.supabase.client
-            .from('charges')
+            .from(DB_TABLES.CHARGES)
             .select('*')
             .eq('equipe_id', teamId)
             .order('semaine_debut');
@@ -84,7 +84,7 @@ export class ChargeService {
         }
 
         const { data, error } = await this.supabase.client
-            .from('charges')
+            .from(DB_TABLES.CHARGES)
             .insert([chargeData])
             .select()
             .single();
@@ -105,7 +105,7 @@ export class ChargeService {
     ): Promise<Charge> {
         // First, try to find an existing charge with the same parameters
         let query = this.supabase.client
-            .from('charges')
+            .from(DB_TABLES.CHARGES)
             .select('*')
             .eq('projet_id', projetId)
             .eq('equipe_id', equipeId)
@@ -145,7 +145,7 @@ export class ChargeService {
         if (existingCharges && existingCharges.length > 0) {
             // Update existing charge
             const { data, error } = await this.supabase.client
-            .from(DB_TABLES.CHARGES)
+                .from(DB_TABLES.CHARGES)
                 .update({ unite_ressource: uniteRessource })
                 .eq('id', existingCharges[0].id)
                 .select()
@@ -157,7 +157,7 @@ export class ChargeService {
         } else {
             // Create new charge
             const { data, error } = await this.supabase.client
-                .from('charges')
+                .from(DB_TABLES.CHARGES)
                 .insert([chargeData])
                 .select()
                 .single();
@@ -178,7 +178,7 @@ export class ChargeService {
 
         // Get all charges for this project+team
         const chargesInCombination = await this.supabase.client
-            .from('charges')
+            .from(DB_TABLES.CHARGES)
             .select('role_id')
             .eq('projet_id', projetId)
             .eq('equipe_id', equipeId);
@@ -206,7 +206,7 @@ export class ChargeService {
 
         // Get all charges for this project+team
         const chargesInCombination = await this.supabase.client
-            .from('charges')
+            .from(DB_TABLES.CHARGES)
             .select('personne_id')
             .eq('projet_id', projetId)
             .eq('equipe_id', equipeId);
@@ -246,7 +246,7 @@ export class ChargeService {
         personneId?: string
     ): Promise<void> {
         let query = this.supabase.client
-            .from('charges')
+            .from(DB_TABLES.CHARGES)
             .delete()
             .eq('equipe_id', equipeId);
 
@@ -275,7 +275,7 @@ export class ChargeService {
         equipeId: string
     ): Promise<void> {
         const { error } = await this.supabase.client
-            .from('charges')
+            .from(DB_TABLES.CHARGES)
             .delete()
             .eq('projet_id', projetId)
             .eq('equipe_id', equipeId);

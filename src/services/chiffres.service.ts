@@ -33,7 +33,7 @@ export class ChiffresService {
     }
 
     const { data, error } = await this.supabase.client
-      .from("chiffres")
+      .from(DB_TABLES.CHIFFRES)
       .select("*")
       .order("date_mise_a_jour", { ascending: false });
 
@@ -48,7 +48,7 @@ export class ChiffresService {
     }
 
     const { data, error } = await this.supabase.client
-      .from("chiffres")
+      .from(DB_TABLES.CHIFFRES)
       .select("*")
       .eq("id_projet", idProjet)
       .order("id_service");
@@ -59,7 +59,7 @@ export class ChiffresService {
 
   async getChiffre(idProjet: number, idService: number): Promise<Chiffre | null> {
     const { data, error } = await this.supabase.client
-      .from("chiffres")
+      .from(DB_TABLES.CHIFFRES)
       .select("*")
       .eq("id_projet", idProjet)
       .eq("id_service", idService)
@@ -71,7 +71,7 @@ export class ChiffresService {
 
   async createChiffre(chiffre: Chiffre): Promise<Chiffre> {
     const { data, error } = await this.supabase.client
-      .from("chiffres")
+      .from(DB_TABLES.CHIFFRES)
       .insert([
         {
           id_projet: chiffre.id_projet,
@@ -102,7 +102,7 @@ export class ChiffresService {
     updateData.updated_at = new Date().toISOString();
 
     const { data, error } = await this.supabase.client
-      .from("chiffres")
+      .from(DB_TABLES.CHIFFRES)
       .update(updateData)
       .eq("id_chiffres", idChiffres)
       .select()

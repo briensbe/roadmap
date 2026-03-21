@@ -35,7 +35,7 @@ export class PersonnesService {
         }
 
         const { data, error } = await this.supabase.client
-            .from("personnes")
+            .from(DB_TABLES.PERSONNES)
             .select("*")
             .order("nom", { ascending: true });
 
@@ -55,7 +55,7 @@ export class PersonnesService {
         }
 
         const { data, error } = await this.supabase.client
-            .from("personnes")
+            .from(DB_TABLES.PERSONNES)
             .select("*")
             .eq("id", id)
             .maybeSingle();
@@ -80,7 +80,7 @@ export class PersonnesService {
 
     async createPersonne(personne: Partial<Personne>): Promise<Personne> {
         const { data, error } = await this.supabase.client
-            .from("personnes")
+            .from(DB_TABLES.PERSONNES)
             .insert([personne])
             .select()
             .single();
@@ -92,7 +92,7 @@ export class PersonnesService {
 
     async updatePersonne(id: string, personne: Partial<Personne>): Promise<Personne> {
         const { data, error } = await this.supabase.client
-            .from("personnes")
+            .from(DB_TABLES.PERSONNES)
             .update(personne)
             .eq("id", id)
             .select()
