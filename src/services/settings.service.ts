@@ -4,6 +4,7 @@ import { Setting } from "../models/settings.type";
 import { QueryClient, injectQuery, injectMutation } from "@tanstack/angular-query-experimental";
 import { settingsQueryKeys } from "./settings.query-keys";
 import { RealtimeChannel } from "@supabase/supabase-js";
+import { DB_TABLES } from "../constants/db-tables";
 
 @Injectable({
     providedIn: "root",
@@ -29,7 +30,7 @@ export class SettingsService implements OnDestroy {
                 {
                     event: '*',
                     schema: 'public',
-                    table: 'settings'
+                    table: DB_TABLES.SETTINGS
                 },
                 (payload) => {
                     console.log('Settings realtime event received:', payload);
@@ -101,7 +102,7 @@ export class SettingsService implements OnDestroy {
             queryKey: settingsQueryKeys.list(),
             queryFn: async () => {
                 const { data, error } = await this.supabase.client
-                    .from("settings")
+                    .from(DB_TABLES.SETTINGS)
                     .select("*")
                     .order("key");
 

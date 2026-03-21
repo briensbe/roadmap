@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { Charge, Role, Personne } from '../models/types';
 import { TeamService } from './team.service';
+import { DB_TABLES } from '../constants/db-tables';
 
 @Injectable({
     providedIn: 'root'
@@ -144,7 +145,7 @@ export class ChargeService {
         if (existingCharges && existingCharges.length > 0) {
             // Update existing charge
             const { data, error } = await this.supabase.client
-                .from('charges')
+            .from(DB_TABLES.CHARGES)
                 .update({ unite_ressource: uniteRessource })
                 .eq('id', existingCharges[0].id)
                 .select()
@@ -229,7 +230,7 @@ export class ChargeService {
         const formattedFirstDay = this.getFirstDayOfWeek(fromDate);
 
         const { data, error } = await this.supabase.client
-            .from("charges")
+            .from(DB_TABLES.CHARGES)
             .select("*")
             .eq("projet_id", id)
             .gte("semaine_debut", formattedFirstDay);

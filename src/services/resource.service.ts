@@ -2,6 +2,7 @@ import { Injectable } from "@angular/core";
 import { SupabaseService } from "./supabase.service";
 import { DataSyncService } from "./data-sync.service";
 import { Societe, Departement, Service, Equipe, Role, Personne } from "../models/types";
+import { DB_TABLES } from "../constants/db-tables";
 
 @Injectable({
   providedIn: "root",
@@ -38,7 +39,7 @@ export class ResourceService {
 
   async getAllSocietes(): Promise<Societe[]> {
     if (this._societesCache) return this._societesCache;
-    const { data, error } = await this.supabase.client.from("societes").select("*").order("nom");
+    const { data, error } = await this.supabase.client.from(DB_TABLES.SOCIETES).select("*").order("nom");
     if (error) throw error;
 
     this._societesCache = data || [];
@@ -46,7 +47,7 @@ export class ResourceService {
   }
 
   async createSociete(societe: Partial<Societe>): Promise<Societe> {
-    const { data, error } = await this.supabase.client.from("societes").insert([societe]).select().single();
+    const { data, error } = await this.supabase.client.from(DB_TABLES.SOCIETES).insert([societe]).select().single();
     if (error) throw error;
     this.clearCache();
     return data;
@@ -54,7 +55,7 @@ export class ResourceService {
 
   async getAllDepartements(): Promise<Departement[]> {
     if (this._departementsCache) return this._departementsCache;
-    const { data, error } = await this.supabase.client.from("departements").select("*").order("nom");
+    const { data, error } = await this.supabase.client.from(DB_TABLES.DEPARTEMENTS).select("*").order("nom");
     if (error) throw error;
 
     this._departementsCache = data || [];
@@ -62,7 +63,7 @@ export class ResourceService {
   }
 
   async createDepartement(departement: Partial<Departement>): Promise<Departement> {
-    const { data, error } = await this.supabase.client.from("departements").insert([departement]).select().single();
+    const { data, error } = await this.supabase.client.from(DB_TABLES.DEPARTEMENTS).insert([departement]).select().single();
     if (error) throw error;
     this.clearCache();
     return data;
@@ -70,7 +71,7 @@ export class ResourceService {
 
   async getAllServices(): Promise<Service[]> {
     if (this._servicesCache) return this._servicesCache;
-    const { data, error } = await this.supabase.client.from("services").select("*").order("nom");
+    const { data, error } = await this.supabase.client.from(DB_TABLES.SERVICES).select("*").order("nom");
     if (error) throw error;
 
     this._servicesCache = data || [];
@@ -78,7 +79,7 @@ export class ResourceService {
   }
 
   async createService(service: Partial<Service>): Promise<Service> {
-    const { data, error } = await this.supabase.client.from("services").insert([service]).select().single();
+    const { data, error } = await this.supabase.client.from(DB_TABLES.SERVICES).insert([service]).select().single();
     if (error) throw error;
     this.clearCache();
     return data;
@@ -86,7 +87,7 @@ export class ResourceService {
 
   async getAllEquipes(): Promise<Equipe[]> {
     if (this._equipesCache) return this._equipesCache;
-    const { data, error } = await this.supabase.client.from("equipes").select("*").order("nom");
+    const { data, error } = await this.supabase.client.from(DB_TABLES.EQUIPES).select("*").order("nom");
     if (error) throw error;
 
     this._equipesCache = data || [];
@@ -94,7 +95,7 @@ export class ResourceService {
   }
 
   async createEquipe(equipe: Partial<Equipe>): Promise<Equipe> {
-    const { data, error } = await this.supabase.client.from("equipes").insert([equipe]).select().single();
+    const { data, error } = await this.supabase.client.from(DB_TABLES.EQUIPES).insert([equipe]).select().single();
     if (error) throw error;
     this.clearCache();
     return data;
@@ -102,7 +103,7 @@ export class ResourceService {
 
   async getAllRoles(): Promise<Role[]> {
     if (this._rolesCache) return this._rolesCache;
-    const { data, error } = await this.supabase.client.from("roles").select("*").order("nom");
+    const { data, error } = await this.supabase.client.from(DB_TABLES.ROLES).select("*").order("nom");
     if (error) throw error;
 
     this._rolesCache = data || [];
@@ -110,7 +111,7 @@ export class ResourceService {
   }
 
   async createRole(role: Partial<Role>): Promise<Role> {
-    const { data, error } = await this.supabase.client.from("roles").insert([role]).select().single();
+    const { data, error } = await this.supabase.client.from(DB_TABLES.ROLES).insert([role]).select().single();
     if (error) throw error;
     this.clearCache();
     return data;
@@ -118,7 +119,7 @@ export class ResourceService {
 
   async updateRole(id: string, role: Partial<Role>): Promise<Role> {
     const { data, error } = await this.supabase.client
-      .from("roles")
+      .from(DB_TABLES.ROLES)
       .update(role)
       .eq("id", id)
       .select()
@@ -129,14 +130,14 @@ export class ResourceService {
   }
 
   async deleteRole(id: string): Promise<void> {
-    const { error } = await this.supabase.client.from("roles").delete().eq("id", id);
+    const { error } = await this.supabase.client.from(DB_TABLES.ROLES).delete().eq("id", id);
     if (error) throw error;
     this.clearCache();
   }
 
   async getAllPersonnes(): Promise<Personne[]> {
     if (this._personnesCache) return this._personnesCache;
-    const { data, error } = await this.supabase.client.from("personnes").select("*").order("nom");
+    const { data, error } = await this.supabase.client.from(DB_TABLES.PERSONNES).select("*").order("nom");
     if (error) throw error;
 
     this._personnesCache = data || [];
@@ -144,21 +145,21 @@ export class ResourceService {
   }
 
   async createPersonne(personne: Partial<Personne>): Promise<Personne> {
-    const { data, error } = await this.supabase.client.from("personnes").insert([personne]).select().single();
+    const { data, error } = await this.supabase.client.from(DB_TABLES.PERSONNES).insert([personne]).select().single();
     if (error) throw error;
     this.clearCache();
     return data;
   }
 
   async deletePersonne(id: string): Promise<void> {
-    const { error } = await this.supabase.client.from("personnes").delete().eq("id", id);
+    const { error } = await this.supabase.client.from(DB_TABLES.PERSONNES).delete().eq("id", id);
     if (error) throw error;
     this.clearCache();
   }
 
   async updatePersonne(id: string, personne: Partial<Personne>): Promise<Personne> {
     const { data, error } = await this.supabase.client
-      .from("personnes")
+      .from(DB_TABLES.PERSONNES)
       .update(personne)
       .eq("id", id)
       .select()
@@ -170,7 +171,7 @@ export class ResourceService {
 
   async addRoleToPersonne(personneId: string, roleId: string): Promise<void> {
     const { error } = await this.supabase.client
-      .from("personne_roles")
+      .from(DB_TABLES.PERSONNE_ROLES)
       .insert([{ personne_id: personneId, role_id: roleId }]);
     if (error) throw error;
     this.clearCache();
@@ -179,7 +180,7 @@ export class ResourceService {
   // Societes
   async updateSociete(id: string, societe: Partial<Societe>): Promise<Societe> {
     const { data, error } = await this.supabase.client
-      .from("societes")
+      .from(DB_TABLES.SOCIETES)
       .update(societe)
       .eq("id", id)
       .select()
@@ -190,7 +191,7 @@ export class ResourceService {
   }
 
   async deleteSociete(id: string): Promise<void> {
-    const { error } = await this.supabase.client.from("societes").delete().eq("id", id);
+    const { error } = await this.supabase.client.from(DB_TABLES.SOCIETES).delete().eq("id", id);
     if (error) throw error;
     this.clearCache();
   }
@@ -198,7 +199,7 @@ export class ResourceService {
   // Departements
   async updateDepartement(id: string, departement: Partial<Departement>): Promise<Departement> {
     const { data, error } = await this.supabase.client
-      .from("departements")
+      .from(DB_TABLES.DEPARTEMENTS)
       .update(departement)
       .eq("id", id)
       .select()
@@ -209,7 +210,7 @@ export class ResourceService {
   }
 
   async deleteDepartement(id: string): Promise<void> {
-    const { error } = await this.supabase.client.from("departements").delete().eq("id", id);
+    const { error } = await this.supabase.client.from(DB_TABLES.DEPARTEMENTS).delete().eq("id", id);
     if (error) throw error;
     this.clearCache();
   }
@@ -217,7 +218,7 @@ export class ResourceService {
   // Services
   async updateService(id: string, service: Partial<Service>): Promise<Service> {
     const { data, error } = await this.supabase.client
-      .from("services")
+      .from(DB_TABLES.SERVICES)
       .update(service)
       .eq("id", id)
       .select()
@@ -228,7 +229,7 @@ export class ResourceService {
   }
 
   async deleteService(id: string): Promise<void> {
-    const { error } = await this.supabase.client.from("services").delete().eq("id", id);
+    const { error } = await this.supabase.client.from(DB_TABLES.SERVICES).delete().eq("id", id);
     if (error) throw error;
     this.clearCache();
   }
@@ -236,7 +237,7 @@ export class ResourceService {
   // Equipes
   async updateEquipe(id: string, equipe: Partial<Equipe>): Promise<Equipe> {
     const { data, error } = await this.supabase.client
-      .from("equipes")
+      .from(DB_TABLES.EQUIPES)
       .update(equipe)
       .eq("id", id)
       .select()
@@ -247,7 +248,7 @@ export class ResourceService {
   }
 
   async deleteEquipe(id: string): Promise<void> {
-    const { error } = await this.supabase.client.from("equipes").delete().eq("id", id);
+    const { error } = await this.supabase.client.from(DB_TABLES.EQUIPES).delete().eq("id", id);
     if (error) throw error;
     this.clearCache();
   }

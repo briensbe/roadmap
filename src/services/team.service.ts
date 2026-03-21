@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { DataSyncService } from './data-sync.service';
 import { Equipe, Role, Personne, Capacite, EquipeResource } from '../models/types';
+import { DB_TABLES } from '../constants/db-tables';
 
 @Injectable({
     providedIn: 'root'
@@ -43,7 +44,7 @@ export class TeamService {
         }
 
         const { data, error } = await this.supabase.client
-            .from('equipes')
+            .from(DB_TABLES.EQUIPES)
             .select('*')
             .order('nom');
 
@@ -62,7 +63,7 @@ export class TeamService {
 
         // Get roles attached to this team
         const { data: roleAttachments, error: roleError } = await this.supabase.client
-            .from('role_attachments')
+            .from(DB_TABLES.ROLE_ATTACHMENTS)
             .select('id, role_id, roles(*)')
             .eq('equipe_id', equipeId);
 
@@ -83,7 +84,7 @@ export class TeamService {
 
         // Get persons attached to this team
         const { data: personnes, error: personneError } = await this.supabase.client
-            .from('personnes')
+            .from(DB_TABLES.PERSONNES)
             .select('*')
             .eq('equipe_id', equipeId);
 
@@ -111,7 +112,7 @@ export class TeamService {
         }
 
         const { data, error } = await this.supabase.client
-            .from('roles')
+            .from(DB_TABLES.ROLES)
             .select('*')
             .order('nom');
 
@@ -127,7 +128,7 @@ export class TeamService {
 
         // Get roles already attached to THIS specific team
         const { data: attachments, error } = await this.supabase.client
-            .from('role_attachments')
+            .from(DB_TABLES.ROLE_ATTACHMENTS)
             .select('role_id')
             .eq('equipe_id', equipeId);
 
@@ -146,7 +147,7 @@ export class TeamService {
         }
 
         const { data, error } = await this.supabase.client
-            .from('personnes')
+            .from(DB_TABLES.PERSONNES)
             .select('*')
             .order('nom', { ascending: true });
 
@@ -162,7 +163,7 @@ export class TeamService {
 
         // Get persons already attached to THIS specific team
         const { data: personnes, error } = await this.supabase.client
-            .from('personnes')
+            .from(DB_TABLES.PERSONNES)
             .select('id')
             .eq('equipe_id', equipeId);
 
@@ -177,7 +178,7 @@ export class TeamService {
 
     async addRoleToEquipe(equipeId: string, roleId: string): Promise<void> {
         const { error } = await this.supabase.client
-            .from('role_attachments')
+            .from(DB_TABLES.ROLE_ATTACHMENTS)
             .insert({
                 role_id: roleId,
                 equipe_id: equipeId
@@ -195,7 +196,7 @@ export class TeamService {
 
     async addPersonneToEquipe(equipeId: string, personneId: string): Promise<void> {
         const { error } = await this.supabase.client
-            .from('personnes')
+            .from(DB_TABLES.PERSONNES)
             .update({ equipe_id: equipeId })
             .eq('id', personneId);
 
@@ -205,7 +206,7 @@ export class TeamService {
 
     async removeRoleFromEquipe(roleId: string, equipeId: string): Promise<void> {
         const { error } = await this.supabase.client
-            .from('role_attachments')
+            .from(DB_TABLES.ROLE_ATTACHMENTS)
             .delete()
             .eq('role_id', roleId)
             .eq('equipe_id', equipeId);
@@ -216,7 +217,7 @@ export class TeamService {
 
     async removePersonneFromEquipe(personneId: string): Promise<void> {
         const { error } = await this.supabase.client
-            .from('personnes')
+            .from(DB_TABLES.PERSONNES)
             .update({ equipe_id: null })
             .eq('id', personneId);
 
@@ -231,7 +232,7 @@ export class TeamService {
         }
 
         const query = this.supabase.client
-            .from('capacites')
+            .from(DB_TABLES.CAPACITES)
             .select('*')
             .eq('equipe_id', equipeId);
 
@@ -271,7 +272,7 @@ export class TeamService {
 
         // Check if capacity already exists for this week
         const query = this.supabase.client
-            .from('capacites')
+            .from(DB_TABLES.CAPACITES)
             .select('id')
             .eq('semaine_debut', semaineDebut)
             .eq('equipe_id', equipeId);
@@ -287,7 +288,7 @@ export class TeamService {
         if (existing) {
             // Update existing
             const { error } = await this.supabase.client
-                .from('capacites')
+                .from(DB_TABLES.CAPACITES)
                 .update({ capacite })
                 .eq('id', existing.id);
 
@@ -295,7 +296,7 @@ export class TeamService {
         } else {
             // Insert new
             const { error } = await this.supabase.client
-                .from('capacites')
+                .from(DB_TABLES.CAPACITES)
                 .insert(capaciteData);
 
             if (error) throw error;
@@ -309,7 +310,7 @@ export class TeamService {
         semaineDebut: string
     ): Promise<void> {
         const query = this.supabase.client
-            .from('capacites')
+            .from(DB_TABLES.CAPACITES)
             .delete()
             .eq('semaine_debut', semaineDebut);
 
@@ -329,7 +330,7 @@ export class TeamService {
         }
 
         const { data, error } = await this.supabase.client
-            .from('capacites')
+            .from(DB_TABLES.CAPACITES)
             .select('*');
 
         if (error) throw error;

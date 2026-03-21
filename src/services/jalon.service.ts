@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
-import { Jalon } from '../models/types';
+import { Jalon } from "../models/types";
+import { DB_TABLES } from "../constants/db-tables";
 
 @Injectable({
     providedIn: 'root'
@@ -67,7 +68,7 @@ export class JalonService {
 
     async deleteJalon(id: string): Promise<void> {
         const { error } = await this.supabase.client
-            .from('jalons')
+            .from(DB_TABLES.JALONS)
             .delete()
             .eq('id', id);
 

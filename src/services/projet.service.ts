@@ -1,10 +1,11 @@
 import { Injectable, inject, OnDestroy } from "@angular/core";
 import { SupabaseService } from "./supabase.service";
-import { Projet } from "../models/types";
+import { Projet, EquipeProjet } from "../models/types";
 import { LexoRank } from "lexorank";
 import { QueryClient, injectQuery, injectMutation } from "@tanstack/angular-query-experimental";
 import { projetQueryKeys } from "./projet.query-keys";
 import { RealtimeChannel } from "@supabase/supabase-js";
+import { DB_TABLES } from "../constants/db-tables";
 
 @Injectable({
   providedIn: "root"
@@ -35,7 +36,7 @@ export class ProjetService implements OnDestroy {
         {
           event: '*',
           schema: 'public',
-          table: 'projets'
+          table: DB_TABLES.PROJETS
         },
         (payload) => {
           console.log('Realtime event received:', payload);
@@ -132,7 +133,7 @@ export class ProjetService implements OnDestroy {
       queryKey: projetQueryKeys.list(),
       queryFn: async () => {
         const { data, error } = await this.supabase.client
-          .from("projets")
+          .from(DB_TABLES.PROJETS)
           .select("*")
           .order("rank", { ascending: true });
 
@@ -248,7 +249,7 @@ export class ProjetService implements OnDestroy {
 
     // Fetch from database
     const { data, error } = await this.supabase.client
-      .from("equipes_projets")
+      .from(DB_TABLES.EQUIPES_PROJETS)
       .select("*");
 
     if (error) throw error;
@@ -271,7 +272,7 @@ export class ProjetService implements OnDestroy {
       mutationFn: async (projet: Partial<Projet>) => {
         // 1. Fetch only the project with the highest rank to calculate next rank
         const { data: highestRankProject } = await this.supabase.client
-          .from("projets")
+          .from(DB_TABLES.PROJETS)
           .select("rank")
           .not("rank", "is", null)
           .order("rank", { ascending: false })
@@ -386,7 +387,7 @@ export class ProjetService implements OnDestroy {
     return injectMutation(() => ({
       mutationFn: async (id: string) => {
         const { error } = await this.supabase.client
-          .from("projets")
+          .from(DB_TABLES.PROJETS)
           .delete()
           .eq("id", id);
 
@@ -494,7 +495,7 @@ export class ProjetService implements OnDestroy {
    */
   async linkProjectToTeam(projetId: string, equipeId: string): Promise<void> {
     const { error } = await this.supabase.client
-      .from("equipes_projets")
+      .from(DB_TABLES.EQUIPES_PROJETS)
       .insert({ projet_id: projetId, equipe_id: equipeId });
 
     if (error) throw error;

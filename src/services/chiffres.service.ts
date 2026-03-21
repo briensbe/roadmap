@@ -6,6 +6,7 @@ import { RolesService } from "./roles.service";
 import { PersonnesService } from "./personnes.service";
 import { ChargeService } from "./charge.service";
 import { ProjetService } from "./projet.service";
+import { DB_TABLES } from "../constants/db-tables";
 
 @Injectable({
   providedIn: "root",
@@ -113,7 +114,7 @@ export class ChiffresService {
   }
 
   async deleteChiffre(idChiffres: number): Promise<void> {
-    const { error } = await this.supabase.client.from("chiffres").delete().eq("id_chiffres", idChiffres);
+    const { error } = await this.supabase.client.from(DB_TABLES.CHIFFRES).delete().eq("id_chiffres", idChiffres);
 
     if (error) throw error;
     this.clearCache();

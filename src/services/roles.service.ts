@@ -2,6 +2,7 @@ import { Injectable } from "@angular/core";
 import { SupabaseService } from "./supabase.service";
 import { DataSyncService } from "./data-sync.service";
 import { Role, RoleAttachment } from "../models/types";
+import { DB_TABLES } from "../constants/db-tables";
 
 @Injectable({
     providedIn: "root"
@@ -124,7 +125,7 @@ export class RolesService {
 
     async deleteRole(id: string): Promise<void> {
         const { error } = await this.supabase.client
-            .from("roles")
+            .from(DB_TABLES.ROLES)
             .delete()
             .eq("id", id);
 
@@ -146,7 +147,7 @@ export class RolesService {
 
     async deleteRoleAttachment(id: string): Promise<void> {
         const { error } = await this.supabase.client
-            .from("role_attachments")
+            .from(DB_TABLES.ROLE_ATTACHMENTS)
             .delete()
             .eq("id", id);
 

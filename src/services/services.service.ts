@@ -2,6 +2,7 @@ import { Injectable } from "@angular/core";
 import { SupabaseService } from "./supabase.service";
 import { DataSyncService } from "./data-sync.service";
 import { Service } from "../models/types";
+import { DB_TABLES } from "../constants/db-tables";
 
 @Injectable({
     providedIn: "root"
@@ -34,7 +35,7 @@ export class ServicesService {
         }
 
         const { data, error } = await this.supabase.client
-            .from("services")
+            .from(DB_TABLES.SERVICES)
             .select("*")
             .order("nom", { ascending: true });
 
@@ -80,7 +81,7 @@ export class ServicesService {
         }
 
         const { data, error } = await this.supabase.client
-            .from("services")
+            .from(DB_TABLES.SERVICES)
             .select("*")
             .eq("id", id)
             .maybeSingle();
@@ -116,7 +117,7 @@ export class ServicesService {
 
     async deleteService(id: string): Promise<void> {
         const { error } = await this.supabase.client
-            .from("services")
+            .from(DB_TABLES.SERVICES)
             .delete()
             .eq("id", id);
 

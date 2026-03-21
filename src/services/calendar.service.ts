@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { Capacite, Charge, Jalon, WeekData } from '../models/types';
+import { DB_TABLES } from '../constants/db-tables';
 
 @Injectable({
   providedIn: 'root'
@@ -43,7 +44,7 @@ export class CalendarService {
     societeId?: string;
   }): Promise<Capacite[]> {
     let query = this.supabase.client
-      .from('capacites')
+      .from(DB_TABLES.CAPACITES)
       .select('*');
 
     if (filters?.roleId) query = query.eq('role_id', filters.roleId);
@@ -63,7 +64,7 @@ export class CalendarService {
 
     if (existing) {
       const { data, error } = await this.supabase.client
-        .from('capacites')
+        .from(DB_TABLES.CAPACITES)
         .update({ capacite: capacite.capacite })
         .eq('id', existing.id)
         .select()
@@ -72,7 +73,7 @@ export class CalendarService {
       return data;
     } else {
       const { data, error } = await this.supabase.client
-        .from('capacites')
+        .from(DB_TABLES.CAPACITES)
         .insert([capacite])
         .select()
         .single();
@@ -83,7 +84,7 @@ export class CalendarService {
 
   private async findExistingCapacite(capacite: Partial<Capacite>): Promise<Capacite | null> {
     let query = this.supabase.client
-      .from('capacites')
+      .from(DB_TABLES.CAPACITES)
       .select('*')
       .eq('semaine_debut', capacite.semaine_debut!);
 
@@ -130,7 +131,7 @@ export class CalendarService {
 
   async getCharges(projetId?: string): Promise<Charge[]> {
     let query = this.supabase.client
-      .from('charges')
+      .from(DB_TABLES.CHARGES)
       .select('*');
 
     if (projetId) query = query.eq('projet_id', projetId);
@@ -142,7 +143,7 @@ export class CalendarService {
 
   async createCharge(charge: Partial<Charge>): Promise<Charge> {
     const { data, error } = await this.supabase.client
-      .from('charges')
+      .from(DB_TABLES.CHARGES)
       .insert([charge])
       .select()
       .single();
@@ -152,7 +153,7 @@ export class CalendarService {
 
   async updateCharge(id: string, charge: Partial<Charge>): Promise<Charge> {
     const { data, error } = await this.supabase.client
-      .from('charges')
+      .from(DB_TABLES.CHARGES)
       .update(charge)
       .eq('id', id)
       .select()
@@ -163,7 +164,7 @@ export class CalendarService {
 
   async deleteCharge(id: string): Promise<void> {
     const { error } = await this.supabase.client
-      .from('charges')
+      .from(DB_TABLES.CHARGES)
       .delete()
       .eq('id', id);
     if (error) throw error;
@@ -171,7 +172,7 @@ export class CalendarService {
 
   async getJalons(projetId?: string): Promise<Jalon[]> {
     let query = this.supabase.client
-      .from('jalons')
+      .from(DB_TABLES.JALONS)
       .select('*');
 
     if (projetId) query = query.eq('projet_id', projetId);
@@ -183,7 +184,7 @@ export class CalendarService {
 
   async createJalon(jalon: Partial<Jalon>): Promise<Jalon> {
     const { data, error } = await this.supabase.client
-      .from('jalons')
+      .from(DB_TABLES.JALONS)
       .insert([jalon])
       .select()
       .single();

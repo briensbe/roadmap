@@ -2,6 +2,7 @@ import { Injectable } from "@angular/core";
 import { SupabaseService } from "./supabase.service";
 import { DataSyncService } from "./data-sync.service";
 import { Personne } from "../models/types";
+import { DB_TABLES } from "../constants/db-tables";
 
 @Injectable({
     providedIn: "root"
@@ -104,7 +105,7 @@ export class PersonnesService {
 
     async deletePersonne(id: string): Promise<void> {
         const { error } = await this.supabase.client
-            .from("personnes")
+            .from(DB_TABLES.PERSONNES)
             .delete()
             .eq("id", id);
 
