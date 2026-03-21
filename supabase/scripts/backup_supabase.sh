@@ -37,8 +37,8 @@ supabase link --project-ref "$PROJECT_REF"
 # --password "$DB_PASSWORD"
 
 # 5. Sauvegardes dans le sous-dossier daté
-SCHEMA_FILE="$BACKUP_PATH/schema_public_${TIME_SUFFIX}.sql"
-DATA_FILE="$BACKUP_PATH/data_${TIME_SUFFIX}.sql"
+SCHEMA_FILE="$BACKUP_PATH/schema_public_${TIME_SUFFIX}_${PROJECT_REF:0:10}.sql"
+DATA_FILE="$BACKUP_PATH/data_${TIME_SUFFIX}_${PROJECT_REF:0:10}.sql"
 
 echo "📄 Extraction du schéma public..."
 supabase db dump --linked --schema public -f "$SCHEMA_FILE"
@@ -58,5 +58,3 @@ echo "Unlinking project -> supabase unlink"
 supabase unlink
 echo "Listing project -> supabase projects list"
 supabase projects list
-
-
