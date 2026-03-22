@@ -87,7 +87,7 @@ export class ChargeService {
             .from(DB_TABLES.CHARGES)
             .insert([chargeData])
             .select()
-            .single();
+            .maybeSingle(); // Renvoie null proprement si rien n'est trouvé
 
         if (error) throw error;
         // Invalidate cache
@@ -149,7 +149,7 @@ export class ChargeService {
                 .update({ unite_ressource: uniteRessource })
                 .eq('id', existingCharges[0].id)
                 .select()
-                .single();
+                .maybeSingle(); // Renvoie null proprement si rien n'est trouvé
 
             if (error) throw error;
             this.clearCache();
@@ -160,7 +160,7 @@ export class ChargeService {
                 .from(DB_TABLES.CHARGES)
                 .insert([chargeData])
                 .select()
-                .single();
+                .maybeSingle(); // Renvoie null proprement si rien n'est trouvé
 
             if (error) throw error;
             this.clearCache();
