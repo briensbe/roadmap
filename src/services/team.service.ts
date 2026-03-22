@@ -64,7 +64,7 @@ export class TeamService {
         // Get roles attached to this team
         const { data: roleAttachments, error: roleError } = await this.supabase.client
             .from(DB_TABLES.ROLE_ATTACHMENTS)
-            .select('id, role_id, roles(*)')
+            .select(`id, role_id, roles:${DB_TABLES.ROLES}(*)`) // attention on met roles: pour ne pas avoir à changer le reste du code suite renommage table
             .eq('equipe_id', equipeId);
 
         if (!roleError && roleAttachments) {
