@@ -2,12 +2,22 @@
   {
     "version": "2026.03.26",
     "date": "2026-03-26",
-    "title": "Semaine en cours aussi dans la vue Capacité",
-    "imageUrl": "assets/release-notes/2026-02-27-semaine-en-cours.png",
-    "imageMaxHeight": 200,
-    "items": [
-      "Dans le filtre par année pour les projections (year popover), ajout du choix Semaine en cours comme dans la vue Planification",
-      "et une correction de la position du popover dans la vue Capacité"
+    "news": [
+      {
+        "title": "Tribute to fujleya and the TuttiViewer",
+        "imageUrl": "assets/release-notes/2023-easterEggTribute2.gif",
+        "imageMaxHeight": 200,
+        "items": ["Pour les plus anciens d'entre nous, un petit EasterEgg des familles :) "]
+      },
+      {
+        "title": "Semaine en cours aussi dans la vue Capacité",
+        "imageUrl": "assets/release-notes/2026-02-27-semaine-en-cours.png",
+        "imageMaxHeight": 200,
+        "items": [
+          "Dans le filtre par année pour les projections (year popover), ajout du choix Semaine en cours comme dans la vue Planification",
+          "et une correction de la position du popover dans la vue Capacité"
+        ]
+      }
     ]
   },
   {
