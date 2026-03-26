@@ -61,16 +61,16 @@ class ColumnEffect {
     this.isDoneInFade = false;
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
+  drawRain(ctx: CanvasRenderingContext2D) {
     this.frameCount++;
     const dec = this.frameCount;
     const offset = dec * this.speed;
 
-    // Fading logic
+    // Fading logic for rain
     if (offset > this.beginFadeOut) {
       if (this.currentColor.b > 0) this.currentColor.b--;
       if (this.currentColor.r > 0) this.currentColor.r--;
-      if (this.currentColor.g > 0) this.currentColor.g -= 3; // Slower fade for better readability
+      if (this.currentColor.g > 0) this.currentColor.g -= 3;
       if (this.currentColor.g < 0) this.currentColor.g = 0;
     }
 
@@ -91,8 +91,12 @@ class ColumnEffect {
     } else {
       this.isDoneInFade = true;
     }
+  }
 
-    // The letters that stay (reveal)
+  drawReveal(ctx: CanvasRenderingContext2D) {
+    const dec = this.frameCount;
+    const offset = dec * this.speed;
+
     if (offset > this.beginFadeOut) {
       const lineToBeginIn = Math.ceil((Math.ceil(ctx.canvas.height / this.height) - this.goals.length) / 2) + 1;
       ctx.font = `${this.fontSize}px monospace`;
@@ -197,6 +201,7 @@ export class MatrixEasterEggComponent implements OnInit, OnDestroy {
   private animationId?: number;
   private currentMessageIndex = 0;
   private isWaitingForNext = false;
+  private zoomFactor = 1.0;
 
   ngOnInit() {
     setTimeout(() => {
@@ -232,10 +237,7 @@ export class MatrixEasterEggComponent implements OnInit, OnDestroy {
     const canvasWidth = this.canvasRef.nativeElement.width;
     const numCols = Math.floor(canvasWidth / colWidth);
     
-    // Find the longest line in the current message
     const maxLineLen = Math.max(...currentMsg.map(l => l.length));
-    
-    // Calculate the left padding in terms of columns to center the block
     const paddingLeftCols = Math.floor((numCols - maxLineLen) / 2);
     
     const relativeCol = colIndex - paddingLeftCols;
@@ -281,15 +283,37 @@ export class MatrixEasterEggComponent implements OnInit, OnDestroy {
 
     let allFinished = true;
     for (const column of this.columns) {
-      column.draw(this.ctx);
+      column.drawRain(this.ctx);
       if (!column.isFinished()) {
         allFinished = false;
       }
     }
 
+    // Zoom animation starts growing from the beginning of the message
+    this.zoomFactor = Math.min(1.35, this.zoomFactor + 0.0015);
+
+    // Now draw the revealed text with optional zoom
     if (allFinished && !this.isWaitingForNext) {
-        this.isWaitingForNext = true;
-        setTimeout(() => this.nextMessage(), 2500);
+      this.isWaitingForNext = true;
+      setTimeout(() => this.nextMessage(), 3000); 
+    }
+
+    if (this.zoomFactor > 1.0) {
+      this.ctx.save();
+      const centerX = this.ctx.canvas.width / 2;
+      const centerY = this.ctx.canvas.height / 2;
+      this.ctx.translate(centerX, centerY);
+      this.ctx.scale(this.zoomFactor, this.zoomFactor);
+      this.ctx.translate(-centerX, -centerY);
+      
+      for (const column of this.columns) {
+        column.drawReveal(this.ctx);
+      }
+      this.ctx.restore();
+    } else {
+      for (const column of this.columns) {
+        column.drawReveal(this.ctx);
+      }
     }
 
     this.animationId = requestAnimationFrame(() => this.animate());
@@ -298,17 +322,18 @@ export class MatrixEasterEggComponent implements OnInit, OnDestroy {
   private nextMessage() {
     this.currentMessageIndex++;
     if (this.currentMessageIndex >= MESSAGES.length) {
-        // Last message shown, wait a bit and close or loop
         setTimeout(() => this.close.emit(), 3000);
         return;
     }
 
     const canvas = this.canvasRef.nativeElement;
+    this.zoomFactor = 1.0;
+    this.isWaitingForNext = false;
+
     for (let i = 0; i < this.columns.length; i++) {
         const goals = this.getGoalsForCurrentMessage(i);
         const fadeStart = canvas.height * 0.3 + Math.random() * (canvas.height * 0.4);
         this.columns[i].reset(goals, fadeStart);
     }
-    this.isWaitingForNext = false;
   }
 }
