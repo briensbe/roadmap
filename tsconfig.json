@@ -19,7 +19,11 @@
     "module": "ES2022",
     "useDefineForClassFields": false,
     "lib": ["ES2022", "dom"],
-    "types": ["node", "jasmine"]
+    "types": ["node", "jasmine"],
+    "skipLibCheck": true,
+    "paths": {
+      "@supabase/phoenix/priv/static/types/timer": ["./node_modules/@supabase/realtime-js/dist/main/lib/timer"]
+    }
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
