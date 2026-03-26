@@ -236,7 +236,14 @@
   </app-selection-toolbar>
 
   <!-- Year Selection Popover -->
-  <div *ngIf="showYearPopover" class="year-popover" (click)="$event.stopPropagation()">
+  <div 
+    *ngIf="showYearPopover" 
+    class="year-popover" 
+    (click)="$event.stopPropagation()"
+    [style.left.px]="popoverPosition?.left"
+    [style.top.px]="popoverPosition?.top"
+    [style.transform]="popoverPosition?.transform"
+  >
     <div
       class="popover-arrow"
       [class.top]="popoverArrowSide === 'top'"

@@ -1,4 +1,4 @@
-import { Component, OnInit, NgModule, HostListener, ChangeDetectorRef } from "@angular/core";
+import { Component, OnInit, NgModule, HostListener, ChangeDetectorRef, NgZone, OnDestroy } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { SelectionToolbarComponent } from "../selection-toolbar.component";
@@ -41,7 +41,7 @@ interface TeamRow {
   templateUrl: "./capacity-view.component.html",
   styleUrl: "./capacity-view.component.css"
 })
-export class CapacityViewComponent implements OnInit {
+export class CapacityViewComponent implements OnInit, OnDestroy {
   displayedWeeks: Date[] = [];
   currentDate: Date = new Date();
 
@@ -108,11 +108,13 @@ export class CapacityViewComponent implements OnInit {
   showYearPopover = false;
   popoverPosition: PopoverPosition | null = null;
   popoverArrowSide: 'top' | 'bottom' = 'top';
+  private scrollCloseListener?: () => void;
 
   constructor(
     private teamService: TeamService,
     private calendarService: CalendarService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone
   ) { }
 
   expandAll() {
@@ -130,6 +132,28 @@ export class CapacityViewComponent implements OnInit {
   async ngOnInit() {
     this.generateWeeks();
     await this.loadData();
+
+    this.ngZone.runOutsideAngular(() => {
+      // Close popovers on scroll so they don't detach from their anchor badge
+      const scrollHandler = () => {
+        if (this.showYearPopover) {
+          this.ngZone.run(() => {
+            this.showYearPopover = false;
+            this.activeAnchorId = null;
+            this.cdr.markForCheck();
+          });
+        }
+      };
+      // Attach to the document with capture phase to catch scroll on any child element
+      document.addEventListener('scroll', scrollHandler, true);
+      this.scrollCloseListener = () => document.removeEventListener('scroll', scrollHandler, true);
+    });
+  }
+
+  ngOnDestroy() {
+    if (this.scrollCloseListener) {
+      this.scrollCloseListener();
+    }
   }
 
   generateWeeks() {
@@ -669,6 +693,7 @@ export class CapacityViewComponent implements OnInit {
       popoverHeight: 200, // Estimated height of the popover
       popoverWidth: 160
     });
+    this.popoverPosition = pos;
     this.popoverArrowSide = pos.arrowSide;
 
     // Close when clicking outside
