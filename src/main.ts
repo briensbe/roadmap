@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, HostListener, OnInit } from "@angular/core";
 import { bootstrapApplication } from "@angular/platform-browser";
 import { provideRouter, RouterOutlet } from "@angular/router";
 import { CommonModule } from "@angular/common";
@@ -9,10 +9,14 @@ import { provideAngularQuery, QueryClient } from "@tanstack/angular-query-experi
 import { provideHttpClient } from "@angular/common/http";
 import { ReleaseNotesComponent } from "./components/release-notes.component";
 
+import { MatrixEasterEggComponent } from "./components/matrix-easter-egg.component";
+
+import { EasterEggService } from "./services/easter-egg.service";
+
 @Component({
   selector: "app-root",
   standalone: true,
-  imports: [CommonModule, RouterOutlet, SidebarNavigationComponent, ReleaseNotesComponent],
+  imports: [CommonModule, RouterOutlet, SidebarNavigationComponent, ReleaseNotesComponent, MatrixEasterEggComponent],
   template: `
     <div class="app-layout">
       <app-sidebar-navigation></app-sidebar-navigation>
@@ -20,6 +24,7 @@ import { ReleaseNotesComponent } from "./components/release-notes.component";
         <router-outlet></router-outlet>
       </main>
       <app-release-notes></app-release-notes>
+      <app-matrix-easter-egg *ngIf="showEasterEgg" (close)="showEasterEgg = false"></app-matrix-easter-egg>
     </div>
   `,
   styles: [
@@ -45,12 +50,20 @@ import { ReleaseNotesComponent } from "./components/release-notes.component";
 })
 export class App implements OnInit {
   sidebarCollapsed = false;
+  showEasterEgg = false;
 
-  constructor(private sidebarService: SidebarService) { }
+  constructor(
+    private sidebarService: SidebarService,
+    private easterEggService: EasterEggService
+  ) { }
 
   ngOnInit() {
     this.sidebarService.collapsed$.subscribe((collapsed) => {
       this.sidebarCollapsed = collapsed;
+    });
+
+    this.easterEggService.trigger$.subscribe(() => {
+      this.showEasterEgg = true;
     });
   }
 }

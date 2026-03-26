@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ReleaseNotesService } from '../services/release-notes.service';
+import { EasterEggService } from '../services/easter-egg.service';
 import { SupabaseService } from '../services/supabase.service';
 import { Subscription } from 'rxjs';
 import { environment } from '../environments/environment';
@@ -24,7 +25,13 @@ interface ReleaseNote {
       <div class="release-notes-overlay">
         <div class="release-notes-card" [class.history-mode]="showHistory">
           <div class="header">
-            <h3>{{ showHistory ? 'Historique des versions' : notes[0]?.title }}</h3>
+            <h3>
+              @if (showHistory) {
+                Historique des versio<span (click)="triggerEasterEgg()" class="egg-trigger">n</span>s
+              } @else {
+                {{ notes[0]?.title }}
+              }
+            </h3>
             <button (click)="close()" class="close-btn">&times;</button>
           </div>
           
@@ -247,6 +254,13 @@ interface ReleaseNote {
     .secondary-btn:hover {
       background: #e2e6ea;
     }
+    .egg-trigger {
+      cursor: default;
+      user-select: none;
+    }
+    .egg-trigger:active {
+      color: #007bff;
+    }
     @keyframes slideUp {
       from { transform: translateY(20px); opacity: 0; }
       to { transform: translateY(0); opacity: 1; }
@@ -272,6 +286,7 @@ export class ReleaseNotesComponent implements OnInit, OnDestroy {
   constructor(
     private http: HttpClient,
     private releaseNotesService: ReleaseNotesService,
+    private easterEggService: EasterEggService,
     private supabaseService: SupabaseService
   ) { }
 
@@ -313,6 +328,11 @@ export class ReleaseNotesComponent implements OnInit, OnDestroy {
     if (this.subscription) {
       this.subscription.add(authSub);
     }
+  }
+
+  triggerEasterEgg() {
+    this.easterEggService.trigger();
+    this.close();
   }
 
   private async isAuthenticated(): Promise<boolean> {
