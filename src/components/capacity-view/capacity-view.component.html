@@ -250,6 +250,9 @@
       [class.bottom]="popoverArrowSide === 'bottom'"
     ></div>
     <div class="popover-content">
+      <button class="popover-item" [class.active]="selectedCapacityYear === 'today'" (click)="selectYear('today')">
+        Semaine en cours
+      </button>
       <button class="popover-item" [class.active]="selectedCapacityYear === 'all'" (click)="selectYear('all')">
         Tout cumulé
       </button>
