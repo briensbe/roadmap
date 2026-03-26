@@ -1,5 +1,16 @@
 [
   {
+    "version": "2026.03.26",
+    "date": "2026-03-26",
+    "title": "Semaine en cours aussi dans la vue Capacité",
+    "imageUrl": "assets/release-notes/2026-02-27-semaine-en-cours.png",
+    "imageMaxHeight": 200,
+    "items": [
+      "Dans le filtre par année pour les projections (year popover), ajout du choix Semaine en cours comme dans la vue Planification",
+      "et une correction de la position du popover dans la vue Capacité"
+    ]
+  },
+  {
     "version": "2026.02.27.3",
     "date": "2026-02-27",
     "title": "Semaine en cours par défaut",
