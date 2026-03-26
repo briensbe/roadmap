@@ -7,13 +7,23 @@ import { SupabaseService } from '../services/supabase.service';
 import { Subscription } from 'rxjs';
 import { environment } from '../environments/environment';
 
-interface ReleaseNote {
-  version: string;
-  date: string;
+interface ReleaseNews {
   title: string;
   imageUrl?: string;
   imageMaxHeight?: number;
   items: string[];
+}
+
+interface ReleaseNote {
+  version: string;
+  date: string;
+  // Old fields (fallback)
+  title?: string;
+  imageUrl?: string;
+  imageMaxHeight?: number;
+  items?: string[];
+  // New grouped news
+  news?: ReleaseNews[];
 }
 
 @Component({
@@ -29,7 +39,7 @@ interface ReleaseNote {
               @if (showHistory) {
                 Historique des versio<span (click)="triggerEasterEgg()" class="egg-trigger">n</span>s
               } @else {
-                {{ notes[0]?.title }}
+                {{ notes[0]?.news ? 'Quoi de neuf ?' : notes[0]?.title }}
               }
             </h3>
             <button (click)="close()" class="close-btn">&times;</button>
@@ -41,37 +51,73 @@ interface ReleaseNote {
               <div class="latest-update">
                 <p class="date">{{ notes[0]?.date | date:'longDate' }} - Version {{ notes[0]?.version }}</p>
                 
-                
-                <ul>
-                  @for (item of notes[0]?.items; track item) {
-                    <li>{{ item }}</li>
+                @if (notes[0]?.news) {
+                  @for (newsItem of notes[0].news; track newsItem.title) {
+                    <div class="news-section">
+                      <h4>{{ newsItem.title }}</h4>
+                      <ul>
+                        @for (item of newsItem.items; track item) {
+                          <li>{{ item }}</li>
+                        }
+                      </ul>
+                      @if (newsItem.imageUrl) {
+                        <div class="image-container">
+                          <img [src]="newsItem.imageUrl" [alt]="newsItem.title" class="release-image"
+                               [style.max-height]="newsItem.imageMaxHeight ? newsItem.imageMaxHeight + 'px' : null">
+                        </div>
+                      }
+                    </div>
                   }
-                </ul>
-                @if (notes[0]?.imageUrl) {
-                  <div class="image-container">
-                    <img [src]="notes[0].imageUrl" [alt]="notes[0].title" class="release-image"
-                         [style.max-height]="notes[0].imageMaxHeight ? notes[0].imageMaxHeight + 'px' : null">
-                  </div>
+                } @else {
+                  <ul>
+                    @for (item of notes[0]?.items; track item) {
+                      <li>{{ item }}</li>
+                    }
+                  </ul>
+                  @if (notes[0]?.imageUrl) {
+                    <div class="image-container">
+                      <img [src]="notes[0].imageUrl" [alt]="notes[0].title" class="release-image"
+                           [style.max-height]="notes[0].imageMaxHeight ? notes[0].imageMaxHeight + 'px' : null">
+                    </div>
+                  }
                 }
               </div>
             } @else {
               <!-- History View -->
               @for (note of notes; track note.version) {
                 <div class="history-item">
-                  <h4 class="history-title">{{ note.title }}</h4>
                   <p class="date">{{ note.date | date:'longDate' }} - Version {{ note.version }}</p>
                   
-                  
-                  <ul>
-                    @for (item of note.items; track item) {
-                      <li>{{ item }}</li>
+                  @if (note.news) {
+                    @for (newsItem of note.news; track newsItem.title) {
+                      <div class="news-section mini">
+                        <h4 class="history-title">{{ newsItem.title }}</h4>
+                        <ul>
+                          @for (item of newsItem.items; track item) {
+                            <li>{{ item }}</li>
+                          }
+                        </ul>
+                        @if (newsItem.imageUrl) {
+                          <div class="image-container mini">
+                            <img [src]="newsItem.imageUrl" [alt]="newsItem.title" class="release-image"
+                                 [style.max-height]="newsItem.imageMaxHeight ? newsItem.imageMaxHeight + 'px' : null">
+                          </div>
+                        }
+                      </div>
                     }
-                  </ul>
-                  @if (note.imageUrl) {
-                    <div class="image-container mini">
-                      <img [src]="note.imageUrl" [alt]="note.title" class="release-image"
-                           [style.max-height]="note.imageMaxHeight ? note.imageMaxHeight + 'px' : null">
-                    </div>
+                  } @else {
+                    <h4 class="history-title">{{ note.title }}</h4>
+                    <ul>
+                      @for (item of note.items; track item) {
+                        <li>{{ item }}</li>
+                      }
+                    </ul>
+                    @if (note.imageUrl) {
+                      <div class="image-container mini">
+                        <img [src]="note.imageUrl" [alt]="note.title" class="release-image"
+                             [style.max-height]="note.imageMaxHeight ? note.imageMaxHeight + 'px' : null">
+                      </div>
+                    }
                   }
                 </div>
               }
@@ -199,6 +245,21 @@ interface ReleaseNote {
        margin-bottom: 0;
        padding-bottom: 0;
        border-bottom: none;
+    }
+    .news-section {
+       margin-bottom: 20px;
+    }
+    .news-section:last-child {
+       margin-bottom: 0;
+    }
+    .news-section h4 {
+       margin: 12px 0 8px 0;
+       font-size: 1.1rem;
+       color: #333;
+    }
+    .news-section.mini h4 {
+       margin-top: 8px;
+       font-size: 1rem;
     }
     .history-title {
        margin: 0 0 8px 0;
