@@ -1,5 +1,12 @@
 <div class="container">
   <h2>Login</h2>
+  
+  @if (sessionExpired()) {
+    <div class="session-expired-alert">
+      <lucide-icon [img]="Info" size="18"></lucide-icon>
+      <span>Votre session a expiré car vous vous êtes déconnecté sur un autre onglet.</span>
+    </div>
+  }
   <form (ngSubmit)="signInWithEmail()">
     <input type="email" [(ngModel)]="email" name="email" placeholder="Email" required autocomplete="email" />
     <div class="password-container">

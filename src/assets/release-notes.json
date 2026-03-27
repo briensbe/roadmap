@@ -9,6 +9,16 @@
         "imageMaxHeight": 200,
         "items": ["Pour les plus anciens d'entre nous, un petit EasterEgg des familles :) "]
       },
+
+      {
+        "title": "Synchronisation globale de l'authentification entre tous les onglets du navigateur",
+        "imageUrl": "assets/release-notes/2026-03-27 deconnexion.png",
+        "imageMaxHeight": 200,
+        "items": [
+          "Correction du problème où la déconnexion dans un onglet ne se répercutait pas immédiatement dans les autres.",
+          "Ajout d'un message pour notifier l'utilisateur en cas de déconnexion."
+        ]
+      },
       {
         "title": "Semaine en cours aussi dans la vue Capacité",
         "imageUrl": "assets/release-notes/2026-02-27-semaine-en-cours.png",

@@ -11,6 +11,7 @@ const sessionStorageUserKey = "roadmapUser"; // A changer si on change d'applica
 export class SupabaseService {
   private supabase: SupabaseClient;
   private _user = signal<User | null>(null);
+  private _isLocalLogout = false;
 
   /**
    * Observable pour suivre l'état de l'authentification (compatibilité ascendante)
@@ -21,6 +22,13 @@ export class SupabaseService {
    * Signal réactif pour l'utilisateur actuellement connecté
    */
   public user = this._user.asReadonly();
+
+  /**
+   * Indique si l'utilisateur vient de se déconnecter manuellement depuis cet onglet.
+   */
+  get isLocalLogout() {
+    return this._isLocalLogout;
+  }
 
   constructor() {
     this.supabase = createClient(environment.supabaseUrl, environment.supabaseKey, {
@@ -126,12 +134,20 @@ export class SupabaseService {
    * Déconnexion de l'utilisateur courant
    */
   async signOut() {
+    // On marque la déconnexion comme locale
+    this._isLocalLogout = true;
+    
     // On vide immédiatement le cache local avant même l'appel réseau
     this._user.set(null);
     this.authState$.next(null);
 
-    await this.supabase.auth.signOut();
-    sessionStorage.removeItem(sessionStorageUserKey);
+    try {
+      await this.supabase.auth.signOut();
+    } finally {
+      sessionStorage.removeItem(sessionStorageUserKey);
+      // On réinitialise le flag après un court délai pour laisser l'effect réagir
+      setTimeout(() => this._isLocalLogout = false, 1000);
+    }
   }
 
   /**

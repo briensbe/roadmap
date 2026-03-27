@@ -1,8 +1,8 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { SupabaseService } from '../../services/supabase.service';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, Eye, EyeOff } from 'lucide-angular';
+import { LucideAngularModule, Eye, EyeOff, Info } from 'lucide-angular';
 
 @Component({
   selector: 'app-login',
@@ -10,15 +10,17 @@ import { LucideAngularModule, Eye, EyeOff } from 'lucide-angular';
   templateUrl: './login.component.html',
   styleUrl: './login.component.css',
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   email = signal('');
   password = signal('');
   showPassword = signal(false);
+  sessionExpired = signal(false);
   loading = false;
 
   // Expose icons for template usage via [img]
   readonly Eye = Eye;
   readonly EyeOff = EyeOff;
+  readonly Info = Info;
 
   togglePasswordVisibility() {
     this.showPassword.update((value) => !value);
@@ -26,6 +28,15 @@ export class LoginComponent {
 
   private readonly supabaseService = inject(SupabaseService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+
+  ngOnInit() {
+    this.route.queryParams.subscribe(params => {
+      if (params['reason'] === 'session_expired') {
+        this.sessionExpired.set(true);
+      }
+    });
+  }
 
   async signInWithEmail() {
     this.loading = true;

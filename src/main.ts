@@ -73,7 +73,8 @@ export class App implements OnInit {
 
         // Redirect to login only if on a protected route
         if (!isPublic && currentUrl !== "/") {
-          this.router.navigate(["/login"]);
+          const queryParams = this.supabaseService.isLocalLogout ? {} : { reason: "session_expired" };
+          this.router.navigate(["/login"], { queryParams });
         }
       }
     });

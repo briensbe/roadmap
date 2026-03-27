@@ -13,6 +13,26 @@ h2 {
   margin-bottom: 2rem;
 }
 
+.session-expired-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: #f0f9ff;
+  border: 1px solid #bae6fd;
+  color: #0369a1;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 form {
   display: flex;
   flex-direction: column;
@@ -215,4 +235,10 @@ a:hover {
 :host-context(body.dark-mode) .google-btn:hover {
   background: #475569;
   border-color: #64748b;
+}
+
+:host-context(body.dark-mode) .session-expired-alert {
+  background-color: #0c4a6e;
+  border-color: #075985;
+  color: #bae6fd;
 }
