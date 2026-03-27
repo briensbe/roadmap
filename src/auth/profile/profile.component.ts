@@ -15,11 +15,10 @@ import { User } from "../types/user.type";
   styleUrl: "./profile.component.css",
 })
 export class ProfileComponent implements OnInit {
-  user: User | null = null;
+  private readonly supabaseService = inject(SupabaseService);
+  public readonly user = this.supabaseService.user;
   loading = false;
   showInfo = false;
-
-  private readonly supabaseService = inject(SupabaseService);
   private readonly router = inject(Router);
 //désactivation de la partie darkmode
   /*
@@ -50,7 +49,7 @@ export class ProfileComponent implements OnInit {
     */
 
   async toggleUserInfo() {
-    if (this.user) {
+    if (this.user()) {
       this.showInfo = !this.showInfo;
     } else {
       await this.fetchUser();
@@ -62,9 +61,9 @@ export class ProfileComponent implements OnInit {
     this.loading = true;
     try {
       const { data } = await this.supabaseService.getUser();
-      this.user = data.user;
+      // Le signal se met à jour automatiquement via getUser() ou le listener
 
-      if (!this.user) {
+      if (!data?.user) {
         this.router.navigate(["/login"]);
       }
     } finally {

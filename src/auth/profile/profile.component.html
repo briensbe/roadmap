@@ -5,11 +5,11 @@
     {{ loading ? "Chargement..." : showInfo ? "Masquer les informations" : "Afficher les informations personnelles" }}
   </button>
 
-  @if (showInfo && user) {
+  @if (showInfo && user()) {
   <div class="user-info">
-    <p>User ID: {{ user.id }}</p>
-    <p>Email: {{ user.email }}</p>
-    <p>Display Name: {{ user.user_metadata.displayName }}</p>
+    <p>User ID: {{ user()?.id }}</p>
+    <p>Email: {{ user()?.email }}</p>
+    <p>Display Name: {{ user()?.user_metadata?.['displayName'] }}</p>
   </div>
   }
 

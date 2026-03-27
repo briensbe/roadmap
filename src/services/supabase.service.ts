@@ -1,5 +1,5 @@
-import { Injectable } from "@angular/core";
-import { AuthTokenResponse, createClient, SupabaseClient, UserResponse } from "@supabase/supabase-js";
+import { Injectable, signal } from "@angular/core";
+import { AuthTokenResponse, createClient, SupabaseClient, UserResponse, User } from "@supabase/supabase-js";
 import { BehaviorSubject } from "rxjs";
 import { LoginPayload, SignupPayload } from "../auth/types/user.type";
 import { environment } from "../environments/environment";
@@ -10,6 +10,17 @@ const sessionStorageUserKey = "roadmapUser"; // A changer si on change d'applica
 })
 export class SupabaseService {
   private supabase: SupabaseClient;
+  private _user = signal<User | null>(null);
+
+  /**
+   * Observable pour suivre l'état de l'authentification (compatibilité ascendante)
+   */
+  readonly authState$ = new BehaviorSubject<{ event: string, session: any } | null>(null);
+
+  /**
+   * Signal réactif pour l'utilisateur actuellement connecté
+   */
+  public user = this._user.asReadonly();
 
   constructor() {
     this.supabase = createClient(environment.supabaseUrl, environment.supabaseKey, {
@@ -20,6 +31,12 @@ export class SupabaseService {
     });
 
     this.initializeAuthListener();
+    // Chargement initial de la session pour peupler le signal immédiatement
+    this.supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        this._user.set(session.user);
+      }
+    });
   }
 
   private async safeLock<T>(name: string, acquireFn: () => Promise<T>, retries = 5, delayMs = 50): Promise<T> {
@@ -81,27 +98,38 @@ export class SupabaseService {
   }
 
   /**
-   * Récupère l'utilisateur actuellement connecté
+   * Récupère l'utilisateur actuellement connecté.
+   * Optimisé pour utiliser le cache local et éviter les appels réseau inutiles.
    */
-  async getUser() {
-    return await this.supabase.auth.getUser();
-    // pb sur l'ajout en sessionStorage -> les pages sont accessibles sans connexion 
-    /*
-    const user = sessionStorage.getItem(sessionStorageUserKey);
-    if (user) {
-      return JSON.parse(user);
-    } else {
-      const { data: { user: currentUser } } = await this.supabase.auth.getUser();
-      sessionStorage.setItem(sessionStorageUserKey, JSON.stringify(currentUser));
-      return currentUser;
+  async getUser(): Promise<{ data: { user: User | null }, error: any }> {
+    const cachedUser = this._user(); // signal -> rapide 
+    if (cachedUser) {
+      return { data: { user: cachedUser }, error: null };
     }
-      */
+
+    // Si pas de cache, on essaie getSession qui est rapide (Lit dans le stockage local (très rapide, pas d'appel réseau).)
+    const { data: { session }, error: sessionError } = await this.supabase.auth.getSession();
+    if (session?.user) {
+      this._user.set(session.user);
+      return { data: { user: session.user }, error: null };
+    }
+
+    // En dernier recours, on appelle getUser() qui valide le JWT auprès du serveur
+    const response = await this.supabase.auth.getUser();
+    if (response.data.user) {
+      this._user.set(response.data.user);
+    }
+    return response;
   }
 
   /**
    * Déconnexion de l'utilisateur courant
    */
   async signOut() {
+    // On vide immédiatement le cache local avant même l'appel réseau
+    this._user.set(null);
+    this.authState$.next(null);
+
     await this.supabase.auth.signOut();
     sessionStorage.removeItem(sessionStorageUserKey);
   }
@@ -165,14 +193,12 @@ export class SupabaseService {
     return this.supabase.auth.getSession();
   }
 
-  /**
-   * Observable pour suivre l'état de l'authentification
-   */
-  readonly authState$ = new BehaviorSubject<{ event: string, session: any } | null>(null);
 
   private initializeAuthListener() {
     this.supabase.auth.onAuthStateChange((event, session) => {
       this.authState$.next({ event, session });
+      this._user.set(session?.user ?? null);
+
       if (session?.user) {
         sessionStorage.setItem(sessionStorageUserKey, JSON.stringify(session.user));
       } else {
