@@ -1,6 +1,6 @@
-import { Component, HostListener, OnInit } from "@angular/core";
+import { Component, HostListener, OnInit, inject, effect } from "@angular/core";
 import { bootstrapApplication } from "@angular/platform-browser";
-import { provideRouter, RouterOutlet } from "@angular/router";
+import { provideRouter, RouterOutlet, Router } from "@angular/router";
 import { CommonModule } from "@angular/common";
 import { SidebarNavigationComponent } from "./components/sidebar-navigation.component";
 import { SidebarService } from "./services/sidebar.service";
@@ -12,6 +12,7 @@ import { ReleaseNotesComponent } from "./components/release-notes.component";
 import { MatrixEasterEggComponent } from "./components/matrix-easter-egg.component";
 
 import { EasterEggService } from "./services/easter-egg.service";
+import { SupabaseService } from "./services/supabase.service";
 
 @Component({
   selector: "app-root",
@@ -52,10 +53,31 @@ export class App implements OnInit {
   sidebarCollapsed = false;
   showEasterEgg = false;
 
-  constructor(
-    private sidebarService: SidebarService,
-    private easterEggService: EasterEggService
-  ) { }
+  private readonly sidebarService = inject(SidebarService);
+  private readonly easterEggService = inject(EasterEggService);
+  private readonly supabaseService = inject(SupabaseService);
+  private readonly router = inject(Router);
+  private readonly queryClient = inject(QueryClient);
+
+  constructor() {
+    // Watch for authentication changes globally
+    effect(() => {
+      const user = this.supabaseService.user();
+      if (!user) {
+        // Clear all query data in memory to prevent stale information showing up
+        this.queryClient.clear();
+        
+        const currentUrl = this.router.url;
+        const publicRoutes = ["/login", "/signup", "/forgot-password"];
+        const isPublic = publicRoutes.some(route => currentUrl.includes(route));
+
+        // Redirect to login only if on a protected route
+        if (!isPublic && currentUrl !== "/") {
+          this.router.navigate(["/login"]);
+        }
+      }
+    });
+  }
 
   ngOnInit() {
     this.sidebarService.collapsed$.subscribe((collapsed) => {
