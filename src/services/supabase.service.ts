@@ -4,6 +4,7 @@ import { BehaviorSubject } from "rxjs";
 import { LoginPayload, SignupPayload } from "../auth/types/user.type";
 import { environment } from "../environments/environment";
 
+const sessionStorageUserKey = "roadmapUser"; // A changer si on change d'application (car j'avais repris un ancien nom)
 @Injectable({
   providedIn: "root"
 })
@@ -86,12 +87,12 @@ export class SupabaseService {
     return await this.supabase.auth.getUser();
     // pb sur l'ajout en sessionStorage -> les pages sont accessibles sans connexion 
     /*
-    const user = sessionStorage.getItem("releaseflowUser");
+    const user = sessionStorage.getItem(sessionStorageUserKey);
     if (user) {
       return JSON.parse(user);
     } else {
       const { data: { user: currentUser } } = await this.supabase.auth.getUser();
-      sessionStorage.setItem("releaseflowUser", JSON.stringify(currentUser));
+      sessionStorage.setItem(sessionStorageUserKey, JSON.stringify(currentUser));
       return currentUser;
     }
       */
@@ -102,7 +103,7 @@ export class SupabaseService {
    */
   async signOut() {
     await this.supabase.auth.signOut();
-    sessionStorage.removeItem("releaseflowUser");
+    sessionStorage.removeItem(sessionStorageUserKey);
   }
 
   /**
@@ -173,9 +174,9 @@ export class SupabaseService {
     this.supabase.auth.onAuthStateChange((event, session) => {
       this.authState$.next({ event, session });
       if (session?.user) {
-        sessionStorage.setItem("releaseflowUser", JSON.stringify(session.user));
+        sessionStorage.setItem(sessionStorageUserKey, JSON.stringify(session.user));
       } else {
-        sessionStorage.removeItem("releaseflowUser");
+        sessionStorage.removeItem(sessionStorageUserKey);
       }
     });
   }
