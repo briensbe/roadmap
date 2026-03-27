@@ -343,6 +343,7 @@ export class ReleaseNotesComponent implements OnInit, OnDestroy {
   showHistory = false;
   private readonly STORAGE_KEY = 'last_seen_release_version';
   private subscription: Subscription | null = null;
+  private hasBeenClosedInSession = false;
 
   constructor(
     private http: HttpClient,
@@ -412,7 +413,7 @@ export class ReleaseNotesComponent implements OnInit, OnDestroy {
   }
 
   private checkVisibility() {
-    if (this.notes.length === 0) return;
+    if (this.notes.length === 0 || this.hasBeenClosedInSession) return;
     const latestVersion = this.notes[0].version;
     const lastSeenVersion = localStorage.getItem(this.STORAGE_KEY);
 
@@ -428,6 +429,7 @@ export class ReleaseNotesComponent implements OnInit, OnDestroy {
 
   close() {
     this.show = false;
+    this.hasBeenClosedInSession = true;
     // Reset history view for the next time it opens
     setTimeout(() => this.showHistory = false, 300);
   }
