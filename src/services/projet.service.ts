@@ -446,8 +446,14 @@ export class ProjetService implements OnDestroy {
 
     if (error) throw error;
 
-    // 3. Invalidate queries to trigger refetch
-    await this.queryClient.invalidateQueries({ queryKey: projetQueryKeys.all });
+    // 3. Update caches manually
+    this.queryClient.setQueryData(projetQueryKeys.list(), (old: Projet[] | undefined) => {
+      if (!old) return [data];
+      return [...old, data].sort((a, b) => (a.rank || "").localeCompare(b.rank || ""));
+    });
+    this.queryClient.setQueryData(projetQueryKeys.detail(data.id!), data);
+
+    // 4. Invalidate related queries
     await this.queryClient.invalidateQueries({ queryKey: projetQueryKeys.equipeLinks() });
 
     return data;
@@ -466,9 +472,15 @@ export class ProjetService implements OnDestroy {
 
     if (error) throw error;
 
-    // Invalidate queries to trigger refetch
-    //await this.queryClient.invalidateQueries({ queryKey: projetQueryKeys.all }); // PAS BESOIN !!
-    await this.queryClient.invalidateQueries({ queryKey: projetQueryKeys.detail(id) });
+    // Update list cache manually
+    this.queryClient.setQueryData(projetQueryKeys.list(), (old: Projet[] | undefined) => {
+      if (!old) return old;
+      const updated = old.map((p) => (p.id === data.id ? data : p));
+      return updated.sort((a, b) => (a.rank || "").localeCompare(b.rank || ""));
+    });
+
+    // Update detail cache manually
+    this.queryClient.setQueryData(projetQueryKeys.detail(id), data);
 
     return data;
   }
@@ -484,9 +496,15 @@ export class ProjetService implements OnDestroy {
 
     if (error) throw error;
 
-    // Invalidate queries to trigger refetch
-    //await this.queryClient.invalidateQueries({ queryKey: projetQueryKeys.all }); // PAS BESOIN !!
-    await this.queryClient.invalidateQueries({ queryKey: projetQueryKeys.detail(id) });
+    // Update caches manually
+    this.queryClient.setQueryData(projetQueryKeys.list(), (old: Projet[] | undefined) => {
+      if (!old) return old;
+      return old.filter((p) => p.id !== id);
+    });
+
+    this.queryClient.removeQueries({ queryKey: projetQueryKeys.detail(id) });
+
+    // Invalidate related queries
     await this.queryClient.invalidateQueries({ queryKey: projetQueryKeys.equipeLinks() });
   }
 
