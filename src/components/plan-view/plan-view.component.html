@@ -4,68 +4,113 @@
     {{ activeTooltip }}
   </div>
   <div class="capacity-header">
-    <h1>Vue Planification</h1>
-    <div class="header-actions">
-      <div class="view-mode-toggle">
-        <button
-          class="btn"
-          [class.btn-primary]="viewMode() === 'project'"
-          [class.btn-secondary]="viewMode() !== 'project'"
-          (click)="switchViewMode('project')"
-        >
-          Par Projet
-        </button>
-        <button
-          class="btn"
-          [class.btn-primary]="viewMode() === 'team'"
-          [class.btn-secondary]="viewMode() !== 'team'"
-          (click)="switchViewMode('team')"
-        >
-          Par Équipe
-        </button>
-        <button
-          class="btn"
-          [class.btn-primary]="viewMode() === 'resource'"
-          [class.btn-secondary]="viewMode() !== 'resource'"
-          (click)="switchViewMode('resource')"
-        >
-          Par Ressources
+    <div class="header-left">
+      <h1>Vue Planification</h1>
+      <div class="header-search-bar">
+        <lucide-icon [img]="Search" [size]="16" class="search-icon"></lucide-icon>
+        <input
+          type="text"
+          class="header-search-input"
+          placeholder="Rechercher un projet, une équipe…"
+          [ngModel]="globalSearch()"
+          (ngModelChange)="globalSearch.set($event); applyFilters()"
+        />
+        <button *ngIf="globalSearch()" class="search-clear-btn" (click)="globalSearch.set(''); applyFilters()">
+          <lucide-icon [img]="X" [size]="14"></lucide-icon>
         </button>
       </div>
+    </div>
 
-      <div class="view-mode-toggle">
-        <button
-          class="btn"
-          [class.btn-primary]="displayFormat() === 'tree'"
-          [class.btn-secondary]="displayFormat() !== 'tree'"
-          (click)="toggleDisplayFormat('tree')"
-        >
-          Arborescence
+    <div class="header-right">
+      <!-- Actions Menu -->
+      <div class="actions-menu-wrapper">
+        <button class="btn btn-actions" (click)="toggleActionsMenu($event)" id="actions-menu-btn">
+          <lucide-icon [img]="Settings2" [size]="16"></lucide-icon>
+          Actions
+          <lucide-icon [img]="ChevronDown" [size]="16" [class.rotated]="showActionsMenu"></lucide-icon>
         </button>
-        <button
-          class="btn"
-          [class.btn-primary]="displayFormat() === 'flat'"
-          [class.btn-secondary]="displayFormat() !== 'flat'"
-          (click)="toggleDisplayFormat('flat')"
-        >
-          À plat
-        </button>
+
+        <div class="actions-dropdown" *ngIf="showActionsMenu" (click)="$event.stopPropagation()">
+          <!-- Vue mode radio -->
+          <div class="actions-dropdown-section">
+            <div class="actions-section-label">Vue</div>
+            <label class="actions-radio-item" [class.selected]="viewMode() === 'project'">
+              <input type="radio" name="viewMode" value="project" [checked]="viewMode() === 'project'" (change)="switchViewMode('project')" />
+              <lucide-icon [img]="Network" [size]="15"></lucide-icon>
+              Par Projet
+            </label>
+            <label class="actions-radio-item" [class.selected]="viewMode() === 'team'">
+              <input type="radio" name="viewMode" value="team" [checked]="viewMode() === 'team'" (change)="switchViewMode('team')" />
+              <lucide-icon [img]="Users" [size]="15"></lucide-icon>
+              Par Équipe
+            </label>
+            <label class="actions-radio-item" [class.selected]="viewMode() === 'resource'">
+              <input type="radio" name="viewMode" value="resource" [checked]="viewMode() === 'resource'" (change)="switchViewMode('resource')" />
+              <lucide-icon [img]="BookUser" [size]="15"></lucide-icon>
+              Par Ressources
+            </label>
+          </div>
+
+          <div class="actions-dropdown-divider"></div>
+
+          <!-- Format arborescence/plat -->
+          <div class="actions-dropdown-section">
+            <div class="actions-section-label">Affichage</div>
+            <button class="actions-dropdown-item" [class.active]="displayFormat() === 'tree'" (click)="toggleDisplayFormat('tree')">
+              <lucide-icon [img]="ListTree" [size]="15"></lucide-icon>
+              Arborescence
+              <span class="actions-check" *ngIf="displayFormat() === 'tree'">✓</span>
+            </button>
+            <button class="actions-dropdown-item" [class.active]="displayFormat() === 'flat'" (click)="toggleDisplayFormat('flat')">
+              <lucide-icon [img]="AlignJustify" [size]="15"></lucide-icon>
+              À plat
+              <span class="actions-check" *ngIf="displayFormat() === 'flat'">✓</span>
+            </button>
+          </div>
+
+          <div class="actions-dropdown-divider"></div>
+
+          <!-- Dispo toggle -->
+          <div class="actions-dropdown-section">
+            <button class="actions-dropdown-item" (click)="showAvailability.set(!showAvailability())">
+              <lucide-icon [img]="showAvailability() ? Eye : EyeOff" [size]="15"></lucide-icon>
+              Dispo. Capacité
+              <span class="actions-toggle-pill" [class.on]="showAvailability()">
+                {{ showAvailability() ? 'ON' : 'OFF' }}
+              </span>
+            </button>
+          </div>
+
+          <div class="actions-dropdown-divider"></div>
+
+          <!-- Navigation -->
+          <div class="actions-dropdown-section">
+            <div class="actions-section-label">Navigation</div>
+            <button class="actions-dropdown-item" (click)="goToToday(); showActionsMenu = false">
+              <lucide-icon [img]="Calendar" [size]="15"></lucide-icon>
+              Aujourd'hui
+            </button>
+            <button class="actions-dropdown-item" (click)="goToPreviousMonth(); showActionsMenu = false">
+              <lucide-icon [img]="ChevronLeft" [size]="15"></lucide-icon>
+              Mois précédent
+            </button>
+            <button class="actions-dropdown-item" (click)="goToNextMonth(); showActionsMenu = false">
+              <lucide-icon [img]="ChevronRight" [size]="15"></lucide-icon>
+              Mois suivant
+            </button>
+          </div>
+
+          <div class="actions-dropdown-divider"></div>
+
+          <!-- Export -->
+          <div class="actions-dropdown-section">
+            <button class="actions-dropdown-item" (click)="exportToExcel(); showActionsMenu = false">
+              <lucide-icon [img]="FileDown" [size]="15"></lucide-icon>
+              Export Excel
+            </button>
+          </div>
+        </div>
       </div>
-
-      <div class="toggle-container">
-        <span class="toggle-label">Dispo.</span>
-        <label class="switch">
-          <input type="checkbox" [ngModel]="showAvailability()" (ngModelChange)="showAvailability.set($event)" />
-          <span class="slider round"></span>
-        </label>
-      </div>
-
-      <button class="btn btn-secondary" (click)="goToToday()">Aujourd'hui</button>
-
-      <button class="btn btn-export" (click)="exportToExcel()" title="Exporter en Excel">
-        <lucide-icon [img]="FileDown" [size]="16"></lucide-icon>
-        Export Excel
-      </button>
     </div>
   </div>
 
@@ -312,12 +357,23 @@
                     </div>
 
                     <button
-                      class="btn-hover-add"
-                      (click)="openLinkModal(row); $event.stopPropagation()"
-                      [title]="viewMode() === 'resource' ? 'Ajouter un projet' : 'Ajouter'"
+                      class="line-menu-trigger btn-icon-s"
+                      (click)="toggleLineMenu('parent-' + row.id, $event)"
+                      [title]="viewMode() === 'resource' ? 'Actions' : 'Actions'"
                     >
-                      <lucide-icon [img]="Plus" [size]="18"></lucide-icon>
+                      <lucide-icon [img]="MoreVertical" [size]="15"></lucide-icon>
                     </button>
+                    <!-- Line menu -->
+                    <div
+                      class="line-menu-wrapper"
+                      *ngIf="activeLineMenuId === 'parent-' + row.id"
+                      (click)="$event.stopPropagation()"
+                    >
+                      <button class="line-menu-item" (click)="openLinkModal(row); closeLineMenu(); $event.stopPropagation()">
+                        <lucide-icon [img]="Plus" [size]="14"></lucide-icon>
+                        {{ viewMode() === 'resource' ? 'Ajouter un projet' : 'Ajouter' }}
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div class="weeks-container">
@@ -442,19 +498,27 @@
                           </div>
 
                           <button
-                            class="btn-hover-add"
-                            (click)="openAddResourceModal(child, row); $event.stopPropagation()"
-                            title="Ajouter une ressource"
+                            class="line-menu-trigger btn-icon-s"
+                            (click)="toggleLineMenu('child-proj-' + resource.uniqueId, $event)"
+                            title="Actions"
                           >
-                            <lucide-icon [img]="Plus" [size]="16"></lucide-icon>
+                            <lucide-icon [img]="MoreVertical" [size]="15"></lucide-icon>
                           </button>
-                          <button
-                            class="btn-hover-delete"
-                            (click)="removeResource(resource, child, row); $event.stopPropagation()"
-                            title="Supprimer cette ressource"
+                          <!-- Line menu -->
+                          <div
+                            class="line-menu-wrapper"
+                            *ngIf="activeLineMenuId === 'child-proj-' + resource.uniqueId"
+                            (click)="$event.stopPropagation()"
                           >
-                            <lucide-icon [img]="X" [size]="16"></lucide-icon>
-                          </button>
+                            <button class="line-menu-item" (click)="openAddResourceModal(child, row); closeLineMenu(); $event.stopPropagation()">
+                              <lucide-icon [img]="Plus" [size]="14"></lucide-icon>
+                              Ajouter une ressource
+                            </button>
+                            <button class="line-menu-item danger" (click)="removeResource(resource, child, row); closeLineMenu(); $event.stopPropagation()">
+                              <lucide-icon [img]="X" [size]="14"></lucide-icon>
+                              Supprimer cette ressource
+                            </button>
+                          </div>
                         </div>
                       </div>
                       <div class="weeks-container">
@@ -549,28 +613,39 @@
                           </div>
 
                           <button
-                            class="btn-hover-add"
-                            (click)="
-                              viewMode() === 'resource' ? openLinkModal(row, child) : openAddResourceModal(child, row);
-                              $event.stopPropagation()
-                            "
-                            [title]="viewMode() === 'resource' ? 'Ajouter un projet' : 'Ajouter une ressource'"
+                            class="line-menu-trigger btn-icon-s"
+                            (click)="toggleLineMenu('child-' + child.id + '-' + row.id, $event)"
+                            title="Actions"
                           >
-                            <lucide-icon [img]="Plus" [size]="16"></lucide-icon>
+                            <lucide-icon [img]="MoreVertical" [size]="15"></lucide-icon>
                           </button>
-                          <button
-                            class="btn-hover-delete"
-                            (click)="removeChild(child, row); $event.stopPropagation()"
-                            [title]="
-                              viewMode() === 'project'
-                                ? 'Retirer cette équipe du projet'
-                                : viewMode() === 'team'
-                                  ? 'Retirer ce projet de l\'équipe'
-                                  : 'Retirer cette ressource de l\'équipe'
-                            "
+                          <!-- Line menu -->
+                          <div
+                            class="line-menu-wrapper"
+                            *ngIf="activeLineMenuId === 'child-' + child.id + '-' + row.id"
+                            (click)="$event.stopPropagation()"
                           >
-                            <lucide-icon [img]="X" [size]="16"></lucide-icon>
-                          </button>
+                            <button
+                              class="line-menu-item"
+                              (click)="viewMode() === 'resource' ? openLinkModal(row, child) : openAddResourceModal(child, row); closeLineMenu(); $event.stopPropagation()"
+                            >
+                              <lucide-icon [img]="Plus" [size]="14"></lucide-icon>
+                              {{ viewMode() === 'resource' ? 'Ajouter un projet' : 'Ajouter une ressource' }}
+                            </button>
+                            <button
+                              class="line-menu-item danger"
+                              (click)="removeChild(child, row); closeLineMenu(); $event.stopPropagation()"
+                            >
+                              <lucide-icon [img]="X" [size]="14"></lucide-icon>
+                              {{
+                                viewMode() === 'project'
+                                  ? "Retirer cette équipe"
+                                  : viewMode() === 'team'
+                                    ? "Retirer ce projet"
+                                    : "Retirer cette ressource"
+                              }}
+                            </button>
+                          </div>
                         </div>
                       </div>
                       <div class="weeks-container">
@@ -685,19 +760,30 @@
                               </ng-container>
                             </div>
                             <button
-                              class="btn-hover-search"
-                              (click)="openProjectEditByResource(resource); $event.stopPropagation()"
-                              title="Ouvrir le projet"
+                              class="line-menu-trigger btn-icon-s"
+                              (click)="toggleLineMenu('res-' + getResourceUniqueId(resource, child, row), $event)"
+                              title="Actions"
                             >
-                              <lucide-icon [img]="Search" [size]="14"></lucide-icon>
+                              <lucide-icon [img]="MoreVertical" [size]="15"></lucide-icon>
                             </button>
-                            <button
-                              class="btn-hover-delete"
-                              (click)="removeResource(resource, child, row); $event.stopPropagation()"
-                              [title]="viewMode() === 'resource' ? 'Retirer ce projet' : 'Supprimer cette ressource'"
+                            <!-- Line menu -->
+                            <div
+                              class="line-menu-wrapper"
+                              *ngIf="activeLineMenuId === 'res-' + getResourceUniqueId(resource, child, row)"
+                              (click)="$event.stopPropagation()"
                             >
-                              <lucide-icon [img]="X" [size]="14"></lucide-icon>
-                            </button>
+                              <button class="line-menu-item" (click)="openProjectEditByResource(resource); closeLineMenu(); $event.stopPropagation()">
+                                <lucide-icon [img]="Search" [size]="14"></lucide-icon>
+                                Ouvrir le projet
+                              </button>
+                              <button
+                                class="line-menu-item danger"
+                                (click)="removeResource(resource, child, row); closeLineMenu(); $event.stopPropagation()"
+                              >
+                                <lucide-icon [img]="X" [size]="14"></lucide-icon>
+                                {{ viewMode() === 'resource' ? 'Retirer ce projet' : 'Supprimer cette ressource' }}
+                              </button>
+                            </div>
                           </div>
                         </div>
                         <div class="weeks-container">

@@ -13,7 +13,7 @@ import { ChiffresService } from "../../services/chiffres.service";
 import { Chiffre } from "../../models/chiffres.type";
 import { ResourceService } from "../../services/resource.service";
 
-import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown, LucideCalculator, Search } from "lucide-angular";
+import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown, LucideCalculator, Search, MoreVertical, ListTree, AlignJustify, Eye, EyeOff, Calendar, ChevronLeft, Network, Users, BookUser, Settings2 } from "lucide-angular";
 import * as XLSX from 'xlsx';
 import { getISOWeekYear } from "date-fns";
 import { calculateBestToolbarPosition, calculateBestPopoverPosition, ToolbarPosition, PopoverPosition } from "../../utils/selection-positioning";
@@ -26,7 +26,7 @@ import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-
 import { calculateNewRank, sortByRank } from '../../utils/lexorank.utils';
 
 @NgModule({
-  imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown, LucideCalculator, Search })],
+  imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown, LucideCalculator, Search, MoreVertical, ListTree, AlignJustify, Eye, EyeOff, Calendar, ChevronLeft, Network, Users, BookUser, Settings2 })],
   exports: [LucideAngularModule]
 })
 export class LucideIconsModule { }
@@ -220,6 +220,16 @@ export class PlanViewComponent implements OnInit, OnDestroy {
   openProjetDropdown = false;
   openResourceDropdown = false;
 
+  // Actions menu state
+  showActionsMenu = false;
+
+  // Line context menu state
+  activeLineMenuId: string | null = null;
+  lineMenuPosition = { x: 0, y: 0 };
+
+  // Global search
+  globalSearch = storageSignal<string>('plan-view-global-search', '');
+
   // Link Modal State
   showLinkModal = false;
   selectedParentRow: ParentRow | null = null;
@@ -272,6 +282,21 @@ export class PlanViewComponent implements OnInit, OnDestroy {
   Contact = Contact;
   User = User;
   FileDown = FileDown;
+  MoreVertical = MoreVertical;
+  ListTree = ListTree;
+  AlignJustify = AlignJustify;
+  Eye = Eye;
+  EyeOff = EyeOff;
+  Calendar = Calendar;
+  ChevronLeft = ChevronLeft;
+  ChevronDown = ChevronDown;
+  ChevronRight = ChevronRight;
+  Network = Network;
+  Users = Users;
+  BookUser = BookUser;
+  Settings2 = Settings2;
+  Search = Search;
+  LucideCalculator = LucideCalculator;
 
   constructor(
     private teamService: TeamService,
@@ -1810,15 +1835,23 @@ export class PlanViewComponent implements OnInit, OnDestroy {
   // --- Filter helpers ---
   @HostListener("document:click", ["$event"])
   onDocumentClick(event: Event) {
-    // Close any open dropdown if clicking outside
     const target = event.target as HTMLElement;
-    // if click is outside filters-bar, close dropdowns
+    // Close filter dropdowns if clicking outside filters-bar
     if (!target.closest(".filters-bar")) {
       this.openEquipeDropdown = false;
       this.openProjetDropdown = false;
       this.openResourceDropdown = false;
       this.filterProjetSearch.set('');
     }
+    // Close actions menu if clicking outside
+    if (!target.closest(".actions-menu-wrapper")) {
+      this.showActionsMenu = false;
+    }
+    // Close line menu if clicking outside
+    if (!target.closest(".line-menu-wrapper") && !target.closest(".line-menu-trigger")) {
+      this.activeLineMenuId = null;
+    }
+    this.cdr.markForCheck();
   }
 
   toggleDropdown(name: "equipe" | "projet" | "resource", event: MouseEvent) {
@@ -1839,6 +1872,30 @@ export class PlanViewComponent implements OnInit, OnDestroy {
     if (!this.openProjetDropdown) {
       this.filterProjetSearch.set('');
     }
+  }
+
+  toggleActionsMenu(event: MouseEvent) {
+    event.stopPropagation();
+    this.showActionsMenu = !this.showActionsMenu;
+    this.cdr.markForCheck();
+  }
+
+  toggleLineMenu(rowId: string, event: MouseEvent) {
+    event.stopPropagation();
+    if (this.activeLineMenuId === rowId) {
+      this.activeLineMenuId = null;
+    } else {
+      this.activeLineMenuId = rowId;
+      // Position near the trigger button
+      const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+      this.lineMenuPosition = { x: rect.right, y: rect.bottom };
+    }
+    this.cdr.markForCheck();
+  }
+
+  closeLineMenu() {
+    this.activeLineMenuId = null;
+    this.cdr.markForCheck();
   }
 
   onEquipeToggle(id: string | undefined, event: Event) {
@@ -1915,8 +1972,36 @@ export class PlanViewComponent implements OnInit, OnDestroy {
   }
 
   applyFilters() {
-    // If no active filters, show original rows
-    if (!this.filterEquipeIds().length && !this.filterProjetIds().length && !this.filterResourceIds().length) {
+    const search = this.globalSearch().toLowerCase().trim();
+
+    // Helpers to check matches at each level
+    const parentMatchesSearch = (parent: ParentRow): boolean => {
+      if (!search) return true;
+      if (parent.label.toLowerCase().includes(search)) return true;
+      if (parent.code && parent.code.toLowerCase().includes(search)) return true;
+      return false;
+    };
+
+    const childMatchesSearch = (child: ChildRow): boolean => {
+      if (!search) return true;
+      if (child.label.toLowerCase().includes(search)) return true;
+      if (child.code && child.code.toLowerCase().includes(search)) return true;
+      // Also check grandchildren resources
+      for (const res of child.resources) {
+        if (res.label.toLowerCase().includes(search)) return true;
+      }
+      return false;
+    };
+
+    const anyChildMatches = (parent: ParentRow): boolean => {
+      for (const child of parent.children) {
+        if (childMatchesSearch(child)) return true;
+      }
+      return false;
+    };
+
+    // If no active filters AND no search, show original rows
+    if (!this.filterEquipeIds().length && !this.filterProjetIds().length && !this.filterResourceIds().length && !search) {
       this.rows = [...this.rowsAll];
       this.buildFlatList();
       return;
@@ -1925,12 +2010,20 @@ export class PlanViewComponent implements OnInit, OnDestroy {
     const filteredParents: ParentRow[] = [];
 
     for (const parent of this.rowsAll) {
+      const pMatches = parentMatchesSearch(parent);
+      const cMatchesAny = anyChildMatches(parent);
+
+      // Decision to include parent based on search:
+      // If there is a search, we include parent if it matches OR if any child matches
+      if (search && !pMatches && !cMatchesAny) continue;
+
       const newParent: ParentRow = {
         id: parent.id,
         label: parent.label,
         code: parent.code,
         color: parent.color,
-        expanded: parent.expanded,
+        // Auto-expand if a child matches the search
+        expanded: (search && cMatchesAny) ? true : parent.expanded,
         children: [],
         totalCharges: parent.totalCharges,
         originalProject: parent.originalProject,
@@ -2024,7 +2117,14 @@ export class PlanViewComponent implements OnInit, OnDestroy {
           : this.filterResourceIds().length > 0;
 
         const hasGrandchildrenMatch = hasGrandchildFilter ? grandchildrenMatch.length > 0 : true;
-        const includeChild = childPassesEquipe && childPassesProjet && childPassesResource && hasGrandchildrenMatch;
+
+        // Search filter for children:
+        // If parent matches search, we show all children.
+        // Otherwise, only children that match search are shown.
+        const childMatches = childMatchesSearch(child);
+        const childPassesSearch = !search || pMatches || childMatches;
+
+        const includeChild = childPassesEquipe && childPassesProjet && childPassesResource && hasGrandchildrenMatch && childPassesSearch;
 
         if (includeChild) {
           newParent.children.push({
@@ -2062,6 +2162,7 @@ export class PlanViewComponent implements OnInit, OnDestroy {
     this.rows = filteredParents;
     this.buildFlatList();
   }
+
 
   // Metrics calculation methods
   getRowMetricsYear(row: ParentRow, year: number): number {
@@ -2406,8 +2507,5 @@ export class PlanViewComponent implements OnInit, OnDestroy {
       }
     }
   }
-
-  LucideCalculator = LucideCalculator;
-  Search = Search;
 }
 
