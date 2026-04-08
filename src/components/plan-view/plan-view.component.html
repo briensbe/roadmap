@@ -13,9 +13,10 @@
           class="header-search-input"
           placeholder="Rechercher un projet, une équipe…"
           [ngModel]="globalSearch()"
-          (ngModelChange)="globalSearch.set($event); applyFilters()"
+          (ngModelChange)="onSearchInput($event)"
+          #searchInput
         />
-        <button *ngIf="globalSearch()" class="search-clear-btn" (click)="globalSearch.set(''); applyFilters()">
+        <button *ngIf="searchInput.value" class="search-clear-btn" (click)="searchInput.value = ''; onSearchInput('')">
           <lucide-icon [img]="X" [size]="14"></lucide-icon>
         </button>
       </div>
@@ -320,7 +321,7 @@
         <ng-container *ngIf="displayFormat() === 'tree'">
           <div cdkDropList (cdkDropListDropped)="drop($event)">
             <div
-              *ngFor="let row of rows"
+              *ngFor="let row of rows; trackBy: trackByRow"
               cdkDrag
               [cdkDragDisabled]="viewMode() !== 'project'"
               class="project-draggable-group"
@@ -378,43 +379,43 @@
                 </div>
                 <div class="weeks-container">
                   <div
-                    *ngFor="let week of displayedWeeks"
+                    *ngFor="let week of displayedWeeks; trackBy: trackByWeek"
                     class="week-cell team-cell"
                     [class.team-cell-positive]="
-                      viewMode() === 'resource' && getParentAvailabilityStatus(row, week) === 'positive'
+                      viewMode() === 'resource' && row.metrics?.get(week.toISOString().split('T')[0])?.status === 'positive'
                     "
                     [class.team-cell-zero]="
-                      viewMode() === 'resource' && getParentAvailabilityStatus(row, week) === 'zero'
+                      viewMode() === 'resource' && row.metrics?.get(week.toISOString().split('T')[0])?.status === 'zero'
                     "
                     [class.team-cell-negative]="
-                      viewMode() === 'resource' && getParentAvailabilityStatus(row, week) === 'negative'
+                      viewMode() === 'resource' && row.metrics?.get(week.toISOString().split('T')[0])?.status === 'negative'
                     "
                   >
                     <!-- Resource View: Show cumulative data -->
                     <div
                       class="team-summary"
                       *ngIf="
-                        viewMode() === 'resource' && (getParentTotal(row, week) > 0 || getParentCapacity(row, week) > 0)
+                        viewMode() === 'resource' && ( (row.metrics?.get(week.toISOString().split('T')[0])?.total || 0) > 0 || (row.metrics?.get(week.toISOString().split('T')[0])?.capacity || 0) > 0)
                       "
                     >
                       <div class="summary-main">
-                        <span class="summary-charge">{{ getParentTotal(row, week) | number: "1.0-1" }}</span>
+                        <span class="summary-charge">{{ row.metrics?.get(week.toISOString().split('T')[0])?.total || 0 | number: "1.0-1" }}</span>
                         <span class="summary-separator">/</span>
-                        <span class="summary-capacity">{{ getParentCapacity(row, week) | number: "1.0-1" }}</span>
+                        <span class="summary-capacity">{{ row.metrics?.get(week.toISOString().split('T')[0])?.capacity || 0 | number: "1.0-1" }}</span>
                       </div>
                       <div
                         class="summary-availability"
-                        [class.availability-positive]="getParentAvailabilityStatus(row, week) === 'positive'"
-                        [class.availability-zero]="getParentAvailabilityStatus(row, week) === 'zero'"
-                        [class.availability-negative]="getParentAvailabilityStatus(row, week) === 'negative'"
+                        [class.availability-positive]="row.metrics?.get(week.toISOString().split('T')[0])?.status === 'positive'"
+                        [class.availability-zero]="row.metrics?.get(week.toISOString().split('T')[0])?.status === 'zero'"
+                        [class.availability-negative]="row.metrics?.get(week.toISOString().split('T')[0])?.status === 'negative'"
                       >
-                        {{ getParentAvailabilityStatus(row, week) === "positive" ? "+" : ""
-                        }}{{ getParentAvailability(row, week) | number: "1.0-1" }}
+                        {{ row.metrics?.get(week.toISOString().split('T')[0])?.status === "positive" ? "+" : ""
+                        }}{{ row.metrics?.get(week.toISOString().split('T')[0])?.availability || 0 | number: "1.0-1" }}
                       </div>
                     </div>
                     <!-- Other views: Keep empty or simple display -->
-                    <div class="team-summary" *ngIf="viewMode() !== 'resource' && getParentTotal(row, week) > 0">
-                      <div class="capacity-value">{{ getParentTotal(row, week) | number: "1.0-1" }}</div>
+                    <div class="team-summary" *ngIf="viewMode() !== 'resource' && (row.metrics?.get(week.toISOString().split('T')[0])?.total || 0) > 0">
+                      <div class="capacity-value">{{ row.metrics?.get(week.toISOString().split('T')[0])?.total || 0 | number: "1.0-1" }}</div>
                     </div>
                   </div>
                 </div>
@@ -422,17 +423,17 @@
 
               <!-- Children Rows -->
               <ng-container *ngIf="row.expanded">
-                <ng-container *ngFor="let child of row.children">
-                  <!-- CASE 1: Combined Team-Resource row in Project View -->
-                  <ng-container *ngIf="viewMode() === 'project' && child.resources.length > 0">
-                    <div
-                      *ngFor="let resource of child.resources"
-                      class="calendar-row"
-                      [attr.data-resource-id]="getResourceUniqueId(resource, child, row)"
-                      (mousedown)="onMouseDown($event, resource, child, row)"
-                      (mouseup)="onMouseUp()"
-                      (mouseleave)="onMouseUp()"
-                    >
+                  <ng-container *ngFor="let child of row.children; trackBy: trackByChild">
+                    <!-- CASE 1: Combined Team-Resource row in Project View -->
+                    <ng-container *ngIf="viewMode() === 'project' && child.resources.length > 0">
+                      <div
+                        *ngFor="let resource of child.resources; trackBy: trackByResource"
+                        class="calendar-row"
+                        [attr.data-resource-id]="getResourceUniqueId(resource, child, row)"
+                        (mousedown)="onMouseDown($event, resource, child, row)"
+                        (mouseup)="onMouseUp()"
+                        (mouseleave)="onMouseUp()"
+                      >
                       <div
                         class="label-cell row-label-child"
                         [style.width.px]="labelColumnWidth()"
@@ -523,7 +524,7 @@
                       </div>
                       <div class="weeks-container">
                         <div
-                          *ngFor="let week of displayedWeeks; let i = index"
+                          *ngFor="let week of displayedWeeks; let i = index; trackBy: trackByWeek"
                           class="week-cell resource-detail-cell"
                           [class.selected]="isCellSelected(resource, week)"
                           [class.has-capacity]="resource.cellData?.[i]?.value! > 0"
@@ -649,14 +650,14 @@
                         </div>
                       </div>
                       <div class="weeks-container">
-                        <div *ngFor="let week of displayedWeeks" class="week-cell resource-cell"></div>
+                        <div *ngFor="let week of displayedWeeks; trackBy: trackByWeek" class="week-cell resource-cell"></div>
                       </div>
                     </div>
 
                     <!-- Resource Rows (3rd level OR 2nd level in resource mode) -->
                     <ng-container *ngIf="child.expanded">
                       <div
-                        *ngFor="let resource of child.resources"
+                        *ngFor="let resource of child.resources; trackBy: trackByResource"
                         class="calendar-row"
                         [attr.data-resource-id]="getResourceUniqueId(resource, child, row)"
                         (mousedown)="onMouseDown($event, resource, child, row)"
@@ -849,7 +850,7 @@
         <!-- Flat View -->
         <ng-container *ngIf="displayFormat() === 'flat'">
           <div
-            *ngFor="let row of flatRows"
+            *ngFor="let row of flatRows; trackBy: trackByFlatRow"
             class="calendar-row"
             [attr.data-resource-id]="getResourceUniqueId(row.resource, row.child, row.parent)"
             (mousedown)="onMouseDown($event, row.resource, row.child, row.parent)"
@@ -977,7 +978,7 @@
             </div>
             <div class="weeks-container">
               <div
-                *ngFor="let week of displayedWeeks; let i = index"
+                *ngFor="let week of displayedWeeks; let i = index; trackBy: trackByWeek"
                 class="week-cell resource-detail-cell"
                 [class.selected]="isCellSelected(row.resource, week)"
                 [class.has-capacity]="row.resource.cellData?.[i]?.value! > 0"

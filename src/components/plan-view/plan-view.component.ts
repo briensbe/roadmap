@@ -1,4 +1,6 @@
 import { Component, OnInit, ViewChild, ElementRef, HostListener, NgModule, ChangeDetectionStrategy, ChangeDetectorRef, NgZone, OnDestroy, computed } from "@angular/core";
+import { Subject, Subscription } from "rxjs";
+import { debounceTime, distinctUntilChanged } from "rxjs/operators";
 import { CommonModule, NgIf, NgFor } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { TeamService } from "../../services/team.service";
@@ -56,6 +58,7 @@ interface ResourceRow {
   resourceId?: string; // Always the role or personne id
   projectId?: string; // Always the project id
   cellData?: ResourceCellData[];
+  metrics?: Map<string, { total: number }>;
 }
 
 interface ChildRow {
@@ -66,6 +69,7 @@ interface ChildRow {
   expanded: boolean;
   resources: ResourceRow[];
   charges: Map<string, number>; // week string -> amount
+  metrics?: Map<string, { total: number }>;
 }
 
 interface ParentRow {
@@ -77,6 +81,7 @@ interface ParentRow {
   children: ChildRow[];
   totalCharges: Map<string, number>; // week string -> amount
   originalProject?: Projet;
+  metrics?: Map<string, { total: number; capacity: number; availability: number; status: 'positive' | 'zero' | 'negative' | 'none' }>;
 }
 
 interface FlatRow {
@@ -176,6 +181,9 @@ export class PlanViewComponent implements OnInit, OnDestroy {
 
   flatRows: FlatRow[] = [];
 
+  // Capacity Index for O(1) lookups: teamId_type_resourceId_weekKey -> capacity
+  private capacityIndex = new Map<string, number>();
+
   // Usage Map
   usageMap: Map<string, number> = new Map();
 
@@ -229,6 +237,8 @@ export class PlanViewComponent implements OnInit, OnDestroy {
 
   // Global search
   globalSearch = storageSignal<string>('plan-view-global-search', '');
+  private searchSubject = new Subject<string>();
+  private searchSubscription?: Subscription;
 
   // Link Modal State
   showLinkModal = false;
@@ -428,6 +438,16 @@ export class PlanViewComponent implements OnInit, OnDestroy {
     this.loadData();
     this.generateWeeks();
 
+    // Setup debounced search
+    this.searchSubscription = this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe(value => {
+      this.globalSearch.set(value);
+      this.applyFilters();
+      this.cdr.markForCheck();
+    });
+
     this.ngZone.runOutsideAngular(() => {
       const mouseListener = (event: MouseEvent) => this.onGlobalMouseMove(event);
       window.addEventListener('mousemove', mouseListener);
@@ -459,6 +479,13 @@ export class PlanViewComponent implements OnInit, OnDestroy {
     if (this.scrollCloseListener) {
       this.scrollCloseListener();
     }
+    if (this.searchSubscription) {
+      this.searchSubscription.unsubscribe();
+    }
+  }
+
+  onSearchInput(value: string) {
+    this.searchSubject.next(value);
   }
 
 
@@ -476,6 +503,13 @@ export class PlanViewComponent implements OnInit, OnDestroy {
       this.displayedWeeks.push(week);
     }
   }
+
+  // trackBy functions for performance
+  trackByRow(index: number, row: ParentRow) { return row.id; }
+  trackByChild(index: number, child: ChildRow) { return child.id; }
+  trackByResource(index: number, res: ResourceRow) { return res.uniqueId; }
+  trackByWeek(index: number, week: Date) { return week.getTime(); }
+  trackByFlatRow(index: number, row: FlatRow) { return row.uniqueId; }
 
   async loadData() {
     try {
@@ -505,11 +539,86 @@ export class PlanViewComponent implements OnInit, OnDestroy {
       this.allChiffres = chiffres;
       this.allServices = services;
 
+      // Index capacities once for O(1) loop-up
+      this.capacityIndex.clear();
+      this.allCapacities.forEach(c => {
+        const weekKey = c.semaine_debut.split("T")[0];
+        const rId = c.role_id || c.personne_id;
+        const type = c.role_id ? 'role' : 'personne';
+        const key = `${c.equipe_id}_${type}_${rId}_${weekKey}`;
+        this.capacityIndex.set(key, c.capacite);
+      });
+
       this.buildTree();
+      this.precalculateResources();
+      this.calculateMetrics(); // New step
       this.cdr.markForCheck();
     } catch (error) {
       console.error("Error loading data:", error);
     }
+  }
+
+  calculateMetrics() {
+    this.rowsAll.forEach(parent => {
+      parent.metrics = new Map();
+      parent.children.forEach(child => {
+        child.metrics = new Map();
+        child.resources.forEach(res => {
+          res.metrics = new Map();
+          this.displayedWeeks.forEach(week => {
+            const weekKey = week.toISOString().split("T")[0];
+            const charge = res.charges.get(weekKey) || 0;
+            res.metrics!.set(weekKey, { total: charge });
+          });
+        });
+
+        // Sum Child metrics
+        this.displayedWeeks.forEach(week => {
+          const weekKey = week.toISOString().split("T")[0];
+          let total = 0;
+          child.resources.forEach(res => {
+            total += res.metrics?.get(weekKey)?.total || 0;
+          });
+          child.metrics!.set(weekKey, { total });
+        });
+      });
+
+      // Sum Parent metrics
+      const teamIdFromParent = this.viewMode() === 'resource' ? parent.id.split('_')[0] : parent.id;
+      this.displayedWeeks.forEach(week => {
+        const weekKey = week.toISOString().split("T")[0];
+        let total = 0;
+        let totalCapacity = 0;
+
+        parent.children.forEach(child => {
+          total += child.metrics?.get(weekKey)?.total || 0;
+        });
+
+        if (this.viewMode() === 'resource') {
+          // In Resource Mode, Parent IS a specific resource for a team
+          const parts = parent.id.split('_');
+          const rType = parts[1];
+          const rId = parts.slice(2).join('_');
+          const capKey = `${teamIdFromParent}_${rType}_${rId}_${weekKey}`;
+          totalCapacity = this.capacityIndex.get(capKey) || 0;
+        }
+
+        const availability = totalCapacity - total;
+        let status: 'positive' | 'zero' | 'negative' | 'none' = 'none';
+        if (totalCapacity > 0 || total > 0) {
+          if (availability > 0) status = 'positive';
+          else if (availability === 0) status = 'zero';
+          else status = 'negative';
+        }
+
+        parent.metrics!.set(weekKey, {
+          total,
+          capacity: totalCapacity,
+          availability: availability,
+          status: status
+        });
+      });
+    });
   }
 
   precalculateResources() {
@@ -1128,26 +1237,15 @@ export class PlanViewComponent implements OnInit, OnDestroy {
 
   buildFlatList() {
     this.flatRows = [];
+    const collator = new Intl.Collator("fr-FR", { numeric: true, sensitivity: 'base' });
 
     // Iterate over the currently filtered rows (this.rows)
     for (const parent of this.rows) {
       for (const child of parent.children) {
         for (const resource of child.resources) {
-          let label = "";
-          if (this.viewMode() === "project") {
-            // Project > Team > Resource
-            label = `${parent.label} / ${child.label} / ${resource.label}`;
-          } else if (this.viewMode() === "team") {
-            // Team > Project > Resource
-            label = `${parent.label} / ${child.label} / ${resource.label}`;
-          } else {
-            // Team > Resource > Project
-            label = `${parent.label} / ${child.label} / ${resource.label}`;
-          }
-
           this.flatRows.push({
             uniqueId: resource.uniqueId,
-            fullLabel: label,
+            fullLabel: `${parent.label} / ${child.label} / ${resource.label}`,
             resource: resource,
             child: child,
             parent: parent
@@ -1156,8 +1254,8 @@ export class PlanViewComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Sort flattened rows alphabetically by full label
-    this.flatRows.sort((a, b) => a.fullLabel.localeCompare(b.fullLabel));
+    // Sort flattened rows faster
+    this.flatRows.sort((a, b) => collator.compare(a.fullLabel, b.fullLabel));
   }
 
   // Week Filter Methods
@@ -1267,62 +1365,6 @@ export class PlanViewComponent implements OnInit, OnDestroy {
 
   isCurrentWeek(date: Date): boolean {
     return this.calendarService.isCurrentWeek(date);
-  }
-
-  getParentTotal(row: ParentRow, week: Date): number {
-    const weekKey = week.toISOString().split("T")[0];
-    return row.totalCharges.get(weekKey) || 0;
-  }
-
-  /**
-   * Calculate cumulative capacity for a parent row in Resource view.
-   * In Resource mode, parent.id is `${team.id}_${rKey}` where rKey is role_xxx or personne_xxx.
-   */
-  getParentCapacity(row: ParentRow, week: Date): number {
-    const weekKey = week.toISOString().split("T")[0];
-    const parts = row.id.split('_');
-    if (parts.length < 2) return 0;
-
-    const teamId = parts[0];
-    const resourceType = parts[1]; // 'role' or 'personne'
-    const resourceId = parts.slice(2).join('_'); // Handle IDs with underscores
-
-    // Find matching capacity record
-    const cap = this.allCapacities.find(c =>
-      c.equipe_id === teamId &&
-      c.semaine_debut.startsWith(weekKey) &&
-      (resourceType === 'role' ? c.role_id === resourceId : c.personne_id === resourceId)
-    );
-
-    return cap ? cap.capacite : 0;
-  }
-
-  /**
-   * Calculate cumulative availability for a parent row in Resource view.
-   */
-  getParentAvailability(row: ParentRow, week: Date): number {
-    const capacity = this.getParentCapacity(row, week);
-    const charges = this.getParentTotal(row, week);
-    return capacity - charges;
-  }
-
-  /**
-   * Get availability status for color indication.
-   * Returns 'positive', 'zero', 'negative', or 'none' (no data).
-   */
-  getParentAvailabilityStatus(row: ParentRow, week: Date): 'positive' | 'zero' | 'negative' | 'none' {
-    const capacity = this.getParentCapacity(row, week);
-    const charges = this.getParentTotal(row, week);
-
-    // If neither capacity nor charges exist for this week, return 'none'
-    if (capacity === 0 && charges === 0) {
-      return 'none';
-    }
-
-    const availability = capacity - charges;
-    if (availability > 0) return 'positive';
-    if (availability === 0) return 'zero';
-    return 'negative';
   }
 
   getChildValue(child: ChildRow, week: Date): number {
@@ -1972,9 +2014,41 @@ export class PlanViewComponent implements OnInit, OnDestroy {
   }
 
   applyFilters() {
+    this.calculateUsage();
+
     const search = this.globalSearch().toLowerCase().trim();
 
-    // Helpers to check matches at each level
+    // 1. Index search matches once for O(1) lookups
+    const matchingProjetIds = new Set<string>();
+    const matchingEquipeIds = new Set<string>();
+    const matchingRoleIds = new Set<string>();
+    const matchingPersonneIds = new Set<string>();
+
+    if (search) {
+      for (const p of this.allProjects) {
+        if (p.nom_projet.toLowerCase().includes(search) || (p.code_projet && p.code_projet.toLowerCase().includes(search))) {
+          matchingProjetIds.add(p.id!);
+        }
+      }
+      for (const e of this.allEquipes) {
+        if (e.nom.toLowerCase().includes(search) || (e.code && e.code.toLowerCase().includes(search))) {
+          matchingEquipeIds.add(e.id!);
+        }
+      }
+      for (const r of this.availableRoles) {
+        if (r.nom.toLowerCase().includes(search)) matchingRoleIds.add(r.id!);
+      }
+      for (const p of this.availablePersonnes) {
+        if (`${p.prenom} ${p.nom}`.toLowerCase().includes(search)) matchingPersonneIds.add(p.id!);
+      }
+    }
+
+    const resourceMatchesSearchSelf = (res: ResourceRow): boolean => {
+      if (!search) return true;
+      if (res.type === 'role') return matchingRoleIds.has(res.resourceId || res.id);
+      return matchingPersonneIds.has(res.resourceId || res.id);
+    };
+
     const parentMatchesSearch = (parent: ParentRow): boolean => {
       if (!search) return true;
       if (parent.label.toLowerCase().includes(search)) return true;
@@ -1982,117 +2056,104 @@ export class PlanViewComponent implements OnInit, OnDestroy {
       return false;
     };
 
-    const childMatchesSearch = (child: ChildRow): boolean => {
+    const childMatchesSearchSelf = (child: ChildRow): boolean => {
       if (!search) return true;
       if (child.label.toLowerCase().includes(search)) return true;
       if (child.code && child.code.toLowerCase().includes(search)) return true;
-      // Also check grandchildren resources
-      for (const res of child.resources) {
-        if (res.label.toLowerCase().includes(search)) return true;
-      }
       return false;
     };
 
-    const anyChildMatches = (parent: ParentRow): boolean => {
-      for (const child of parent.children) {
-        if (childMatchesSearch(child)) return true;
-      }
-      return false;
-    };
-
-    // If no active filters AND no search, show original rows
     if (!this.filterEquipeIds().length && !this.filterProjetIds().length && !this.filterResourceIds().length && !search) {
       this.rows = [...this.rowsAll];
-      this.buildFlatList();
+      this.calculateFilteredMetrics(); // Ensure metrics are ready
+      if (this.displayFormat() === 'flat') this.buildFlatList();
       return;
     }
 
     const filteredParents: ParentRow[] = [];
+    const isResourceMode = this.viewMode() === 'resource';
 
     for (const parent of this.rowsAll) {
       const pMatches = parentMatchesSearch(parent);
-      const cMatchesAny = anyChildMatches(parent);
 
-      // Decision to include parent based on search:
-      // If there is a search, we include parent if it matches OR if any child matches
-      if (search && !pMatches && !cMatchesAny) continue;
+      let parentPassesEquipe = true;
+      if (this.filterEquipeIds().length) {
+        if (this.viewMode() === "team") {
+          parentPassesEquipe = this.filterEquipeIds().includes(parent.id);
+        } else if (this.viewMode() === "resource") {
+          const teamId = parent.id.split('_')[0];
+          parentPassesEquipe = this.filterEquipeIds().includes(teamId);
+        }
+      }
+
+      let parentPassesResource = true;
+      if (this.filterResourceIds().length && this.viewMode() === "resource") {
+        parentPassesResource = this.filterResourceIds().some((sel) => {
+          const [t, id] = sel.split(":");
+          return parent.id.endsWith(`${t}_${id}`);
+        });
+      }
+
+      let parentPassesProjet = true;
+      if (this.filterProjetIds().length && this.viewMode() === "project") {
+        parentPassesProjet = this.filterProjetIds().includes(parent.id);
+      }
 
       const newParent: ParentRow = {
         id: parent.id,
         label: parent.label,
         code: parent.code,
         color: parent.color,
-        // Auto-expand if a child matches the search
-        expanded: (search && cMatchesAny) ? true : parent.expanded,
+        expanded: parent.expanded,
         children: [],
         totalCharges: parent.totalCharges,
         originalProject: parent.originalProject,
       };
 
-      // Decide if parent passes equipe filter (if in team or resource mode)
-      let parentPassesEquipe = true;
-      if (this.filterEquipeIds().length) {
-        if (this.viewMode() === "team") {
-          parentPassesEquipe = this.filterEquipeIds().includes(parent.id);
-        } else if (this.viewMode() === "resource") {
-          // parent.id is "teamId_resourceKey"
-          const teamId = parent.id.split('_')[0];
-          parentPassesEquipe = this.filterEquipeIds().includes(teamId);
-        }
-      }
+      let cMatchesAny = false;
 
-      // Decide if parent passes resource filter (ONLY in resource mode where parent IS the resource)
-      let parentPassesResource = true;
-      if (this.filterResourceIds().length && this.viewMode() === "resource") {
-        parentPassesResource = this.filterResourceIds().some((sel) => {
-          const rKeyForSel = sel.replace(':', '_');
-          // parent.id is "teamId_resourceKey", we check if it ends with resourceKey
-          return parent.id.endsWith(rKeyForSel);
-        });
-      }
-
-      // Decide if parent passes project filter (if in project mode)
-      let parentPassesProjet = true;
-      if (this.filterProjetIds().length) {
-        if (this.viewMode() === "project") {
-          parentPassesProjet = this.filterProjetIds().includes(parent.id);
-        }
-      }
-
-      // Process each child and apply child/resource-level filters
       for (const child of parent.children) {
-        // Grandchild-level resources/projects
-        let grandchildrenMatch: ResourceRow[] = child.resources;
+        const cMatchesSelf = childMatchesSearchSelf(child);
+        let gMatchesAny = false;
 
-        // Apply filters to grandchildren
-        if (this.filterResourceIds().length || this.filterProjetIds().length) {
+        // Filter grandchildren
+        let grandchildrenMatch = child.resources;
+        const hasSpecificFilter = this.filterResourceIds().length || this.filterProjetIds().length;
+        const needsSearchFilter = !!search && (isResourceMode || !pMatches);
+
+        if (hasSpecificFilter || needsSearchFilter) {
           grandchildrenMatch = child.resources.filter((gr) => {
-            let resMatch = true;
-            let projMatch = true;
-
-            // In resource mode, grandchild IS a project
-            if (this.viewMode() === 'resource') {
-              if (this.filterProjetIds().length) {
-                projMatch = this.filterProjetIds().includes(gr.id);
-              }
-              // Resource filter applies to CHILD level in resource mode (handled later)
-            } else {
-              // In other modes, grandchild IS a resource
-              if (this.filterResourceIds().length) {
-                resMatch = this.filterResourceIds().some((sel) => {
+            let passesIdFilter = true;
+            if (this.filterResourceIds().length || this.filterProjetIds().length) {
+              if (isResourceMode) {
+                passesIdFilter = this.filterProjetIds().length === 0 || this.filterProjetIds().includes(gr.id);
+              } else {
+                passesIdFilter = this.filterResourceIds().length === 0 || this.filterResourceIds().some((sel) => {
                   const [t, id] = sel.split(":");
-                  return (
-                    (t === "role" && gr.type === "role" && gr.id === id) ||
-                    (t === "personne" && gr.type === "personne" && gr.id === id)
-                  );
+                  return (t === "role" && gr.type === "role" && gr.id === id) || (t === "personne" && gr.type === "personne" && gr.id === id);
                 });
               }
             }
-            return resMatch && projMatch;
+
+            let passesSearch = true;
+            if (search) {
+              if (isResourceMode) {
+                passesSearch = matchingProjetIds.has(gr.id);
+              } else if (!pMatches && !cMatchesSelf) {
+                passesSearch = resourceMatchesSearchSelf(gr);
+              }
+            }
+
+            const isMatch = passesIdFilter && passesSearch;
+            if (isMatch) gMatchesAny = true;
+            return isMatch;
           });
+        } else if (search) {
+          for (const gr of child.resources) {
+            if (resourceMatchesSearchSelf(gr)) { gMatchesAny = true; break; }
+          }
         }
 
-        // Child-level filters
         let childPassesEquipe = true;
         let childPassesProjet = true;
         let childPassesResource = true;
@@ -2100,33 +2161,21 @@ export class PlanViewComponent implements OnInit, OnDestroy {
         if (this.filterEquipeIds().length && this.viewMode() === "project") {
           childPassesEquipe = this.filterEquipeIds().includes(child.id);
         }
-
         if (this.filterProjetIds().length && this.viewMode() === "team") {
           childPassesProjet = this.filterProjetIds().includes(child.id);
         }
-
         if (this.filterResourceIds().length && this.viewMode() === "resource") {
-          // In resource mode, the resource filter already applied to the parent
           childPassesResource = parentPassesResource;
         }
 
-        // A child is included if it passes child-level filters. 
-        // We only prune empty children if a filter targeting the grandchildren (Resources in project/team mode, Projects in resource mode) is active.
-        const hasGrandchildFilter = (this.viewMode() === 'resource')
-          ? this.filterProjetIds().length > 0
-          : this.filterResourceIds().length > 0;
-
+        const hasGrandchildFilter = isResourceMode ? this.filterProjetIds().length > 0 : this.filterResourceIds().length > 0;
         const hasGrandchildrenMatch = hasGrandchildFilter ? grandchildrenMatch.length > 0 : true;
 
-        // Search filter for children:
-        // If parent matches search, we show all children.
-        // Otherwise, only children that match search are shown.
-        const childMatches = childMatchesSearch(child);
-        const childPassesSearch = !search || pMatches || childMatches;
+        const childMatches = cMatchesSelf || gMatchesAny;
+        const childPassesSearch = !search || (pMatches && !isResourceMode) || childMatches;
 
-        const includeChild = childPassesEquipe && childPassesProjet && childPassesResource && hasGrandchildrenMatch && childPassesSearch;
-
-        if (includeChild) {
+        if (childPassesEquipe && childPassesProjet && childPassesResource && hasGrandchildrenMatch && childPassesSearch) {
+          if (childMatches) cMatchesAny = true;
           newParent.children.push({
             id: child.id,
             label: child.label,
@@ -2139,28 +2188,70 @@ export class PlanViewComponent implements OnInit, OnDestroy {
         }
       }
 
-      // Final decision to include parent
       const hasChildren = newParent.children.length > 0;
+      if (search && cMatchesAny) newParent.expanded = true;
 
-      // Allow showing empty parent if it was explicitly selected via the primary filter 
       let showEmptyParent = false;
       if (this.viewMode() === 'project' && this.filterProjetIds().includes(parent.id)) {
-        if (this.filterEquipeIds().length === 0 && this.filterResourceIds().length === 0) {
-          showEmptyParent = true;
-        }
+        if (this.filterEquipeIds().length === 0 && this.filterResourceIds().length === 0) showEmptyParent = true;
       } else if ((this.viewMode() === 'team' || this.viewMode() === 'resource') && this.filterEquipeIds().includes(parent.id)) {
-        if (this.filterProjetIds().length === 0 && this.filterResourceIds().length === 0) {
-          showEmptyParent = true;
-        }
+        if (this.filterProjetIds().length === 0 && this.filterResourceIds().length === 0) showEmptyParent = true;
       }
 
-      if (parentPassesEquipe && parentPassesResource && parentPassesProjet && (hasChildren || showEmptyParent)) {
+      if (parentPassesEquipe && parentPassesResource && parentPassesProjet && (hasChildren || showEmptyParent || (search && pMatches))) {
         filteredParents.push(newParent);
       }
     }
 
     this.rows = filteredParents;
-    this.buildFlatList();
+    this.calculateFilteredMetrics(); // Pre-calculate metrics for filtered view
+    if (this.displayFormat() === 'flat') this.buildFlatList();
+  }
+
+  // Calculate metrics for current visible rows (after filtering)
+  private calculateFilteredMetrics() {
+    this.rows.forEach(parent => {
+      // Re-calculate Parent metrics based on its current children (which are already filtered)
+      const teamIdFromParent = this.viewMode() === 'resource' ? parent.id.split('_')[0] : parent.id;
+      this.displayedWeeks.forEach(week => {
+        const weekKey = week.toISOString().split("T")[0];
+        let total = 0;
+        let totalCapacity = 0;
+
+        parent.children.forEach(child => {
+          // Re-sum child totals
+          let childTotal = 0;
+          child.resources.forEach(res => {
+             childTotal += res.metrics?.get(weekKey)?.total || 0;
+          });
+          child.metrics?.set(weekKey, { total: childTotal });
+          total += childTotal;
+        });
+
+        if (this.viewMode() === 'resource') {
+          const parts = parent.id.split('_');
+          const rType = parts[1];
+          const rId = parts.slice(2).join('_');
+          const capKey = `${teamIdFromParent}_${rType}_${rId}_${weekKey}`;
+          totalCapacity = this.capacityIndex.get(capKey) || 0;
+        }
+
+        const availability = totalCapacity - total;
+        let status: 'positive' | 'zero' | 'negative' | 'none' = 'none';
+        if (totalCapacity > 0 || total > 0) {
+          if (availability > 0) status = 'positive';
+          else if (availability === 0) status = 'zero';
+          else status = 'negative';
+        }
+
+        parent.metrics?.set(weekKey, {
+          total,
+          capacity: totalCapacity,
+          availability: availability,
+          status: status
+        });
+      });
+    });
   }
 
 
