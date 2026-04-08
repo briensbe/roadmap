@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef, HostListener, NgModule, ChangeDetectionStrategy, ChangeDetectorRef, NgZone, OnDestroy, computed } from "@angular/core";
+import { Component, OnInit, AfterViewInit, ViewChild, ElementRef, HostListener, NgModule, ChangeDetectionStrategy, ChangeDetectorRef, NgZone, OnDestroy, computed } from "@angular/core";
 import { Subject, Subscription } from "rxjs";
 import { debounceTime, distinctUntilChanged } from "rxjs/operators";
 import { CommonModule, NgIf, NgFor } from "@angular/common";
@@ -26,6 +26,7 @@ import { storageSignal } from "../../utils/storage-signal";
 import { signal } from "@angular/core";
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { calculateNewRank, sortByRank } from '../../utils/lexorank.utils';
+import { driver } from "driver.js";
 
 @NgModule({
   imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown, LucideCalculator, Search, MoreVertical, ListTree, AlignJustify, Eye, EyeOff, Calendar, ChevronLeft, Network, Users, BookUser, Settings2, GripVertical })],
@@ -100,7 +101,7 @@ interface FlatRow {
   styleUrl: "./plan-view.component.css",
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class PlanViewComponent implements OnInit, OnDestroy {
+export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('tooltipElement') tooltipElement?: ElementRef<HTMLElement>;
 
   // Milestone Modal props
@@ -471,6 +472,46 @@ export class PlanViewComponent implements OnInit, OnDestroy {
       document.addEventListener('scroll', scrollHandler, true);
       this.scrollCloseListener = () => document.removeEventListener('scroll', scrollHandler, true);
     });
+  }
+
+  ngAfterViewInit() {
+    this.startTutorial();
+  }
+
+  private startTutorial() {
+    const tutorialKey = "tutorial-actions-menu-v1";
+    if (localStorage.getItem(tutorialKey)) return;
+
+    const driverObj = driver({
+      showProgress: true,
+      nextBtnText: 'Suivant',
+      prevBtnText: 'Précédent',
+      doneBtnText: 'Terminer',
+      allowClose: true,
+      overlayColor: 'rgba(15, 23, 42, 0.75)',
+      // @ts-ignore - popupClass is valid but may not be in older types
+      popoverClass: 'premium-driver-popover',
+      steps: [
+        {
+          element: '[data-tour="actions-menu"]',
+          popover: {
+            title: 'Nouveau menu "Actions"',
+            description: 'On a regroupé les options d’affichage et d’export dans ce nouveau menu pour libérer de l’espace.',
+            side: "bottom",
+            align: 'end',
+            showButtons: ['next', 'previous', 'close']
+          }
+        }
+      ],
+      onDestroyed: () => {
+        localStorage.setItem(tutorialKey, "true");
+      }
+    });
+
+    // Slight delay to allow DOM stabilization
+    setTimeout(() => {
+      driverObj.drive();
+    }, 1000);
   }
 
   ngOnDestroy() {
@@ -2223,7 +2264,7 @@ export class PlanViewComponent implements OnInit, OnDestroy {
           // Re-sum child totals
           let childTotal = 0;
           child.resources.forEach(res => {
-             childTotal += res.metrics?.get(weekKey)?.total || 0;
+            childTotal += res.metrics?.get(weekKey)?.total || 0;
           });
           child.metrics?.set(weekKey, { total: childTotal });
           total += childTotal;
