@@ -367,6 +367,7 @@
                       class="line-menu-trigger btn-icon-s"
                       (click)="toggleLineMenu('parent-' + row.id, $event)"
                       [title]="viewMode() === 'resource' ? 'Actions' : 'Actions'"
+                      data-tour="line-menu"
                     >
                       <lucide-icon [img]="MoreVertical" [size]="15"></lucide-icon>
                     </button>

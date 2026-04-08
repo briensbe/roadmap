@@ -139,6 +139,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   chiffreMode = storageSignal<'initial' | 'revise' | 'previsionnel' | 'consomme'>("plan-view-chiffre-mode", "previsionnel");
   private isDefaultExpanded = true;
   private manualStates = new Map<string, boolean>();
+  private tutorialStarted = false;
 
   selectedCapacityYear = storageSignal<'today' | 'all' | '2025' | '2026' | 'custom'>("plan-view-capacity-year", "today");
   private globalMouseMoveListener?: () => void;
@@ -480,18 +481,12 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private startTutorial() {
     const tutorialKey = "tutorial-actions-menu-v1";
-    if (localStorage.getItem(tutorialKey)) return;
+    if (localStorage.getItem(tutorialKey) || this.tutorialStarted) return;
+    this.tutorialStarted = true;
 
-    const driverObj = driver({
-      showProgress: true,
-      nextBtnText: 'Suivant',
-      prevBtnText: 'Précédent',
-      doneBtnText: 'Terminer',
-      allowClose: true,
-      overlayColor: 'rgba(15, 23, 42, 0.75)',
-      // @ts-ignore - popupClass is valid but may not be in older types
-      popoverClass: 'premium-driver-popover',
-      steps: [
+    // We use a timeout to ensure data is loaded and DOM is fully rendered
+    setTimeout(() => {
+      const steps: any[] = [
         {
           element: '[data-tour="actions-menu"]',
           popover: {
@@ -502,16 +497,40 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
             showButtons: ['next', 'previous', 'close']
           }
         }
-      ],
-      onDestroyed: () => {
-        localStorage.setItem(tutorialKey, "true");
-      }
-    });
+      ];
 
-    // Slight delay to allow DOM stabilization
-    setTimeout(() => {
+      // Check for line menu presence now that we've waited for render
+      const hasLineMenu = document.querySelector('[data-tour="line-menu"]');
+      if (hasLineMenu) {
+        steps.push({
+          element: '[data-tour="line-menu"]',
+          popover: {
+            title: 'Options de ligne',
+            description: 'Retrouvez ici les actions spécifiques à cette ligne (ajout de ressource, suppression, etc.).',
+            side: "right",
+            align: 'start',
+            showButtons: ['next', 'previous', 'close']
+          }
+        });
+      }
+
+      const driverObj = driver({
+        showProgress: true,
+        nextBtnText: 'Suivant',
+        prevBtnText: 'Précédent',
+        doneBtnText: 'Terminer',
+        allowClose: true,
+        overlayColor: 'rgba(15, 23, 42, 0.75)',
+        // @ts-ignore - popupClass is valid but may not be in older types
+        popoverClass: 'premium-driver-popover',
+        steps: steps,
+        onDestroyed: () => {
+          localStorage.setItem(tutorialKey, "true");
+        }
+      });
+
       driverObj.drive();
-    }, 1000);
+    }, 2000); // 2 seconds to be safe with async data load
   }
 
   ngOnDestroy() {
