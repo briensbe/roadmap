@@ -830,7 +830,8 @@
   z-index: 5;
 }
 
-.row-label-content:hover .line-menu-trigger {
+.row-label-content:hover .line-menu-trigger,
+.line-menu-trigger.driver-active-element {
   opacity: 1;
 }
 
