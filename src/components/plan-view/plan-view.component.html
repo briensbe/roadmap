@@ -39,16 +39,19 @@
               <input type="radio" name="viewMode" value="project" [checked]="viewMode() === 'project'" (change)="switchViewMode('project')" />
               <lucide-icon [img]="Network" [size]="15"></lucide-icon>
               Par Projet
+              <span class="actions-check" *ngIf="viewMode() === 'project'">✓</span>
             </label>
             <label class="actions-radio-item" [class.selected]="viewMode() === 'team'">
               <input type="radio" name="viewMode" value="team" [checked]="viewMode() === 'team'" (change)="switchViewMode('team')" />
               <lucide-icon [img]="Users" [size]="15"></lucide-icon>
               Par Équipe
+              <span class="actions-check" *ngIf="viewMode() === 'team'">✓</span>
             </label>
             <label class="actions-radio-item" [class.selected]="viewMode() === 'resource'">
               <input type="radio" name="viewMode" value="resource" [checked]="viewMode() === 'resource'" (change)="switchViewMode('resource')" />
               <lucide-icon [img]="BookUser" [size]="15"></lucide-icon>
               Par Ressources
+              <span class="actions-check" *ngIf="viewMode() === 'resource'">✓</span>
             </label>
           </div>
 
