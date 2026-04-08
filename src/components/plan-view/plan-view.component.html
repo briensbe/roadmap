@@ -330,7 +330,7 @@
               class="project-draggable-group"
             >
               <!-- Parent Row -->
-              <div class="calendar-row" cdkDragHandle>
+              <div class="calendar-row">
                 <div
                   class="label-cell row-label-parent"
                   [style.width.px]="labelColumnWidth()"
@@ -338,6 +338,9 @@
                 >
                   <div class="row-label-content" (click)="toggleRow(row)">
                     <div class="color-bar-container">
+                      <div class="drag-handle" cdkDragHandle *ngIf="viewMode() === 'project'">
+                        <lucide-icon [img]="GripVertical" [size]="14"></lucide-icon>
+                      </div>
                       <div class="color-bar-v" [style.background-color]="row.color || '#94a3b8'"></div>
                     </div>
 
