@@ -61,7 +61,8 @@
   background: #e2e8f0;
 }
 
-.row-label-parent .row-label-content:hover .drag-handle {
+.row-label-parent .row-label-content:hover .drag-handle,
+.drag-handle.driver-active-element {
   opacity: 1;
 }
 

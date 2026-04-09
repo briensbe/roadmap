@@ -514,6 +514,21 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
         });
       }
 
+      // Check for drag handle presence (Project Mode)
+      const hasDragHandle = document.querySelector('[data-tour="drag-handle"]');
+      if (hasDragHandle) {
+        steps.push({
+          element: '[data-tour="drag-handle"]',
+          popover: {
+            title: 'Réorganisation',
+            description: 'Désormais, uniquement dans la Vue "Par Projets", les lignes déplaçables sont indiquées avec la poignée cdkdraghandle.',
+            side: "right",
+            align: 'start',
+            showButtons: ['next', 'previous', 'close']
+          }
+        });
+      }
+
       const driverObj = driver({
         showProgress: true,
         nextBtnText: 'Suivant',

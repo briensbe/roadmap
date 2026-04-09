@@ -338,7 +338,7 @@
                 >
                   <div class="row-label-content" (click)="toggleRow(row)">
                     <div class="color-bar-container">
-                      <div class="drag-handle" cdkDragHandle *ngIf="viewMode() === 'project'">
+                      <div class="drag-handle" cdkDragHandle *ngIf="viewMode() === 'project'" data-tour="drag-handle">
                         <lucide-icon [img]="GripVertical" [size]="14"></lucide-icon>
                       </div>
                       <div class="color-bar-v" [style.background-color]="row.color || '#94a3b8'"></div>
