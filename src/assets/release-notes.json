@@ -1,5 +1,36 @@
 [
   {
+    "version": "2026.04.09",
+    "date": "2026-04-09",
+    "news": [
+      {
+        "title": "Premier tutorial Driver.js",
+        "items": [
+          "Vous le trouverez dans la Vue Planification ",
+          "Il est possible de le relancer avec localStorage.removeItem('tutorial-actions-menu-v1')"
+        ]
+      },
+      {
+        "title": "Ajout d'un filtre texte sur les projets",
+        "items": ["Permet de filtrer les noeuds parents ou enfants à partir d'un texte"]
+      },
+      {
+        "title": "Modification de l'UI",
+        "items": [
+          "Désormais les options d'affichage et l'export sont regroupées dans un seul menu déroulant 'Actions'",
+          "De même, les actions sur les lignes, auparavant affichées séparément au survol, sont désormais regroupées dans le kebab menu de la ligne",
+          "Affichage d'une poignée de drag and drop sur les lignes, dans la seule vue 'Par projets' qui le permet"
+        ]
+      },
+      {
+        "title": "Ajout d'un moyen de déplacer un projet en haut ou en bas de la liste",
+        "items": ["A retrouver dans le kebab menu de ligne"],
+        "imageUrl": "assets/release-notes/2026-04-09 moveToTop or Bottom.png",
+        "imageMaxHeight": 100
+      }
+    ]
+  },
+  {
     "version": "2026.03.26",
     "date": "2026-03-26",
     "news": [
