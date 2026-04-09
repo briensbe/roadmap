@@ -330,7 +330,7 @@
               class="project-draggable-group"
             >
               <!-- Parent Row -->
-              <div class="calendar-row">
+              <div class="calendar-row" [style.z-index]="activeLineMenuId === 'parent-' + row.id ? 1700 : null">
                 <div
                   class="label-cell row-label-parent"
                   [style.width.px]="labelColumnWidth()"
@@ -380,6 +380,16 @@
                       <button class="line-menu-item" (click)="openLinkModal(row); closeLineMenu(); $event.stopPropagation()">
                         <lucide-icon [img]="Plus" [size]="14"></lucide-icon>
                         {{ viewMode() === 'resource' ? 'Ajouter un projet' : 'Ajouter' }}
+                      </button>
+
+                      <!-- Move up/down actions only in project view -->
+                      <button class="line-menu-item" *ngIf="viewMode() === 'project'" (click)="moveToTop(row); closeLineMenu(); $event.stopPropagation()">
+                        <lucide-icon [img]="ArrowUp" [size]="14"></lucide-icon>
+                        Envoyer en première place
+                      </button>
+                      <button class="line-menu-item" *ngIf="viewMode() === 'project'" (click)="moveToBottom(row); closeLineMenu(); $event.stopPropagation()">
+                        <lucide-icon [img]="ArrowDown" [size]="14"></lucide-icon>
+                        Envoyer en dernière place
                       </button>
                     </div>
                   </div>
@@ -586,7 +596,7 @@
                   <!-- CASE 2: Standard/Other Views (Team view, or Project view with no resources, or Resource view projects) -->
                   <ng-container *ngIf="viewMode() !== 'project' || child.resources.length === 0">
                     <!-- Standard Child Row -->
-                    <div class="calendar-row" *ngIf="viewMode() !== 'resource'">
+                    <div class="calendar-row" *ngIf="viewMode() !== 'resource'" [style.z-index]="activeLineMenuId === 'child-' + child.id + '-' + row.id ? 1700 : null">
                       <div
                         class="label-cell row-label-child"
                         [style.width.px]="labelColumnWidth()"

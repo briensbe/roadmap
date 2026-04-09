@@ -15,7 +15,7 @@ import { ChiffresService } from "../../services/chiffres.service";
 import { Chiffre } from "../../models/chiffres.type";
 import { ResourceService } from "../../services/resource.service";
 
-import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown, LucideCalculator, Search, MoreVertical, ListTree, AlignJustify, Eye, EyeOff, Calendar, ChevronLeft, Network, Users, BookUser, Settings2, GripVertical } from "lucide-angular";
+import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown, LucideCalculator, Search, MoreVertical, ListTree, AlignJustify, Eye, EyeOff, Calendar, ChevronLeft, Network, Users, BookUser, Settings2, GripVertical, ArrowUp, ArrowDown } from "lucide-angular";
 import * as XLSX from 'xlsx';
 import { getISOWeekYear } from "date-fns";
 import { calculateBestToolbarPosition, calculateBestPopoverPosition, ToolbarPosition, PopoverPosition } from "../../utils/selection-positioning";
@@ -29,7 +29,7 @@ import { calculateNewRank, sortByRank } from '../../utils/lexorank.utils';
 import { driver } from "driver.js";
 
 @NgModule({
-  imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown, LucideCalculator, Search, MoreVertical, ListTree, AlignJustify, Eye, EyeOff, Calendar, ChevronLeft, Network, Users, BookUser, Settings2, GripVertical })],
+  imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown, LucideCalculator, Search, MoreVertical, ListTree, AlignJustify, Eye, EyeOff, Calendar, ChevronLeft, Network, Users, BookUser, Settings2, GripVertical, ArrowUp, ArrowDown })],
   exports: [LucideAngularModule]
 })
 export class LucideIconsModule { }
@@ -310,6 +310,8 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   Search = Search;
   LucideCalculator = LucideCalculator;
   GripVertical = GripVertical;
+  ArrowUp = ArrowUp;
+  ArrowDown = ArrowDown;
 
   constructor(
     private teamService: TeamService,
@@ -1451,6 +1453,44 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   getResourceValue(resource: ResourceRow, week: Date): number {
     const weekKey = week.toISOString().split("T")[0];
     return resource.charges.get(weekKey) || 0;
+  }
+
+  async moveToTop(row: ParentRow) {
+    if (this.viewMode() !== 'project') return;
+    const currentIndex = this.rows.indexOf(row);
+    if (currentIndex <= 0) return;
+
+    moveItemInArray(this.rows, currentIndex, 0);
+    await this.updateRankAfterMove(0);
+  }
+
+  async moveToBottom(row: ParentRow) {
+    if (this.viewMode() !== 'project') return;
+    const currentIndex = this.rows.indexOf(row);
+    if (currentIndex === -1 || currentIndex === this.rows.length - 1) return;
+
+    moveItemInArray(this.rows, currentIndex, this.rows.length - 1);
+    await this.updateRankAfterMove(this.rows.length - 1);
+  }
+
+  private async updateRankAfterMove(index: number) {
+    const movedItem = this.rows[index];
+    if (!movedItem.originalProject) return;
+
+    try {
+      const rankStr = calculateNewRank(
+        this.rows,
+        index,
+        (row) => row.originalProject?.rank
+      );
+
+      movedItem.originalProject.rank = rankStr;
+      await this.projetService.updateProjet(movedItem.id, { rank: rankStr });
+      this.cdr.markForCheck();
+    } catch (error) {
+      console.error('Error calculating rank:', error);
+      await this.loadData();
+    }
   }
 
   // Modal & Linking Logic

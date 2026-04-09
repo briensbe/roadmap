@@ -850,9 +850,8 @@
 
 .line-menu-wrapper {
   position: absolute;
-  top: 50%;
+  top: 0;
   right: 38px;
-  transform: translateY(-50%);
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
@@ -868,11 +867,11 @@
 @keyframes lineMenuIn {
   from {
     opacity: 0;
-    transform: translateY(-50%) scale(0.95);
+    transform: translateY(10px) scale(0.95);
   }
   to {
     opacity: 1;
-    transform: translateY(-50%) scale(1);
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -1184,6 +1183,12 @@
   display: flex;
   min-height: 48px;
   border-bottom: 1px solid #e2e8f0;
+  position: relative; /* Essential for z-index to work on rows */
+}
+
+/* Ensure row stays on top when its context menu is open */
+.calendar-row:has(.line-menu-wrapper) {
+  z-index: 2000 !important;
 }
 
 /* Week cells in data rows */
