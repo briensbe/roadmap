@@ -54,6 +54,10 @@ testem.log
 .DS_Store
 Thumbs.db
 
+# Supabase
+supabase/.temp/
+supabase/.functions-pnpm/
+supabase/.storage/
 
 #env
 /environments
