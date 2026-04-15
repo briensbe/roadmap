@@ -392,8 +392,8 @@ export class ReleaseNotesComponent implements OnInit, OnDestroy {
     }
   }
 
-  @HostListener('document:keydown.escape', ['$event'])
-  onEscapeKeydown(event: KeyboardEvent) {
+  @HostListener('document:keydown.escape')
+  onEscapeKeydown() {
     if (this.show) {
       this.close();
     }
