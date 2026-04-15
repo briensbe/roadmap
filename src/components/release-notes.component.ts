@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ReleaseNotesService } from '../services/release-notes.service';
@@ -389,6 +389,13 @@ export class ReleaseNotesComponent implements OnInit, OnDestroy {
 
     if (this.subscription) {
       this.subscription.add(authSub);
+    }
+  }
+
+  @HostListener('document:keydown.escape', ['$event'])
+  onEscapeKeydown(event: KeyboardEvent) {
+    if (this.show) {
+      this.close();
     }
   }
 
