@@ -181,6 +181,19 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.isResizing = false;
   }
 
+  @HostListener("document:keydown.escape")
+  onEscape() {
+    this.showActionsMenu = false;
+    this.activeLineMenuId = null;
+    this.openEquipeDropdown = false;
+    this.openProjetDropdown = false;
+    this.openResourceDropdown = false;
+    this.showYearPopover = false;
+    this.showChiffrePopover = false;
+    this.clearSelection();
+    this.cdr.markForCheck();
+  }
+
   flatRows: FlatRow[] = [];
 
   // Capacity Index for O(1) lookups: teamId_type_resourceId_weekKey -> capacity

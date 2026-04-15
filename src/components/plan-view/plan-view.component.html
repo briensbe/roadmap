@@ -90,15 +90,15 @@
           <!-- Navigation -->
           <div class="actions-dropdown-section">
             <div class="actions-section-label">Navigation</div>
-            <button class="actions-dropdown-item" (click)="goToToday(); showActionsMenu = false">
+            <button class="actions-dropdown-item" (click)="goToToday()">
               <lucide-icon [img]="Calendar" [size]="15"></lucide-icon>
               Aujourd'hui
             </button>
-            <button class="actions-dropdown-item" (click)="goToPreviousMonth(); showActionsMenu = false">
+            <button class="actions-dropdown-item" (click)="goToPreviousMonth()">
               <lucide-icon [img]="ChevronLeft" [size]="15"></lucide-icon>
               Mois précédent
             </button>
-            <button class="actions-dropdown-item" (click)="goToNextMonth(); showActionsMenu = false">
+            <button class="actions-dropdown-item" (click)="goToNextMonth()">
               <lucide-icon [img]="ChevronRight" [size]="15"></lucide-icon>
               Mois suivant
             </button>
