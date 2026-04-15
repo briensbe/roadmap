@@ -6,20 +6,6 @@
   <div class="capacity-header">
     <div class="header-left">
       <h1>Vue Planification</h1>
-      <div class="header-search-bar">
-        <lucide-icon [img]="Search" [size]="16" class="search-icon"></lucide-icon>
-        <input
-          type="text"
-          class="header-search-input"
-          placeholder="Rechercher un projet, une équipe…"
-          [ngModel]="globalSearch()"
-          (ngModelChange)="onSearchInput($event)"
-          #searchInput
-        />
-        <button *ngIf="searchInput.value" class="search-clear-btn" (click)="searchInput.value = ''; onSearchInput('')">
-          <lucide-icon [img]="X" [size]="14"></lucide-icon>
-        </button>
-      </div>
     </div>
 
     <div class="header-right">
@@ -129,125 +115,139 @@
   </div>
 
   <div class="calendar-controls">
-    <div class="date-navigation">
-      <button class="btn btn-sm" (click)="goToPreviousMonth()">← Mois précédent</button>
-      <button class="btn btn-sm btn-primary" (click)="goToToday()">Aujourd'hui</button>
-      <button class="btn btn-sm" (click)="goToNextMonth()">Mois suivant →</button>
-
-      <div *ngIf="getFilteredWeekCount() > 0" class="filter-status-badge">
-        <lucide-icon name="funnel-plus" [size]="14"></lucide-icon>
-        <span
-          >{{ getFilteredWeekCount() }} semaine{{ getFilteredWeekCount() > 1 ? "s" : "" }} filtrée{{
-            getFilteredWeekCount() > 1 ? "s" : ""
-          }}</span
-        >
-        <button class="filter-clear-btn" (click)="clearAllWeekFilters()" title="Effacer tous les filtres">
-          Effacer
-        </button>
-      </div>
+    <div class="header-search-bar">
+      <lucide-icon [img]="Search" [size]="16" class="search-icon"></lucide-icon>
+      <input
+        type="text"
+        class="header-search-input"
+        placeholder="Rechercher un projet, une équipe…"
+        [ngModel]="globalSearch()"
+        (ngModelChange)="onSearchInput($event)"
+        #searchInput
+      />
+      <button *ngIf="searchInput.value" class="search-clear-btn" (click)="searchInput.value = ''; onSearchInput('')">
+        <lucide-icon [img]="X" [size]="14"></lucide-icon>
+      </button>
     </div>
 
     <!-- Filters bar -->
     <div class="filters-bar" #filtersContainer>
-      <div class="filter-pill" (click)="toggleDropdown('equipe', $event)">
-        <span class="filter-title">Équipes</span>
-        <span class="chip-list">
-          <span *ngFor="let id of filterEquipeIds()" class="chip">{{ getEquipeName(id) }}</span>
-          <span *ngIf="filterEquipeIds().length === 0" class="chip placeholder">Tous</span>
-        </span>
+      <div class="filter-group">
+        <div class="filter-pill" (click)="toggleDropdown('equipe', $event)">
+          <span class="filter-title">Équipes</span>
+          <span class="chip-list">
+            <span *ngFor="let id of filterEquipeIds()" class="chip">{{ getEquipeName(id) }}</span>
+            <span *ngIf="filterEquipeIds().length === 0" class="chip placeholder">Tous</span>
+          </span>
+        </div>
+
+        <div class="filters-dropdown" *ngIf="openEquipeDropdown" (click)="$event.stopPropagation()">
+          <div class="dropdown-list">
+            <label *ngFor="let e of allEquipes" class="dropdown-item">
+              <input
+                type="checkbox"
+                [value]="e.id"
+                (change)="onEquipeToggle(e.id, $event)"
+                [checked]="filterEquipeIds().includes(e.id!)"
+              />
+              {{ e.nom }}
+            </label>
+          </div>
+        </div>
       </div>
 
-      <div class="filter-pill" (click)="toggleDropdown('projet', $event)">
-        <span class="filter-title">Projets</span>
-        <span class="chip-list">
-          <span *ngFor="let id of filterProjetIds()" class="chip">{{ getProjetLabel(id) }}</span>
-          <span *ngIf="filterProjetIds().length === 0" class="chip placeholder">Tous</span>
-        </span>
-      </div>
+      <div class="filter-group projet-filter-group">
+        <div class="filter-pill" (click)="toggleDropdown('projet', $event)">
+          <span class="filter-title">Projets</span>
+          <span class="chip-list">
+            <span *ngFor="let id of filterProjetIds()" class="chip">{{ getProjetLabel(id) }}</span>
+            <span *ngIf="filterProjetIds().length === 0" class="chip placeholder">Tous</span>
+          </span>
+        </div>
 
-      <div class="filter-pill" (click)="toggleDropdown('resource', $event)">
-        <span class="filter-title">Rôle / Personne</span>
-        <span class="chip-list">
-          <span *ngFor="let sel of filterResourceIds()" class="chip">{{ getResourceLabel(sel) }}</span>
-          <span *ngIf="filterResourceIds().length === 0" class="chip placeholder">Tous</span>
-        </span>
-      </div>
-
-      <!-- Dropdowns -->
-      <div class="filters-dropdown" *ngIf="openEquipeDropdown" (click)="$event.stopPropagation()">
-        <div class="dropdown-list">
-          <label *ngFor="let e of allEquipes" class="dropdown-item">
+        <div class="filters-dropdown" *ngIf="openProjetDropdown" (click)="$event.stopPropagation()">
+          <div class="dropdown-search">
             <input
-              type="checkbox"
-              [value]="e.id"
-              (change)="onEquipeToggle(e.id, $event)"
-              [checked]="filterEquipeIds().includes(e.id!)"
+              type="text"
+              class="search-input"
+              placeholder="Rechercher un projet..."
+              [ngModel]="filterProjetSearch()"
+              (ngModelChange)="filterProjetSearch.set($event)"
+              (click)="$event.stopPropagation()"
             />
-            {{ e.nom }}
-          </label>
+            <lucide-icon
+              [img]="X"
+              [size]="14"
+              class="clear-search"
+              *ngIf="filterProjetSearch()"
+              (click)="filterProjetSearch.set('')"
+            ></lucide-icon>
+          </div>
+          <div class="dropdown-actions" *ngIf="filteredProjectsForDropdown.length > 0">
+            <button class="btn-link" (click)="selectFilteredProjects()">Tout sélectionner</button>
+            <button class="btn-link text-danger" (click)="deselectFilteredProjects()">Tout désélectionner</button>
+          </div>
+          <div class="dropdown-list">
+            <label *ngFor="let p of filteredProjectsForDropdown" class="dropdown-item">
+              <input
+                type="checkbox"
+                [value]="p.id"
+                (change)="onProjetToggle(p.id, $event)"
+                [checked]="filterProjetIds().includes(p.id!)"
+              />
+              <span class="p-code">{{ p.code_projet }}</span> — {{ p.nom_projet }}
+            </label>
+            <div *ngIf="filteredProjectsForDropdown.length === 0" class="no-results">Aucun projet trouvé</div>
+          </div>
         </div>
       </div>
 
-      <div class="filters-dropdown" *ngIf="openProjetDropdown" (click)="$event.stopPropagation()">
-        <div class="dropdown-search">
-          <input
-            type="text"
-            class="search-input"
-            placeholder="Rechercher un projet..."
-            [ngModel]="filterProjetSearch()"
-            (ngModelChange)="filterProjetSearch.set($event)"
-            (click)="$event.stopPropagation()"
-          />
-          <lucide-icon
-            [img]="X"
-            [size]="14"
-            class="clear-search"
-            *ngIf="filterProjetSearch()"
-            (click)="filterProjetSearch.set('')"
-          ></lucide-icon>
+      <div class="filter-group">
+        <div class="filter-pill" (click)="toggleDropdown('resource', $event)">
+          <span class="filter-title">Rôle / Personne</span>
+          <span class="chip-list">
+            <span *ngFor="let sel of filterResourceIds()" class="chip">{{ getResourceLabel(sel) }}</span>
+            <span *ngIf="filterResourceIds().length === 0" class="chip placeholder">Tous</span>
+          </span>
         </div>
-        <div class="dropdown-actions" *ngIf="filteredProjectsForDropdown.length > 0">
-          <button class="btn-link" (click)="selectFilteredProjects()">Tout sélectionner</button>
-          <button class="btn-link text-danger" (click)="deselectFilteredProjects()">Tout désélectionner</button>
-        </div>
-        <div class="dropdown-list">
-          <label *ngFor="let p of filteredProjectsForDropdown" class="dropdown-item">
-            <input
-              type="checkbox"
-              [value]="p.id"
-              (change)="onProjetToggle(p.id, $event)"
-              [checked]="filterProjetIds().includes(p.id!)"
-            />
-            <span class="p-code">{{ p.code_projet }}</span> — {{ p.nom_projet }}
-          </label>
-          <div *ngIf="filteredProjectsForDropdown.length === 0" class="no-results">Aucun projet trouvé</div>
-        </div>
-      </div>
 
-      <div class="filters-dropdown" *ngIf="openResourceDropdown" (click)="$event.stopPropagation()">
-        <div class="dropdown-list">
-          <div class="dropdown-group">Rôles</div>
-          <label *ngFor="let r of availableRoles" class="dropdown-item">
-            <input
-              type="checkbox"
-              [value]="'role:' + r.id"
-              (change)="onResourceToggle('role:' + r.id, $event)"
-              [checked]="filterResourceIds().includes('role:' + r.id)"
-            />
-            {{ r.nom }}
-          </label>
-          <div class="dropdown-group">Personnes</div>
-          <label *ngFor="let p of availablePersonnes" class="dropdown-item">
-            <input
-              type="checkbox"
-              [value]="'personne:' + p.id"
-              (change)="onResourceToggle('personne:' + p.id, $event)"
-              [checked]="filterResourceIds().includes('personne:' + p.id)"
-            />
-            {{ p.prenom }} {{ p.nom }}
-          </label>
+        <div class="filters-dropdown" *ngIf="openResourceDropdown" (click)="$event.stopPropagation()">
+          <div class="dropdown-list">
+            <div class="dropdown-group">Rôles</div>
+            <label *ngFor="let r of availableRoles" class="dropdown-item">
+              <input
+                type="checkbox"
+                [value]="'role:' + r.id"
+                (change)="onResourceToggle('role:' + r.id, $event)"
+                [checked]="filterResourceIds().includes('role:' + r.id)"
+              />
+              {{ r.nom }}
+            </label>
+            <div class="dropdown-group">Personnes</div>
+            <label *ngFor="let p of availablePersonnes" class="dropdown-item">
+              <input
+                type="checkbox"
+                [value]="'personne:' + p.id"
+                (change)="onResourceToggle('personne:' + p.id, $event)"
+                [checked]="filterResourceIds().includes('personne:' + p.id)"
+              />
+              {{ p.prenom }} {{ p.nom }}
+            </label>
+          </div>
         </div>
       </div>
+    </div>
+
+    <div *ngIf="getFilteredWeekCount() > 0" class="filter-status-badge">
+      <lucide-icon name="funnel-plus" [size]="14"></lucide-icon>
+      <span>
+        {{ getFilteredWeekCount() }} semaine{{ getFilteredWeekCount() > 1 ? "s" : "" }} filtrée{{
+          getFilteredWeekCount() > 1 ? "s" : ""
+        }}
+      </span>
+      <button class="filter-clear-btn" (click)="clearAllWeekFilters()" title="Effacer tous les filtres">
+        Effacer
+      </button>
     </div>
   </div>
 

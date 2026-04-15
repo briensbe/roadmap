@@ -427,8 +427,9 @@
 
 .calendar-controls {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
+  gap: 16px;
   margin-bottom: 20px;
   padding: 16px;
   background: white;
@@ -436,11 +437,7 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.date-navigation {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
+
 
 /* Filter status badge */
 .filter-status-badge {
@@ -488,6 +485,9 @@
   display: flex;
   gap: 12px;
   align-items: center;
+}
+
+.filter-group {
   position: relative;
 }
 
@@ -586,6 +586,12 @@
   max-height: 320px;
   overflow: auto;
   min-width: 260px;
+}
+
+.projet-filter-group .filters-dropdown {
+  min-width: 400px;
+  max-width: 500px;
+  width: max-content;
 }
 
 .dropdown-list {
