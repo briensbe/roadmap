@@ -2248,6 +2248,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
         children: [],
         totalCharges: parent.totalCharges,
         originalProject: parent.originalProject,
+        metrics: new Map(),
       };
 
       let cMatchesAny = false;
@@ -2324,6 +2325,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
             expanded: child.expanded,
             resources: grandchildrenMatch,
             charges: child.charges,
+            metrics: new Map(),
           });
         }
       }
@@ -2365,7 +2367,11 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
             childTotal += res.metrics?.get(weekKey)?.total || 0;
           });
           child.metrics?.set(weekKey, { total: childTotal });
-          total += childTotal;
+          if (this.viewMode() === 'resource') {
+            total = parent.totalCharges?.get(weekKey) || 0;
+          } else {
+            total += childTotal;
+          }
         });
 
         if (this.viewMode() === 'resource') {
