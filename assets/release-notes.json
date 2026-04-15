@@ -1,5 +1,33 @@
 [
   {
+    "version": "2026.04.15",
+    "date": "2026-04-15",
+    "news": [
+      {
+        "title": "Tutorial & Accompagnement",
+        "items": [
+          "Nouvelle étape ajoutée au tutoriel pour la barre de recherche",
+          "Ajout d'une option 'Rejouer le Tutoriel' dans le menu Actions"
+        ]
+      },
+      {
+        "title": "Amélioration des Notes de version",
+        "items": [
+          "Agrandissement de la largeur de la fenêtre pour une meilleure lisibilité",
+          "Possibilité de fermer la fenêtre avec la touche 'Esc'"
+        ]
+      },
+      {
+        "title": "Corrections & Optimisations",
+        "items": [
+          "Correction de l'affichage des cellules résumé d'équipe en vue 'Par ressources' lorsqu'un filtre est actif"
+        ],
+        "imageUrl": "assets/release-notes/2026-04-15 team-summary.png",
+        "imageMaxHeight": 200
+      }
+    ]
+  },
+  {
     "version": "2026.04.09",
     "date": "2026-04-09",
     "news": [
