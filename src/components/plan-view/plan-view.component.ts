@@ -15,7 +15,7 @@ import { ChiffresService } from "../../services/chiffres.service";
 import { Chiffre } from "../../models/chiffres.type";
 import { ResourceService } from "../../services/resource.service";
 
-import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown, LucideCalculator, Search, MoreVertical, ListTree, AlignJustify, Eye, EyeOff, Calendar, ChevronLeft, Network, Users, BookUser, Settings2, GripVertical, ArrowUp, ArrowDown } from "lucide-angular";
+import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown, LucideCalculator, Search, MoreVertical, ListTree, AlignJustify, Eye, EyeOff, Calendar, ChevronLeft, Network, Users, BookUser, Settings2, GripVertical, ArrowUp, ArrowDown, Play } from "lucide-angular";
 import * as XLSX from 'xlsx';
 import { getISOWeekYear } from "date-fns";
 import { calculateBestToolbarPosition, calculateBestPopoverPosition, ToolbarPosition, PopoverPosition } from "../../utils/selection-positioning";
@@ -29,7 +29,7 @@ import { calculateNewRank, sortByRank } from '../../utils/lexorank.utils';
 import { driver } from "driver.js";
 
 @NgModule({
-  imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown, LucideCalculator, Search, MoreVertical, ListTree, AlignJustify, Eye, EyeOff, Calendar, ChevronLeft, Network, Users, BookUser, Settings2, GripVertical, ArrowUp, ArrowDown })],
+  imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown, LucideCalculator, Search, MoreVertical, ListTree, AlignJustify, Eye, EyeOff, Calendar, ChevronLeft, Network, Users, BookUser, Settings2, GripVertical, ArrowUp, ArrowDown, Play })],
   exports: [LucideAngularModule]
 })
 export class LucideIconsModule { }
@@ -312,6 +312,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   GripVertical = GripVertical;
   ArrowUp = ArrowUp;
   ArrowDown = ArrowDown;
+  Play = Play;
 
   constructor(
     private teamService: TeamService,
@@ -481,73 +482,96 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.startTutorial();
   }
 
-  private startTutorial() {
+  restartTutorial() {
+    this.showActionsMenu = false;
+    this.startTutorial(true);
+  }
+
+  private startTutorial(force = false) {
     const tutorialKey = "tutorial-actions-menu-v1";
-    if (localStorage.getItem(tutorialKey) || this.tutorialStarted) return;
+    if (!force && (localStorage.getItem(tutorialKey) || this.tutorialStarted)) return;
     this.tutorialStarted = true;
 
-    // We use a timeout to ensure data is loaded and DOM is fully rendered
-    setTimeout(() => {
-      const steps: any[] = [
-        {
-          element: '[data-tour="actions-menu"]',
-          popover: {
-            title: 'Nouveau menu "Actions"',
-            description: 'On a regroupé les options d’affichage et d’export dans ce nouveau menu pour libérer de l’espace.',
-            side: "bottom",
-            align: 'end',
-            showButtons: ['next', 'previous', 'close']
-          }
+    if (force) {
+      this.runTutorialLogic(tutorialKey);
+    } else {
+      // We use a timeout to ensure data is loaded and DOM is fully rendered on first load
+      setTimeout(() => this.runTutorialLogic(tutorialKey), 2000);
+    }
+  }
+
+  private runTutorialLogic(tutorialKey: string) {
+    const steps: any[] = [
+      {
+        element: '[data-tour="actions-menu"]',
+        popover: {
+          title: 'Nouveau menu "Actions"',
+          description: 'On a regroupé les options d’affichage et d’export dans ce nouveau menu pour libérer de l’espace.',
+          side: "bottom",
+          align: 'end',
+          showButtons: ['next', 'previous', 'close']
         }
-      ];
-
-      // Check for line menu presence now that we've waited for render
-      const hasLineMenu = document.querySelector('[data-tour="line-menu"]');
-      if (hasLineMenu) {
-        steps.push({
-          element: '[data-tour="line-menu"]',
-          popover: {
-            title: 'Options de ligne',
-            description: 'Retrouvez ici les actions spécifiques à cette ligne (ajout de ressource, suppression, etc.).',
-            side: "right",
-            align: 'start',
-            showButtons: ['next', 'previous', 'close']
-          }
-        });
       }
+    ];
 
-      // Check for drag handle presence (Project Mode)
-      const hasDragHandle = document.querySelector('[data-tour="drag-handle"]');
-      if (hasDragHandle) {
-        steps.push({
-          element: '[data-tour="drag-handle"]',
-          popover: {
-            title: 'Réorganisation',
-            description: 'Désormais, uniquement dans la Vue "Par Projets", les lignes déplaçables sont indiquées avec la poignée cdkdraghandle.',
-            side: "right",
-            align: 'start',
-            showButtons: ['next', 'previous', 'close']
-          }
-        });
-      }
-
-      const driverObj = driver({
-        showProgress: true,
-        nextBtnText: 'Suivant',
-        prevBtnText: 'Précédent',
-        doneBtnText: 'Terminer',
-        allowClose: true,
-        overlayColor: 'rgba(15, 23, 42, 0.75)',
-        // @ts-ignore - popupClass is valid but may not be in older types
-        popoverClass: 'premium-driver-popover',
-        steps: steps,
-        onDestroyed: () => {
-          localStorage.setItem(tutorialKey, "true");
+    // Check for line menu presence now that we've waited for render
+    const hasLineMenu = document.querySelector('[data-tour="line-menu"]');
+    if (hasLineMenu) {
+      steps.push({
+        element: '[data-tour="line-menu"]',
+        popover: {
+          title: 'Options de ligne',
+          description: 'Retrouvez ici les actions spécifiques à cette ligne (ajout de ressource, suppression, etc.).',
+          side: "right",
+          align: 'start',
+          showButtons: ['next', 'previous', 'close']
         }
       });
+    }
 
-      driverObj.drive();
-    }, 2000); // 2 seconds to be safe with async data load
+    // Check for drag handle presence (Project Mode)
+    const hasDragHandle = document.querySelector('[data-tour="drag-handle"]');
+    if (hasDragHandle) {
+      steps.push({
+        element: '[data-tour="drag-handle"]',
+        popover: {
+          title: 'Réorganisation',
+          description: 'Désormais, uniquement dans la Vue "Par Projets", les lignes déplaçables sont indiquées avec la poignée cdkdraghandle.',
+          side: "right",
+          align: 'start',
+          showButtons: ['next', 'previous', 'close']
+        }
+      });
+    }
+
+    // La recherche globale en fin de tutorial
+    steps.push({
+      element: '.header-search-bar',
+      popover: {
+        title: 'Recherche globale',
+        description: 'Vous pouvez filtrer les lignes projets visibles via une chaîne de caractères.',
+        side: "bottom",
+        align: 'start',
+        showButtons: ['next', 'previous', 'close']
+      }
+    });
+
+    const driverObj = driver({
+      showProgress: true,
+      nextBtnText: 'Suivant',
+      prevBtnText: 'Précédent',
+      doneBtnText: 'Terminer',
+      allowClose: true,
+      overlayColor: 'rgba(15, 23, 42, 0.75)',
+      // @ts-ignore - popupClass is valid but may not be in older types
+      popoverClass: 'premium-driver-popover',
+      steps: steps,
+      onDestroyed: () => {
+        localStorage.setItem(tutorialKey, "true");
+      }
+    });
+
+    driverObj.drive();
   }
 
   ngOnDestroy() {
