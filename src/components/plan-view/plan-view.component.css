@@ -95,12 +95,20 @@
   --cell-width: 50px;
   --row-min-height: 32px;
   --cell-padding: 0 4px;
+  --fs-14: 12px;
+  --fs-13: 11px;
+  --fs-12: 10px;
+  --fs-10: 9px;
 }
 
 .capacity-container[data-zoom="normal"] {
   --cell-width: 80px;
   --row-min-height: 48px;
   --cell-padding: 8px;
+  --fs-14: 14px;
+  --fs-13: 13px;
+  --fs-12: 12px;
+  --fs-10: 10px;
 }
 
 /* Sexy Tooltip Styles */
@@ -835,7 +843,7 @@
 
 .info-code {
   font-family: "JetBrains Mono", "Cascadia Code", monospace;
-  font-size: 10px;
+  font-size: var(--fs-10, 10px);
   font-weight: 600;
   color: #94a3b8;
   letter-spacing: 0.5px;
@@ -868,7 +876,7 @@
 }
 
 .resource-detail-name {
-  font-size: 14px;
+  font-size: var(--fs-14, 14px);
   color: #334155;
   white-space: nowrap;
   overflow: hidden;
@@ -876,7 +884,7 @@
 }
 
 .info-label {
-  font-size: 13px;
+  font-size: var(--fs-13, 13px);
   font-weight: 700;
   color: #1e293b;
   white-space: nowrap;
@@ -1159,7 +1167,7 @@
   padding: var(--cell-padding, 8px);
   text-align: center;
   border-right: 1px solid #e2e8f0;
-  font-size: 12px;
+  font-size: var(--fs-12, 12px);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1230,7 +1238,7 @@
 }
 
 .jalon-item {
-  font-size: 10px;
+  font-size: var(--fs-10, 10px);
   font-weight: 700;
   padding: 3px 6px;
   border-radius: 12px;
@@ -1302,7 +1310,7 @@
 }
 
 .capacity-value {
-  font-size: 13px;
+  font-size: var(--fs-13, 13px);
   font-weight: 600;
 }
 
@@ -1321,7 +1329,7 @@
   display: flex;
   align-items: baseline;
   gap: 2px;
-  font-size: 12px;
+  font-size: var(--fs-12, 12px);
 }
 
 .summary-charge {
@@ -1336,13 +1344,13 @@
 
 .summary-capacity {
   font-weight: 500;
-  font-size: 10px;
+  font-size: var(--fs-10, 10px);
   color: #64748b;
 }
 
 /* Availability indicator in aggregated cells */
 .summary-availability {
-  font-size: 10px;
+  font-size: var(--fs-10, 10px);
   font-weight: 500;
   margin-top: 1px;
 }
@@ -1502,7 +1510,7 @@
 
 /* Availability Styles */
 .availability-indicator {
-  font-size: 10px;
+  font-size: var(--fs-10, 10px);
   margin-top: 2px;
   font-weight: 500;
 }
