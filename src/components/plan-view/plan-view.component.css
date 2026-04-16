@@ -1,10 +1,18 @@
 .cdk-drag-preview {
   box-shadow:
-    0 5px 5px -3px rgba(0, 0, 0, 0.2),
-    0 8px 10px 1px rgba(0, 0, 0, 0.14),
-    0 3px 14px 2px rgba(0, 0, 0, 0.12);
+    0 10px 30px -5px rgba(0, 0, 0, 0.2),
+    0 8px 10px -6px rgba(0, 0, 0, 0.2);
   background: white;
-  opacity: 0.9;
+  opacity: 0.95;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Force relative positioning in preview to fix sticky offset gaps */
+.cdk-drag-preview .calendar-row {
+  position: relative !important;
+  top: 0 !important;
+  box-shadow: none !important;
 }
 .cdk-drag-placeholder {
   opacity: 0;
