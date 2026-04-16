@@ -105,7 +105,7 @@
             <button
               class="actions-dropdown-item"
               [class.active]="zoomLevel() === 'compact'"
-              (click)="zoomLevel.set('compact'); showActionsMenu = false"
+              (click)="zoomLevel.set('compact')"
             >
               <lucide-icon [img]="AlignJustify" [size]="15"></lucide-icon>
               Compact
@@ -114,7 +114,7 @@
             <button
               class="actions-dropdown-item"
               [class.active]="zoomLevel() === 'normal'"
-              (click)="zoomLevel.set('normal'); showActionsMenu = false"
+              (click)="zoomLevel.set('normal')"
             >
               <lucide-icon [img]="AlignJustify" [size]="15"></lucide-icon>
               Normal
