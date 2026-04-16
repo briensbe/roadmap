@@ -3,7 +3,7 @@ import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { ProjetService } from "../services/projet.service";
 import { SettingsService } from "../services/settings.service";
-import { Projet } from "../models/types";
+import { Projet, PROJECT_STATUS_LIST } from "../models/types";
 import { LucideAngularModule, Plus, ExternalLink, LucideCalculator } from "lucide-angular";
 
 @Component({
@@ -63,11 +63,7 @@ import { LucideAngularModule, Plus, ExternalLink, LucideCalculator } from "lucid
             <div class="form-group">
               <label>Statut</label>
               <select [(ngModel)]="editableProjet.statut" name="statut">
-                <option value="En cours">En cours</option>
-                <option value="Planifié">Planifié</option>
-                <option value="Terminé">Terminé</option>
-                <option value="En pause">En pause</option>
-                <option value="Actif">Actif</option>
+                <option *ngFor="let s of PROJECT_STATUTS" [value]="s">{{ s }}</option>
               </select>
             </div>
             <div class="form-group">
@@ -213,6 +209,7 @@ export class ProjectModalComponent implements OnInit {
     '#ec4899', '#f43f5e'
   ];
 
+  readonly PROJECT_STATUTS = PROJECT_STATUS_LIST;
   private isMouseDownOnOverlay = false;
 
   constructor(

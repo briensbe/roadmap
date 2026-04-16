@@ -11,7 +11,12 @@
     <div class="header-right">
       <!-- Actions Menu -->
       <div class="actions-menu-wrapper">
-        <button class="btn btn-actions" (click)="toggleActionsMenu($event)" id="actions-menu-btn" data-tour="actions-menu">
+        <button
+          class="btn btn-actions"
+          (click)="toggleActionsMenu($event)"
+          id="actions-menu-btn"
+          data-tour="actions-menu"
+        >
           <lucide-icon [img]="Settings2" [size]="16"></lucide-icon>
           Actions
           <lucide-icon [img]="ChevronDown" [size]="16" [class.rotated]="showActionsMenu"></lucide-icon>
@@ -22,19 +27,37 @@
           <div class="actions-dropdown-section">
             <div class="actions-section-label">Vue</div>
             <label class="actions-radio-item" [class.selected]="viewMode() === 'project'">
-              <input type="radio" name="viewMode" value="project" [checked]="viewMode() === 'project'" (change)="switchViewMode('project')" />
+              <input
+                type="radio"
+                name="viewMode"
+                value="project"
+                [checked]="viewMode() === 'project'"
+                (change)="switchViewMode('project')"
+              />
               <lucide-icon [img]="Network" [size]="15"></lucide-icon>
               Par Projet
               <span class="actions-check" *ngIf="viewMode() === 'project'">✓</span>
             </label>
             <label class="actions-radio-item" [class.selected]="viewMode() === 'team'">
-              <input type="radio" name="viewMode" value="team" [checked]="viewMode() === 'team'" (change)="switchViewMode('team')" />
+              <input
+                type="radio"
+                name="viewMode"
+                value="team"
+                [checked]="viewMode() === 'team'"
+                (change)="switchViewMode('team')"
+              />
               <lucide-icon [img]="Users" [size]="15"></lucide-icon>
               Par Équipe
               <span class="actions-check" *ngIf="viewMode() === 'team'">✓</span>
             </label>
             <label class="actions-radio-item" [class.selected]="viewMode() === 'resource'">
-              <input type="radio" name="viewMode" value="resource" [checked]="viewMode() === 'resource'" (change)="switchViewMode('resource')" />
+              <input
+                type="radio"
+                name="viewMode"
+                value="resource"
+                [checked]="viewMode() === 'resource'"
+                (change)="switchViewMode('resource')"
+              />
               <lucide-icon [img]="BookUser" [size]="15"></lucide-icon>
               Par Ressources
               <span class="actions-check" *ngIf="viewMode() === 'resource'">✓</span>
@@ -46,12 +69,20 @@
           <!-- Format arborescence/plat -->
           <div class="actions-dropdown-section">
             <div class="actions-section-label">Affichage</div>
-            <button class="actions-dropdown-item" [class.active]="displayFormat() === 'tree'" (click)="toggleDisplayFormat('tree')">
+            <button
+              class="actions-dropdown-item"
+              [class.active]="displayFormat() === 'tree'"
+              (click)="toggleDisplayFormat('tree')"
+            >
               <lucide-icon [img]="ListTree" [size]="15"></lucide-icon>
               Arborescence
               <span class="actions-check" *ngIf="displayFormat() === 'tree'">✓</span>
             </button>
-            <button class="actions-dropdown-item" [class.active]="displayFormat() === 'flat'" (click)="toggleDisplayFormat('flat')">
+            <button
+              class="actions-dropdown-item"
+              [class.active]="displayFormat() === 'flat'"
+              (click)="toggleDisplayFormat('flat')"
+            >
               <lucide-icon [img]="AlignJustify" [size]="15"></lucide-icon>
               À plat
               <span class="actions-check" *ngIf="displayFormat() === 'flat'">✓</span>
@@ -66,7 +97,7 @@
               <lucide-icon [img]="showAvailability() ? Eye : EyeOff" [size]="15"></lucide-icon>
               Dispo. Capacité
               <span class="actions-toggle-pill" [class.on]="showAvailability()">
-                {{ showAvailability() ? 'ON' : 'OFF' }}
+                {{ showAvailability() ? "ON" : "OFF" }}
               </span>
             </button>
           </div>
@@ -203,6 +234,30 @@
       </div>
 
       <div class="filter-group">
+        <div class="filter-pill" (click)="toggleDropdown('statut', $event)">
+          <span class="filter-title">Statuts</span>
+          <span class="chip-list">
+            <span *ngFor="let s of filterStatusIds()" class="chip">{{ s }}</span>
+            <span *ngIf="filterStatusIds().length === 0" class="chip placeholder">Tous</span>
+          </span>
+        </div>
+
+        <div class="filters-dropdown" *ngIf="openStatusDropdown" (click)="$event.stopPropagation()">
+          <div class="dropdown-list">
+            <label *ngFor="let s of PROJECT_STATUSES" class="dropdown-item">
+              <input
+                type="checkbox"
+                [value]="s"
+                (change)="onStatutToggle(s, $event)"
+                [checked]="filterStatusIds().includes(s)"
+              />
+              {{ s }}
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="filter-group">
         <div class="filter-pill" (click)="toggleDropdown('resource', $event)">
           <span class="filter-title">Rôle / Personne</span>
           <span class="chip-list">
@@ -245,9 +300,7 @@
           getFilteredWeekCount() > 1 ? "s" : ""
         }}
       </span>
-      <button class="filter-clear-btn" (click)="clearAllWeekFilters()" title="Effacer tous les filtres">
-        Effacer
-      </button>
+      <button class="filter-clear-btn" (click)="clearAllWeekFilters()" title="Effacer tous les filtres">Effacer</button>
     </div>
   </div>
 
@@ -387,17 +440,28 @@
                       *ngIf="activeLineMenuId === 'parent-' + row.id"
                       (click)="$event.stopPropagation()"
                     >
-                      <button class="line-menu-item" (click)="openLinkModal(row); closeLineMenu(); $event.stopPropagation()">
+                      <button
+                        class="line-menu-item"
+                        (click)="openLinkModal(row); closeLineMenu(); $event.stopPropagation()"
+                      >
                         <lucide-icon [img]="Plus" [size]="14"></lucide-icon>
-                        {{ viewMode() === 'resource' ? 'Ajouter un projet' : 'Ajouter' }}
+                        {{ viewMode() === "resource" ? "Ajouter un projet" : "Ajouter" }}
                       </button>
 
                       <!-- Move up/down actions only in project view -->
-                      <button class="line-menu-item" *ngIf="viewMode() === 'project'" (click)="moveToTop(row); closeLineMenu(); $event.stopPropagation()">
+                      <button
+                        class="line-menu-item"
+                        *ngIf="viewMode() === 'project'"
+                        (click)="moveToTop(row); closeLineMenu(); $event.stopPropagation()"
+                      >
                         <lucide-icon [img]="ArrowUp" [size]="14"></lucide-icon>
                         Envoyer en première place
                       </button>
-                      <button class="line-menu-item" *ngIf="viewMode() === 'project'" (click)="moveToBottom(row); closeLineMenu(); $event.stopPropagation()">
+                      <button
+                        class="line-menu-item"
+                        *ngIf="viewMode() === 'project'"
+                        (click)="moveToBottom(row); closeLineMenu(); $event.stopPropagation()"
+                      >
                         <lucide-icon [img]="ArrowDown" [size]="14"></lucide-icon>
                         Envoyer en dernière place
                       </button>
@@ -409,40 +473,62 @@
                     *ngFor="let week of displayedWeeks; trackBy: trackByWeek"
                     class="week-cell team-cell"
                     [class.team-cell-positive]="
-                      viewMode() === 'resource' && row.metrics?.get(week.toISOString().split('T')[0])?.status === 'positive'
+                      viewMode() === 'resource' &&
+                      row.metrics?.get(week.toISOString().split('T')[0])?.status === 'positive'
                     "
                     [class.team-cell-zero]="
                       viewMode() === 'resource' && row.metrics?.get(week.toISOString().split('T')[0])?.status === 'zero'
                     "
                     [class.team-cell-negative]="
-                      viewMode() === 'resource' && row.metrics?.get(week.toISOString().split('T')[0])?.status === 'negative'
+                      viewMode() === 'resource' &&
+                      row.metrics?.get(week.toISOString().split('T')[0])?.status === 'negative'
                     "
                   >
                     <!-- Resource View: Show cumulative data -->
                     <div
                       class="team-summary"
                       *ngIf="
-                        viewMode() === 'resource' && ( (row.metrics?.get(week.toISOString().split('T')[0])?.total || 0) > 0 || (row.metrics?.get(week.toISOString().split('T')[0])?.capacity || 0) > 0)
+                        viewMode() === 'resource' &&
+                        ((row.metrics?.get(week.toISOString().split('T')[0])?.total || 0) > 0 ||
+                          (row.metrics?.get(week.toISOString().split('T')[0])?.capacity || 0) > 0)
                       "
                     >
                       <div class="summary-main">
-                        <span class="summary-charge">{{ row.metrics?.get(week.toISOString().split('T')[0])?.total || 0 | number: "1.0-1" }}</span>
+                        <span class="summary-charge">{{
+                          row.metrics?.get(week.toISOString().split("T")[0])?.total || 0 | number: "1.0-1"
+                        }}</span>
                         <span class="summary-separator">/</span>
-                        <span class="summary-capacity">{{ row.metrics?.get(week.toISOString().split('T')[0])?.capacity || 0 | number: "1.0-1" }}</span>
+                        <span class="summary-capacity">{{
+                          row.metrics?.get(week.toISOString().split("T")[0])?.capacity || 0 | number: "1.0-1"
+                        }}</span>
                       </div>
                       <div
                         class="summary-availability"
-                        [class.availability-positive]="row.metrics?.get(week.toISOString().split('T')[0])?.status === 'positive'"
-                        [class.availability-zero]="row.metrics?.get(week.toISOString().split('T')[0])?.status === 'zero'"
-                        [class.availability-negative]="row.metrics?.get(week.toISOString().split('T')[0])?.status === 'negative'"
+                        [class.availability-positive]="
+                          row.metrics?.get(week.toISOString().split('T')[0])?.status === 'positive'
+                        "
+                        [class.availability-zero]="
+                          row.metrics?.get(week.toISOString().split('T')[0])?.status === 'zero'
+                        "
+                        [class.availability-negative]="
+                          row.metrics?.get(week.toISOString().split('T')[0])?.status === 'negative'
+                        "
                       >
-                        {{ row.metrics?.get(week.toISOString().split('T')[0])?.status === "positive" ? "+" : ""
-                        }}{{ row.metrics?.get(week.toISOString().split('T')[0])?.availability || 0 | number: "1.0-1" }}
+                        {{ row.metrics?.get(week.toISOString().split("T")[0])?.status === "positive" ? "+" : ""
+                        }}{{ row.metrics?.get(week.toISOString().split("T")[0])?.availability || 0 | number: "1.0-1" }}
                       </div>
                     </div>
                     <!-- Other views: Keep empty or simple display -->
-                    <div class="team-summary" *ngIf="viewMode() !== 'resource' && (row.metrics?.get(week.toISOString().split('T')[0])?.total || 0) > 0">
-                      <div class="capacity-value">{{ row.metrics?.get(week.toISOString().split('T')[0])?.total || 0 | number: "1.0-1" }}</div>
+                    <div
+                      class="team-summary"
+                      *ngIf="
+                        viewMode() !== 'resource' &&
+                        (row.metrics?.get(week.toISOString().split('T')[0])?.total || 0) > 0
+                      "
+                    >
+                      <div class="capacity-value">
+                        {{ row.metrics?.get(week.toISOString().split("T")[0])?.total || 0 | number: "1.0-1" }}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -450,17 +536,17 @@
 
               <!-- Children Rows -->
               <ng-container *ngIf="row.expanded">
-                  <ng-container *ngFor="let child of row.children; trackBy: trackByChild">
-                    <!-- CASE 1: Combined Team-Resource row in Project View -->
-                    <ng-container *ngIf="viewMode() === 'project' && child.resources.length > 0">
-                      <div
-                        *ngFor="let resource of child.resources; trackBy: trackByResource"
-                        class="calendar-row"
-                        [attr.data-resource-id]="getResourceUniqueId(resource, child, row)"
-                        (mousedown)="onMouseDown($event, resource, child, row)"
-                        (mouseup)="onMouseUp()"
-                        (mouseleave)="onMouseUp()"
-                      >
+                <ng-container *ngFor="let child of row.children; trackBy: trackByChild">
+                  <!-- CASE 1: Combined Team-Resource row in Project View -->
+                  <ng-container *ngIf="viewMode() === 'project' && child.resources.length > 0">
+                    <div
+                      *ngFor="let resource of child.resources; trackBy: trackByResource"
+                      class="calendar-row"
+                      [attr.data-resource-id]="getResourceUniqueId(resource, child, row)"
+                      (mousedown)="onMouseDown($event, resource, child, row)"
+                      (mouseup)="onMouseUp()"
+                      (mouseleave)="onMouseUp()"
+                    >
                       <div
                         class="label-cell row-label-child"
                         [style.width.px]="labelColumnWidth()"
@@ -538,11 +624,17 @@
                             *ngIf="activeLineMenuId === 'child-proj-' + resource.uniqueId"
                             (click)="$event.stopPropagation()"
                           >
-                            <button class="line-menu-item" (click)="openAddResourceModal(child, row); closeLineMenu(); $event.stopPropagation()">
+                            <button
+                              class="line-menu-item"
+                              (click)="openAddResourceModal(child, row); closeLineMenu(); $event.stopPropagation()"
+                            >
                               <lucide-icon [img]="Plus" [size]="14"></lucide-icon>
                               Ajouter une ressource
                             </button>
-                            <button class="line-menu-item danger" (click)="removeResource(resource, child, row); closeLineMenu(); $event.stopPropagation()">
+                            <button
+                              class="line-menu-item danger"
+                              (click)="removeResource(resource, child, row); closeLineMenu(); $event.stopPropagation()"
+                            >
                               <lucide-icon [img]="X" [size]="14"></lucide-icon>
                               Supprimer cette ressource
                             </button>
@@ -606,7 +698,11 @@
                   <!-- CASE 2: Standard/Other Views (Team view, or Project view with no resources, or Resource view projects) -->
                   <ng-container *ngIf="viewMode() !== 'project' || child.resources.length === 0">
                     <!-- Standard Child Row -->
-                    <div class="calendar-row" *ngIf="viewMode() !== 'resource'" [style.z-index]="activeLineMenuId === 'child-' + child.id + '-' + row.id ? 1700 : null">
+                    <div
+                      class="calendar-row"
+                      *ngIf="viewMode() !== 'resource'"
+                      [style.z-index]="activeLineMenuId === 'child-' + child.id + '-' + row.id ? 1700 : null"
+                    >
                       <div
                         class="label-cell row-label-child"
                         [style.width.px]="labelColumnWidth()"
@@ -655,10 +751,16 @@
                           >
                             <button
                               class="line-menu-item"
-                              (click)="viewMode() === 'resource' ? openLinkModal(row, child) : openAddResourceModal(child, row); closeLineMenu(); $event.stopPropagation()"
+                              (click)="
+                                viewMode() === 'resource'
+                                  ? openLinkModal(row, child)
+                                  : openAddResourceModal(child, row);
+                                closeLineMenu();
+                                $event.stopPropagation()
+                              "
                             >
                               <lucide-icon [img]="Plus" [size]="14"></lucide-icon>
-                              {{ viewMode() === 'resource' ? 'Ajouter un projet' : 'Ajouter une ressource' }}
+                              {{ viewMode() === "resource" ? "Ajouter un projet" : "Ajouter une ressource" }}
                             </button>
                             <button
                               class="line-menu-item danger"
@@ -666,9 +768,9 @@
                             >
                               <lucide-icon [img]="X" [size]="14"></lucide-icon>
                               {{
-                                viewMode() === 'project'
+                                viewMode() === "project"
                                   ? "Retirer cette équipe"
-                                  : viewMode() === 'team'
+                                  : viewMode() === "team"
                                     ? "Retirer ce projet"
                                     : "Retirer cette ressource"
                               }}
@@ -677,7 +779,10 @@
                         </div>
                       </div>
                       <div class="weeks-container">
-                        <div *ngFor="let week of displayedWeeks; trackBy: trackByWeek" class="week-cell resource-cell"></div>
+                        <div
+                          *ngFor="let week of displayedWeeks; trackBy: trackByWeek"
+                          class="week-cell resource-cell"
+                        ></div>
                       </div>
                     </div>
 
@@ -800,16 +905,21 @@
                               *ngIf="activeLineMenuId === 'res-' + getResourceUniqueId(resource, child, row)"
                               (click)="$event.stopPropagation()"
                             >
-                              <button class="line-menu-item" (click)="openProjectEditByResource(resource); closeLineMenu(); $event.stopPropagation()">
+                              <button
+                                class="line-menu-item"
+                                (click)="openProjectEditByResource(resource); closeLineMenu(); $event.stopPropagation()"
+                              >
                                 <lucide-icon [img]="Search" [size]="14"></lucide-icon>
                                 Ouvrir le projet
                               </button>
                               <button
                                 class="line-menu-item danger"
-                                (click)="removeResource(resource, child, row); closeLineMenu(); $event.stopPropagation()"
+                                (click)="
+                                  removeResource(resource, child, row); closeLineMenu(); $event.stopPropagation()
+                                "
                               >
                                 <lucide-icon [img]="X" [size]="14"></lucide-icon>
-                                {{ viewMode() === 'resource' ? 'Retirer ce projet' : 'Supprimer cette ressource' }}
+                                {{ viewMode() === "resource" ? "Retirer ce projet" : "Supprimer cette ressource" }}
                               </button>
                             </div>
                           </div>

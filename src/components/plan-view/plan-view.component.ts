@@ -8,7 +8,7 @@ import { ProjetService } from "../../services/projet.service";
 import { ChargeService } from "../../services/charge.service";
 import { RolesService } from "../../services/roles.service";
 import { JalonService } from "../../services/jalon.service";
-import { Equipe, Projet, Charge, Role, Personne, Capacite, Jalon, Service } from "../../models/types";
+import { Equipe, Projet, Charge, Role, Personne, Capacite, Jalon, Service, PROJECT_STATUS_LIST } from "../../models/types";
 import { CalendarService } from "../../services/calendar.service";
 import { PersonnesService } from "../../services/personnes.service";
 import { ChiffresService } from "../../services/chiffres.service";
@@ -70,6 +70,7 @@ interface ChildRow {
   expanded: boolean;
   resources: ResourceRow[];
   charges: Map<string, number>; // week string -> amount
+  originalProject?: Projet;
   metrics?: Map<string, { total: number }>;
 }
 
@@ -183,11 +184,10 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @HostListener("document:keydown.escape")
   onEscape() {
-    this.showActionsMenu = false;
-    this.activeLineMenuId = null;
     this.openEquipeDropdown = false;
     this.openProjetDropdown = false;
     this.openResourceDropdown = false;
+    this.openStatusDropdown = false;
     this.showYearPopover = false;
     this.showChiffrePopover = false;
     this.clearSelection();
@@ -237,11 +237,15 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   filterProjetIds = storageSignal<string[]>("plan-view-filter-projets", []);
   filterProjetSearch = storageSignal<string>("plan-view-filter-search", "");
   filterResourceIds = storageSignal<string[]>("plan-view-filter-resources", []); // values like 'role:<id>' or 'personne:<id>'
+  filterStatusIds = storageSignal<string[]>("plan-view-filter-statuses", []);
+
+  readonly PROJECT_STATUSES = PROJECT_STATUS_LIST;
 
   // Dropdown states
   openEquipeDropdown = false;
   openProjetDropdown = false;
   openResourceDropdown = false;
+  openStatusDropdown = false;
 
   // Actions menu state
   showActionsMenu = false;
@@ -1165,6 +1169,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
             expanded: this.manualStates.has(`${team.id}_${projectId}`) ? this.manualStates.get(`${team.id}_${projectId}`)! : this.isDefaultExpanded, // Respect persisted preference
             resources: filteredResources,
             charges: projectCharges,
+            originalProject: project
           });
         });
 
@@ -2036,6 +2041,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       this.openEquipeDropdown = false;
       this.openProjetDropdown = false;
       this.openResourceDropdown = false;
+      this.openStatusDropdown = false;
       this.filterProjetSearch.set('');
     }
     // Close actions menu if clicking outside
@@ -2049,20 +2055,28 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  toggleDropdown(name: "equipe" | "projet" | "resource", event: MouseEvent) {
+  toggleDropdown(name: "equipe" | "projet" | "resource" | "statut", event: MouseEvent) {
     event.stopPropagation();
     if (name === "equipe") {
       this.openEquipeDropdown = !this.openEquipeDropdown;
       this.openProjetDropdown = false;
       this.openResourceDropdown = false;
+      this.openStatusDropdown = false;
     } else if (name === "projet") {
       this.openProjetDropdown = !this.openProjetDropdown;
       this.openEquipeDropdown = false;
       this.openResourceDropdown = false;
-    } else {
+      this.openStatusDropdown = false;
+    } else if (name === "resource") {
       this.openResourceDropdown = !this.openResourceDropdown;
       this.openEquipeDropdown = false;
       this.openProjetDropdown = false;
+      this.openStatusDropdown = false;
+    } else {
+      this.openStatusDropdown = !this.openStatusDropdown;
+      this.openEquipeDropdown = false;
+      this.openProjetDropdown = false;
+      this.openResourceDropdown = false;
     }
     if (!this.openProjetDropdown) {
       this.filterProjetSearch.set('');
@@ -2109,6 +2123,15 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.filterProjetIds.update(ids => {
       if (checked) return [...ids, id];
       return ids.filter((x) => x !== id);
+    });
+    this.applyFilters();
+  }
+
+  onStatutToggle(statut: string, event: Event) {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.filterStatusIds.update(ids => {
+      if (checked) return [...ids, statut];
+      return ids.filter((x) => x !== statut);
     });
     this.applyFilters();
   }
@@ -2170,6 +2193,11 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.calculateUsage();
 
     const search = this.globalSearch().toLowerCase().trim();
+    const hasSpecificFilter = this.filterEquipeIds().length > 0 ||
+      this.filterProjetIds().length > 0 ||
+      this.filterResourceIds().length > 0 ||
+      this.filterStatusIds().length > 0;
+    const needsSearchFilter = search.length > 0;
 
     // 1. Index search matches once for O(1) lookups
     const matchingProjetIds = new Set<string>();
@@ -2216,7 +2244,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       return false;
     };
 
-    if (!this.filterEquipeIds().length && !this.filterProjetIds().length && !this.filterResourceIds().length && !search) {
+    if (!this.filterEquipeIds().length && !this.filterProjetIds().length && !this.filterResourceIds().length && !this.filterStatusIds().length && !search) {
       this.rows = [...this.rowsAll];
       this.calculateFilteredMetrics(); // Ensure metrics are ready
       if (this.displayFormat() === 'flat') this.buildFlatList();
@@ -2252,6 +2280,22 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
         parentPassesProjet = this.filterProjetIds().includes(parent.id);
       }
 
+      let parentPassesStatut = true;
+      if (this.filterStatusIds().length) {
+        if (this.viewMode() === 'project' && parent.originalProject) {
+          parentPassesStatut = this.filterStatusIds().includes(parent.originalProject.statut);
+        } else if (this.viewMode() === 'team' || this.viewMode() === 'resource') {
+          // Parent is team or resource/team, status filter will be applied on children (projects)
+          parentPassesStatut = true;
+        }
+      }
+
+      if (!pMatches && !parentPassesEquipe && !parentPassesResource && !parentPassesProjet && !parentPassesStatut) {
+        // Optimization: if parent doesn't match and no specific project/team/status filter is active,
+        // we might still need to check children. But if the parent is a project and didn't pass project/status filter, skip.
+        if (this.viewMode() === 'project' && (!parentPassesProjet || !parentPassesStatut)) continue;
+      }
+
       const newParent: ParentRow = {
         id: parent.id,
         label: parent.label,
@@ -2270,17 +2314,23 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
         const cMatchesSelf = childMatchesSearchSelf(child);
         let gMatchesAny = false;
 
+        let childPassesStatut = true;
+        if (this.filterStatusIds().length && this.viewMode() === 'team' && child.originalProject) {
+          childPassesStatut = this.filterStatusIds().includes(child.originalProject.statut);
+        }
+
+        if (this.viewMode() === 'team' && !childPassesStatut) continue;
+
         // Filter grandchildren
         let grandchildrenMatch = child.resources;
-        const hasSpecificFilter = this.filterResourceIds().length || this.filterProjetIds().length;
-        const needsSearchFilter = !!search && (isResourceMode || !pMatches);
-
         if (hasSpecificFilter || needsSearchFilter) {
           grandchildrenMatch = child.resources.filter((gr) => {
             let passesIdFilter = true;
-            if (this.filterResourceIds().length || this.filterProjetIds().length) {
+            if (this.filterResourceIds().length || this.filterProjetIds().length || this.filterStatusIds().length) {
               if (isResourceMode) {
-                passesIdFilter = this.filterProjetIds().length === 0 || this.filterProjetIds().includes(gr.id);
+                const project = this.allProjects.find(p => p.id === gr.projectId);
+                const passesStatut = this.filterStatusIds().length === 0 || (!!project && this.filterStatusIds().includes(project.statut));
+                passesIdFilter = (this.filterProjetIds().length === 0 || this.filterProjetIds().includes(gr.projectId!)) && passesStatut;
               } else {
                 passesIdFilter = this.filterResourceIds().length === 0 || this.filterResourceIds().some((sel) => {
                   const [t, id] = sel.split(":");
@@ -2322,7 +2372,9 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
           childPassesResource = parentPassesResource;
         }
 
-        const hasGrandchildFilter = isResourceMode ? this.filterProjetIds().length > 0 : this.filterResourceIds().length > 0;
+        const hasGrandchildFilter = isResourceMode
+          ? (this.filterProjetIds().length > 0 || this.filterStatusIds().length > 0)
+          : this.filterResourceIds().length > 0;
         const hasGrandchildrenMatch = hasGrandchildFilter ? grandchildrenMatch.length > 0 : true;
 
         const childMatches = cMatchesSelf || gMatchesAny;
@@ -2353,7 +2405,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
         if (this.filterProjetIds().length === 0 && this.filterResourceIds().length === 0) showEmptyParent = true;
       }
 
-      if (parentPassesEquipe && parentPassesResource && parentPassesProjet && (hasChildren || showEmptyParent || (search && pMatches))) {
+      if (parentPassesEquipe && parentPassesResource && parentPassesProjet && parentPassesStatut && (hasChildren || showEmptyParent || (search && pMatches))) {
         filteredParents.push(newParent);
       }
     }

@@ -84,6 +84,9 @@ export interface Personne {
   color?: string;
 }
 
+export const PROJECT_STATUS_LIST = ['Actif', 'En cours', 'Planifié', 'Terminé', 'En pause'] as const;
+export type ProjectStatus = (typeof PROJECT_STATUS_LIST)[number];
+
 export interface Projet {
   id?: string;
   id_projet: number;
