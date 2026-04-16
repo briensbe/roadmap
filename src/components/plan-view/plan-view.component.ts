@@ -15,7 +15,7 @@ import { ChiffresService } from "../../services/chiffres.service";
 import { Chiffre } from "../../models/chiffres.type";
 import { ResourceService } from "../../services/resource.service";
 
-import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown, LucideCalculator, Search, MoreVertical, ListTree, AlignJustify, Eye, EyeOff, Calendar, ChevronLeft, Network, Users, BookUser, Settings2, GripVertical, ArrowUp, ArrowDown, Play } from "lucide-angular";
+import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown, LucideCalculator, Search, MoreVertical, ListTree, AlignJustify, Eye, EyeOff, Calendar, ChevronLeft, Network, Users, BookUser, Settings2, GripVertical, ArrowUp, ArrowDown, Play, AlertTriangle } from "lucide-angular";
 import * as XLSX from 'xlsx';
 import { getISOWeekYear } from "date-fns";
 import { calculateBestToolbarPosition, calculateBestPopoverPosition, ToolbarPosition, PopoverPosition } from "../../utils/selection-positioning";
@@ -29,7 +29,7 @@ import { calculateNewRank, sortByRank } from '../../utils/lexorank.utils';
 import { driver } from "driver.js";
 
 @NgModule({
-  imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown, LucideCalculator, Search, MoreVertical, ListTree, AlignJustify, Eye, EyeOff, Calendar, ChevronLeft, Network, Users, BookUser, Settings2, GripVertical, ArrowUp, ArrowDown, Play })],
+  imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown, LucideCalculator, Search, MoreVertical, ListTree, AlignJustify, Eye, EyeOff, Calendar, ChevronLeft, Network, Users, BookUser, Settings2, GripVertical, ArrowUp, ArrowDown, Play, AlertTriangle })],
   exports: [LucideAngularModule]
 })
 export class LucideIconsModule { }
@@ -239,6 +239,29 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   filterResourceIds = storageSignal<string[]>("plan-view-filter-resources", []); // values like 'role:<id>' or 'personne:<id>'
   filterStatusIds = storageSignal<string[]>("plan-view-filter-statuses", []);
 
+  isAnyFilterActiveExceptTeam = computed(() => {
+    const hasSearch = this.globalSearch().trim().length > 0;
+    const hasProjectFilter = this.filterProjetIds().length > 0 || this.filterProjetSearch().trim().length > 0;
+    const hasStatusFilter = this.filterStatusIds().length > 0;
+    const hasResourceFilter = this.filterResourceIds().length > 0;
+    const hasWeekFilter = this.weekFilters().length > 0;
+
+    return hasSearch || hasProjectFilter || hasStatusFilter || hasResourceFilter || hasWeekFilter;
+  });
+
+  reorderMessage = signal<string | null>(null);
+  private reorderMessageTimeout?: any;
+
+  showReorderMessage(msg: string) {
+    if (this.reorderMessageTimeout) clearTimeout(this.reorderMessageTimeout);
+    this.reorderMessage.set(msg);
+    this.cdr.markForCheck();
+    this.reorderMessageTimeout = setTimeout(() => {
+      this.reorderMessage.set(null);
+      this.cdr.markForCheck();
+    }, 4000);
+  }
+
   readonly PROJECT_STATUSES = PROJECT_STATUS_LIST;
 
   // Dropdown states
@@ -330,6 +353,8 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   ArrowUp = ArrowUp;
   ArrowDown = ArrowDown;
   Play = Play;
+
+  AlertTriangle = AlertTriangle;
 
   constructor(
     private teamService: TeamService,
@@ -901,6 +926,11 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   async drop(event: CdkDragDrop<any[]>) {
     if (this.viewMode() !== 'project' || this.displayFormat() !== 'tree') return;
+
+    if (this.isAnyFilterActiveExceptTeam()) {
+      this.showReorderMessage("Le réordonnancement est désactivé lorsqu'un filtre est actif (hors filtre équipe)");
+      return;
+    }
 
     // Move in UI first for responsiveness
     moveItemInArray(this.rows, event.previousIndex, event.currentIndex);
@@ -1499,6 +1529,11 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   async moveToTop(row: ParentRow) {
     if (this.viewMode() !== 'project') return;
+
+    if (this.isAnyFilterActiveExceptTeam()) {
+      this.showReorderMessage("Le réordonnancement est désactivé lorsqu'un filtre est actif (hors filtre équipe)");
+      return;
+    }
     const currentIndex = this.rows.indexOf(row);
     if (currentIndex <= 0) return;
 
@@ -1508,6 +1543,11 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   async moveToBottom(row: ParentRow) {
     if (this.viewMode() !== 'project') return;
+
+    if (this.isAnyFilterActiveExceptTeam()) {
+      this.showReorderMessage("Le réordonnancement est désactivé lorsqu'un filtre est actif (hors filtre équipe)");
+      return;
+    }
     const currentIndex = this.rows.indexOf(row);
     if (currentIndex === -1 || currentIndex === this.rows.length - 1) return;
 
