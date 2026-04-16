@@ -15,7 +15,7 @@ import { ChiffresService } from "../../services/chiffres.service";
 import { Chiffre } from "../../models/chiffres.type";
 import { ResourceService } from "../../services/resource.service";
 
-import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown, LucideCalculator, Search, MoreVertical, ListTree, AlignJustify, Eye, EyeOff, Calendar, ChevronLeft, Network, Users, BookUser, Settings2, GripVertical, ArrowUp, ArrowDown, Play, AlertTriangle } from "lucide-angular";
+import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown, LucideCalculator, Search, MoreVertical, ListTree, AlignJustify, Eye, EyeOff, Calendar, ChevronLeft, Network, Users, BookUser, Settings2, GripVertical, ArrowUp, ArrowDown, Play, AlertTriangle, Filter } from "lucide-angular";
 import * as XLSX from 'xlsx';
 import { getISOWeekYear } from "date-fns";
 import { calculateBestToolbarPosition, calculateBestPopoverPosition, ToolbarPosition, PopoverPosition } from "../../utils/selection-positioning";
@@ -29,7 +29,7 @@ import { calculateNewRank, sortByRank } from '../../utils/lexorank.utils';
 import { driver } from "driver.js";
 
 @NgModule({
-  imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown, LucideCalculator, Search, MoreVertical, ListTree, AlignJustify, Eye, EyeOff, Calendar, ChevronLeft, Network, Users, BookUser, Settings2, GripVertical, ArrowUp, ArrowDown, Play, AlertTriangle })],
+  imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown, LucideCalculator, Search, MoreVertical, ListTree, AlignJustify, Eye, EyeOff, Calendar, ChevronLeft, Network, Users, BookUser, Settings2, GripVertical, ArrowUp, ArrowDown, Play, AlertTriangle, Filter })],
   exports: [LucideAngularModule]
 })
 export class LucideIconsModule { }
@@ -139,6 +139,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   showAvailability = storageSignal<boolean>("plan-view-show-availability", false);
   weekFilters = storageSignal<number[]>("plan-view-week-filters", []);
   chiffreMode = storageSignal<'initial' | 'revise' | 'previsionnel' | 'consomme'>("plan-view-chiffre-mode", "previsionnel");
+  showGlobalFilters = signal<boolean>(false);
   private isDefaultExpanded = true;
   private manualStates = new Map<string, boolean>();
   private tutorialStarted = false;
@@ -354,6 +355,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   ArrowUp = ArrowUp;
   ArrowDown = ArrowDown;
   Play = Play;
+  Filter = Filter;
 
   AlertTriangle = AlertTriangle;
 
@@ -380,6 +382,16 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       r.expanded = true;
       r.children.forEach(c => c.expanded = true);
     });
+  }
+
+  toggleGlobalFilters() {
+    this.showGlobalFilters.set(!this.showGlobalFilters());
+    if (!this.showGlobalFilters()) {
+      this.openEquipeDropdown = false;
+      this.openProjetDropdown = false;
+      this.openResourceDropdown = false;
+      this.openStatusDropdown = false;
+    }
   }
 
   collapseAll() {

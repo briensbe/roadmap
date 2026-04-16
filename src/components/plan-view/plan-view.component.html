@@ -17,6 +17,16 @@
     </div>
 
     <div class="header-right">
+      <!-- Filtres -->
+      <button 
+        class="btn btn-actions"
+        (click)="toggleGlobalFilters()"
+        [class.active]="showGlobalFilters()"
+      >
+        <lucide-icon [img]="Filter" [size]="16"></lucide-icon>
+        Filtrer
+      </button>
+
       <!-- Actions Menu -->
       <div class="actions-menu-wrapper">
         <button
@@ -178,7 +188,7 @@
     </div>
   </div>
 
-  <div class="calendar-controls">
+  <div class="calendar-controls" *ngIf="showGlobalFilters()">
     <div class="header-search-bar">
       <lucide-icon [img]="Search" [size]="16" class="search-icon"></lucide-icon>
       <input
