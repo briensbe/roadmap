@@ -1,5 +1,32 @@
 [
   {
+    "version": "2026.04.16",
+    "date": "2026-04-16",
+    "news": [
+      {
+        "title": "Gestion des Filtres & Réorganisation",
+        "items": [
+          "Ajout d'un filtre par statut des projets dans la barre de filtres",
+          "Le réordonnancement des projets est désormais désactivé lorsqu'un filtre est actif (hors filtre équipe) pour garantir la cohérence des données"
+        ]
+      },
+      {
+        "title": "Améliorations UI & Navigation",
+        "items": [
+          "Optimisation de l'espace occupé par la barre de filtres",
+          "Navigation continue entre les mois dans le menu Actions (le menu ne se ferme plus automatiquement)",
+          "Fermeture systématique de tous les menus de la vue Planification avec la touche 'Esc'"
+        ]
+      },
+      {
+        "title": "Correction Drag & Drop",
+        "items": [
+          "Correction du décalage visuel lors du déplacement d'une ligne projet dépliée"
+        ]
+      }
+    ]
+  },
+  {
     "version": "2026.04.15",
     "date": "2026-04-15",
     "news": [
