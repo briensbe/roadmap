@@ -274,6 +274,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Actions menu state
   showActionsMenu = false;
+  activeActionsSubmenu: string | null = null;
 
   // Line context menu state
   activeLineMenuId: string | null = null;
@@ -2136,9 +2137,18 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  toggleActionsSubmenu(menu: string, event: MouseEvent) {
+    event.stopPropagation();
+    this.activeActionsSubmenu = this.activeActionsSubmenu === menu ? null : menu;
+    this.cdr.markForCheck();
+  }
+
   toggleActionsMenu(event: MouseEvent) {
     event.stopPropagation();
     this.showActionsMenu = !this.showActionsMenu;
+    if (!this.showActionsMenu) {
+      this.activeActionsSubmenu = null;
+    }
     this.cdr.markForCheck();
   }
 
