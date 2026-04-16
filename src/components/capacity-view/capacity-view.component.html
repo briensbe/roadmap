@@ -1,4 +1,4 @@
-<div class="capacity-container">
+<div class="capacity-container" [attr.data-zoom]="zoomLevel()">
   <!-- Sexy Tooltip Singleton -->
   <div class="sexy-tooltip" [class.visible]="activeTooltip" [style.left.px]="tooltipX" [style.top.px]="tooltipY">
     {{ activeTooltip }}
@@ -73,6 +73,12 @@
             </div>
           </div>
         </div>
+      </div>
+      <div class="filter-item">
+        <select [ngModel]="zoomLevel()" (ngModelChange)="zoomLevel.set($event)" class="form-control form-control-sm" style="width: 100px">
+          <option value="normal">Normal</option>
+          <option value="compact">Compact</option>
+        </select>
       </div>
       <label class="ios-switch" title="Afficher les jours (j)">
         <input type="checkbox" [(ngModel)]="showDaysInCells" />

@@ -7,6 +7,28 @@
   overflow-x: hidden; /* Prevent horizontal scroll of entire container */
 }
 
+.capacity-container[data-zoom="compact"] {
+  --cell-width: 50px;
+  --row-min-height: 32px;
+  --cell-padding: 0 4px;
+  --fs-14: 12px;
+  --fs-13: 11px;
+  --fs-12: 10px;
+  --fs-11: 10px;
+  --fs-10: 9px;
+}
+
+.capacity-container[data-zoom="normal"] {
+  --cell-width: 80px;
+  --row-min-height: 48px;
+  --cell-padding: 8px;
+  --fs-14: 14px;
+  --fs-13: 13px;
+  --fs-12: 12px;
+  --fs-11: 11px;
+  --fs-10: 10px;
+}
+
 /* Sexy Tooltip Styles */
 .sexy-tooltip {
   position: fixed;
@@ -170,12 +192,12 @@
 }
 
 .week-header-cell {
-  min-width: 80px;
-  width: 80px;
-  padding: 8px;
+  min-width: var(--cell-width, 80px);
+  width: var(--cell-width, 80px);
+  padding: var(--cell-padding, 8px);
   text-align: center;
   border-right: 1px solid #e2e8f0;
-  font-size: 12px;
+  font-size: var(--fs-12, 12px);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -194,7 +216,7 @@
 }
 
 .week-number {
-  font-size: 11px;
+  font-size: var(--fs-11, 11px);
   color: #6b7280;
 }
 
@@ -206,7 +228,7 @@
 .calendar-row {
   display: flex;
   border-bottom: 1px solid #e2e8f0;
-  min-height: 48px;
+  min-height: var(--row-min-height, 48px);
 }
 
 .label-cell {
@@ -253,9 +275,9 @@
 }
 
 .week-cell {
-  min-width: 80px;
-  width: 80px;
-  padding: 8px;
+  min-width: var(--cell-width, 80px);
+  width: var(--cell-width, 80px);
+  padding: var(--cell-padding, 8px);
   border-right: 1px solid #e2e8f0;
   text-align: center;
   display: flex;
@@ -327,7 +349,7 @@
 }
 
 .info-label {
-  font-size: 13px;
+  font-size: var(--fs-13, 13px);
   font-weight: 700;
   color: #1e293b;
   white-space: nowrap;
@@ -393,12 +415,12 @@
 }
 
 .capacity-value {
-  font-size: 13px;
+  font-size: var(--fs-13, 13px);
   font-weight: 600;
 }
 
 .days-value {
-  font-size: 10px;
+  font-size: var(--fs-10, 10px);
   opacity: 0.9;
 }
 
@@ -482,7 +504,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 14px;
+  font-size: var(--fs-14, 14px);
   color: #334155;
 }
 

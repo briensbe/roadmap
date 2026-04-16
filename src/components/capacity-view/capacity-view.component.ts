@@ -100,6 +100,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
 
   // Toggle to show/hide the computed days inside cells. Default: hidden (user activates toggle to show)
   showDaysInCells: boolean = false;
+  zoomLevel = storageSignal<"compact" | "normal">("capacity-view-zoom-level", "normal");
   private isDefaultExpanded = true;
   private manualStates = new Map<string, boolean>();
 
