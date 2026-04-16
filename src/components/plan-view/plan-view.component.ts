@@ -135,6 +135,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   viewMode = storageSignal<"project" | "team" | "resource">("plan-view-mode", "resource");
   displayFormat = storageSignal<"tree" | "flat">("plan-view-display-format", "tree");
+  zoomLevel = storageSignal<"compact" | "normal">("plan-view-zoom-level", "normal");
   showAvailability = storageSignal<boolean>("plan-view-show-availability", false);
   weekFilters = storageSignal<number[]>("plan-view-week-filters", []);
   chiffreMode = storageSignal<'initial' | 'revise' | 'previsionnel' | 'consomme'>("plan-view-chiffre-mode", "previsionnel");

@@ -91,6 +91,18 @@
   overflow-x: hidden;
 }
 
+.capacity-container[data-zoom="compact"] {
+  --cell-width: 50px;
+  --row-min-height: 32px;
+  --cell-padding: 0 4px;
+}
+
+.capacity-container[data-zoom="normal"] {
+  --cell-width: 80px;
+  --row-min-height: 48px;
+  --cell-padding: 8px;
+}
+
 /* Sexy Tooltip Styles */
 .sexy-tooltip {
   position: fixed;
@@ -1141,11 +1153,10 @@
   flex: 1;
 }
 
-/* Week header cells */
 .week-header-cell {
-  min-width: 80px;
-  width: 80px;
-  padding: 8px;
+  min-width: var(--cell-width, 80px);
+  width: var(--cell-width, 80px);
+  padding: var(--cell-padding, 8px);
   text-align: center;
   border-right: 1px solid #e2e8f0;
   font-size: 12px;
@@ -1200,8 +1211,8 @@
 
 /* Milestone cells */
 .milestone-cell {
-  min-width: 80px;
-  width: 80px;
+  min-width: var(--cell-width, 80px);
+  width: var(--cell-width, 80px);
   padding: 2px;
   border-right: 1px solid #e2e8f0;
   display: flex;
@@ -1243,7 +1254,7 @@
 /* Calendar rows */
 .calendar-row {
   display: flex;
-  min-height: 48px;
+  min-height: var(--row-min-height, 48px);
   border-bottom: 1px solid #e2e8f0;
   position: relative; /* Essential for z-index to work on rows */
 }
@@ -1255,9 +1266,9 @@
 
 /* Week cells in data rows */
 .week-cell {
-  min-width: 80px;
-  width: 80px;
-  padding: 8px;
+  min-width: var(--cell-width, 80px);
+  width: var(--cell-width, 80px);
+  padding: var(--cell-padding, 8px);
   border-right: 1px solid #e2e8f0;
   text-align: center;
   display: flex;

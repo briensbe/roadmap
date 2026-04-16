@@ -1,4 +1,4 @@
-<div class="capacity-container">
+<div class="capacity-container" [attr.data-zoom]="zoomLevel()">
   <!-- Sexy Tooltip Singleton -->
   <div #tooltipElement class="sexy-tooltip" [class.visible]="activeTooltip">
     {{ activeTooltip }}
@@ -94,6 +94,31 @@
               <lucide-icon [img]="AlignJustify" [size]="15"></lucide-icon>
               À plat
               <span class="actions-check" *ngIf="displayFormat() === 'flat'">✓</span>
+            </button>
+          </div>
+
+          <div class="actions-dropdown-divider"></div>
+
+          <!-- Densité -->
+          <div class="actions-dropdown-section">
+            <div class="actions-section-label">Densité (Zoom)</div>
+            <button
+              class="actions-dropdown-item"
+              [class.active]="zoomLevel() === 'compact'"
+              (click)="zoomLevel.set('compact'); showActionsMenu = false"
+            >
+              <lucide-icon [img]="AlignJustify" [size]="15"></lucide-icon>
+              Compact
+              <span class="actions-check" *ngIf="zoomLevel() === 'compact'">✓</span>
+            </button>
+            <button
+              class="actions-dropdown-item"
+              [class.active]="zoomLevel() === 'normal'"
+              (click)="zoomLevel.set('normal'); showActionsMenu = false"
+            >
+              <lucide-icon [img]="AlignJustify" [size]="15"></lucide-icon>
+              Normal
+              <span class="actions-check" *ngIf="zoomLevel() === 'normal'">✓</span>
             </button>
           </div>
 
