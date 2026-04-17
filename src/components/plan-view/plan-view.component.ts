@@ -146,6 +146,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   selectedCapacityYear = storageSignal<'today' | 'all' | '2025' | '2026' | 'custom'>("plan-view-capacity-year", "today");
   private globalMouseMoveListener?: () => void;
+  private globalMouseUpListener?: () => void;
   private scrollCloseListener?: () => void;
 
   selectedStartDate: Date | null = null;
@@ -526,6 +527,10 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       window.addEventListener('mousemove', mouseListener);
       this.globalMouseMoveListener = () => window.removeEventListener('mousemove', mouseListener);
 
+      const mouseUpListener = (event: MouseEvent) => this.onGlobalMouseUp(event);
+      window.addEventListener('mouseup', mouseUpListener);
+      this.globalMouseUpListener = () => window.removeEventListener('mouseup', mouseUpListener);
+
       // Close popovers on scroll so they don't detach from their anchor badge
       const scrollHandler = () => {
         if (this.showYearPopover || this.showChiffrePopover) {
@@ -651,6 +656,9 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnDestroy() {
     if (this.globalMouseMoveListener) {
       this.globalMouseMoveListener();
+    }
+    if (this.globalMouseUpListener) {
+      this.globalMouseUpListener();
     }
     if (this.scrollCloseListener) {
       this.scrollCloseListener();
@@ -2052,19 +2060,22 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     // This method is now obsolete as we use onGlobalMouseMove
   }
 
-  async onMouseUp() {
+  // Called by the global window mouseup listener — fires even outside the grid
+  async onGlobalMouseUp(_event?: MouseEvent) {
     if (this.isMovingSelection) {
       if (this.moveGhostOffset !== 0) {
         // Keep isMovingSelection = true so the ghost remains visible during save
         this.isMoveCommitting = true;
-        await this.executeMove();
+        this.ngZone.run(() => this.executeMove());
       } else {
         // No movement: cancel and restore
-        this.isMovingSelection = false;
-        this.isMoveCommitting = false;
-        this.isOverSelectionBorder = false;
-        this.moveGhostOffset = 0;
-        this.cdr.markForCheck();
+        this.ngZone.run(() => {
+          this.isMovingSelection = false;
+          this.isMoveCommitting = false;
+          this.isOverSelectionBorder = false;
+          this.moveGhostOffset = 0;
+          this.cdr.markForCheck();
+        });
       }
       return;
     }

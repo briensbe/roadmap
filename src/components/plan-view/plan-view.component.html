@@ -622,8 +622,6 @@
                       class="calendar-row"
                       [attr.data-resource-id]="getResourceUniqueId(resource, child, row)"
                       (mousedown)="onMouseDown($event, resource, child, row)"
-                      (mouseup)="onMouseUp()"
-                      (mouseleave)="onMouseUp()"
                     >
                       <div
                         class="label-cell row-label-child"
@@ -872,8 +870,6 @@
                         class="calendar-row"
                         [attr.data-resource-id]="getResourceUniqueId(resource, child, row)"
                         (mousedown)="onMouseDown($event, resource, child, row)"
-                        (mouseup)="onMouseUp()"
-                        (mouseleave)="onMouseUp()"
                       >
                         <div
                           class="label-cell row-label-resource"
@@ -1071,8 +1067,6 @@
             class="calendar-row"
             [attr.data-resource-id]="getResourceUniqueId(row.resource, row.child, row.parent)"
             (mousedown)="onMouseDown($event, row.resource, row.child, row.parent)"
-            (mouseup)="onMouseUp()"
-            (mouseleave)="onMouseUp()"
           >
             <div
               class="label-cell row-label-flat"
