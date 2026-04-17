@@ -746,13 +746,13 @@
                           [attr.data-week-index]="i"
                         >
                           <div class="cell-content">
-                            <div *ngIf="(resource.cellData?.[i]?.value! > 0 && (!isMovingSelection || moveGhostOffset === 0)) || getGhostValue(resource, i) !== null" class="capacity-value">
+                            <div *ngIf="(resource.cellData?.[i]?.value! > 0 && (!isMovingSelection || moveGhostOffset === 0 || !isCellSelected(resource, week))) || getGhostValue(resource, i) !== null" class="capacity-value">
                               {{ (getGhostValue(resource, i) !== null ? getGhostValue(resource, i) : resource.cellData?.[i]?.value) | number: "1.0-1" }}
                             </div>
                             <div
                               class="availability-indicator"
                               *ngIf="
-                                (!isMovingSelection || moveGhostOffset === 0) &&
+                                (!isMovingSelection || moveGhostOffset === 0 || !isCellSelected(resource, week)) &&
                                 resource.cellData?.[i]?.showAvailability &&
                                 (resource.cellData?.[i]?.value! > 0 ||
                                   (showAvailability() &&
@@ -1030,13 +1030,13 @@
                             [attr.data-week-index]="i"
                           >
                             <div class="cell-content">
-                              <div *ngIf="(resource.cellData?.[i]?.value! > 0 && (!isMovingSelection || moveGhostOffset === 0)) || getGhostValue(resource, i) !== null" class="capacity-value">
+                              <div *ngIf="(resource.cellData?.[i]?.value! > 0 && (!isMovingSelection || moveGhostOffset === 0 || !isCellSelected(resource, week))) || getGhostValue(resource, i) !== null" class="capacity-value">
                                 {{ (getGhostValue(resource, i) !== null ? getGhostValue(resource, i) : resource.cellData?.[i]?.value) | number: "1.0-1" }}
                               </div>
                               <div
                                 class="availability-indicator"
                                 *ngIf="
-                                  (!isMovingSelection || moveGhostOffset === 0) &&
+                                  (!isMovingSelection || moveGhostOffset === 0 || !isCellSelected(resource, week)) &&
                                   resource.cellData?.[i]?.showAvailability &&
                                   (resource.cellData?.[i]?.value! > 0 ||
                                     (showAvailability() &&
@@ -1220,13 +1220,13 @@
                 [attr.data-week-index]="i"
               >
                 <div class="cell-content">
-                  <div *ngIf="(row.resource.cellData?.[i]?.value! > 0 && (!isMovingSelection || moveGhostOffset === 0)) || getGhostValue(row.resource, i) !== null" class="capacity-value">
+                  <div *ngIf="(row.resource.cellData?.[i]?.value! > 0 && (!isMovingSelection || moveGhostOffset === 0 || !isCellSelected(row.resource, week))) || getGhostValue(row.resource, i) !== null" class="capacity-value">
                     {{ (getGhostValue(row.resource, i) !== null ? getGhostValue(row.resource, i) : row.resource.cellData?.[i]?.value) | number: "1.0-1" }}
                   </div>
                   <div
                     class="availability-indicator"
                     *ngIf="
-                      (!isMovingSelection || moveGhostOffset === 0) &&
+                      (!isMovingSelection || moveGhostOffset === 0 || !isCellSelected(row.resource, week)) &&
                       row.resource.cellData?.[i]?.showAvailability &&
                       (row.resource.cellData?.[i]?.value! > 0 ||
                         (showAvailability() &&
