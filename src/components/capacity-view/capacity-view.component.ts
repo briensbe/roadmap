@@ -608,7 +608,8 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   get totalSelectedDays(): number {
     let total = 0;
     for (const cell of this.selectedCells) {
-      const cap = this.getCapacite(cell.resource, cell.week) || 0;
+      // Prioritize the bulk input value if it has been set by the user
+      const cap = (this.bulkCapaciteValue !== null) ? this.bulkCapaciteValue : (this.getCapacite(cell.resource, cell.week) || 0);
       const jours = cell.resource.jours_par_semaine || 0;
       total += cap * jours;
     }

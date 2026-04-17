@@ -1,4 +1,6 @@
-import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, OnChanges, SimpleChanges, OnInit, OnDestroy } from '@angular/core';
+import { Subject } from 'rxjs';
+import { debounceTime, takeUntil } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToolbarPosition } from '../utils/selection-positioning';
@@ -24,7 +26,8 @@ import { ToolbarPosition } from '../utils/selection-positioning';
         <input 
           #bulkInput
           type="number" 
-          [(ngModel)]="value" 
+          [ngModel]="value" 
+          (ngModelChange)="onValueChange($event)"
           [placeholder]="placeholder"
           [step]="step"
           [min]="min"
@@ -82,7 +85,7 @@ import { ToolbarPosition } from '../utils/selection-positioning';
     }
   `]
 })
-export class SelectionToolbarComponent implements OnChanges {
+export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
     @Input() position: ToolbarPosition | null = null;
     @Input() visible: boolean = false;
     @Input() selectedCount: number = 0;
@@ -102,12 +105,34 @@ export class SelectionToolbarComponent implements OnChanges {
 
     @ViewChild('bulkInput') bulkInput?: ElementRef<HTMLInputElement>;
 
+    private valueSubject = new Subject<number | null>();
+    private destroy$ = new Subject<void>();
+
+    ngOnInit() {
+        this.valueSubject.pipe(
+            debounceTime(200),
+            takeUntil(this.destroy$)
+        ).subscribe(val => {
+            this.value = val;
+            this.valueChange.emit(val);
+        });
+    }
+
     ngOnChanges(changes: SimpleChanges) {
         if (changes['visible']?.currentValue === true) {
             setTimeout(() => {
                 this.bulkInput?.nativeElement.focus();
             }, 50);
         }
+    }
+
+    ngOnDestroy() {
+        this.destroy$.next();
+        this.destroy$.complete();
+    }
+
+    onValueChange(val: number | null) {
+        this.valueSubject.next(val);
     }
 
     onApply() {

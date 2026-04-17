@@ -2573,7 +2573,8 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   get totalSelectedDays(): number {
     let total = 0;
     for (const cell of this.selectedCells) {
-      const charge = this.getResourceValue(cell.resource, cell.week) || 0;
+      // Prioritize the bulk input value if it has been set by the user
+      const charge = (this.bulkChargeValue !== null) ? this.bulkChargeValue : (this.getResourceValue(cell.resource, cell.week) || 0);
       const jours = cell.resource.jours_par_semaine || 0;
       total += charge * jours;
     }
