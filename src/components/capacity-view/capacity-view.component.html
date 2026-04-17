@@ -237,6 +237,7 @@
     [(value)]="bulkCapaciteValue"
     placeholder="Capacité (unités)"
     (apply)="applyBulkCapacite($event)"
+    (project)="applyCapacityProjection($event)"
     (cancel)="clearSelection()"
   >
   </app-selection-toolbar>

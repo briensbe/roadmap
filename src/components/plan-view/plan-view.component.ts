@@ -2388,6 +2388,70 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  async applyProjection(data: { resources: number; totalDays: number }) {
+    if (this.selectedCells.length === 0) return;
+    this.isSaving = true;
+    try {
+      // Find the earliest selected week to start from
+      const sortedCells = [...this.selectedCells].sort((a, b) => a.week.getTime() - b.week.getTime());
+      const firstCell = sortedCells[0];
+      const startWeekIdx = this.displayedWeeks.findIndex((w) => w.getTime() === firstCell.week.getTime());
+
+      if (startWeekIdx === -1) return;
+
+      const resourceRow = firstCell.resource;
+      const daysPerWeek = resourceRow.jours_par_semaine || 5;
+
+      // Calculate how many weeks are needed (rounded up)
+      const nbWeeks = Math.ceil(data.totalDays / (data.resources * daysPerWeek));
+
+      for (let i = 0; i < nbWeeks; i++) {
+        const currentTargetIdx = startWeekIdx + i;
+        if (currentTargetIdx >= this.displayedWeeks.length) break;
+
+        const targetWeek = this.displayedWeeks[currentTargetIdx];
+        const weekKey = targetWeek.toISOString().split("T")[0];
+
+        let projetId: string;
+        let equipeId: string;
+
+        if (this.viewMode() === "project") {
+          projetId = firstCell.parentId;
+          equipeId = firstCell.childId;
+        } else if (this.viewMode() === "team") {
+          equipeId = firstCell.parentId;
+          projetId = firstCell.childId;
+        } else {
+          const parentIdParts = firstCell.parentId.split('_');
+          equipeId = parentIdParts[0];
+          projetId = firstCell.resource.projectId!;
+        }
+
+        const rId = resourceRow.resourceId || resourceRow.id;
+        const roleId = resourceRow.type === "role" ? rId : undefined;
+        const personneId = resourceRow.type === "personne" ? rId : undefined;
+
+        // Save the charge with a value equal to the number of resources
+        await this.chargeService.createOrUpdateCharge(
+          projetId,
+          equipeId,
+          weekKey,
+          data.resources, // unite_ressource = resources count
+          roleId,
+          personneId
+        );
+      }
+
+      await this.loadData();
+      this.clearSelection();
+    } catch (error) {
+      console.error("Error applying projection:", error);
+      alert("Erreur lors de l'application de la projection.");
+    } finally {
+      this.isSaving = false;
+    }
+  }
+
   // --- Filter helpers ---
   @HostListener("document:click", ["$event"])
   onDocumentClick(event: Event) {

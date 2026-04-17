@@ -17,12 +17,29 @@ import { ToolbarPosition } from '../utils/selection-positioning';
       [style.transform]="position?.transform"
       [style.opacity]="visible ? 1 : 0">
       
+      <!-- Toolbar Tabs -->
+      <div class="toolbar-tabs">
+        <button 
+          class="tab-btn" 
+          [class.active]="mode === 'classic'" 
+          (click)="setMode('classic')">
+          Saisie classique
+        </button>
+        <button 
+          class="tab-btn" 
+          [class.active]="mode === 'projection'" 
+          (click)="setMode('projection')">
+          Projection
+        </button>
+      </div>
+
       <div class="selection-info">
         <span class="highlight">{{ totalDays | number : "1.1-1" }}j</span>
         <span class="details">sur <span class="count">{{ selectedCount }}</span> semaine(s)</span>
       </div>
 
-      <div class="selection-input-row">
+      <!-- Classic Mode Inputs -->
+      <div class="selection-input-row" *ngIf="mode === 'classic'">
         <input 
           #bulkInput
           type="number" 
@@ -35,13 +52,47 @@ import { ToolbarPosition } from '../utils/selection-positioning';
           (keydown.enter)="onApply()" />
       </div>
 
+      <!-- Projection Mode Inputs -->
+      <div class="projection-input-row" *ngIf="mode === 'projection'">
+        <div class="projection-field">
+          <label>Ressources</label>
+          <input 
+            #projResInput
+            type="number" 
+            [(ngModel)]="projectionResources" 
+            placeholder="Nb res."
+            step="1"
+            min="1"
+            class="bulk-input" />
+        </div>
+        <div class="projection-separator">×</div>
+        <div class="projection-field">
+          <label>Jours</label>
+          <input 
+            #projDaysInput
+            type="number" 
+            [(ngModel)]="projectionDays" 
+            placeholder="Total jours"
+            step="1"
+            min="1"
+            class="bulk-input"
+            (keydown.enter)="onProject()" />
+        </div>
+      </div>
+
       <div class="selection-actions">
         <button class="btn btn-secondary btn-sm" (click)="onCancel()" [disabled]="isSaving">
           Annuler
         </button>
-        <button class="btn btn-primary btn-sm" (click)="onApply()" [disabled]="isSaving || value === null">
+        <!-- Classic Button -->
+        <button class="btn btn-primary btn-sm" (click)="onApply()" [disabled]="isSaving || value === null" *ngIf="mode === 'classic'">
           <span *ngIf="isSaving" class="spinner-small"></span>
           {{ isSaving ? savingLabel : applyLabel }}
+        </button>
+        <!-- Projection Button -->
+        <button class="btn btn-primary btn-sm btn-project" (click)="onProject()" [disabled]="isSaving || !projectionDays || projectionDays <= 0 || projectionResources <= 0" *ngIf="mode === 'projection'">
+          <span *ngIf="isSaving" class="spinner-small"></span>
+          {{ isSaving ? 'Calcul...' : 'Projeter' }}
         </button>
       </div>
 
@@ -83,6 +134,84 @@ import { ToolbarPosition } from '../utils/selection-positioning';
       font-weight: 600;
       color: #6366f1;
     }
+
+    .toolbar-tabs {
+      display: flex;
+      background: #f1f5f9;
+      padding: 4px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      gap: 4px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #64748b;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      color: #334155;
+      background: rgba(255, 255, 255, 0.5);
+    }
+
+    .tab-btn.active {
+      background: #fff;
+      color: #0f172a;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      font-weight: 600;
+    }
+
+    .projection-input-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .projection-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+    }
+
+    .projection-field label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .projection-field .bulk-input {
+      width: 100%;
+      text-align: left;
+      padding: 8px 10px;
+    }
+
+    .projection-separator {
+      font-size: 16px;
+      color: #94a3b8;
+      font-weight: 600;
+      padding-bottom: 8px;
+    }
+
+    .btn-project {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      border: none;
+    }
+
+    .btn-project:hover:not(:disabled) {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    }
   `]
 })
 export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
@@ -101,9 +230,15 @@ export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
     @Output() valueChange = new EventEmitter<number | null>();
 
     @Output() apply = new EventEmitter<number | null>();
+    @Output() project = new EventEmitter<{ resources: number, totalDays: number }>();
     @Output() cancel = new EventEmitter<void>();
 
     @ViewChild('bulkInput') bulkInput?: ElementRef<HTMLInputElement>;
+    @ViewChild('projResInput') projResInput?: ElementRef<HTMLInputElement>;
+
+    mode: 'classic' | 'projection' = 'classic';
+    projectionResources: number = 1;
+    projectionDays: number | null = null;
 
     private valueSubject = new Subject<number | null>();
     private destroy$ = new Subject<void>();
@@ -119,15 +254,28 @@ export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
 
     ngOnChanges(changes: SimpleChanges) {
         if (changes['visible']?.currentValue === true) {
-            setTimeout(() => {
-                this.bulkInput?.nativeElement.focus();
-            }, 50);
+            this.focusActiveInput();
         }
     }
 
     ngOnDestroy() {
         this.destroy$.next();
         this.destroy$.complete();
+    }
+
+    setMode(newMode: 'classic' | 'projection') {
+      this.mode = newMode;
+      this.focusActiveInput();
+    }
+
+    focusActiveInput() {
+      setTimeout(() => {
+          if (this.mode === 'classic') {
+            this.bulkInput?.nativeElement.focus();
+          } else {
+            this.projResInput?.nativeElement.focus();
+          }
+      }, 50);
     }
 
     onValueChange(val: number | null) {
@@ -137,6 +285,15 @@ export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
 
     onApply() {
         this.apply.emit(this.value);
+    }
+
+    onProject() {
+        if (this.projectionDays && this.projectionDays > 0 && this.projectionResources > 0) {
+            this.project.emit({
+                resources: this.projectionResources,
+                totalDays: this.projectionDays
+            });
+        }
     }
 
     onCancel() {

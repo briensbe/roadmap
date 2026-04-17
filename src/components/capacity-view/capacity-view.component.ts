@@ -606,6 +606,49 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
     }
   }
 
+  async applyCapacityProjection(data: { resources: number; totalDays: number }) {
+    if (this.selectedCells.length === 0) return;
+
+    try {
+      // Find the earliest selected week to start from
+      const sortedCells = [...this.selectedCells].sort((a, b) => a.week.getTime() - b.week.getTime());
+      const firstCell = sortedCells[0];
+      const startWeekIdx = this.displayedWeeks.findIndex((w) => w.getTime() === firstCell.week.getTime());
+
+      if (startWeekIdx === -1) return;
+
+      const resourceRow = firstCell.resource;
+      const daysPerWeek = resourceRow.jours_par_semaine || 5;
+
+      // Calculate how many weeks are needed (rounded up)
+      const nbWeeks = Math.ceil(data.totalDays / (data.resources * daysPerWeek));
+
+      for (let i = 0; i < nbWeeks; i++) {
+        const currentTargetIdx = startWeekIdx + i;
+        if (currentTargetIdx >= this.displayedWeeks.length) break;
+
+        const targetWeek = this.displayedWeeks[currentTargetIdx];
+        const weekStr = this.calendarService.formatWeekStart(targetWeek);
+
+        await this.teamService.saveCapacite(
+          resourceRow.id,
+          resourceRow.type,
+          resourceRow.equipeId,
+          weekStr,
+          data.resources
+        );
+
+        // Update local data for immediate UI feedback
+        resourceRow.weeks.set(weekStr, data.resources);
+      }
+
+      this.clearSelection();
+    } catch (error) {
+      console.error("Error applying generic capacity projection:", error);
+      alert("Erreur lors de l'application de la projection.");
+    }
+  }
+
   // Sum of days (capacite * jours_par_semaine) for currently selected cells
   get totalSelectedDays(): number {
     let total = 0;
