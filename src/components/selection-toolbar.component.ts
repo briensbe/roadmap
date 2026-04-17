@@ -16,10 +16,8 @@ import { ToolbarPosition } from '../utils/selection-positioning';
       [style.opacity]="visible ? 1 : 0">
       
       <div class="selection-info">
-        {{ selectedCount }} semaine(s) sélectionnée(s)
-        <div class="selection-total">
-          Total jours sélectionnés: {{ totalDays | number : "1.1-1" }}j
-        </div>
+        <span class="highlight">{{ totalDays | number : "1.1-1" }}j</span>
+        <span class="details">sur <span class="count">{{ selectedCount }}</span> semaine(s)</span>
       </div>
 
       <div class="selection-input-row">
