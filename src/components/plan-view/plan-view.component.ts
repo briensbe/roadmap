@@ -1404,6 +1404,9 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   toggleDisplayFormat(format: "tree" | "flat") {
     this.displayFormat.set(format);
+    if (format === 'flat') {
+      this.buildFlatList();
+    }
   }
 
   buildFlatList() {
