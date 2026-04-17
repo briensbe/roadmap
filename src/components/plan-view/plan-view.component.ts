@@ -1898,11 +1898,8 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     // 3. Move Selection update — tracked from cursor X delta, works outside the row
-    if (this.isMovingSelection && this.selectedCells.length > 0) {
-      // Update floating badge position
-      this.moveDragBadgeX = event.clientX + 16;
-      this.moveDragBadgeY = event.clientY - 20;
-
+    //    Frozen during commit so the ghost doesn't follow the mouse after mouseup
+    if (this.isMovingSelection && !this.isMoveCommitting && this.selectedCells.length > 0) {
       // Compute offset from pixel delta, independent of hovered row
       const deltaX = event.clientX - this.moveStartClientX;
       const newOffset = Math.round(deltaX / this.cellWidthPx);
