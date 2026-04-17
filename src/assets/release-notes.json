@@ -1,5 +1,30 @@
 [
   {
+    "version": "2026.04.17",
+    "date": "2026-04-17",
+    "news": [
+      {
+        "title": "Saisie & Productivité",
+        "items": [
+          "Calcul du nombre de jours en temps réel pendant la saisie",
+          "Affichage compact sur une seule ligne (ex: 1.5j sur 4 semaine(s)) des projections"
+        ],
+        "imageUrl": "assets/release-notes/2026-04-17-rt-input-selection-toolbar.gif",
+        "imageMaxHeight": 150
+      },
+      {
+        "title": "Interface & Ergonomie",
+        "items": [
+          "Ajout d'un mode 'Compact' (Zoom/Densité) sur les vues Capacité et Planification pour une vision globale plus dense",
+          "Optimisation du menu 'Actions' avec regroupement des options par catégories (Affichage, Densité, Navigation, Export/Tutorial)",
+          "Agrandissement des zones des vues Capacité et Planification pour voir plus de lignes"
+        ],
+        "imageUrl": "assets/release-notes/2026-04-17-compact-mode.gif",
+        "imageMaxHeight": 200
+      }
+    ]
+  },
+  {
     "version": "2026.04.16",
     "date": "2026-04-16",
     "news": [
@@ -20,9 +45,7 @@
       },
       {
         "title": "Correction Drag & Drop",
-        "items": [
-          "Correction du décalage visuel lors du déplacement d'une ligne projet dépliée"
-        ]
+        "items": ["Correction du décalage visuel lors du déplacement d'une ligne projet dépliée"]
       }
     ]
   },
