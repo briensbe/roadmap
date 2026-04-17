@@ -317,6 +317,13 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   bulkChargeValue: number | null = null;
   isSaving = false;
 
+  // Moving logic
+  isMovingSelection = false;
+  isOverSelectionBorder = false;
+  moveStartWeekIndex = -1;
+  moveGhostOffset = 0; // horizontal offset in weeks
+  private moveStartTargetCell: { weekIndex: number; resourceId: string } | null = null;
+
 
   // Confirm Modal state
   showConfirmModal = false;
@@ -1864,7 +1871,6 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       const target = event.target as HTMLElement;
       const cell = target.closest(".week-cell");
       if (cell) {
-        // We need to verify if we are over the same row to keep selection consistent
         const row = target.closest(".calendar-row");
         if (row) {
           const resId = row.getAttribute("data-resource-id");
@@ -1886,6 +1892,92 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       }
     }
+
+    // 3. Move Selection update
+    if (this.isMovingSelection && this.selectedCells.length > 0) {
+      const target = event.target as HTMLElement;
+      const cell = target.closest(".week-cell");
+      if (cell) {
+        // Horizontal restriction as requested by user
+        const indexStr = cell.getAttribute("data-week-index");
+        if (indexStr) {
+          const currentIndex = parseInt(indexStr, 10);
+          const offset = currentIndex - this.moveStartWeekIndex;
+          if (offset !== this.moveGhostOffset) {
+            this.ngZone.run(() => {
+              this.moveGhostOffset = offset;
+              this.cdr.markForCheck();
+            });
+          }
+        }
+      }
+    }
+
+    // 4. Border Hover Detection
+    if (!this.isDragging && !this.isMovingSelection && this.selectedCells.length > 0 && this.isSelectionFinished) {
+      const target = event.target as HTMLElement;
+      const cell = target.closest(".week-cell");
+      if (cell) {
+        const isSelected = cell.classList.contains('selected');
+        if (isSelected) {
+          const rect = cell.getBoundingClientRect();
+          const margin = 5; // 5px threshold for border detection
+          
+          const isAtLeft = (event.clientX - rect.left) < margin;
+          const isAtRight = (rect.right - event.clientX) < margin;
+          const isAtTop = (event.clientY - rect.top) < margin;
+          const isAtBottom = (rect.bottom - event.clientY) < margin;
+
+          const resRow = target.closest(".calendar-row");
+          const resId = resRow?.getAttribute('data-resource-id');
+          const weekIndex = parseInt(cell.getAttribute('data-week-index') || '-1', 10);
+          
+          const isBorder = this.isCellAtSelectionEdge(resId, weekIndex, isAtLeft, isAtRight, isAtTop, isAtBottom);
+          
+          if (this.isOverSelectionBorder !== isBorder) {
+            this.ngZone.run(() => {
+              this.isOverSelectionBorder = isBorder;
+              this.cdr.markForCheck();
+            });
+          }
+        } else {
+          if (this.isOverSelectionBorder) {
+            this.ngZone.run(() => {
+              this.isOverSelectionBorder = false;
+              this.cdr.markForCheck();
+            });
+          }
+        }
+      } else {
+        if (this.isOverSelectionBorder) {
+          this.ngZone.run(() => {
+            this.isOverSelectionBorder = false;
+            this.cdr.markForCheck();
+          });
+        }
+      }
+    }
+  }
+
+  isCellAtSelectionEdge(resId: string | null | undefined, weekIndex: number, isAtLeft: boolean, isAtRight: boolean, isAtTop: boolean, isAtBottom: boolean): boolean {
+    if (!resId || this.selectedCells.length === 0) return false;
+    
+    // Find min/max week and resource context
+    const selectedWeeks = this.selectedCells.map(c => this.displayedWeeks.findIndex(w => w.getTime() === c.week.getTime()));
+    const minW = Math.min(...selectedWeeks);
+    const maxW = Math.max(...selectedWeeks);
+    
+    // Currently one row only
+    const firstCell = this.selectedCells[0];
+    const selResId = this.getResourceUniqueId(firstCell.resource, {id: firstCell.childId} as ChildRow, {id: firstCell.parentId} as ParentRow);
+    
+    if (resId !== selResId) return false;
+
+    // Check if cell is an outer edge of the selection block
+    const isMinW = weekIndex === minW;
+    const isMaxW = weekIndex === maxW;
+
+    return (isMinW && isAtLeft) || (isMaxW && isAtRight) || isAtTop || isAtBottom;
   }
 
   updateTooltipPosition(event: MouseEvent) {
@@ -1916,8 +2008,25 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onMouseDown(event: MouseEvent, resource: ResourceRow, child: ChildRow, parent: ParentRow) {
+    if (this.isOverSelectionBorder) {
+      this.isMovingSelection = true;
+      this.moveGhostOffset = 0;
+      const target = event.target as HTMLElement;
+      const cell = target.closest(".week-cell");
+      if (cell) {
+        const indexStr = cell.getAttribute("data-week-index");
+        if (indexStr) {
+          this.moveStartWeekIndex = parseInt(indexStr, 10);
+        }
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
     this.isDragging = true;
     this.isSelectionFinished = false;
+    this.isOverSelectionBorder = false;
     this.dragStartResource = resource;
     this.dragStartChild = child;
     this.dragStartParent = parent;
@@ -1939,7 +2048,18 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     // This method is now obsolete as we use onGlobalMouseMove
   }
 
-  onMouseUp() {
+  async onMouseUp() {
+    if (this.isMovingSelection) {
+      this.isMovingSelection = false;
+      if (this.moveGhostOffset !== 0) {
+        await this.executeMove();
+      } else {
+        this.moveGhostOffset = 0;
+        this.cdr.markForCheck();
+      }
+      return;
+    }
+
     if (!this.isDragging) return;
     this.isDragging = false;
     if (this.selectedCells.length > 0) {
@@ -1947,6 +2067,140 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       this.updateToolbarPosition();
       this.cdr.markForCheck();
     }
+  }
+
+  async executeMove() {
+    if (this.selectedCells.length === 0 || this.moveGhostOffset === 0) return;
+
+    this.isSaving = true;
+    this.cdr.markForCheck();
+
+    try {
+      // 1. Snapshot values and target definitions
+      const snapshots = this.selectedCells.map(cell => {
+        const weekKey = cell.week.toISOString().split("T")[0];
+        const value = cell.resource.charges.get(weekKey) || 0;
+        
+        // Find target week
+        const sourceIndex = this.displayedWeeks.findIndex(w => w.getTime() === cell.week.getTime());
+        const targetIndex = sourceIndex + this.moveGhostOffset;
+        
+        return {
+          cell,
+          value,
+          targetWeek: this.displayedWeeks[targetIndex]
+        };
+      });
+
+      // 2. Clear source cells (set to 0)
+      for (const snap of snapshots) {
+        await this.updateChargeValue(snap.cell, 0);
+      }
+
+      // 3. Apply values to target cells
+      for (const snap of snapshots) {
+        if (snap.targetWeek) {
+          await this.updateChargeValue(snap.cell, snap.value, snap.targetWeek);
+        }
+      }
+
+      await this.loadData();
+      this.clearSelection();
+    } catch (error) {
+      console.error("Error executing move:", error);
+      alert("Erreur lors du déplacement des charges.");
+    } finally {
+      this.isSaving = false;
+      this.moveGhostOffset = 0;
+      this.cdr.markForCheck();
+    }
+  }
+
+  private async updateChargeValue(cell: any, value: number, overrideWeek?: Date) {
+    const week = overrideWeek || cell.week;
+    const weekKey = week.toISOString().split("T")[0];
+
+    let projetId, equipeId;
+    if (this.viewMode() === "project") {
+      projetId = cell.parentId;
+      equipeId = cell.childId;
+    } else if (this.viewMode() === "team") {
+      equipeId = cell.parentId;
+      projetId = cell.childId;
+    } else {
+      const parentIdParts = cell.parentId.split('_');
+      equipeId = parentIdParts[0];
+      projetId = cell.resource.projectId!;
+    }
+
+    const rId = cell.resource.resourceId || cell.resource.id;
+    const roleId = cell.resource.type === "role" ? rId : undefined;
+    const personneId = cell.resource.type === "personne" ? rId : undefined;
+
+    await this.chargeService.createOrUpdateCharge(
+      projetId,
+      equipeId,
+      weekKey,
+      value,
+      roleId,
+      personneId
+    );
+  }
+
+  // Visual helpers for HTML
+  getCellSelectionClasses(resource: ResourceRow, week: Date, weekIndex: number, child: ChildRow, parent: ParentRow) {
+    if (this.selectedCells.length === 0) return {};
+    
+    const isSelected = this.isCellSelected(resource, week);
+
+    if (this.isMovingSelection) {
+      if (this.isCellGhostSelected(resource, weekIndex, child, parent)) {
+        return { 'selected': true, 'ghost-selection': true };
+      }
+      if (isSelected) {
+        // Only hide source if we have actually moved to a new position
+        return this.moveGhostOffset === 0 ? { 'selected': true } : { 'moving-source': true };
+      }
+      return {};
+    }
+
+    if (!isSelected) return {};
+
+    // Standard selection mode (not moving)
+    return {
+      'selected': true,
+      'is-over-border': this.isOverSelectionBorder
+    };
+  }
+
+  isCellGhostSelected(resource: ResourceRow, weekIndex: number, child: ChildRow, parent: ParentRow): boolean {
+    if (!this.isMovingSelection || this.moveGhostOffset === 0) return false;
+    
+    const currResId = this.getResourceUniqueId(resource, child, parent);
+    const firstCell = this.selectedCells[0];
+    const selResId = this.getResourceUniqueId(firstCell.resource, {id: firstCell.childId} as ChildRow, {id: firstCell.parentId} as ParentRow);
+    
+    if (currResId !== selResId) return false;
+    
+    const sourceWeekIndex = weekIndex - this.moveGhostOffset;
+    if (sourceWeekIndex < 0 || sourceWeekIndex >= this.displayedWeeks.length) return false;
+    
+    const sourceWeek = this.displayedWeeks[sourceWeekIndex];
+    return this.isCellSelected(resource, sourceWeek);
+  }
+
+  getGhostValue(resource: ResourceRow, weekIndex: number): number | null {
+    if (!this.isMovingSelection || this.moveGhostOffset === 0) return null;
+    
+    const sourceWeekIndex = weekIndex - this.moveGhostOffset;
+    if (sourceWeekIndex < 0 || sourceWeekIndex >= this.displayedWeeks.length) return null;
+    
+    const sourceWeek = this.displayedWeeks[sourceWeekIndex];
+    if (this.isCellSelected(resource, sourceWeek)) {
+      const sourceWeekKey = sourceWeek.toISOString().split("T")[0];
+      return resource.charges.get(sourceWeekKey) || 0;
+    }
+    return null;
   }
 
 
