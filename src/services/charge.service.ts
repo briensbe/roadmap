@@ -169,6 +169,81 @@ export class ChargeService {
     }
 
     /**
+     * Bulk move: transfers charges from source weeks to target weeks in 3 queries.
+     * All cells must belong to the same resource (same projet, equipe, role/personne).
+     */
+    async bulkMoveCharges(
+        projetId: string,
+        equipeId: string,
+        moves: Array<{ fromWeek: string; toWeek: string; value: number }>,
+        roleId?: string,
+        personneId?: string
+    ): Promise<void> {
+        if (moves.length === 0) return;
+
+        const allWeeks = [...new Set([...moves.map(m => m.fromWeek), ...moves.map(m => m.toWeek)])];
+        const sourceWeeks = moves.map(m => m.fromWeek);
+
+        // 1. SELECT existing records for all affected weeks (source + destination)
+        let query: any = this.supabase.client
+            .from(DB_TABLES.CHARGES)
+            .select('id, semaine_debut')
+            .eq('projet_id', projetId)
+            .eq('equipe_id', equipeId)
+            .in('semaine_debut', allWeeks);
+
+        if (roleId)     query = query.eq('role_id', roleId);
+        else            query = query.is('role_id', null);
+        if (personneId) query = query.eq('personne_id', personneId);
+        else            query = query.is('personne_id', null);
+
+        const { data: existing, error: selectError } = await query;
+        if (selectError) throw selectError;
+
+        const existingByWeek = new Map<string, string>((existing || []).map((r: any) => [r.semaine_debut, r.id]));
+
+        // 2. UPSERT destination weeks
+        const upsertRows = moves.map(m => {
+            const row: any = {
+                projet_id: projetId,
+                equipe_id: equipeId,
+                semaine_debut: m.toWeek,
+                semaine_fin: m.toWeek,
+                unite_ressource: m.value,
+            };
+            if (roleId)     row.role_id = roleId;
+            if (personneId) row.personne_id = personneId;
+            const existingId = existingByWeek.get(m.toWeek);
+            if (existingId) row.id = existingId;
+            return row;
+        });
+
+        if (upsertRows.length > 0) {
+            const { error: upsertError } = await this.supabase.client
+                .from(DB_TABLES.CHARGES)
+                .upsert(upsertRows, { onConflict: 'id' });
+            if (upsertError) throw upsertError;
+        }
+
+        // 3. UPDATE source weeks to 0 — skip weeks also used as destination
+        const destinationWeeks = new Set(moves.map(m => m.toWeek));
+        const idsToZero = sourceWeeks
+            .filter(w => !destinationWeeks.has(w))
+            .map(w => existingByWeek.get(w))
+            .filter(Boolean) as string[];
+
+        if (idsToZero.length > 0) {
+            const { error: zeroError } = await this.supabase.client
+                .from(DB_TABLES.CHARGES)
+                .update({ unite_ressource: 0 })
+                .in('id', idsToZero);
+            if (zeroError) throw zeroError;
+        }
+
+        this.clearCache();
+    }
+
+    /**
      * Get available roles for a project + team combination
      * (roles not already in a charge for this project+team)
      */

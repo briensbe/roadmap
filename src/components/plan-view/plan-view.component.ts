@@ -2088,39 +2088,44 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cdr.markForCheck();
 
     try {
-      // 1. Snapshot values and target definitions
-      const snapshots = this.selectedCells.map(cell => {
-        const weekKey = cell.week.toISOString().split("T")[0];
-        const value = cell.resource.charges.get(weekKey) || 0;
-        
-        // Find target week
-        const sourceIndex = this.displayedWeeks.findIndex(w => w.getTime() === cell.week.getTime());
-        const targetIndex = sourceIndex + this.moveGhostOffset;
-        
-        return {
-          cell,
-          value,
-          targetWeek: this.displayedWeeks[targetIndex]
-        };
-      });
+      // Group cells by resource identity (projet + equipe + role/personne)
+      // Since move is restricted to 1 resource line, all cells share the same identity
+      const firstCell = this.selectedCells[0];
+      let projetId: string, equipeId: string;
 
-      // 2. Clear source cells (set to 0)
-      for (const snap of snapshots) {
-        await this.updateChargeValue(snap.cell, 0);
+      if (this.viewMode() === 'project') {
+        projetId = firstCell.parentId;
+        equipeId = firstCell.childId;
+      } else if (this.viewMode() === 'team') {
+        equipeId = firstCell.parentId;
+        projetId = firstCell.childId;
+      } else {
+        const parts = firstCell.parentId.split('_');
+        equipeId = parts[0];
+        projetId = firstCell.resource.projectId!;
       }
 
-      // 3. Apply values to target cells
-      for (const snap of snapshots) {
-        if (snap.targetWeek) {
-          await this.updateChargeValue(snap.cell, snap.value, snap.targetWeek);
-        }
-      }
+      const rId = firstCell.resource.resourceId || firstCell.resource.id;
+      const roleId     = firstCell.resource.type === 'role'    ? rId : undefined;
+      const personneId = firstCell.resource.type === 'personne' ? rId : undefined;
+
+      // Build the move list in one pass
+      const moves = this.selectedCells.map(cell => {
+        const fromWeek = cell.week.toISOString().split('T')[0];
+        const value    = cell.resource.charges.get(fromWeek) || 0;
+        const srcIdx   = this.displayedWeeks.findIndex(w => w.getTime() === cell.week.getTime());
+        const tgtWeek  = this.displayedWeeks[srcIdx + this.moveGhostOffset];
+        return { fromWeek, toWeek: tgtWeek?.toISOString().split('T')[0] ?? '', value };
+      }).filter(m => m.toWeek); // discard out-of-range
+
+      // 3 queries total instead of 2×N
+      await this.chargeService.bulkMoveCharges(projetId, equipeId, moves, roleId, personneId);
 
       await this.loadData();
       this.clearSelection();
     } catch (error) {
-      console.error("Error executing move:", error);
-      alert("Erreur lors du déplacement des charges.");
+      console.error('Error executing move:', error);
+      alert('Erreur lors du déplacement des charges.');
     } finally {
       this.isMovingSelection = false;
       this.isMoveCommitting = false;
