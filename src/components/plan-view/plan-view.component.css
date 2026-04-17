@@ -1563,10 +1563,80 @@
   box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.5);
 }
 
+/* Subtle pulse during API commit */
+.resource-detail-cell.ghost-selection.committing {
+  animation: ghostPulse 0.7s ease-in-out infinite;
+}
+
+@keyframes ghostPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+
+/* Spinning ring overlay on committing cells */
+.resource-detail-cell.ghost-selection.committing::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  pointer-events: none;
+}
+
+/* Small centered spinner on each committing cell */
+.resource-detail-cell.ghost-selection.committing .cell-content::after {
+  content: '';
+  display: block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: ghostSpin 0.6s linear infinite;
+  margin-top: 2px;
+}
+
+@keyframes ghostSpin {
+  to { transform: rotate(360deg); }
+}
+
 .resource-detail-cell.moving-source {
   background: white !important; /* Look like empty cell */
   border: 1px solid #e2e8f0 !important; /* Standard grid border */
   box-shadow: none !important;
+}
+
+/* Floating drag badge that follows the cursor */
+.move-drag-badge {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #1e40af;
+  color: white;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow:
+    0 4px 16px rgba(30, 64, 175, 0.4),
+    0 2px 6px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+  animation: badgeIn 0.1s ease-out;
+  transform: translateY(-50%);
+}
+
+.move-drag-badge svg {
+  opacity: 0.8;
+}
+
+@keyframes badgeIn {
+  from { opacity: 0; transform: translateY(-50%) scale(0.85); }
+  to   { opacity: 1; transform: translateY(-50%) scale(1); }
 }
 
 /* Availability Styles */

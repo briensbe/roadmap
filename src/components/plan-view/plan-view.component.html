@@ -1255,7 +1255,7 @@
   </div>
 
   <app-selection-toolbar
-    *ngIf="selectedCells.length > 0 && isSelectionFinished"
+    *ngIf="selectedCells.length > 0 && isSelectionFinished && !isMovingSelection && !isSaving"
     [position]="toolbarPosition"
     [visible]="toolbarVisible"
     [selectedCount]="selectedCells.length"

@@ -319,10 +319,14 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Moving logic
   isMovingSelection = false;
+  isMoveCommitting = false; // true while API calls in progress, ghost stays visible
   isOverSelectionBorder = false;
   moveStartWeekIndex = -1;
   moveGhostOffset = 0; // horizontal offset in weeks
-  private moveStartTargetCell: { weekIndex: number; resourceId: string } | null = null;
+  moveDragBadgeX = 0;
+  moveDragBadgeY = 0;
+  private moveStartClientX = 0;
+  private cellWidthPx = 80; // will be measured at drag start
 
 
   // Confirm Modal state
@@ -1893,23 +1897,20 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     }
 
-    // 3. Move Selection update
+    // 3. Move Selection update — tracked from cursor X delta, works outside the row
     if (this.isMovingSelection && this.selectedCells.length > 0) {
-      const target = event.target as HTMLElement;
-      const cell = target.closest(".week-cell");
-      if (cell) {
-        // Horizontal restriction as requested by user
-        const indexStr = cell.getAttribute("data-week-index");
-        if (indexStr) {
-          const currentIndex = parseInt(indexStr, 10);
-          const offset = currentIndex - this.moveStartWeekIndex;
-          if (offset !== this.moveGhostOffset) {
-            this.ngZone.run(() => {
-              this.moveGhostOffset = offset;
-              this.cdr.markForCheck();
-            });
-          }
-        }
+      // Update floating badge position
+      this.moveDragBadgeX = event.clientX + 16;
+      this.moveDragBadgeY = event.clientY - 20;
+
+      // Compute offset from pixel delta, independent of hovered row
+      const deltaX = event.clientX - this.moveStartClientX;
+      const newOffset = Math.round(deltaX / this.cellWidthPx);
+      if (newOffset !== this.moveGhostOffset) {
+        this.ngZone.run(() => {
+          this.moveGhostOffset = newOffset;
+          this.cdr.markForCheck();
+        });
       }
     }
 
@@ -2011,14 +2012,20 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.isOverSelectionBorder) {
       this.isMovingSelection = true;
       this.moveGhostOffset = 0;
+      this.moveStartClientX = event.clientX;
+      // Measure actual cell width from DOM
       const target = event.target as HTMLElement;
-      const cell = target.closest(".week-cell");
+      const cell = target.closest(".week-cell") as HTMLElement;
       if (cell) {
+        this.cellWidthPx = cell.getBoundingClientRect().width || 80;
         const indexStr = cell.getAttribute("data-week-index");
         if (indexStr) {
           this.moveStartWeekIndex = parseInt(indexStr, 10);
         }
       }
+      // Initialize badge at cursor
+      this.moveDragBadgeX = event.clientX + 16;
+      this.moveDragBadgeY = event.clientY - 20;
       event.preventDefault();
       event.stopPropagation();
       return;
@@ -2050,10 +2057,15 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   async onMouseUp() {
     if (this.isMovingSelection) {
-      this.isMovingSelection = false;
       if (this.moveGhostOffset !== 0) {
+        // Keep isMovingSelection = true so the ghost remains visible during save
+        this.isMoveCommitting = true;
         await this.executeMove();
       } else {
+        // No movement: cancel and restore
+        this.isMovingSelection = false;
+        this.isMoveCommitting = false;
+        this.isOverSelectionBorder = false;
         this.moveGhostOffset = 0;
         this.cdr.markForCheck();
       }
@@ -2110,7 +2122,10 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       console.error("Error executing move:", error);
       alert("Erreur lors du déplacement des charges.");
     } finally {
+      this.isMovingSelection = false;
+      this.isMoveCommitting = false;
       this.isSaving = false;
+      this.isOverSelectionBorder = false;
       this.moveGhostOffset = 0;
       this.cdr.markForCheck();
     }
@@ -2155,7 +2170,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
     if (this.isMovingSelection) {
       if (this.isCellGhostSelected(resource, weekIndex, child, parent)) {
-        return { 'selected': true, 'ghost-selection': true };
+        return { 'selected': true, 'ghost-selection': true, 'committing': this.isMoveCommitting };
       }
       if (isSelected) {
         // Only hide source if we have actually moved to a new position
@@ -2187,6 +2202,10 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     
     const sourceWeek = this.displayedWeeks[sourceWeekIndex];
     return this.isCellSelected(resource, sourceWeek);
+  }
+
+  getAbsOffset(): number {
+    return Math.abs(this.moveGhostOffset);
   }
 
   getGhostValue(resource: ResourceRow, weekIndex: number): number | null {
@@ -2292,6 +2311,11 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.dragStartWeekIndex = -1;
     this.dragEndWeekIndex = -1;
     this.bulkChargeValue = null;
+    // Reset move state
+    this.isMovingSelection = false;
+    this.isMoveCommitting = false;
+    this.isOverSelectionBorder = false;
+    this.moveGhostOffset = 0;
   }
 
   async applyBulkCharge(value: number | null) {
