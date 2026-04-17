@@ -557,6 +557,13 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private runTutorialLogic(tutorialKey: string) {
+    // On ouvre les filtres globaux au début du tutoriel
+    // pour s'assurer que la barre de recherche est bien présente et mesurable par driver.js
+    if (!this.showGlobalFilters()) {
+      this.showGlobalFilters.set(true);
+      this.cdr.detectChanges();
+    }
+
     const steps: any[] = [
       {
         element: '[data-tour="actions-menu"]',
