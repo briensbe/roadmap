@@ -579,9 +579,11 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
     this.dragEndWeekIndex = -1;
   }
 
-  async applyBulkCapacite() {
+  async applyBulkCapacite(value: number | null) {
     // Autorise 0, bloque seulement null et undefined
-    if (this.selectedCells.length === 0 || this.bulkCapaciteValue == null) return;
+    if (this.selectedCells.length === 0 || value == null) return;
+    
+    this.bulkCapaciteValue = value;
 
     try {
       for (const cell of this.selectedCells) {

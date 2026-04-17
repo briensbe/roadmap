@@ -100,7 +100,7 @@ export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
     @Input() value: number | null = null;
     @Output() valueChange = new EventEmitter<number | null>();
 
-    @Output() apply = new EventEmitter<void>();
+    @Output() apply = new EventEmitter<number | null>();
     @Output() cancel = new EventEmitter<void>();
 
     @ViewChild('bulkInput') bulkInput?: ElementRef<HTMLInputElement>;
@@ -113,7 +113,6 @@ export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
             debounceTime(200),
             takeUntil(this.destroy$)
         ).subscribe(val => {
-            this.value = val;
             this.valueChange.emit(val);
         });
     }
@@ -132,12 +131,12 @@ export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
     }
 
     onValueChange(val: number | null) {
+        this.value = val; // Synchronous update
         this.valueSubject.next(val);
     }
 
     onApply() {
-        this.valueChange.emit(this.value);
-        this.apply.emit();
+        this.apply.emit(this.value);
     }
 
     onCancel() {

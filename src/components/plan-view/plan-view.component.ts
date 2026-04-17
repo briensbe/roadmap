@@ -2037,9 +2037,10 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.bulkChargeValue = null;
   }
 
-  async applyBulkCharge() {
-    if (this.selectedCells.length === 0 || this.bulkChargeValue == null) return;
-
+  async applyBulkCharge(value: number | null) {
+    if (this.selectedCells.length === 0 || value == null) return;
+    
+    this.bulkChargeValue = value;
     this.isSaving = true;
     try {
       for (const cell of this.selectedCells) {

@@ -236,7 +236,7 @@
     [totalDays]="totalSelectedDays"
     [(value)]="bulkCapaciteValue"
     placeholder="Capacité (unités)"
-    (apply)="applyBulkCapacite()"
+    (apply)="applyBulkCapacite($event)"
     (cancel)="clearSelection()"
   >
   </app-selection-toolbar>

@@ -1261,7 +1261,7 @@
     [isSaving]="isSaving"
     [applyLabel]="'Appliquer'"
     [savingLabel]="'Application...'"
-    (apply)="applyBulkCharge()"
+    (apply)="applyBulkCharge($event)"
     (cancel)="clearSelection()"
   >
   </app-selection-toolbar>
