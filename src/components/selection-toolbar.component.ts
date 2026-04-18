@@ -6,10 +6,10 @@ import { FormsModule } from '@angular/forms';
 import { ToolbarPosition } from '../utils/selection-positioning';
 
 @Component({
-    selector: 'app-selection-toolbar',
-    standalone: true,
-    imports: [CommonModule, FormsModule],
-    template: `
+  selector: 'app-selection-toolbar',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  template: `
     <div 
       class="selection-toolbar"
       [style.top.px]="position?.top"
@@ -23,7 +23,7 @@ import { ToolbarPosition } from '../utils/selection-positioning';
           class="tab-btn" 
           [class.active]="mode === 'classic'" 
           (click)="setMode('classic')">
-          Saisie classique
+          Saisie
         </button>
         <button 
           class="tab-btn" 
@@ -38,45 +38,51 @@ import { ToolbarPosition } from '../utils/selection-positioning';
         <span class="details">sur <span class="count">{{ selectedCount }}</span> semaine(s)</span>
       </div>
 
-      <!-- Classic Mode Inputs -->
-      <div class="selection-input-row" *ngIf="mode === 'classic'">
-        <input 
-          #bulkInput
-          type="number" 
-          [ngModel]="value" 
-          (ngModelChange)="onValueChange($event)"
-          [placeholder]="placeholder"
-          [step]="step"
-          [min]="min"
-          class="bulk-input"
-          (keydown.enter)="onApply()" />
-      </div>
-
-      <!-- Projection Mode Inputs -->
-      <div class="projection-input-row" *ngIf="mode === 'projection'">
-        <div class="projection-field">
-          <label>Ressources</label>
+      <!-- Fixed height content area to prevent jumping -->
+      <div class="toolbar-main-content">
+        <!-- Classic Mode Inputs -->
+        <div class="selection-input-row" *ngIf="mode === 'classic'">
+          <div class="projection-field">
+            <label>Ressources</label>
           <input 
-            #projResInput
+            #bulkInput
             type="number" 
-            [(ngModel)]="projectionResources" 
-            placeholder="Nb res."
-            step="1"
-            min="1"
-            class="bulk-input" />
-        </div>
-        <div class="projection-separator">×</div>
-        <div class="projection-field">
-          <label>Jours</label>
-          <input 
-            #projDaysInput
-            type="number" 
-            [(ngModel)]="projectionDays" 
-            placeholder="Total jours"
-            step="1"
-            min="1"
+            [ngModel]="value" 
+            (ngModelChange)="onValueChange($event)"
+            [placeholder]="placeholder"
+            [step]="step"
+            [min]="min"
             class="bulk-input"
-            (keydown.enter)="onProject()" />
+            (keydown.enter)="onApply()" />
+          </div>
+        </div>
+
+        <!-- Projection Mode Inputs -->
+        <div class="projection-input-row" *ngIf="mode === 'projection'">
+          <div class="projection-field">
+            <label>Ressources</label>
+            <input 
+              #projResInput
+              type="number" 
+              [(ngModel)]="projectionResources" 
+              placeholder="Nb res."
+              step="1"
+              min="1"
+              class="bulk-input" />
+          </div>
+          <div class="projection-separator">et</div>
+          <div class="projection-field">
+            <label>Jours</label>
+            <input 
+              #projDaysInput
+              type="number" 
+              [(ngModel)]="projectionDays" 
+              placeholder="Total jours"
+              step="1"
+              min="1"
+              class="bulk-input"
+              (keydown.enter)="onProject()" />
+          </div>
         </div>
       </div>
 
@@ -103,7 +109,7 @@ import { ToolbarPosition } from '../utils/selection-positioning';
       </div>
     </div>
   `,
-    styles: [`
+  styles: [`
     .spinner-small {
       display: inline-block;
       width: 14px;
@@ -212,91 +218,102 @@ import { ToolbarPosition } from '../utils/selection-positioning';
     .btn-project:hover:not(:disabled) {
       background: linear-gradient(135deg, #059669 0%, #047857 100%);
     }
+
+    .toolbar-main-content {
+      min-height: 80px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .selection-input-row, .projection-input-row {
+      margin-bottom: 0 !important;
+    }
   `]
 })
 export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
-    @Input() position: ToolbarPosition | null = null;
-    @Input() visible: boolean = false;
-    @Input() selectedCount: number = 0;
-    @Input() totalDays: number = 0;
-    @Input() placeholder: string = "Charge...";
-    @Input() step: string = "0.5";
-    @Input() min: string = "0";
-    @Input() isSaving: boolean = false;
-    @Input() applyLabel: string = "Appliquer";
-    @Input() savingLabel: string = "Application";
+  @Input() position: ToolbarPosition | null = null;
+  @Input() visible: boolean = false;
+  @Input() selectedCount: number = 0;
+  @Input() totalDays: number = 0;
+  @Input() placeholder: string = "Charge...";
+  @Input() step: string = "0.5";
+  @Input() min: string = "0";
+  @Input() isSaving: boolean = false;
+  @Input() applyLabel: string = "Appliquer";
+  @Input() savingLabel: string = "Application";
 
-    @Input() value: number | null = null;
-    @Output() valueChange = new EventEmitter<number | null>();
+  @Input() value: number | null = null;
+  @Output() valueChange = new EventEmitter<number | null>();
 
-    @Output() apply = new EventEmitter<number | null>();
-    @Output() project = new EventEmitter<{ resources: number, totalDays: number }>();
-    @Output() cancel = new EventEmitter<void>();
+  @Output() apply = new EventEmitter<number | null>();
+  @Output() project = new EventEmitter<{ resources: number, totalDays: number }>();
+  @Output() cancel = new EventEmitter<void>();
 
-    @ViewChild('bulkInput') bulkInput?: ElementRef<HTMLInputElement>;
-    @ViewChild('projResInput') projResInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('bulkInput') bulkInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('projResInput') projResInput?: ElementRef<HTMLInputElement>;
 
-    mode: 'classic' | 'projection' = 'classic';
-    projectionResources: number = 1;
-    projectionDays: number | null = null;
+  mode: 'classic' | 'projection' = 'classic';
+  projectionResources: number = 1;
+  projectionDays: number | null = null;
 
-    private valueSubject = new Subject<number | null>();
-    private destroy$ = new Subject<void>();
+  private valueSubject = new Subject<number | null>();
+  private destroy$ = new Subject<void>();
 
-    ngOnInit() {
-        this.valueSubject.pipe(
-            debounceTime(200),
-            takeUntil(this.destroy$)
-        ).subscribe(val => {
-            this.valueChange.emit(val);
-        });
-    }
+  ngOnInit() {
+    this.valueSubject.pipe(
+      debounceTime(200),
+      takeUntil(this.destroy$)
+    ).subscribe(val => {
+      this.valueChange.emit(val);
+    });
+  }
 
-    ngOnChanges(changes: SimpleChanges) {
-        if (changes['visible']?.currentValue === true) {
-            this.focusActiveInput();
-        }
-    }
-
-    ngOnDestroy() {
-        this.destroy$.next();
-        this.destroy$.complete();
-    }
-
-    setMode(newMode: 'classic' | 'projection') {
-      this.mode = newMode;
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['visible']?.currentValue === true) {
       this.focusActiveInput();
     }
+  }
 
-    focusActiveInput() {
-      setTimeout(() => {
-          if (this.mode === 'classic') {
-            this.bulkInput?.nativeElement.focus();
-          } else {
-            this.projResInput?.nativeElement.focus();
-          }
-      }, 50);
-    }
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 
-    onValueChange(val: number | null) {
-        this.value = val; // Synchronous update
-        this.valueSubject.next(val);
-    }
+  setMode(newMode: 'classic' | 'projection') {
+    this.mode = newMode;
+    this.focusActiveInput();
+  }
 
-    onApply() {
-        this.apply.emit(this.value);
-    }
+  focusActiveInput() {
+    setTimeout(() => {
+      if (this.mode === 'classic') {
+        this.bulkInput?.nativeElement.focus();
+      } else {
+        this.projResInput?.nativeElement.focus();
+      }
+    }, 50);
+  }
 
-    onProject() {
-        if (this.projectionDays && this.projectionDays > 0 && this.projectionResources > 0) {
-            this.project.emit({
-                resources: this.projectionResources,
-                totalDays: this.projectionDays
-            });
-        }
-    }
+  onValueChange(val: number | null) {
+    this.value = val; // Synchronous update
+    this.valueSubject.next(val);
+  }
 
-    onCancel() {
-        this.cancel.emit();
+  onApply() {
+    this.apply.emit(this.value);
+  }
+
+  onProject() {
+    if (this.projectionDays && this.projectionDays > 0 && this.projectionResources > 0) {
+      this.project.emit({
+        resources: this.projectionResources,
+        totalDays: this.projectionDays
+      });
     }
+  }
+
+  onCancel() {
+    this.cancel.emit();
+  }
 }
