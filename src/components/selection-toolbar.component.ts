@@ -39,7 +39,7 @@ import { ToolbarPosition } from '../utils/selection-positioning';
           <span class="details">sur <span class="count">{{ selectedCount }}</span> semaine(s)</span>
         </ng-container>
         <ng-container *ngIf="mode === 'projection'">
-          <span class="highlight">{{ (projectionDays || 0) | number : "1.1-1" }}j</span>
+          <span class="highlight">{{ actualProjectedDays | number : "1.1-1" }}j</span>
           <span class="details">
             sur <span class="count">{{ projectedWeeks }}</span> semaine(s)
             <span *ngIf="projectionRangeText" class="projection-dates">({{ projectionRangeText }})</span>
@@ -279,6 +279,10 @@ export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
   get projectedWeeks(): number {
     if (!this.projectionDays || !this.projectionResources || this.projectionResources <= 0) return 0;
     return Math.ceil(this.projectionDays / (this.projectionResources * this.daysPerWeek));
+  }
+
+  get actualProjectedDays(): number {
+    return this.projectedWeeks * (this.projectionResources || 0) * this.daysPerWeek;
   }
 
   get projectionRangeText(): string {
