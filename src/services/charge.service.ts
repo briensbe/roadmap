@@ -218,11 +218,21 @@ export class ChargeService {
             return row;
         });
 
-        if (upsertRows.length > 0) {
-            const { error: upsertError } = await this.supabase.client
+        const toUpdate = upsertRows.filter(r => r.id);
+        const toInsert = upsertRows.filter(r => !r.id);
+
+        if (toUpdate.length > 0) {
+            const { error: updateError } = await this.supabase.client
                 .from(DB_TABLES.CHARGES)
-                .upsert(upsertRows, { onConflict: 'id' });
-            if (upsertError) throw upsertError;
+                .upsert(toUpdate, { onConflict: 'id' });
+            if (updateError) throw updateError;
+        }
+
+        if (toInsert.length > 0) {
+            const { error: insertError } = await this.supabase.client
+                .from(DB_TABLES.CHARGES)
+                .insert(toInsert);
+            if (insertError) throw insertError;
         }
 
         // 3. UPDATE source weeks to 0 — skip weeks also used as destination
