@@ -34,8 +34,17 @@ import { ToolbarPosition } from '../utils/selection-positioning';
       </div>
 
       <div class="selection-info">
-        <span class="highlight">{{ totalDays | number : "1.1-1" }}j</span>
-        <span class="details">sur <span class="count">{{ selectedCount }}</span> semaine(s)</span>
+        <ng-container *ngIf="mode === 'classic'">
+          <span class="highlight">{{ totalDays | number : "1.1-1" }}j</span>
+          <span class="details">sur <span class="count">{{ selectedCount }}</span> semaine(s)</span>
+        </ng-container>
+        <ng-container *ngIf="mode === 'projection'">
+          <span class="highlight">{{ (projectionDays || 0) | number : "1.1-1" }}j</span>
+          <span class="details">
+            sur <span class="count">{{ projectedWeeks }}</span> semaine(s)
+            <span *ngIf="projectionRangeText" class="projection-dates">({{ projectionRangeText }})</span>
+          </span>
+        </ng-container>
       </div>
 
       <!-- Fixed height content area to prevent jumping -->
@@ -219,6 +228,13 @@ import { ToolbarPosition } from '../utils/selection-positioning';
       background: linear-gradient(135deg, #059669 0%, #047857 100%);
     }
 
+    .projection-dates {
+      font-size: 11px;
+      color: #94a3b8;
+      font-weight: 400;
+      margin-left: 4px;
+    }
+
     .toolbar-main-content {
       min-height: 80px;
       display: flex;
@@ -253,9 +269,28 @@ export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
   @ViewChild('bulkInput') bulkInput?: ElementRef<HTMLInputElement>;
   @ViewChild('projResInput') projResInput?: ElementRef<HTMLInputElement>;
 
+  @Input() selectionStartDate: Date | null = null;
+  @Input() daysPerWeek: number = 5;
+
   mode: 'classic' | 'projection' = 'classic';
   projectionResources: number = 1;
   projectionDays: number | null = null;
+
+  get projectedWeeks(): number {
+    if (!this.projectionDays || !this.projectionResources || this.projectionResources <= 0) return 0;
+    return Math.ceil(this.projectionDays / (this.projectionResources * this.daysPerWeek));
+  }
+
+  get projectionRangeText(): string {
+    if (!this.selectionStartDate || this.projectedWeeks <= 0) return '';
+    
+    const start = new Date(this.selectionStartDate);
+    const end = new Date(this.selectionStartDate);
+    end.setDate(end.getDate() + (this.projectedWeeks * 7) - 1);
+    
+    const fmt = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit' });
+    return `du ${fmt.format(start)} au ${fmt.format(end)}`;
+  }
 
   private valueSubject = new Subject<number | null>();
   private destroy$ = new Subject<void>();

@@ -234,6 +234,8 @@
     [visible]="toolbarVisible"
     [selectedCount]="selectedCells.length"
     [totalDays]="totalSelectedDays"
+    [selectionStartDate]="selectionStartWeekDate"
+    [daysPerWeek]="selectionDaysPerWeek"
     [(value)]="bulkCapaciteValue"
     placeholder="Capacité (unités)"
     (apply)="applyBulkCapacite($event)"

@@ -95,6 +95,16 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
 
   bulkCapaciteValue: number | null = null;
 
+  get selectionStartWeekDate(): Date | null {
+    if (this.selectedCells.length === 0) return null;
+    const sorted = [...this.selectedCells].sort((a, b) => a.week.getTime() - b.week.getTime());
+    return sorted[0].week;
+  }
+
+  get selectionDaysPerWeek(): number {
+    return this.selectedCells.length > 0 ? (this.selectedCells[0].resource.jours_par_semaine || 5) : 5;
+  }
+
   Contact = Contact;
   User = User;
 
