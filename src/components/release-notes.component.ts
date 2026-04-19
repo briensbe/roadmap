@@ -158,7 +158,7 @@ interface ReleaseNote {
       border-radius: 12px;
       padding: 24px;
       width: 90%;
-      max-width: 800px;
+      max-width: 600px;
       max-height: 85vh;
       display: flex;
       flex-direction: column;
