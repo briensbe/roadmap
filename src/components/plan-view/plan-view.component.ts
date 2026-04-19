@@ -104,6 +104,7 @@ interface FlatRow {
 })
 export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('tooltipElement') tooltipElement?: ElementRef<HTMLElement>;
+  @ViewChild('dragProjectionTooltip') dragProjectionTooltip?: ElementRef<HTMLElement>;
 
   // Milestone Modal props
   showMilestoneModal = false;
@@ -317,8 +318,6 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Value of the first dragged cell (used for pre-fill & live projection tooltip)
   dragStartCellValue: number | null = null;
-  dragProjectionTooltipX: number = 0;
-  dragProjectionTooltipY: number = 0;
   dragProjectionTooltipVisible: boolean = false;
 
   get selectionStartWeekDate(): Date | null {
@@ -1927,8 +1926,8 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
           }
           // Update live projection tooltip position during drag
           if (this.dragStartCellValue && this.dragStartCellValue > 0) {
-            this.dragProjectionTooltipX = event.clientX + 14;
-            this.dragProjectionTooltipY = event.clientY - 42;
+            this.updateDragProjectionTooltipPosition(event);
+
             if (!this.dragProjectionTooltipVisible) {
               this.ngZone.run(() => {
                 this.dragProjectionTooltipVisible = true;
@@ -2046,6 +2045,25 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     // Direct DOM manipulation for fast updates outside Angular zone
     this.tooltipElement.nativeElement.style.left = `${x}px`;
     this.tooltipElement.nativeElement.style.top = `${y}px`;
+  }
+
+  updateDragProjectionTooltipPosition(event: MouseEvent) {
+    if (!this.dragProjectionTooltip) return;
+
+    const x = event.clientX;
+    let y = 0;
+
+    // Position below if space permits, otherwise above
+    const spaceBelow = window.innerHeight - event.clientY;
+    if (spaceBelow > 80) {
+      y = event.clientY + 20;
+    } else {
+      y = event.clientY - 65;
+    }
+
+    // Direct DOM manipulation for fast updates outside Angular zone
+    this.dragProjectionTooltip.nativeElement.style.left = `${x}px`;
+    this.dragProjectionTooltip.nativeElement.style.top = `${y}px`;
   }
 
   onMouseDown(event: MouseEvent, resource: ResourceRow, child: ChildRow, parent: ParentRow) {

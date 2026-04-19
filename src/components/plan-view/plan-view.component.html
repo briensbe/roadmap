@@ -6,10 +6,9 @@
 
   <!-- Live Drag Projection Tooltip -->
   <div 
+    #dragProjectionTooltip
     class="drag-projection-badge" 
-    *ngIf="dragProjectionTooltipVisible"
-    [style.left.px]="dragProjectionTooltipX"
-    [style.top.px]="dragProjectionTooltipY"
+    [class.visible]="dragProjectionTooltipVisible"
   >
     <div class="projection-main">
       <lucide-icon [img]="Calendar" [size]="14"></lucide-icon>
