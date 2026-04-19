@@ -144,6 +144,51 @@
   transform: scale(1) translateY(0);
 }
 
+/* Drag Projection Tooltip */
+.drag-projection-badge {
+  position: fixed;
+  z-index: 10001;
+  background: rgba(99, 102, 241, 0.95);
+  backdrop-filter: blur(8px);
+  color: white;
+  padding: 10px 14px;
+  border-radius: 12px;
+  box-shadow: 
+    0 10px 25px -5px rgba(0, 0, 0, 0.3),
+    0 8px 10px -6px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 120px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: badgeIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes badgeIn {
+  from { opacity: 0; transform: scale(0.8) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.projection-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.projection-val {
+  font-size: 16px;
+  letter-spacing: -0.5px;
+}
+
+.projection-formula {
+  font-size: 11px;
+  opacity: 0.9;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
 .reorder-notification-overlay {
   position: fixed;
   top: 24px;

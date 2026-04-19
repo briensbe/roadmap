@@ -315,6 +315,12 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   toolbarPosition: ToolbarPosition | null = null;
   toolbarVisible: boolean = false; // Controls opacity to prevent flash
 
+  // Value of the first dragged cell (used for pre-fill & live projection tooltip)
+  dragStartCellValue: number | null = null;
+  dragProjectionTooltipX: number = 0;
+  dragProjectionTooltipY: number = 0;
+  dragProjectionTooltipVisible: boolean = false;
+
   get selectionStartWeekDate(): Date | null {
     if (this.selectedCells.length === 0) return null;
     const sorted = [...this.selectedCells].sort((a, b) => a.week.getTime() - b.week.getTime());
@@ -323,6 +329,14 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   get selectionDaysPerWeek(): number {
     return this.selectedCells.length > 0 ? (this.selectedCells[0].resource.jours_par_semaine || 5) : 5;
+  }
+
+  /** Projected days shown in the live drag tooltip: nbWeeks × dragStartCellValue × daysPerWeek */
+  get dragProjectionDays(): number {
+    if (!this.dragStartCellValue || this.dragStartCellValue <= 0) return 0;
+    const nbWeeks = this.selectedCells.length;
+    const daysPerWeek = this.dragStartResource?.jours_par_semaine || 5;
+    return nbWeeks * this.dragStartCellValue * daysPerWeek;
   }
 
   bulkChargeValue: number | null = null;
@@ -1911,6 +1925,17 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
               }
             }
           }
+          // Update live projection tooltip position during drag
+          if (this.dragStartCellValue && this.dragStartCellValue > 0) {
+            this.dragProjectionTooltipX = event.clientX + 14;
+            this.dragProjectionTooltipY = event.clientY - 42;
+            if (!this.dragProjectionTooltipVisible) {
+              this.ngZone.run(() => {
+                this.dragProjectionTooltipVisible = true;
+                this.cdr.markForCheck();
+              });
+            }
+          }
         }
       }
     }
@@ -2060,6 +2085,17 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       if (indexStr) {
         this.dragStartWeekIndex = parseInt(indexStr, 10);
         this.dragEndWeekIndex = this.dragStartWeekIndex;
+
+        // Detect value on the starting cell for pre-fill & live projection
+        const startWeek = this.displayedWeeks[this.dragStartWeekIndex];
+        if (startWeek) {
+          const weekKey = startWeek.toISOString().split('T')[0];
+          const existingValue = resource.charges.get(weekKey) || 0;
+          this.dragStartCellValue = existingValue > 0 ? existingValue : null;
+        } else {
+          this.dragStartCellValue = null;
+        }
+
         this.updateSelection(child, parent);
         this.cdr.markForCheck();
       }
@@ -2091,12 +2127,20 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     if (!this.isDragging) return;
-    this.isDragging = false;
-    if (this.selectedCells.length > 0) {
-      this.isSelectionFinished = true;
-      this.updateToolbarPosition();
-      this.cdr.markForCheck();
-    }
+
+    this.ngZone.run(() => {
+      this.isDragging = false;
+      this.dragProjectionTooltipVisible = false;
+      if (this.selectedCells.length > 0) {
+        this.isSelectionFinished = true;
+        // Pre-fill the bulk charge value if the first cell had a value
+        if (this.dragStartCellValue !== null && this.dragStartCellValue > 0) {
+          this.bulkChargeValue = this.dragStartCellValue;
+        }
+        this.updateToolbarPosition();
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   async executeMove() {
@@ -2334,6 +2378,8 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.dragStartWeekIndex = -1;
     this.dragEndWeekIndex = -1;
     this.bulkChargeValue = null;
+    this.dragStartCellValue = null;
+    this.dragProjectionTooltipVisible = false;
     // Reset move state
     this.isMovingSelection = false;
     this.isMoveCommitting = false;

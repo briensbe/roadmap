@@ -4,6 +4,22 @@
     {{ activeTooltip }}
   </div>
 
+  <!-- Live Drag Projection Tooltip -->
+  <div 
+    class="drag-projection-badge" 
+    *ngIf="dragProjectionTooltipVisible"
+    [style.left.px]="dragProjectionTooltipX"
+    [style.top.px]="dragProjectionTooltipY"
+  >
+    <div class="projection-main">
+      <lucide-icon [img]="Calendar" [size]="14"></lucide-icon>
+      <span class="projection-val">{{ dragProjectionDays | number: "1.0-1" }}j</span>
+    </div>
+    <div class="projection-formula">
+      {{ selectedCells.length }}sem × {{ dragStartCellValue }}res × {{ selectionDaysPerWeek }}j
+    </div>
+  </div>
+
   <!-- Reorder Warning Notification -->
   <div class="reorder-notification-overlay" [class.visible]="reorderMessage()">
     <div class="reorder-notification-toast">
