@@ -1,5 +1,63 @@
 [
   {
+    "version": "2026.04.19",
+    "date": "2026-04-19",
+    "news": [
+      {
+        "title": "Mode 'Projection'",
+        "items": [
+          "planifiez un nombre total de jours et laissez le système calculer automatiquement la durée nécessaire"
+        ],
+        "imageUrl": "assets/release-notes/2026-04-18-projection-mode.gif",
+        "imageMaxHeight": 150
+      },
+      {
+        "title": "Mode 'Drag & Drop'",
+        "items": ["Déplacez des blocs entiers de charges d'un glissement de souris"],
+        "imageUrl": "assets/release-notes/2026-04-18-drag-and-drop.gif",
+        "imageMaxHeight": 150
+      },
+      {
+        "title": "Tooltip dynamique",
+        "items": ["Visualisation en temps réel de la projection de jours pendant le drag de la sélection"],
+        "imageUrl": "assets/release-notes/2026-04-19-live-tooltip.gif",
+        "imageMaxHeight": 150
+      },
+      {
+        "title": "Divers",
+        "items": [
+          "Amélioration de la sélection : conservez votre action même en sortant de la ligne avec la souris",
+          "Optimisation via des requêtes 'Bulk' réduisant les appels serveurs"
+        ]
+      }
+    ]
+  },
+  {
+    "version": "2026.04.17",
+    "date": "2026-04-17",
+    "news": [
+      {
+        "title": "Saisie & Productivité",
+        "items": [
+          "Calcul du nombre de jours en temps réel pendant la saisie",
+          "Affichage compact sur une seule ligne (ex: 1.5j sur 4 semaine(s)) des projections"
+        ],
+        "imageUrl": "assets/release-notes/2026-04-17-rt-input-selection-toolbar.gif",
+        "imageMaxHeight": 150
+      },
+      {
+        "title": "Interface & Ergonomie",
+        "items": [
+          "Ajout d'un mode 'Compact' (Zoom/Densité) sur les vues Capacité et Planification pour une vision globale plus dense",
+          "Optimisation du menu 'Actions' avec regroupement des options par catégories (Affichage, Densité, Navigation, Export/Tutorial)",
+          "Agrandissement des zones des vues Capacité et Planification pour voir plus de lignes"
+        ],
+        "imageUrl": "assets/release-notes/2026-04-17-compact-mode.gif",
+        "imageMaxHeight": 200
+      }
+    ]
+  },
+  {
     "version": "2026.04.16",
     "date": "2026-04-16",
     "news": [
@@ -20,9 +78,7 @@
       },
       {
         "title": "Correction Drag & Drop",
-        "items": [
-          "Correction du décalage visuel lors du déplacement d'une ligne projet dépliée"
-        ]
+        "items": ["Correction du décalage visuel lors du déplacement d'une ligne projet dépliée"]
       }
     ]
   },
