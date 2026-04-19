@@ -2183,7 +2183,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
         }
         
         this.updateToolbarPosition();
-        this.cdr.markForCheck();
+        this.cdr.detectChanges(); // Force l'apparition immédiate de la toolbar
       }
     });
   }
@@ -2338,57 +2338,44 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   updateToolbarPosition() {
     if (!this.dragStartResource || this.dragEndWeekIndex < 0) return;
 
-    setTimeout(() => {
-      const firstCell = this.selectedCells[0];
-      if (!firstCell) return;
+    const firstCell = this.selectedCells[0];
+    if (!firstCell) return;
 
-      const uniqueId = this.getResourceUniqueId(
-        firstCell.resource,
-        { id: firstCell.childId } as ChildRow,
-        { id: firstCell.parentId } as ParentRow
-      );
+    const uniqueId = this.getResourceUniqueId(
+      firstCell.resource,
+      { id: firstCell.childId } as ChildRow,
+      { id: firstCell.parentId } as ParentRow
+    );
 
-      const rowSelector = `[data-resource-id="${uniqueId}"]`;
-      const rowElement = document.querySelector(rowSelector);
+    const rowSelector = `[data-resource-id="${uniqueId}"]`;
+    const rowElement = document.querySelector(rowSelector);
 
-      if (rowElement) {
-        const cellSelector = `[data-week-index="${this.dragEndWeekIndex}"]`;
-        const cellElement = rowElement.querySelector(cellSelector);
+    if (rowElement) {
+      const cellSelector = `[data-week-index="${this.dragEndWeekIndex}"]`;
+      const cellElement = rowElement.querySelector(cellSelector);
 
-        if (cellElement) {
-          const rect = cellElement.getBoundingClientRect();
-          const viewportHeight = window.innerHeight;
-          const viewportWidth = window.innerWidth;
+      if (cellElement) {
+        const rect = cellElement.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
 
-          // Estimated toolbar dimensions (safe buffer)
-          const bottomSafetyMargin = 150; // Height of toolbar + some padding
-          const rightSafetyMargin = 320; // Width of toolbar + padding
+        const pos = calculateBestToolbarPosition({
+          rect,
+          viewportWidth,
+          viewportHeight,
+          dragStartWeekIndex: this.dragStartWeekIndex,
+          dragEndWeekIndex: this.dragEndWeekIndex,
+          bottomSafetyMargin: 150,
+          rightSafetyMargin: 320
+        });
 
-          const spaceBelow = viewportHeight - rect.bottom;
+        this.toolbarPosition = pos;
 
-          let top = rect.bottom;
-          let left = rect.left + rect.width / 2;
-          let transform = 'translate(-50%, 10px)'; // Default: centered below
-
-          // Check if we are too close to the bottom
-          const pos = calculateBestToolbarPosition({
-            rect,
-            viewportWidth,
-            viewportHeight,
-            dragStartWeekIndex: this.dragStartWeekIndex,
-            dragEndWeekIndex: this.dragEndWeekIndex,
-            bottomSafetyMargin: 150,
-            rightSafetyMargin: 320
-          });
-
-          this.toolbarPosition = pos;
-
-          // Make toolbar visible now that position is set
-          this.toolbarVisible = true;
-          this.cdr.markForCheck();
-        }
+        // Make toolbar visible now that position is set
+        this.toolbarVisible = true;
+        this.cdr.detectChanges();
       }
-    }, 0);
+    }
   }
 
   updateSelection(child: ChildRow, parent: ParentRow) {
