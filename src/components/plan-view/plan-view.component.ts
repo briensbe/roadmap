@@ -1924,13 +1924,19 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
               }
             }
           }
-          // Update live projection tooltip position during drag
+          // Update live projection tooltip visibility and position during drag
           if (this.dragStartCellValue && this.dragStartCellValue > 0) {
             this.updateDragProjectionTooltipPosition(event);
-
-            if (!this.dragProjectionTooltipVisible) {
+            
+            const shouldShow = this.shouldShowProjectionTooltip();
+            if (shouldShow && !this.dragProjectionTooltipVisible) {
               this.ngZone.run(() => {
                 this.dragProjectionTooltipVisible = true;
+                this.cdr.markForCheck();
+              });
+            } else if (!shouldShow && this.dragProjectionTooltipVisible) {
+              this.ngZone.run(() => {
+                this.dragProjectionTooltipVisible = false;
                 this.cdr.markForCheck();
               });
             }
@@ -2066,6 +2072,24 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.dragProjectionTooltip.nativeElement.style.top = `${y}px`;
   }
 
+  private shouldShowProjectionTooltip(): boolean {
+    // Condition 1: Au moins 2 cellules sélectionnées
+    if (this.selectedCells.length <= 1) return false;
+    
+    // Condition 2: La cellule de départ doit avoir une valeur à projeter
+    if (!this.dragStartCellValue || this.dragStartCellValue <= 0) return false;
+
+    // Condition 3: Toutes les cellules à partir de la deuxième doivent être vides
+    for (let i = 1; i < this.selectedCells.length; i++) {
+      const cell = this.selectedCells[i];
+      const weekKey = cell.week.toISOString().split('T')[0];
+      const value = cell.resource.charges.get(weekKey) || 0;
+      if (value > 0) return false;
+    }
+
+    return true;
+  }
+
   onMouseDown(event: MouseEvent, resource: ResourceRow, child: ChildRow, parent: ParentRow) {
     if (this.isOverSelectionBorder) {
       this.isMovingSelection = true;
@@ -2151,10 +2175,13 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       this.dragProjectionTooltipVisible = false;
       if (this.selectedCells.length > 0) {
         this.isSelectionFinished = true;
-        // Pre-fill the bulk charge value if the first cell had a value
-        if (this.dragStartCellValue !== null && this.dragStartCellValue > 0) {
+        
+        // On ne pré-remplit la valeur que si on est dans le cas d'une projection vers du vide
+        // afin de ne pas casser le calcul de la somme réelle pour les sélections classiques
+        if (this.shouldShowProjectionTooltip()) {
           this.bulkChargeValue = this.dragStartCellValue;
         }
+        
         this.updateToolbarPosition();
         this.cdr.markForCheck();
       }
