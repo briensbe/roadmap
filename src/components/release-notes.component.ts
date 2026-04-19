@@ -158,7 +158,7 @@ interface ReleaseNote {
       border-radius: 12px;
       padding: 24px;
       width: 90%;
-      max-width: 600px;
+      max-width: 800px;
       max-height: 85vh;
       display: flex;
       flex-direction: column;
@@ -208,7 +208,7 @@ interface ReleaseNote {
       line-height: 0;
     }
     .image-container.mini {
-      max-width: 330px;
+      max-width: 450px;
       margin: 12px 0;
     }
     .release-image {
