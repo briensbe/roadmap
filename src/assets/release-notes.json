@@ -25,6 +25,14 @@
         "items": ["Ajout d'une vue''Tableau'"],
         "imageUrl": "assets/release-notes/2025-05-15-projects-table-view.png",
         "imageMaxHeight": 200
+      },
+      {
+        "title": "Divers",
+        "items": [
+          "Corrections diverses sur export Excel",
+          "Refresh de la vue après suppression d'une équipe en vue Planification",
+          "Meilleurs accompagnements Utilisateur (libellés, bulles d'aide)"
+        ]
       }
     ]
   },
