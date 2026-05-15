@@ -605,11 +605,23 @@
   background: white;
   border-radius: 8px;
   box-shadow:
-    0 4px 12px rgba(0, 0, 0, 0.1),
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05),
     0 0 0 1px rgba(0, 0, 0, 0.05);
   padding: 4px;
-  z-index: 50;
+  z-index: 100;
   margin-top: 4px;
+}
+
+.dropdown-menu.up {
+  top: auto;
+  bottom: 100%;
+  margin-top: 0;
+  margin-bottom: 4px;
+  box-shadow:
+    0 -10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 -4px 6px -2px rgba(0, 0, 0, 0.05),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
 }
 
 .dropdown-menu.right {
@@ -850,8 +862,11 @@
   background: white;
   border-radius: 12px;
   border: 1px solid #e5e7eb;
-  overflow: hidden;
+  /* overflow: hidden; */ /* Permet aux menus déroulants d'être visibles */
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+  min-height: 250px; /* Espace suffisant pour les menus même avec peu de lignes */
+  position: relative;
 }
 
 .projects-table {

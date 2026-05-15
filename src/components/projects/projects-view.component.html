@@ -109,7 +109,7 @@
         </tr>
       </thead>
       <tbody cdkDropList (cdkDropListDropped)="drop($event)">
-        <tr *ngFor="let projet of filteredProjects()" cdkDrag class="project-table-row" (click)="openEditModal(projet)">
+        <tr *ngFor="let projet of filteredProjects(); let i = index" cdkDrag class="project-table-row" (click)="openEditModal(projet)">
           <td class="col-code">
             <span class="project-code" [style.color]="projet.color || '#3b82f6'">{{ projet.code_projet }}</span>
           </td>
@@ -148,7 +148,7 @@
               <button class="menu-btn" (click)="toggleMenu($event, projet.id!)">
                 <lucide-icon [img]="MoreVertical" [size]="18"></lucide-icon>
               </button>
-              <div class="dropdown-menu right" *ngIf="activeMenuId === projet.id">
+              <div class="dropdown-menu right" [class.up]="i >= filteredProjects().length - 2 && i > 0" *ngIf="activeMenuId === projet.id">
                 <button class="dropdown-item" (click)="openEditModal(projet)">
                   <lucide-icon [img]="Edit" [size]="14"></lucide-icon>
                   Modifier
