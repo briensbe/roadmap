@@ -4,6 +4,12 @@
     "date": "2026-05-15",
     "news": [
       {
+        "title": "Bulk Select sur l'ajout de projet ",
+        "items": ["dans les vues Par Equipe et Par Projet, on peut ajouter plusieurs projets en même temps"],
+        "imageUrl": "assets/release-notes/2026-05-15-BulkSelectProjects.gif",
+        "imageMaxHeight": 300
+      },
+      {
         "title": "Import & Export Excel des Projets",
         "items": [
           "Exportez vos projets en un clic (tous les projets ou uniquement ceux filtrés)",
