@@ -93,6 +93,7 @@ export class ProjectsViewComponent implements OnInit {
   confirmMessage = '';
   confirmIcon = 'alert-triangle';
   confirmLabel = 'Confirmer';
+  confirmVariant: 'danger' | 'primary' = 'danger';
   showCancelButton = true;
   private pendingConfirmAction: (() => void) | null = null;
 
@@ -226,6 +227,10 @@ export class ProjectsViewComponent implements OnInit {
     this.activeMenuId = null;
     this.confirmTitle = "Supprimer le projet";
     this.confirmMessage = `Êtes-vous sûr de vouloir supprimer le projet "${projet.nom_projet}" ?`;
+    this.confirmIcon = 'alert-triangle';
+    this.confirmLabel = 'Supprimer';
+    this.confirmVariant = 'danger';
+    this.showCancelButton = true;
 
     this.pendingConfirmAction = async () => {
       try {
@@ -384,29 +389,37 @@ export class ProjectsViewComponent implements OnInit {
       return;
     }
 
-    // No errors, perform bulk import
-    try {
-      // Find max id_projet
-      let maxId = existingProjects.reduce((max: number, p: Projet) => (p.id_projet > max ? p.id_projet : max), 0);
+    // No errors, show confirmation
+    this.confirmTitle = "Confirmer l'import";
+    this.confirmMessage = `Le fichier contient ${projectsToCreate.length} projet(s) prêt(s) à être importé(s).\n\nVoulez-vous lancer l'importation ?`;
+    this.confirmIcon = 'file-down';
+    this.confirmLabel = "Importer";
+    this.confirmVariant = 'primary';
+    this.showCancelButton = true;
+    
+    this.pendingConfirmAction = async () => {
+      try {
+        // Find max id_projet
+        let maxId = existingProjects.reduce((max: number, p: Projet) => (p.id_projet > max ? p.id_projet : max), 0);
 
-      // We need to create them one by one or via a bulk insert in the service
-      // To keep it simple and handle ranks/id_projets, we'll loop or use a new service method
-      for (const p of projectsToCreate) {
-        maxId++;
-        const newProj = { ...p, id_projet: maxId };
-        await this.projetService.createProjet(newProj);
+        // We need to create them one by one or via a bulk insert in the service
+        for (const p of projectsToCreate) {
+          maxId++;
+          const newProj = { ...p, id_projet: maxId };
+          await this.projetService.createProjet(newProj);
+        }
+      } catch (error) {
+        console.error("Erreur lors de l'import :", error);
+        this.confirmTitle = "Erreur d'import";
+        this.confirmMessage = "Une erreur est survenue lors de l'enregistrement des projets.";
+        this.confirmIcon = 'alert-circle';
+        this.confirmLabel = 'Fermer';
+        this.confirmVariant = 'danger';
+        this.showCancelButton = false;
+        this.showConfirmModal = true;
       }
-      
-      // The mutations/service calls will invalidate the cache
-    } catch (error) {
-      console.error("Erreur lors de l'import :", error);
-      this.confirmTitle = "Erreur d'import";
-      this.confirmMessage = "Une erreur est survenue lors de l'enregistrement des projets.";
-      this.confirmIcon = 'alert-circle';
-      this.confirmLabel = 'Fermer';
-      this.showCancelButton = false;
-      this.showConfirmModal = true;
-    }
+    };
+    this.showConfirmModal = true;
   }
 
   private showImportError(errors: string[]) {
@@ -421,6 +434,7 @@ export class ProjectsViewComponent implements OnInit {
     this.confirmMessage = message;
     this.confirmIcon = 'alert-circle';
     this.confirmLabel = 'Fermer';
+    this.confirmVariant = 'danger';
     this.showCancelButton = false;
     this.pendingConfirmAction = null;
     this.showConfirmModal = true;

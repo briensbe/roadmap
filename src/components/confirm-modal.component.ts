@@ -1,9 +1,9 @@
 import { Component, EventEmitter, Input, Output, NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, AlertTriangle, X, AlertCircle } from 'lucide-angular';
+import { LucideAngularModule, AlertTriangle, X, AlertCircle, FileUp, FileDown } from 'lucide-angular';
 
 @NgModule({
-  imports: [LucideAngularModule.pick({ AlertTriangle, X, AlertCircle })],
+  imports: [LucideAngularModule.pick({ AlertTriangle, X, AlertCircle, FileUp, FileDown })],
   exports: [LucideAngularModule]
 })
 export class LucideIconsModule { }
@@ -17,7 +17,7 @@ export class LucideIconsModule { }
       <div class="confirm-card" (click)="$event.stopPropagation()">
         <div class="confirm-header">
           <div class="header-left">
-            <div class="icon-container">
+            <div class="icon-container" [class.danger]="variant === 'danger'" [class.primary]="variant === 'primary'">
               <lucide-icon [name]="icon" [size]="24" class="confirm-icon"></lucide-icon>
             </div>
             <h3 class="confirm-title">{{ title }}</h3>
@@ -33,7 +33,7 @@ export class LucideIconsModule { }
         
         <div class="confirm-footer">
           <button *ngIf="showCancel" class="btn btn-secondary" (click)="onCancel()">{{ cancelLabel }}</button>
-          <button class="btn btn-danger" (click)="onConfirm()">{{ confirmLabel }}</button>
+          <button class="btn" [class.btn-danger]="variant === 'danger'" [class.btn-primary]="variant === 'primary'" (click)="onConfirm()">{{ confirmLabel }}</button>
         </div>
       </div>
     </div>
@@ -92,13 +92,21 @@ export class LucideIconsModule { }
     .icon-container {
       width: 48px;
       height: 48px;
-      background: #fee2e2;
-      color: #ef4444;
       border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+    }
+
+    .icon-container.danger {
+      background: #fee2e2;
+      color: #ef4444;
+    }
+
+    .icon-container.primary {
+      background: #e0e7ff;
+      color: #4f46e5;
     }
 
     .confirm-title {
@@ -170,6 +178,18 @@ export class LucideIconsModule { }
       border-color: #cbd5e1;
     }
 
+    .btn-primary {
+      background: #4f46e5;
+      color: white;
+      box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+    }
+
+    .btn-primary:hover {
+      background: #4338ca;
+      box-shadow: 0 10px 15px -3px rgba(67, 56, 202, 0.3);
+      transform: translateY(-1px);
+    }
+
     .btn-danger {
       background: #ef4444;
       color: white;
@@ -195,6 +215,7 @@ export class ConfirmModalComponent {
   @Input() confirmLabel = 'Confirmer';
   @Input() cancelLabel = 'Annuler';
   @Input() showCancel = true;
+  @Input() variant: 'danger' | 'primary' = 'danger';
 
   @Output() confirm = new EventEmitter<void>();
   @Output() cancel = new EventEmitter<void>();

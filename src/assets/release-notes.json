@@ -1,5 +1,22 @@
 [
   {
+    "version": "2026.05.15",
+    "date": "2026-05-15",
+    "news": [
+      {
+        "title": "Import & Export Excel des Projets",
+        "items": [
+          "Exportez vos projets en un clic (tous les projets ou uniquement ceux filtrés)",
+          "Importez massivement vos projets depuis un fichier Excel",
+          "Détection intelligente des doublons sur le Code Projet et la Référence Externe avec rapport d'erreurs détaillé",
+          "Écran de confirmation avant l'importation finale pour un contrôle total"
+        ],
+        "imageUrl": "assets/release-notes/2026-05-15-export-import-projects.png",
+        "imageMaxHeight": 150
+      }
+    ]
+  },
+  {
     "version": "2026.04.19",
     "date": "2026-04-19",
     "news": [
