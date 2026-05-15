@@ -7,11 +7,12 @@ import { SettingsService } from "../../services/settings.service";
 import { Projet } from "../../models/types";
 import { ChiffresModalComponent } from "../chiffres/chiffres-modal.component";
 import { Chiffre } from "../../models/chiffres.type";
-import { LucideAngularModule, Plus, LucideCalculator, MoreVertical, Edit, Trash2, Copy, ExternalLink } from "lucide-angular";
+import { LucideAngularModule, Plus, LucideCalculator, MoreVertical, Edit, Trash2, Copy, ExternalLink, FileDown, FileUp, AlertCircle } from "lucide-angular";
 import { ConfirmModalComponent } from "../confirm-modal.component";
 import { ProjectModalComponent } from "../project-modal.component";
 import { CdkDragDrop, DragDropModule, moveItemInArray } from "@angular/cdk/drag-drop";
 import { calculateNewRank, sortByRank } from "../../utils/lexorank.utils";
+import * as XLSX from 'xlsx';
 
 @Component({
   selector: "app-projects-view",
@@ -32,6 +33,9 @@ export class ProjectsViewComponent implements OnInit {
   Copy = Copy;
   ExternalLink = ExternalLink;
   Plus = Plus;
+  FileDown = FileDown;
+  FileUp = FileUp;
+  AlertCircle = AlertCircle;
 
   // TanStack Query - Reactive data
   projetsQuery = this.projetService.getAllProjetsQuery();
@@ -87,7 +91,12 @@ export class ProjectsViewComponent implements OnInit {
   showConfirmModal = false;
   confirmTitle = '';
   confirmMessage = '';
+  confirmIcon = 'alert-triangle';
+  confirmLabel = 'Confirmer';
+  showCancelButton = true;
   private pendingConfirmAction: (() => void) | null = null;
+
+  showExportMenu = false;
 
 
   constructor(
@@ -102,6 +111,7 @@ export class ProjectsViewComponent implements OnInit {
     if (this.activeMenuId) {
       this.activeMenuId = null;
     }
+    this.showExportMenu = false;
   }
 
   toggleMenu(event: MouseEvent, projetId: string) {
@@ -249,5 +259,170 @@ export class ProjectsViewComponent implements OnInit {
 
   onChiffresModalSaved(chiffres: Chiffre[]) {
     console.log("Chiffres sauvegardés:", chiffres);
+  }
+
+  // --- Excel Export ---
+
+  exportToExcel(mode: 'all' | 'filtered') {
+    this.showExportMenu = false;
+    const projects = mode === 'filtered' ? this.filteredProjects() : (this.projetsQuery.data() || []);
+
+    const data = projects.map(p => ({
+      'Code Projet': p.code_projet,
+      'Nom Projet': p.nom_projet,
+      'Statut': p.statut,
+      'Description': p.description || '',
+      'Référence Externe': p.reference_externe || '',
+      'Chef de Projet': p.chef_projet || '',
+      'Couleur': p.color || '',
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Projets');
+
+    const fileName = `Export_Projets_${mode === 'filtered' ? 'Filtrés_' : ''}${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  }
+
+  // --- Excel Import ---
+
+  triggerImport() {
+    const fileInput = document.getElementById('excel-import-input') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
+  }
+
+  async importFromExcel(event: any) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e: any) => {
+      const bstr = e.target.result;
+      const wb = XLSX.read(bstr, { type: 'binary' });
+      const wsname = wb.SheetNames[0];
+      const ws = wb.Sheets[wsname];
+      const data = XLSX.utils.sheet_to_json(ws) as any[];
+
+      this.processImportData(data);
+      // Reset input
+      event.target.value = '';
+    };
+    reader.readAsBinaryString(file);
+  }
+
+  private async processImportData(data: any[]) {
+    const existingProjects = this.projetsQuery.data() || [];
+    const errors: string[] = [];
+    const projectsToCreate: Partial<Projet>[] = [];
+
+    // Map headers to fields (handles potential variation in headers)
+    const headerMap: { [key: string]: string } = {
+      'Code Projet': 'code_projet',
+      'Nom Projet': 'nom_projet',
+      'Statut': 'statut',
+      'Description': 'description',
+      'Référence Externe': 'reference_externe',
+      'Chef de Projet': 'chef_projet',
+      'Couleur': 'color'
+    };
+
+    data.forEach((row, index) => {
+      const lineNum = index + 2; // +1 for 1-based index, +1 for header row
+      const project: any = {};
+
+      // Normalize row keys and map them
+      Object.keys(row).forEach(key => {
+        const mappedKey = headerMap[key];
+        if (mappedKey) {
+          project[mappedKey] = row[key];
+        }
+      });
+
+      if (!project.code_projet || !project.nom_projet) {
+        errors.push(`Ligne ${lineNum}: Code Projet et Nom Projet sont obligatoires`);
+        return;
+      }
+
+      // Check duplicates in existing data
+      const duplicateCode = existingProjects.find(p => p.code_projet === project.code_projet);
+      if (duplicateCode) {
+        errors.push(`Ligne ${lineNum}: Le Code Projet "${project.code_projet}" existe déjà`);
+      }
+
+      if (project.reference_externe) {
+        const duplicateRef = existingProjects.find(p => p.reference_externe === project.reference_externe);
+        if (duplicateRef) {
+          errors.push(`Ligne ${lineNum}: La Référence externe "${project.reference_externe}" existe déjà`);
+        }
+      }
+
+      // Check duplicates within the import file itself
+      const internalDuplicateCode = projectsToCreate.find(p => p.code_projet === project.code_projet);
+      if (internalDuplicateCode) {
+         errors.push(`Ligne ${lineNum}: Le Code Projet "${project.code_projet}" est présent plusieurs fois dans le fichier`);
+      }
+
+      if (project.reference_externe) {
+        const internalDuplicateRef = projectsToCreate.find(p => p.reference_externe === project.reference_externe);
+        if (internalDuplicateRef) {
+           errors.push(`Ligne ${lineNum}: La Référence externe "${project.reference_externe}" est présente plusieurs fois dans le fichier`);
+        }
+      }
+
+      projectsToCreate.push({
+        ...project,
+        statut: project.statut || 'En cours',
+        color: project.color || '#3b82f6'
+      });
+    });
+
+    if (errors.length > 0) {
+      this.showImportError(errors);
+      return;
+    }
+
+    // No errors, perform bulk import
+    try {
+      // Find max id_projet
+      let maxId = existingProjects.reduce((max: number, p: Projet) => (p.id_projet > max ? p.id_projet : max), 0);
+
+      // We need to create them one by one or via a bulk insert in the service
+      // To keep it simple and handle ranks/id_projets, we'll loop or use a new service method
+      for (const p of projectsToCreate) {
+        maxId++;
+        const newProj = { ...p, id_projet: maxId };
+        await this.projetService.createProjet(newProj);
+      }
+      
+      // The mutations/service calls will invalidate the cache
+    } catch (error) {
+      console.error("Erreur lors de l'import :", error);
+      this.confirmTitle = "Erreur d'import";
+      this.confirmMessage = "Une erreur est survenue lors de l'enregistrement des projets.";
+      this.confirmIcon = 'alert-circle';
+      this.confirmLabel = 'Fermer';
+      this.showCancelButton = false;
+      this.showConfirmModal = true;
+    }
+  }
+
+  private showImportError(errors: string[]) {
+    this.confirmTitle = "Import KO";
+    const first3 = errors.slice(0, 3);
+    let message = `L'import a été annulé car des doublons ou des erreurs ont été détectés :\n\n`;
+    message += first3.join('\n');
+    if (errors.length > 3) {
+      message += `\n... et ${errors.length - 3} autres erreurs.`;
+    }
+
+    this.confirmMessage = message;
+    this.confirmIcon = 'alert-circle';
+    this.confirmLabel = 'Fermer';
+    this.showCancelButton = false;
+    this.pendingConfirmAction = null;
+    this.showConfirmModal = true;
   }
 }

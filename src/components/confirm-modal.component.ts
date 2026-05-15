@@ -1,9 +1,9 @@
 import { Component, EventEmitter, Input, Output, NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, AlertTriangle, X } from 'lucide-angular';
+import { LucideAngularModule, AlertTriangle, X, AlertCircle } from 'lucide-angular';
 
 @NgModule({
-  imports: [LucideAngularModule.pick({ AlertTriangle, X })],
+  imports: [LucideAngularModule.pick({ AlertTriangle, X, AlertCircle })],
   exports: [LucideAngularModule]
 })
 export class LucideIconsModule { }
@@ -32,7 +32,7 @@ export class LucideIconsModule { }
         </div>
         
         <div class="confirm-footer">
-          <button class="btn btn-secondary" (click)="onCancel()">{{ cancelLabel }}</button>
+          <button *ngIf="showCancel" class="btn btn-secondary" (click)="onCancel()">{{ cancelLabel }}</button>
           <button class="btn btn-danger" (click)="onConfirm()">{{ confirmLabel }}</button>
         </div>
       </div>
@@ -194,6 +194,7 @@ export class ConfirmModalComponent {
   @Input() icon = 'alert-triangle';
   @Input() confirmLabel = 'Confirmer';
   @Input() cancelLabel = 'Annuler';
+  @Input() showCancel = true;
 
   @Output() confirm = new EventEmitter<void>();
   @Output() cancel = new EventEmitter<void>();

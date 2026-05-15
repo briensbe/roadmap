@@ -45,6 +45,21 @@
   margin-bottom: 32px;
 }
 
+.header-actions-main {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.export-menu-container {
+  position: relative;
+}
+
+.export-dropdown {
+  right: 0;
+  width: 140px;
+}
+
 .projects-header h1 {
   margin: 0 0 4px 0;
   font-size: 32px;

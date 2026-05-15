@@ -4,7 +4,30 @@
       <h1>Projets</h1>
       <p class="subtitle">Gérez vos projets et leur chiffrage</p>
     </div>
-    <button class="btn btn-primary" (click)="openCreateModal()">+ Nouveau projet</button>
+    <div class="header-actions-main">
+      <div class="export-menu-container" (click)="$event.stopPropagation()">
+        <button class="btn btn-secondary" (click)="showExportMenu = !showExportMenu">
+          <lucide-icon [img]="FileUp" [size]="18"></lucide-icon>
+          Exporter
+        </button>
+        <div class="dropdown-menu export-dropdown" *ngIf="showExportMenu">
+          <button class="dropdown-item" (click)="exportToExcel('filtered')">Projets filtrés</button>
+          <button class="dropdown-item" (click)="exportToExcel('all')">Tous les projets</button>
+        </div>
+      </div>
+      <button class="btn btn-secondary" (click)="triggerImport()">
+        <lucide-icon [img]="FileDown" [size]="18"></lucide-icon>
+        Importer
+      </button>
+      <button class="btn btn-primary" (click)="openCreateModal()">+ Nouveau projet</button>
+      <input
+        type="file"
+        id="excel-import-input"
+        style="display: none"
+        (change)="importFromExcel($event)"
+        accept=".xlsx, .xls"
+      />
+    </div>
   </div>
 
   <div class="projects-controls">
@@ -243,7 +266,9 @@
   [visible]="showConfirmModal"
   [title]="confirmTitle"
   [message]="confirmMessage"
-  confirmLabel="Supprimer"
+  [icon]="confirmIcon"
+  [confirmLabel]="confirmLabel"
+  [showCancel]="showCancelButton"
   (confirm)="onConfirmAction()"
   (cancel)="showConfirmModal = false"
 >
