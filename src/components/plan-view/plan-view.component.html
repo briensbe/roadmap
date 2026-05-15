@@ -551,7 +551,7 @@
                         (click)="openLinkModal(row); closeLineMenu(); $event.stopPropagation()"
                       >
                         <lucide-icon [img]="Plus" [size]="14"></lucide-icon>
-                        {{ viewMode() === "resource" ? "Ajouter un projet" : "Ajouter" }}
+                        {{ viewMode() === "project" ? "Ajouter Equipe" : "Ajouter Projet(s)" }}
                       </button>
 
                       <!-- Move up/down actions only in project view -->
@@ -882,7 +882,7 @@
                               "
                             >
                               <lucide-icon [img]="Plus" [size]="14"></lucide-icon>
-                              {{ viewMode() === "resource" ? "Ajouter un projet" : "Ajouter une ressource" }}
+                              {{ viewMode() === "resource" ? "Ajouter Projet(s)" : "Ajouter une ressource" }}
                             </button>
                             <button
                               class="line-menu-item danger"
@@ -1342,21 +1342,25 @@
         <h2 *ngIf="viewMode() !== 'resource' || !selectedChildRowToLink">
           {{
             viewMode() === "project"
-              ? "Ajouter une équipe"
+              ? "Ajouter Equipe"
               : viewMode() === "team" || viewMode() === "resource"
-                ? "Ajouter un projet"
+                ? "Ajouter Projet(s)"
                 : "Ajouter une ressource"
           }}
           à {{ selectedParentRow?.label }}
         </h2>
         <h2 *ngIf="viewMode() === 'resource' && selectedChildRowToLink">
-          Ajouter un projet à {{ selectedChildRowToLink.label }}
+          Ajouter Projet(s) à {{ selectedChildRowToLink.label }}
         </h2>
         <button class="modal-close" (click)="closeLinkModal()">×</button>
       </div>
       <div class="modal-body">
         <!-- ===== MODE PROJECT : select simple d'équipe ===== -->
         <ng-container *ngIf="viewMode() === 'project'">
+          <div class="info-box">
+            <lucide-icon [img]="Info" [size]="18"></lucide-icon>
+            <span>Les ressources définies dans <strong>Capacité</strong> pour cette équipe seront automatiquement ajoutées avec le projet.</span>
+          </div>
           <div class="form-group">
             <label>Sélectionner une équipe</label>
             <select [(ngModel)]="selectedIdToLink" class="form-control">
