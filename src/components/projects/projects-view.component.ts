@@ -22,7 +22,7 @@ import * as XLSX from 'xlsx';
   styleUrl: "./projects-view.component.css"
 })
 export class ProjectsViewComponent implements OnInit {
-  viewMode: "list" | "card" = "list";
+  viewMode: "list" | "card" | "table" = "list";
   searchQuery = signal("");
   statusFilter = signal("");
 

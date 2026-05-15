@@ -19,6 +19,12 @@
         ],
         "imageUrl": "assets/release-notes/2026-05-15-export-import-projects.png",
         "imageMaxHeight": 150
+      },
+      {
+        "title": "Nouveau mode d'affichage des projets ",
+        "items": ["Ajout d'une vue''Tableau'"],
+        "imageUrl": "assets/release-notes/2025-05-15-projects-table-view.png",
+        "imageMaxHeight": 200
       }
     ]
   },

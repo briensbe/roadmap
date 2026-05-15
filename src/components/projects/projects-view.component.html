@@ -77,7 +77,103 @@
             <rect x="2" y="13" width="16" height="2" rx="1" />
           </svg>
         </button>
+        <button
+          class="toggle-btn"
+          [class.active]="viewMode === 'table'"
+          (click)="viewMode = 'table'"
+          title="Vue tableau"
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+            <rect x="2" y="2" width="16" height="16" rx="1" fill="none" stroke="currentColor" stroke-width="2" />
+            <line x1="2" y1="7" x2="18" y2="7" stroke="currentColor" stroke-width="2" />
+            <line x1="2" y1="12" x2="18" y2="12" stroke="currentColor" stroke-width="2" />
+            <line x1="7" y1="2" x2="7" y2="18" stroke="currentColor" stroke-width="2" />
+          </svg>
+        </button>
       </div>
+    </div>
+  </div>
+
+  <!-- Table View -->
+  <div *ngIf="viewMode === 'table'" class="projects-table-wrapper">
+    <table class="projects-table">
+      <thead>
+        <tr>
+          <th class="col-code">Code</th>
+          <th class="col-name">Nom du projet</th>
+          <th class="col-status">Statut</th>
+          <th class="col-manager">Chef de projet</th>
+          <th class="col-description">Description</th>
+          <th class="col-ref">Réf. Ext.</th>
+          <th class="col-actions"></th>
+        </tr>
+      </thead>
+      <tbody cdkDropList (cdkDropListDropped)="drop($event)">
+        <tr *ngFor="let projet of filteredProjects()" cdkDrag class="project-table-row" (click)="openEditModal(projet)">
+          <td class="col-code">
+            <span class="project-code" [style.color]="projet.color || '#3b82f6'">{{ projet.code_projet }}</span>
+          </td>
+          <td class="col-name">
+            <div class="name-with-color">
+              <span class="color-indicator" [style.background-color]="projet.color || '#3b82f6'"></span>
+              {{ projet.nom_projet }}
+            </div>
+          </td>
+          <td class="col-status">
+            <span class="status-badge small" [attr.data-status]="projet.statut">{{ projet.statut }}</span>
+          </td>
+          <td class="col-manager">{{ projet.chef_projet || '—' }}</td>
+          <td class="col-description">
+            <div class="truncate-desc" [title]="projet.description">{{ projet.description || '—' }}</div>
+          </td>
+          <td class="col-ref">
+            <span *ngIf="projet.reference_externe; else noRef">
+              <ng-container *ngIf="externalReferenceUrl(); else noLinkTable">
+                <a
+                  [href]="externalReferenceUrl() + projet.reference_externe"
+                  target="_blank"
+                  class="ref-link"
+                  (click)="$event.stopPropagation()"
+                >
+                  #{{ projet.reference_externe }}
+                  <lucide-icon [img]="ExternalLink" [size]="12"></lucide-icon>
+                </a>
+              </ng-container>
+              <ng-template #noLinkTable> #{{ projet.reference_externe }} </ng-template>
+            </span>
+            <ng-template #noRef>—</ng-template>
+          </td>
+          <td class="col-actions" (click)="$event.stopPropagation()">
+            <div class="menu-container">
+              <button class="menu-btn" (click)="toggleMenu($event, projet.id!)">
+                <lucide-icon [img]="MoreVertical" [size]="18"></lucide-icon>
+              </button>
+              <div class="dropdown-menu right" *ngIf="activeMenuId === projet.id">
+                <button class="dropdown-item" (click)="openEditModal(projet)">
+                  <lucide-icon [img]="Edit" [size]="14"></lucide-icon>
+                  Modifier
+                </button>
+                <button class="dropdown-item" (click)="openChiffresModal(projet.id_projet)">
+                  <lucide-icon [img]="LucideCalculator" [size]="14"></lucide-icon>
+                  Gérer les chiffres
+                </button>
+                <button class="dropdown-item" (click)="duplicateProjet(projet)">
+                  <lucide-icon [img]="Copy" [size]="14"></lucide-icon>
+                  Dupliquer
+                </button>
+                <button class="dropdown-item delete" (click)="deleteProjet(projet)">
+                  <lucide-icon [img]="Trash2" [size]="14"></lucide-icon>
+                  Supprimer
+                </button>
+              </div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div *ngIf="filteredProjects().length === 0" class="empty-state">
+      <p>Aucun projet trouvé</p>
     </div>
   </div>
 
