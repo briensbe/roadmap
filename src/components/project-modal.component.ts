@@ -5,11 +5,12 @@ import { ProjetService } from "../services/projet.service";
 import { SettingsService } from "../services/settings.service";
 import { Projet, PROJECT_STATUS_LIST } from "../models/types";
 import { LucideAngularModule, Plus, ExternalLink, LucideCalculator } from "lucide-angular";
+import { ProjectJsonImportComponent } from "./project-json-import.component";
 
 @Component({
   selector: "app-project-modal",
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule, ProjectJsonImportComponent],
   template: `
     <div
       class="modal-overlay"
@@ -18,7 +19,13 @@ import { LucideAngularModule, Plus, ExternalLink, LucideCalculator } from "lucid
     >
       <div class="modal" (click)="$event.stopPropagation()">
         <div class="modal-header">
-          <h2>{{ projet?.id ? "Modifier le projet" : "Nouveau Projet" }}</h2>
+          <div class="header-title-group">
+            <h2>{{ projet?.id ? "Modifier le projet" : "Nouveau Projet" }}</h2>
+            <app-project-json-import 
+              *ngIf="!projet?.id"
+              (imported)="onJsonImported($event)"
+            ></app-project-json-import>
+          </div>
           <button class="modal-close" (click)="close()">×</button>
         </div>
         <form (ngSubmit)="save()" class="form">
@@ -139,6 +146,11 @@ import { LucideAngularModule, Plus, ExternalLink, LucideCalculator } from "lucid
       justify-content: space-between;
       align-items: center;
       margin-bottom: 24px;
+    }
+    .header-title-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
     .modal-header h2 { margin: 0; font-size: 24px; color: #111827; }
     .modal-close {
@@ -305,6 +317,17 @@ export class ProjectModalComponent implements OnInit {
     } finally {
       this.isSaving = false;
     }
+  }
+
+  onJsonImported(data: any) {
+    this.editableProjet = {
+      ...this.editableProjet,
+      reference_externe: data.reference_externe,
+      nom_projet: data.nom_projet,
+      chef_projet: data.chef_projet,
+      description: data.description
+    };
+    this.formErrors.nom_projet = false;
   }
 
   Plus = Plus;
