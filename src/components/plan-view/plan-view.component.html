@@ -1283,7 +1283,7 @@
 
   <!-- Modal for linking -->
   <div *ngIf="showLinkModal" class="modal-overlay" (click)="closeLinkModal()">
-    <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal" [class.modal-wide]="viewMode() !== 'project'" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2 *ngIf="viewMode() !== 'resource' || !selectedChildRowToLink">
           {{
@@ -1301,56 +1301,163 @@
         <button class="modal-close" (click)="closeLinkModal()">×</button>
       </div>
       <div class="modal-body">
-        <div class="form-group">
-          <label>
-            {{
-              viewMode() === "project"
-                ? "Sélectionner une équipe"
-                : viewMode() === "team" || viewMode() === "resource"
-                  ? "Sélectionner un projet"
-                  : "Sélectionner une ressource"
-            }}
-          </label>
-          <select [(ngModel)]="selectedIdToLink" class="form-control">
-            <option value="">-- Choisir --</option>
-            <option *ngFor="let item of linkableItems" [value]="item.id">
-              {{ item.label }}
-            </option>
-          </select>
-        </div>
 
-        <div class="project-links-in-modal" *ngIf="getProjectForLinks() as project">
-          <div class="links-label-row">
-            <span class="links-title">Actions Projet:</span>
-            <div class="links-actions">
-              <button class="btn-link" (click)="openProjectEditFromLink()">
-                <lucide-icon [img]="ExternalLink" [size]="14"></lucide-icon>
-                Modifier Projet
-              </button>
-              <button class="btn-link" (click)="onOpenChiffresFromProject(project.id_projet)">
-                <lucide-icon [img]="LucideCalculator" [size]="14"></lucide-icon>
-                Modifier chiffres
-              </button>
-              <a
-                *ngIf="project.reference_externe && externalReferenceUrl()"
-                [href]="externalReferenceUrl() + project.reference_externe"
-                target="_blank"
-                class="btn-link external-link"
-              >
-                <lucide-icon [img]="ExternalLink" [size]="14"></lucide-icon>
-                {{ project.reference_externe }}
-              </a>
+        <!-- ===== MODE PROJECT : select simple d'équipe ===== -->
+        <ng-container *ngIf="viewMode() === 'project'">
+          <div class="form-group">
+            <label>Sélectionner une équipe</label>
+            <select [(ngModel)]="selectedIdToLink" class="form-control">
+              <option value="">-- Choisir --</option>
+              <option *ngFor="let item of linkableItems" [value]="item.id">
+                {{ item.label }}
+              </option>
+            </select>
+          </div>
+
+          <div class="project-links-in-modal" *ngIf="getProjectForLinks() as project">
+            <div class="links-label-row">
+              <span class="links-title">Actions Projet:</span>
+              <div class="links-actions">
+                <button class="btn-link" (click)="openProjectEditFromLink()">
+                  <lucide-icon [img]="ExternalLink" [size]="14"></lucide-icon>
+                  Modifier Projet
+                </button>
+                <button class="btn-link" (click)="onOpenChiffresFromProject(project.id_projet)">
+                  <lucide-icon [img]="LucideCalculator" [size]="14"></lucide-icon>
+                  Modifier chiffres
+                </button>
+                <a
+                  *ngIf="project.reference_externe && externalReferenceUrl()"
+                  [href]="externalReferenceUrl() + project.reference_externe"
+                  target="_blank"
+                  class="btn-link external-link"
+                >
+                  <lucide-icon [img]="ExternalLink" [size]="14"></lucide-icon>
+                  {{ project.reference_externe }}
+                </a>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="modal-actions">
-          <button class="btn btn-primary" (click)="linkItem()" [disabled]="!selectedIdToLink">Ajouter</button>
-          <button class="btn btn-secondary" (click)="closeLinkModal()">Annuler</button>
-        </div>
+          <div class="modal-actions">
+            <button class="btn btn-primary" (click)="linkItem()" [disabled]="!selectedIdToLink">Ajouter</button>
+            <button class="btn btn-secondary" (click)="closeLinkModal()">Annuler</button>
+          </div>
+        </ng-container>
+
+        <!-- ===== MODES TEAM / RESOURCE : Gmail-style multi-select ===== -->
+        <ng-container *ngIf="viewMode() !== 'project'">
+
+          <!-- Filtres -->
+          <div class="lm-filters">
+            <div class="lm-search-wrapper">
+              <lucide-icon [img]="Search" [size]="16" class="lm-search-icon"></lucide-icon>
+              <input
+                class="lm-search"
+                [(ngModel)]="linkModalSearchQuery"
+                placeholder="Rechercher par code, nom, référence..."
+                autocomplete="off"
+              />
+            </div>
+            <select class="lm-status-filter" [(ngModel)]="linkModalStatusFilter">
+              <option value="">Tous les statuts</option>
+              <option *ngFor="let s of PROJECT_STATUSES" [value]="s">{{ s }}</option>
+            </select>
+          </div>
+
+          <!-- Sticky Toolbar de sélection -->
+          <div class="lm-sticky-toolbar" [class.visible]="selectedIdsToLink.size > 0">
+            <span class="lm-toolbar-count">
+              <strong>{{ selectedIdsToLink.size }}</strong>&nbsp;projet{{ selectedIdsToLink.size > 1 ? 's' : '' }} sélectionné{{ selectedIdsToLink.size > 1 ? 's' : '' }}
+            </span>
+            <div class="lm-toolbar-actions">
+              <button
+                class="btn btn-primary btn-sm"
+                (click)="linkItem()"
+                [disabled]="linkModalIsSaving"
+              >
+                <span *ngIf="!linkModalIsSaving">Ajouter la sélection</span>
+                <span *ngIf="linkModalIsSaving">Ajout en cours…</span>
+              </button>
+              <button class="btn btn-ghost btn-sm" (click)="clearLinkSelection()" [disabled]="linkModalIsSaving">
+                Désélectionner
+              </button>
+            </div>
+          </div>
+
+          <!-- Table Gmail-style -->
+          <div class="lm-table-wrapper">
+            <table class="lm-table">
+              <thead>
+                <tr>
+                  <th class="lm-col-check">
+                    <input
+                      type="checkbox"
+                      class="lm-checkbox"
+                      [checked]="isAllFilteredSelected"
+                      [indeterminate]="isSelectionIndeterminate"
+                      (change)="toggleAllLinkSelection()"
+                      title="Tout sélectionner / désélectionner"
+                    />
+                  </th>
+                  <th class="lm-col-code">Code Projet</th>
+                  <th class="lm-col-ref">Réf. Externe</th>
+                  <th class="lm-col-name">Nom Projet</th>
+                  <th class="lm-col-status">Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let item of filteredLinkableItems"
+                  class="lm-row"
+                  [class.lm-row-selected]="isLinkSelected(item.id)"
+                  (click)="toggleLinkSelection(item.id)"
+                >
+                  <td class="lm-col-check" (click)="$event.stopPropagation(); toggleLinkSelection(item.id)">
+                    <input
+                      type="checkbox"
+                      class="lm-checkbox"
+                      [checked]="isLinkSelected(item.id)"
+                      (change)="toggleLinkSelection(item.id)"
+                      (click)="$event.stopPropagation()"
+                    />
+                  </td>
+                  <td class="lm-col-code">
+                    <span class="lm-code-badge" [style.color]="getLinkableProjectData(item.id)?.color || '#3b82f6'">
+                      {{ getLinkableProjectData(item.id)?.code_projet || '—' }}
+                    </span>
+                  </td>
+                  <td class="lm-col-ref">
+                    <span class="lm-ref-text">{{ getLinkableProjectData(item.id)?.reference_externe || '' }}</span>
+                  </td>
+                  <td class="lm-col-name">{{ item.label }}</td>
+                  <td class="lm-col-status">
+                    <span
+                      class="status-badge small"
+                      [attr.data-status]="getLinkableProjectData(item.id)?.statut"
+                    >{{ getLinkableProjectData(item.id)?.statut }}</span>
+                  </td>
+                </tr>
+                <tr *ngIf="filteredLinkableItems.length === 0">
+                  <td colspan="5" class="lm-empty">
+                    <lucide-icon [img]="Search" [size]="20"></lucide-icon>
+                    <span>Aucun projet disponible</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Footer -->
+          <div class="modal-actions lm-footer">
+            <button class="btn btn-secondary" (click)="closeLinkModal()">Fermer</button>
+          </div>
+
+        </ng-container>
       </div>
     </div>
   </div>
+
 
   <!-- Modal for adding resource -->
   <div *ngIf="showAddResourceModal" class="modal-overlay" (click)="closeAddResourceModal()">

@@ -292,7 +292,68 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   selectedParentRow: ParentRow | null = null;
   selectedChildRowToLink: ChildRow | null = null;
   linkableItems: { id: string; label: string; type?: 'role' | 'personne' }[] = [];
-  selectedIdToLink: string = "";
+  selectedIdToLink: string = ""; // kept for project mode (select)
+
+  // Bulk-select (Gmail-style)
+  selectedIdsToLink: Set<string> = new Set();
+  linkModalSearchQuery: string = '';
+  linkModalStatusFilter: string = '';
+  linkModalIsSaving: boolean = false;
+
+  get filteredLinkableItems(): { id: string; label: string; type?: 'role' | 'personne' }[] {
+    const q = this.linkModalSearchQuery.trim().toLowerCase();
+    const s = this.linkModalStatusFilter;
+    return this.linkableItems.filter(item => {
+      const proj = this.allProjects.find(p => p.id === item.id);
+      const matchSearch = !q ||
+        item.label.toLowerCase().includes(q) ||
+        (proj?.code_projet || '').toLowerCase().includes(q) ||
+        (proj?.reference_externe || '').toLowerCase().includes(q);
+      const matchStatus = !s || (proj?.statut || '') === s;
+      return matchSearch && matchStatus;
+    });
+  }
+
+  get isAllFilteredSelected(): boolean {
+    const filtered = this.filteredLinkableItems;
+    return filtered.length > 0 && filtered.every(i => this.selectedIdsToLink.has(i.id));
+  }
+
+  get isSelectionIndeterminate(): boolean {
+    const filtered = this.filteredLinkableItems;
+    const count = filtered.filter(i => this.selectedIdsToLink.has(i.id)).length;
+    return count > 0 && count < filtered.length;
+  }
+
+  isLinkSelected(id: string): boolean {
+    return this.selectedIdsToLink.has(id);
+  }
+
+  toggleLinkSelection(id: string): void {
+    if (this.selectedIdsToLink.has(id)) {
+      this.selectedIdsToLink.delete(id);
+    } else {
+      this.selectedIdsToLink.add(id);
+    }
+    this.selectedIdsToLink = new Set(this.selectedIdsToLink); // trigger CD
+  }
+
+  toggleAllLinkSelection(): void {
+    if (this.isAllFilteredSelected) {
+      this.filteredLinkableItems.forEach(i => this.selectedIdsToLink.delete(i.id));
+    } else {
+      this.filteredLinkableItems.forEach(i => this.selectedIdsToLink.add(i.id));
+    }
+    this.selectedIdsToLink = new Set(this.selectedIdsToLink); // trigger CD
+  }
+
+  clearLinkSelection(): void {
+    this.selectedIdsToLink = new Set();
+  }
+
+  getLinkableProjectData(id: string): import('../../models/types').Projet | undefined {
+    return this.allProjects.find(p => p.id === id);
+  }
 
   // Resource Modal State
   showAddResourceModal = false;
@@ -1646,6 +1707,10 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.selectedParentRow = row;
     this.selectedChildRowToLink = child || null;
     this.selectedIdToLink = "";
+    this.selectedIdsToLink = new Set();
+    this.linkModalSearchQuery = '';
+    this.linkModalStatusFilter = '';
+    this.linkModalIsSaving = false;
 
     if (this.viewMode() === "project") {
       // Parent is Project, we want to add Teams
@@ -1662,14 +1727,12 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     } else if (this.viewMode() === "resource") {
       if (!child) {
         // Level 1 Parent: [Team - Resource]
-        // We want to add a PROJECT to this resource
         const existingProjectIds = new Set(row.children[0]?.resources.map(r => r.projectId) || []);
         this.linkableItems = this.allProjects
           .filter(p => !existingProjectIds.has(p.id!))
           .map(p => ({ id: p.id!, label: p.nom_projet }));
       } else {
         // Level 2 Child: Resource (already expanded)
-        // We want to add a PROJECT to this resource
         const existingProjectIds = new Set(child.resources.map(r => r.projectId));
         this.linkableItems = this.allProjects
           .filter(p => !existingProjectIds.has(p.id!))
@@ -1685,51 +1748,78 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.selectedParentRow = null;
     this.selectedChildRowToLink = null;
     this.selectedIdToLink = "";
+    this.selectedIdsToLink = new Set();
+    this.linkModalSearchQuery = '';
+    this.linkModalStatusFilter = '';
+    this.linkModalIsSaving = false;
   }
 
   async linkItem() {
-    if (!this.selectedParentRow || !this.selectedIdToLink) return;
+    if (!this.selectedParentRow) return;
 
-    try {
-      if (this.viewMode() === "project") {
+    // MODE PROJECT: single select via <select>
+    if (this.viewMode() === 'project') {
+      if (!this.selectedIdToLink) return;
+      try {
         const projetId = this.selectedParentRow.id;
         const equipeId = this.selectedIdToLink;
         await this.projetService.linkProjectToTeam(projetId, equipeId);
         await this.addAllTeamResourcesToProject(equipeId, projetId);
-      } else if (this.viewMode() === "team") {
-        const equipeId = this.selectedParentRow.id;
-        const projetId = this.selectedIdToLink;
-        await this.projetService.linkProjectToTeam(projetId, equipeId);
-        await this.addAllTeamResourcesToProject(equipeId, projetId);
-      } else if (this.viewMode() === "resource") {
-        if (!this.selectedChildRowToLink) {
-          // Level 1: Add Project to Resource
-          // selectedParentRow.id is `${teamId}_${rKey}`
-          const [equipeId, type, rawResId] = this.selectedParentRow.id.split('_');
-          const projetId = this.selectedIdToLink;
-
-          const roleId = type === 'role' ? rawResId : undefined;
-          const personneId = type === 'personne' ? rawResId : undefined;
-
-          await this.chargeService.createChargeWithoutDates(projetId, equipeId, roleId, personneId);
-        } else {
-          // Level 2: Add Project to Resource (already filtered)
-          const equipeId = this.selectedParentRow.id.split('_')[0];
-          const [type, resId] = this.selectedChildRowToLink.id.split('_');
-          const projetId = this.selectedIdToLink;
-
-          const roleId = type === 'role' ? resId : undefined;
-
-          await this.chargeService.createChargeWithoutDates(projetId, equipeId, roleId, type === 'personne' ? resId : undefined);
-        }
+        await this.loadData();
+        this.closeLinkModal();
+      } catch (error: any) {
+        console.error('Error linking item:', error);
+        alert(error.message || "Erreur lors de l'ajout du lien.");
       }
-
-      await this.loadData();
-      this.closeLinkModal();
-    } catch (error: any) {
-      console.error("Error linking item:", error);
-      alert(error.message || "Erreur lors de l'ajout du lien.");
+      return;
     }
+
+    // MODES TEAM / RESOURCE: bulk via checkboxes
+    if (this.selectedIdsToLink.size === 0) return;
+
+    this.linkModalIsSaving = true;
+    this.cdr.markForCheck();
+    const errors: string[] = [];
+
+    for (const selectedId of Array.from(this.selectedIdsToLink)) {
+      try {
+        if (this.viewMode() === 'team') {
+          const equipeId = this.selectedParentRow.id;
+          const projetId = selectedId;
+          await this.projetService.linkProjectToTeam(projetId, equipeId);
+          await this.addAllTeamResourcesToProject(equipeId, projetId);
+        } else if (this.viewMode() === 'resource') {
+          if (!this.selectedChildRowToLink) {
+            // Level 1: Add Project to Resource
+            const [equipeId, type, rawResId] = this.selectedParentRow.id.split('_');
+            const projetId = selectedId;
+            const roleId = type === 'role' ? rawResId : undefined;
+            const personneId = type === 'personne' ? rawResId : undefined;
+            await this.chargeService.createChargeWithoutDates(projetId, equipeId, roleId, personneId);
+          } else {
+            // Level 2: Add Project to Resource
+            const equipeId = this.selectedParentRow.id.split('_')[0];
+            const [type, resId] = this.selectedChildRowToLink.id.split('_');
+            const projetId = selectedId;
+            const roleId = type === 'role' ? resId : undefined;
+            await this.chargeService.createChargeWithoutDates(projetId, equipeId, roleId, type === 'personne' ? resId : undefined);
+          }
+        }
+      } catch (error: any) {
+        console.error('Error linking item:', error);
+        const proj = this.allProjects.find(p => p.id === selectedId);
+        errors.push(proj?.nom_projet || selectedId);
+      }
+    }
+
+    await this.loadData();
+    this.linkModalIsSaving = false;
+
+    if (errors.length > 0) {
+      alert(`Erreur lors de l'ajout de : ${errors.join(', ')}`);
+    }
+
+    this.closeLinkModal();
   }
 
   private async addAllTeamResourcesToProject(equipeId: string, projetId: string) {
