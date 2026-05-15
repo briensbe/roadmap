@@ -15,7 +15,9 @@ import {
   Globe,
   User,
   Shield,
-  Type
+  Type,
+  Download,
+  FileJson
 } from 'lucide-angular';
 import { SettingsService } from '../../services/settings.service';
 import { Setting, SettingType } from '../../models/settings.type';
@@ -117,6 +119,46 @@ import { ConfirmModalComponent } from '../confirm-modal.component';
                 }
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="tools-section">
+        <div class="section-header">
+          <lucide-icon [img]="DownloadIcon" size="20"></lucide-icon>
+          <h2>Outils & Bookmarklets</h2>
+        </div>
+        <div class="tools-grid">
+          <div class="tool-card">
+            <div class="tool-info">
+              <div class="tool-icon-wrapper cloud">
+                <lucide-icon [img]="FileJsonIcon" size="24"></lucide-icon>
+              </div>
+              <div>
+                <h3>Extracteur Jira Cloud</h3>
+                <p>Bookmarklet pour extraire les données d'un ticket Jira Cloud vers le format JSON compatible.</p>
+              </div>
+            </div>
+            <a href="assets/scripts/extract-jira-cloud-bookmarklet.js" download="extract-jira-cloud.js" class="download-link">
+              <lucide-icon [img]="DownloadIcon" size="16"></lucide-icon>
+              Télécharger
+            </a>
+          </div>
+          
+          <div class="tool-card">
+            <div class="tool-info">
+              <div class="tool-icon-wrapper datacenter">
+                <lucide-icon [img]="FileJsonIcon" size="24"></lucide-icon>
+              </div>
+              <div>
+                <h3>Extracteur Jira DataCenter</h3>
+                <p>Bookmarklet pour extraire les données d'un ticket Jira DataCenter / On-Premise.</p>
+              </div>
+            </div>
+            <a href="assets/scripts/extract-jira-datacenter-bookmarklet.js" download="extract-jira-datacenter.js" class="download-link">
+              <lucide-icon [img]="DownloadIcon" size="16"></lucide-icon>
+              Télécharger
+            </a>
           </div>
         </div>
       </div>
@@ -553,6 +595,107 @@ import { ConfirmModalComponent } from '../confirm-modal.component';
       background: #f1f5f9;
     }
 
+    .tools-section {
+      margin-top: 40px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      color: #1e293b;
+    }
+
+    .section-header h2 {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+      gap: 20px;
+    }
+
+    .tool-card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      border: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s;
+    }
+
+    .tool-card:hover {
+      border-color: #4f46e5;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+    }
+
+    .tool-info {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .tool-icon-wrapper {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .tool-icon-wrapper.cloud {
+      background: #eff6ff;
+      color: #3b82f6;
+    }
+
+    .tool-icon-wrapper.datacenter {
+      background: #f0fdf4;
+      color: #22c55e;
+    }
+
+    .tool-info h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1e293b;
+      margin: 0 0 4px 0;
+    }
+
+    .tool-info p {
+      font-size: 13px;
+      color: #64748b;
+      margin: 0;
+      max-width: 250px;
+      line-height: 1.4;
+    }
+
+    .download-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      color: #475569;
+      font-size: 13px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .download-link:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+      color: #1e293b;
+    }
+
     @keyframes fadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
@@ -613,6 +756,8 @@ export class SettingsComponent implements OnInit {
   SaveIcon = Save;
   GlobeIcon = Globe;
   UserIcon = User;
+  DownloadIcon = Download;
+  FileJsonIcon = FileJson;
 
   get valuePlaceholder(): string {
     return this.currentSetting.type === 'json' ? '{ "key": "value" }' : 'Entrez la valeur...';

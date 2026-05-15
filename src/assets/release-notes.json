@@ -21,6 +21,15 @@
         "imageMaxHeight": 150
       },
       {
+        "title": "Import JSON pour créer des projets",
+        "items": [
+          "il est possible de créer des projets à partir d'un fichier JSON",
+          "Un bookmarklet (disponible dans Paramètres) est à installer pour extraire les données de Jira"
+        ],
+        "imageUrl": "assets/release-notes/2025-05-15-importJson.png",
+        "imageMaxHeight": 300
+      },
+      {
         "title": "Nouveau mode d'affichage des projets ",
         "items": ["Ajout d'une vue''Tableau'"],
         "imageUrl": "assets/release-notes/2025-05-15-projects-table-view.png",
