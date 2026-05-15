@@ -5,11 +5,7 @@
   </div>
 
   <!-- Live Drag Projection Tooltip -->
-  <div 
-    #dragProjectionTooltip
-    class="drag-projection-badge" 
-    [class.visible]="dragProjectionTooltipVisible"
-  >
+  <div #dragProjectionTooltip class="drag-projection-badge" [class.visible]="dragProjectionTooltipVisible">
     <div class="projection-main">
       <lucide-icon [img]="Calendar" [size]="14"></lucide-icon>
       <span class="projection-val">{{ dragProjectionDays | number: "1.0-1" }}j</span>
@@ -33,11 +29,7 @@
 
     <div class="header-right">
       <!-- Filtres -->
-      <button 
-        class="btn btn-actions"
-        (click)="toggleGlobalFilters()"
-        [class.active]="showGlobalFilters()"
-      >
+      <button class="btn btn-actions" (click)="toggleGlobalFilters()" [class.active]="showGlobalFilters()">
         <lucide-icon [img]="Filter" [size]="16"></lucide-icon>
         Filtrer
       </button>
@@ -61,10 +53,16 @@
             <div class="actions-dropdown-item has-submenu" (click)="toggleActionsSubmenu('vue', $event)">
               <lucide-icon [img]="Network" [size]="15"></lucide-icon>
               Vue
-              <span class="actions-selected-text">{{ viewMode() === 'project' ? 'Par Projet' : (viewMode() === 'team' ? 'Par Équipe' : 'Par Ressources') }}</span>
+              <span class="actions-selected-text">{{
+                viewMode() === "project" ? "Par Projet" : viewMode() === "team" ? "Par Équipe" : "Par Ressources"
+              }}</span>
               <lucide-icon [img]="ChevronLeft" [size]="15" class="submenu-arrow"></lucide-icon>
-              
-              <div class="actions-submenu left-submenu" *ngIf="activeActionsSubmenu === 'vue'" (click)="$event.stopPropagation()">
+
+              <div
+                class="actions-submenu left-submenu"
+                *ngIf="activeActionsSubmenu === 'vue'"
+                (click)="$event.stopPropagation()"
+              >
                 <div class="actions-section-label">Sélectionner la Vue</div>
                 <label class="actions-radio-item" [class.selected]="viewMode() === 'project'">
                   <input
@@ -113,10 +111,14 @@
             <div class="actions-dropdown-item has-submenu" (click)="toggleActionsSubmenu('affichage', $event)">
               <lucide-icon [img]="ListTree" [size]="15"></lucide-icon>
               Affichage
-              <span class="actions-selected-text">{{ displayFormat() === 'tree' ? 'Arborescence' : 'À plat' }}</span>
+              <span class="actions-selected-text">{{ displayFormat() === "tree" ? "Arborescence" : "À plat" }}</span>
               <lucide-icon [img]="ChevronLeft" [size]="15" class="submenu-arrow"></lucide-icon>
-              
-              <div class="actions-submenu left-submenu" *ngIf="activeActionsSubmenu === 'affichage'" (click)="$event.stopPropagation()">
+
+              <div
+                class="actions-submenu left-submenu"
+                *ngIf="activeActionsSubmenu === 'affichage'"
+                (click)="$event.stopPropagation()"
+              >
                 <div class="actions-section-label">Sélectionner l'Affichage</div>
                 <button
                   class="actions-dropdown-item"
@@ -147,10 +149,14 @@
             <div class="actions-dropdown-item has-submenu" (click)="toggleActionsSubmenu('densite', $event)">
               <lucide-icon [img]="AlignJustify" [size]="15"></lucide-icon>
               Densité
-              <span class="actions-selected-text">{{ zoomLevel() === 'compact' ? 'Compact' : 'Normal' }}</span>
+              <span class="actions-selected-text">{{ zoomLevel() === "compact" ? "Compact" : "Normal" }}</span>
               <lucide-icon [img]="ChevronLeft" [size]="15" class="submenu-arrow"></lucide-icon>
-              
-              <div class="actions-submenu left-submenu" *ngIf="activeActionsSubmenu === 'densite'" (click)="$event.stopPropagation()">
+
+              <div
+                class="actions-submenu left-submenu"
+                *ngIf="activeActionsSubmenu === 'densite'"
+                (click)="$event.stopPropagation()"
+              >
                 <div class="actions-section-label">Densité (Zoom)</div>
                 <button
                   class="actions-dropdown-item"
@@ -195,8 +201,12 @@
               <lucide-icon [img]="Calendar" [size]="15"></lucide-icon>
               Navigation
               <lucide-icon [img]="ChevronLeft" [size]="15" class="submenu-arrow"></lucide-icon>
-              
-              <div class="actions-submenu left-submenu" *ngIf="activeActionsSubmenu === 'navigation'" (click)="$event.stopPropagation()">
+
+              <div
+                class="actions-submenu left-submenu"
+                *ngIf="activeActionsSubmenu === 'navigation'"
+                (click)="$event.stopPropagation()"
+              >
                 <div class="actions-section-label">Navigation</div>
                 <button class="actions-dropdown-item" (click)="goToToday()">
                   <lucide-icon [img]="Calendar" [size]="15"></lucide-icon>
@@ -509,7 +519,10 @@
 
                     <div class="row-info-stack-wrapper">
                       <div class="info-stack">
-                        <span class="info-code" *ngIf="row.code">{{ row.code }}</span>
+                        <div class="info-meta" *ngIf="row.code || row.reference_externe">
+                          <span class="info-code" *ngIf="row.code">{{ row.code }}</span>
+                          <span class="info-code" *ngIf="row.reference_externe"> / {{ row.reference_externe }}</span>
+                        </div>
                         <span
                           class="info-label"
                           (mouseenter)="showTooltip($event, row.label)"
@@ -759,8 +772,20 @@
                           [attr.data-week-index]="i"
                         >
                           <div class="cell-content">
-                            <div *ngIf="(resource.cellData?.[i]?.value! > 0 && (!isMovingSelection || moveGhostOffset === 0 || !isCellSelected(resource, week))) || getGhostValue(resource, i) !== null" class="capacity-value">
-                              {{ (getGhostValue(resource, i) !== null ? getGhostValue(resource, i) : resource.cellData?.[i]?.value) | number: "1.0-1" }}
+                            <div
+                              *ngIf="
+                                (resource.cellData?.[i]?.value! > 0 &&
+                                  (!isMovingSelection || moveGhostOffset === 0 || !isCellSelected(resource, week))) ||
+                                getGhostValue(resource, i) !== null
+                              "
+                              class="capacity-value"
+                            >
+                              {{
+                                (getGhostValue(resource, i) !== null
+                                  ? getGhostValue(resource, i)
+                                  : resource.cellData?.[i]?.value
+                                ) | number: "1.0-1"
+                              }}
                             </div>
                             <div
                               class="availability-indicator"
@@ -818,7 +843,12 @@
 
                           <div class="row-info-stack-wrapper">
                             <div class="info-stack">
-                              <span class="info-code" *ngIf="child.code">{{ child.code }}</span>
+                              <div class="info-meta" *ngIf="child.code || child.reference_externe">
+                                <span class="info-code" *ngIf="child.code">{{ child.code }}</span>
+                                <span class="info-code" *ngIf="child.reference_externe">
+                                  / {{ child.reference_externe }}</span
+                                >
+                              </div>
                               <span
                                 class="info-label"
                                 (mouseenter)="showTooltip($event, child.label)"
@@ -1041,8 +1071,20 @@
                             [attr.data-week-index]="i"
                           >
                             <div class="cell-content">
-                              <div *ngIf="(resource.cellData?.[i]?.value! > 0 && (!isMovingSelection || moveGhostOffset === 0 || !isCellSelected(resource, week))) || getGhostValue(resource, i) !== null" class="capacity-value">
-                                {{ (getGhostValue(resource, i) !== null ? getGhostValue(resource, i) : resource.cellData?.[i]?.value) | number: "1.0-1" }}
+                              <div
+                                *ngIf="
+                                  (resource.cellData?.[i]?.value! > 0 &&
+                                    (!isMovingSelection || moveGhostOffset === 0 || !isCellSelected(resource, week))) ||
+                                  getGhostValue(resource, i) !== null
+                                "
+                                class="capacity-value"
+                              >
+                                {{
+                                  (getGhostValue(resource, i) !== null
+                                    ? getGhostValue(resource, i)
+                                    : resource.cellData?.[i]?.value
+                                  ) | number: "1.0-1"
+                                }}
                               </div>
                               <div
                                 class="availability-indicator"
@@ -1229,8 +1271,20 @@
                 [attr.data-week-index]="i"
               >
                 <div class="cell-content">
-                  <div *ngIf="(row.resource.cellData?.[i]?.value! > 0 && (!isMovingSelection || moveGhostOffset === 0 || !isCellSelected(row.resource, week))) || getGhostValue(row.resource, i) !== null" class="capacity-value">
-                    {{ (getGhostValue(row.resource, i) !== null ? getGhostValue(row.resource, i) : row.resource.cellData?.[i]?.value) | number: "1.0-1" }}
+                  <div
+                    *ngIf="
+                      (row.resource.cellData?.[i]?.value! > 0 &&
+                        (!isMovingSelection || moveGhostOffset === 0 || !isCellSelected(row.resource, week))) ||
+                      getGhostValue(row.resource, i) !== null
+                    "
+                    class="capacity-value"
+                  >
+                    {{
+                      (getGhostValue(row.resource, i) !== null
+                        ? getGhostValue(row.resource, i)
+                        : row.resource.cellData?.[i]?.value
+                      ) | number: "1.0-1"
+                    }}
                   </div>
                   <div
                     class="availability-indicator"
@@ -1301,7 +1355,6 @@
         <button class="modal-close" (click)="closeLinkModal()">×</button>
       </div>
       <div class="modal-body">
-
         <!-- ===== MODE PROJECT : select simple d'équipe ===== -->
         <ng-container *ngIf="viewMode() === 'project'">
           <div class="form-group">
@@ -1347,7 +1400,6 @@
 
         <!-- ===== MODES TEAM / RESOURCE : Gmail-style multi-select ===== -->
         <ng-container *ngIf="viewMode() !== 'project'">
-
           <!-- Filtres -->
           <div class="lm-filters">
             <div class="lm-search-wrapper">
@@ -1368,14 +1420,13 @@
           <!-- Sticky Toolbar de sélection -->
           <div class="lm-sticky-toolbar" [class.visible]="selectedIdsToLink.size > 0">
             <span class="lm-toolbar-count">
-              <strong>{{ selectedIdsToLink.size }}</strong>&nbsp;projet{{ selectedIdsToLink.size > 1 ? 's' : '' }} sélectionné{{ selectedIdsToLink.size > 1 ? 's' : '' }}
+              <strong>{{ selectedIdsToLink.size }}</strong
+              >&nbsp;projet{{ selectedIdsToLink.size > 1 ? "s" : "" }} sélectionné{{
+                selectedIdsToLink.size > 1 ? "s" : ""
+              }}
             </span>
             <div class="lm-toolbar-actions">
-              <button
-                class="btn btn-primary btn-sm"
-                (click)="linkItem()"
-                [disabled]="linkModalIsSaving"
-              >
+              <button class="btn btn-primary btn-sm" (click)="linkItem()" [disabled]="linkModalIsSaving">
                 <span *ngIf="!linkModalIsSaving">Ajouter la sélection</span>
                 <span *ngIf="linkModalIsSaving">Ajout en cours…</span>
               </button>
@@ -1424,18 +1475,17 @@
                   </td>
                   <td class="lm-col-code">
                     <span class="lm-code-badge" [style.color]="getLinkableProjectData(item.id)?.color || '#3b82f6'">
-                      {{ getLinkableProjectData(item.id)?.code_projet || '—' }}
+                      {{ getLinkableProjectData(item.id)?.code_projet || "—" }}
                     </span>
                   </td>
                   <td class="lm-col-ref">
-                    <span class="lm-ref-text">{{ getLinkableProjectData(item.id)?.reference_externe || '' }}</span>
+                    <span class="lm-ref-text">{{ getLinkableProjectData(item.id)?.reference_externe || "" }}</span>
                   </td>
                   <td class="lm-col-name">{{ item.label }}</td>
                   <td class="lm-col-status">
-                    <span
-                      class="status-badge small"
-                      [attr.data-status]="getLinkableProjectData(item.id)?.statut"
-                    >{{ getLinkableProjectData(item.id)?.statut }}</span>
+                    <span class="status-badge small" [attr.data-status]="getLinkableProjectData(item.id)?.statut">{{
+                      getLinkableProjectData(item.id)?.statut
+                    }}</span>
                   </td>
                 </tr>
                 <tr *ngIf="filteredLinkableItems.length === 0">
@@ -1452,12 +1502,10 @@
           <div class="modal-actions lm-footer">
             <button class="btn btn-secondary" (click)="closeLinkModal()">Fermer</button>
           </div>
-
         </ng-container>
       </div>
     </div>
   </div>
-
 
   <!-- Modal for adding resource -->
   <div *ngIf="showAddResourceModal" class="modal-overlay" (click)="closeAddResourceModal()">

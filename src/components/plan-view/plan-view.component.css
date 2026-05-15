@@ -2308,3 +2308,10 @@ input:checked + .slider:before {
   display: inline-block;
   white-space: nowrap;
 }
+
+.info-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1;
+}

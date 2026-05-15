@@ -58,6 +58,7 @@ interface ResourceRow {
   color?: string;
   resourceId?: string; // Always the role or personne id
   projectId?: string; // Always the project id
+  reference_externe?: string;
   cellData?: ResourceCellData[];
   metrics?: Map<string, { total: number }>;
 }
@@ -66,6 +67,7 @@ interface ChildRow {
   id: string;
   label: string;
   code?: string;
+  reference_externe?: string;
   color?: string;
   expanded: boolean;
   resources: ResourceRow[];
@@ -78,6 +80,7 @@ interface ParentRow {
   id: string;
   label: string;
   code?: string;
+  reference_externe?: string;
   color?: string;
   expanded: boolean;
   children: ChildRow[];
@@ -1208,6 +1211,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
           id: project.id!,
           label: project.nom_projet,
           code: project.code_projet,
+          reference_externe: project.reference_externe,
           color: project.color,
           expanded: this.manualStates.has(project.id!) ? this.manualStates.get(project.id!)! : this.isDefaultExpanded, // Respect persisted preference
           children: children,
@@ -1242,6 +1246,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
           const label = project ? project.nom_projet : "Unknown Project";
           const color = project ? project.color : undefined;
           const code = project ? project.code_projet : undefined;
+          const reference_externe = project ? project.reference_externe : undefined;
           const projectId = project.id;
           const projectCharges = new Map<string, number>();
 
@@ -1319,6 +1324,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
             id: projectId!,
             label: label,
             code: code,
+            reference_externe: reference_externe,
             color: color,
             expanded: this.manualStates.has(`${team.id}_${projectId}`) ? this.manualStates.get(`${team.id}_${projectId}`)! : this.isDefaultExpanded, // Respect persisted preference
             resources: filteredResources,
@@ -1441,6 +1447,8 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
               id: pId,
               uniqueId: `${team.id}_${rKey}_${pId}`,
               label: project ? project.nom_projet : "Sans projet",
+              //code: project?.code_projet,
+              reference_externe: project?.reference_externe,
               type: res.type,
               jours_par_semaine: res.jours_par_semaine,
               charges: new Map(),
@@ -1520,9 +1528,13 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     for (const parent of this.rows) {
       for (const child of parent.children) {
         for (const resource of child.resources) {
+          const p = parent;
+          const c = child;
+          const r = resource;
+          const fullLabel = `${p.label} > ${c.label} > ${r.label} ${p.code || ''} ${p.reference_externe || ''} ${c.code || ''} ${c.reference_externe || ''}`.toLowerCase();
           this.flatRows.push({
             uniqueId: resource.uniqueId,
-            fullLabel: `${parent.label} / ${child.label} / ${resource.label}`,
+            fullLabel: fullLabel,
             resource: resource,
             child: child,
             parent: parent
@@ -2017,7 +2029,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
           // Update live projection tooltip visibility and position during drag
           if (this.dragStartCellValue && this.dragStartCellValue > 0) {
             this.updateDragProjectionTooltipPosition(event);
-            
+
             const shouldShow = this.shouldShowProjectionTooltip();
             if (shouldShow && !this.dragProjectionTooltipVisible) {
               this.ngZone.run(() => {
@@ -2058,7 +2070,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
         if (isSelected) {
           const rect = cell.getBoundingClientRect();
           const margin = 5; // 5px threshold for border detection
-          
+
           const isAtLeft = (event.clientX - rect.left) < margin;
           const isAtRight = (rect.right - event.clientX) < margin;
           const isAtTop = (event.clientY - rect.top) < margin;
@@ -2067,9 +2079,9 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
           const resRow = target.closest(".calendar-row");
           const resId = resRow?.getAttribute('data-resource-id');
           const weekIndex = parseInt(cell.getAttribute('data-week-index') || '-1', 10);
-          
+
           const isBorder = this.isCellAtSelectionEdge(resId, weekIndex, isAtLeft, isAtRight, isAtTop, isAtBottom);
-          
+
           if (this.isOverSelectionBorder !== isBorder) {
             this.ngZone.run(() => {
               this.isOverSelectionBorder = isBorder;
@@ -2097,16 +2109,16 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   isCellAtSelectionEdge(resId: string | null | undefined, weekIndex: number, isAtLeft: boolean, isAtRight: boolean, isAtTop: boolean, isAtBottom: boolean): boolean {
     if (!resId || this.selectedCells.length === 0) return false;
-    
+
     // Find min/max week and resource context
     const selectedWeeks = this.selectedCells.map(c => this.displayedWeeks.findIndex(w => w.getTime() === c.week.getTime()));
     const minW = Math.min(...selectedWeeks);
     const maxW = Math.max(...selectedWeeks);
-    
+
     // Currently one row only
     const firstCell = this.selectedCells[0];
-    const selResId = this.getResourceUniqueId(firstCell.resource, {id: firstCell.childId} as ChildRow, {id: firstCell.parentId} as ParentRow);
-    
+    const selResId = this.getResourceUniqueId(firstCell.resource, { id: firstCell.childId } as ChildRow, { id: firstCell.parentId } as ParentRow);
+
     if (resId !== selResId) return false;
 
     // Check if cell is an outer edge of the selection block
@@ -2165,7 +2177,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   private shouldShowProjectionTooltip(): boolean {
     // Condition 1: Au moins 2 cellules sélectionnées
     if (this.selectedCells.length <= 1) return false;
-    
+
     // Condition 2: La cellule de départ doit avoir une valeur à projeter
     if (!this.dragStartCellValue || this.dragStartCellValue <= 0) return false;
 
@@ -2265,13 +2277,13 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       this.dragProjectionTooltipVisible = false;
       if (this.selectedCells.length > 0) {
         this.isSelectionFinished = true;
-        
+
         // On ne pré-remplit la valeur que si on est dans le cas d'une projection vers du vide
         // afin de ne pas casser le calcul de la somme réelle pour les sélections classiques
         if (this.shouldShowProjectionTooltip()) {
           this.bulkChargeValue = this.dragStartCellValue;
         }
-        
+
         this.updateToolbarPosition();
         this.cdr.detectChanges(); // Force l'apparition immédiate de la toolbar
       }
@@ -2303,15 +2315,15 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       }
 
       const rId = firstCell.resource.resourceId || firstCell.resource.id;
-      const roleId     = firstCell.resource.type === 'role'    ? rId : undefined;
+      const roleId = firstCell.resource.type === 'role' ? rId : undefined;
       const personneId = firstCell.resource.type === 'personne' ? rId : undefined;
 
       // Build the move list in one pass
       const moves = this.selectedCells.map(cell => {
         const fromWeek = cell.week.toISOString().split('T')[0];
-        const value    = cell.resource.charges.get(fromWeek) || 0;
-        const srcIdx   = this.displayedWeeks.findIndex(w => w.getTime() === cell.week.getTime());
-        const tgtWeek  = this.displayedWeeks[srcIdx + this.moveGhostOffset];
+        const value = cell.resource.charges.get(fromWeek) || 0;
+        const srcIdx = this.displayedWeeks.findIndex(w => w.getTime() === cell.week.getTime());
+        const tgtWeek = this.displayedWeeks[srcIdx + this.moveGhostOffset];
         return { fromWeek, toWeek: tgtWeek?.toISOString().split('T')[0] ?? '', value };
       }).filter(m => m.toWeek); // discard out-of-range
 
@@ -2367,7 +2379,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   // Visual helpers for HTML
   getCellSelectionClasses(resource: ResourceRow, week: Date, weekIndex: number, child: ChildRow, parent: ParentRow) {
     if (this.selectedCells.length === 0) return {};
-    
+
     const isSelected = this.isCellSelected(resource, week);
 
     if (this.isMovingSelection) {
@@ -2392,16 +2404,16 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   isCellGhostSelected(resource: ResourceRow, weekIndex: number, child: ChildRow, parent: ParentRow): boolean {
     if (!this.isMovingSelection || this.moveGhostOffset === 0) return false;
-    
+
     const currResId = this.getResourceUniqueId(resource, child, parent);
     const firstCell = this.selectedCells[0];
-    const selResId = this.getResourceUniqueId(firstCell.resource, {id: firstCell.childId} as ChildRow, {id: firstCell.parentId} as ParentRow);
-    
+    const selResId = this.getResourceUniqueId(firstCell.resource, { id: firstCell.childId } as ChildRow, { id: firstCell.parentId } as ParentRow);
+
     if (currResId !== selResId) return false;
-    
+
     const sourceWeekIndex = weekIndex - this.moveGhostOffset;
     if (sourceWeekIndex < 0 || sourceWeekIndex >= this.displayedWeeks.length) return false;
-    
+
     const sourceWeek = this.displayedWeeks[sourceWeekIndex];
     return this.isCellSelected(resource, sourceWeek);
   }
@@ -2412,10 +2424,10 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   getGhostValue(resource: ResourceRow, weekIndex: number): number | null {
     if (!this.isMovingSelection || this.moveGhostOffset === 0) return null;
-    
+
     const sourceWeekIndex = weekIndex - this.moveGhostOffset;
     if (sourceWeekIndex < 0 || sourceWeekIndex >= this.displayedWeeks.length) return null;
-    
+
     const sourceWeek = this.displayedWeeks[sourceWeekIndex];
     if (this.isCellSelected(resource, sourceWeek)) {
       const sourceWeekKey = sourceWeek.toISOString().split("T")[0];
@@ -2511,7 +2523,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   async applyBulkCharge(value: number | null) {
     if (this.selectedCells.length === 0 || value == null) return;
-    
+
     this.bulkChargeValue = value;
     this.isSaving = true;
     try {
@@ -2748,7 +2760,8 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     const search = this.filterProjetSearch().toLowerCase();
     return this.allProjects.filter(p =>
       p.nom_projet.toLowerCase().includes(search) ||
-      (p.code_projet && p.code_projet.toLowerCase().includes(search))
+      (p.code_projet && p.code_projet.toLowerCase().includes(search)) ||
+      (p.reference_externe && p.reference_externe.toLowerCase().includes(search))
     );
   }
 
@@ -2814,7 +2827,9 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
     if (search) {
       for (const p of this.allProjects) {
-        if (p.nom_projet.toLowerCase().includes(search) || (p.code_projet && p.code_projet.toLowerCase().includes(search))) {
+        if (p.nom_projet.toLowerCase().includes(search) ||
+          (p.code_projet && p.code_projet.toLowerCase().includes(search)) ||
+          (p.reference_externe && p.reference_externe.toLowerCase().includes(search))) {
           matchingProjetIds.add(p.id!);
         }
       }
@@ -2833,6 +2848,8 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const resourceMatchesSearchSelf = (res: ResourceRow): boolean => {
       if (!search) return true;
+      if (res.label.toLowerCase().includes(search)) return true;
+      if (res.reference_externe && res.reference_externe.toLowerCase().includes(search)) return true;
       if (res.type === 'role') return matchingRoleIds.has(res.resourceId || res.id);
       return matchingPersonneIds.has(res.resourceId || res.id);
     };
@@ -2841,6 +2858,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       if (!search) return true;
       if (parent.label.toLowerCase().includes(search)) return true;
       if (parent.code && parent.code.toLowerCase().includes(search)) return true;
+      if (parent.reference_externe && parent.reference_externe.toLowerCase().includes(search)) return true;
       return false;
     };
 
@@ -2848,6 +2866,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       if (!search) return true;
       if (child.label.toLowerCase().includes(search)) return true;
       if (child.code && child.code.toLowerCase().includes(search)) return true;
+      if (child.reference_externe && child.reference_externe.toLowerCase().includes(search)) return true;
       return false;
     };
 
