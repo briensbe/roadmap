@@ -554,7 +554,8 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
           const weekValues = this.displayedWeeks.map(w => {
             const weekKey = w.toISOString().split('T')[0];
-            return resource.charges.get(weekKey) || 0;
+            const val = resource.charges.get(weekKey);
+            return (val === 0 || val === undefined) ? '' : val;
           });
 
           dataRows.push([projet, codeProjet, equipe, codeEquipe, ressource, resource.type, ...weekValues]);
