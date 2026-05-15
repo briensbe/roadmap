@@ -58,6 +58,7 @@ interface ResourceRow {
   color?: string;
   resourceId?: string; // Always the role or personne id
   projectId?: string; // Always the project id
+  code?: string;
   reference_externe?: string;
   cellData?: ResourceCellData[];
   metrics?: Map<string, { total: number }>;
@@ -513,7 +514,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       return `${d}/${m}/${y}`;
     });
 
-    const headers = ['Projet', 'Code Projet', 'Équipe', 'Code Équipe', 'Ressource', 'Type', ...weekHeaders];
+    const headers = ['Projet', 'Code Projet', 'Réf Externe', 'Équipe', 'Ressource', 'Type', ...weekHeaders];
 
     const dataRows: (string | number)[][] = [];
 
@@ -525,30 +526,30 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
           // Determine Projet / Équipe / Ressource columns depending on viewMode
           let projet: string;
           let codeProjet: string;
+          let referenceExterne: string = '';
           let equipe: string;
-          let codeEquipe: string;
           let ressource: string;
 
           if (this.viewMode() === 'project') {
             // parent = project, child = team
             projet = parent.label;
             codeProjet = parent.code || '';
+            referenceExterne = parent.reference_externe || '';
             equipe = child.label;
-            codeEquipe = child.code || '';
             ressource = resource.label;
           } else if (this.viewMode() === 'team') {
             // parent = team, child = project
             projet = child.label;
             codeProjet = child.code || '';
+            referenceExterne = child.reference_externe || '';
             equipe = parent.label;
-            codeEquipe = parent.code || '';
             ressource = resource.label;
           } else {
             // resource mode: parent = team, child = resource (label), resource = project
             projet = resource.label;
-            codeProjet = '';
+            codeProjet = resource.code || '';
+            referenceExterne = resource.reference_externe || '';
             equipe = parent.label;
-            codeEquipe = parent.code || '';
             ressource = child.label;
           }
 
@@ -558,7 +559,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
             return (val === 0 || val === undefined) ? '' : val;
           });
 
-          dataRows.push([projet, codeProjet, equipe, codeEquipe, ressource, resource.type, ...weekValues]);
+          dataRows.push([projet, codeProjet, referenceExterne, equipe, ressource, resource.type, ...weekValues]);
         }
       }
     }
@@ -567,9 +568,9 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     dataRows.sort((a, b) => {
       const pa = (a[0] as string).localeCompare(b[0] as string);
       if (pa !== 0) return pa;
-      const ea = (a[2] as string).localeCompare(b[2] as string);
+      const ea = (a[3] as string).localeCompare(b[3] as string); // Adjusted index for 'Équipe'
       if (ea !== 0) return ea;
-      return (a[4] as string).localeCompare(b[4] as string);
+      return (a[4] as string).localeCompare(b[4] as string); // Adjusted index for 'Ressource'
     });
 
     const aoa = [headers, ...dataRows];
@@ -579,8 +580,8 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     ws['!cols'] = [
       { wch: 30 }, // Projet
       { wch: 12 }, // Code Projet
+      { wch: 15 }, // Réf Externe
       { wch: 20 }, // Équipe
-      { wch: 12 }, // Code Équipe
       { wch: 24 }, // Ressource
       { wch: 10 }, // Type
       ...weekHeaders.map(() => ({ wch: 12 }))
@@ -1449,7 +1450,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
               id: pId,
               uniqueId: `${team.id}_${rKey}_${pId}`,
               label: project ? project.nom_projet : "Sans projet",
-              //code: project?.code_projet,
+              code: project?.code_projet,
               reference_externe: project?.reference_externe,
               type: res.type,
               jours_par_semaine: res.jours_par_semaine,
