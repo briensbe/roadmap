@@ -334,6 +334,25 @@ export class ProjectsViewComponent implements OnInit {
       'Couleur': 'color'
     };
 
+    const mandatoryHeaders = ['Code Projet', 'Nom Projet'];
+    const fileHeaders = data.length > 0 ? Object.keys(data[0]) : [];
+    const missingHeaders = mandatoryHeaders.filter(h => !fileHeaders.includes(h));
+
+    if (missingHeaders.length > 0) {
+      this.confirmTitle = "En-têtes manquants";
+      let message = `Le fichier Excel doit contenir les colonnes obligatoires suivantes : ${mandatoryHeaders.join(', ')}.\n\n`;
+      message += `Colonnes manquantes détectées : ${missingHeaders.join(', ')}.\n\n`;
+      message += `Colonnes possibles : ${Object.keys(headerMap).join(', ')} (pour la couleur, utilisez le format Hexa #000000).`;
+      
+      this.confirmMessage = message;
+      this.confirmIcon = 'alert-circle';
+      this.confirmLabel = 'Fermer';
+      this.confirmVariant = 'danger';
+      this.showCancelButton = false;
+      this.showConfirmModal = true;
+      return;
+    }
+
     data.forEach((row, index) => {
       const lineNum = index + 2; // +1 for 1-based index, +1 for header row
       const project: any = {};
@@ -346,8 +365,16 @@ export class ProjectsViewComponent implements OnInit {
         }
       });
 
-      if (!project.code_projet || !project.nom_projet) {
-        errors.push(`Ligne ${lineNum}: Code Projet et Nom Projet sont obligatoires`);
+      if (!project.code_projet && !project.nom_projet) {
+        errors.push(`Ligne ${lineNum}: Le Code Projet et le Nom Projet sont manquants`);
+        return;
+      }
+      if (!project.code_projet) {
+        errors.push(`Ligne ${lineNum}: Le Code Projet est manquant`);
+        return;
+      }
+      if (!project.nom_projet) {
+        errors.push(`Ligne ${lineNum}: Le Nom Projet est manquant`);
         return;
       }
 
