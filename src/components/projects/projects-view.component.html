@@ -54,8 +54,8 @@
       <div class="view-toggle">
         <button
           class="toggle-btn"
-          [class.active]="viewMode === 'card'"
-          (click)="viewMode = 'card'"
+          [class.active]="viewMode() === 'card'"
+          (click)="setViewMode('card')"
           title="Vue en cartes"
         >
           <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
@@ -67,8 +67,8 @@
         </button>
         <button
           class="toggle-btn"
-          [class.active]="viewMode === 'list'"
-          (click)="viewMode = 'list'"
+          [class.active]="viewMode() === 'list'"
+          (click)="setViewMode('list')"
           title="Vue en liste"
         >
           <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
@@ -79,8 +79,8 @@
         </button>
         <button
           class="toggle-btn"
-          [class.active]="viewMode === 'table'"
-          (click)="viewMode = 'table'"
+          [class.active]="viewMode() === 'table'"
+          (click)="setViewMode('table')"
           title="Vue tableau"
         >
           <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
@@ -95,7 +95,7 @@
   </div>
 
   <!-- Table View -->
-  <div *ngIf="viewMode === 'table'" class="projects-table-wrapper">
+  <div *ngIf="viewMode() === 'table'" class="projects-table-wrapper">
     <table class="projects-table">
       <thead>
         <tr>
@@ -178,7 +178,7 @@
   </div>
 
   <!-- Card View -->
-  <div *ngIf="viewMode === 'card'" class="projects-grid" cdkDropList (cdkDropListDropped)="drop($event)">
+  <div *ngIf="viewMode() === 'card'" class="projects-grid" cdkDropList (cdkDropListDropped)="drop($event)">
     <div
       *ngFor="let projet of filteredProjects()"
       cdkDrag
@@ -265,7 +265,7 @@
   </div>
 
   <!-- List View -->
-  <div *ngIf="viewMode === 'list'" class="projects-list-view" cdkDropList (cdkDropListDropped)="drop($event)">
+  <div *ngIf="viewMode() === 'list'" class="projects-list-view" cdkDropList (cdkDropListDropped)="drop($event)">
     <div
       *ngFor="let projet of filteredProjects()"
       cdkDrag

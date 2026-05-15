@@ -12,6 +12,7 @@ import { ConfirmModalComponent } from "../confirm-modal.component";
 import { ProjectModalComponent } from "../project-modal.component";
 import { CdkDragDrop, DragDropModule, moveItemInArray } from "@angular/cdk/drag-drop";
 import { calculateNewRank, sortByRank } from "../../utils/lexorank.utils";
+import { storageSignal } from "../../utils/storage-signal";
 import * as XLSX from 'xlsx';
 
 @Component({
@@ -22,7 +23,7 @@ import * as XLSX from 'xlsx';
   styleUrl: "./projects-view.component.css"
 })
 export class ProjectsViewComponent implements OnInit {
-  viewMode: "list" | "card" | "table" = "list";
+  viewMode = storageSignal<"list" | "card" | "table">("projects_view_mode", "list");
   searchQuery = signal("");
   statusFilter = signal("");
 
@@ -131,6 +132,10 @@ export class ProjectsViewComponent implements OnInit {
         this.statusFilter.set(params['status']);
       }
     });
+  }
+
+  setViewMode(mode: "list" | "card" | "table") {
+    this.viewMode.set(mode);
   }
 
   async drop(event: CdkDragDrop<Projet[]>) {
