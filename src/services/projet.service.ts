@@ -156,107 +156,87 @@ export class ProjetService implements OnDestroy {
    * Get all projects with automatic caching
    */
   async getAllProjets(): Promise<Projet[]> {
-    // Try to get from cache first
-    const cached = this.queryClient.getQueryData<Projet[]>(projetQueryKeys.list());
-    if (cached) return cached;
+    return this.queryClient.fetchQuery({
+      queryKey: projetQueryKeys.list(),
+      queryFn: async () => {
+        const { data, error } = await this.supabase.client
+          .from(DB_TABLES.PROJETS)
+          .select("*")
+          .order("rank", { ascending: true });
 
-    // Fetch and cache
-    const { data, error } = await this.supabase.client
-      .from(DB_TABLES.PROJETS)
-      .select("*")
-      .order("rank", { ascending: true });
-
-    if (error) throw error;
-
-    // Store in cache
-    this.queryClient.setQueryData(projetQueryKeys.list(), data || []);
-    return data || [];
+        if (error) throw error;
+        return data || [];
+      }
+    });
   }
 
   /**
    * Get a single project by ID
    */
   async getProjet(id: string): Promise<Projet | null> {
-    // Try to get from cache first
-    const cached = this.queryClient.getQueryData<Projet | null>(projetQueryKeys.detail(id));
-    if (cached) return cached;
+    return this.queryClient.fetchQuery({
+      queryKey: projetQueryKeys.detail(id),
+      queryFn: async () => {
+        // Try to find in the list cache first (optional optimization)
+        const listCache = this.queryClient.getQueryData<Projet[]>(projetQueryKeys.list());
+        if (listCache) {
+          const found = listCache.find((p) => p.id === id);
+          if (found) return found;
+        }
 
-    // Try to find in the list cache
-    const listCache = this.queryClient.getQueryData<Projet[]>(projetQueryKeys.list());
-    if (listCache) {
-      const found = listCache.find((p) => p.id === id) || null;
-      if (found) {
-        this.queryClient.setQueryData(projetQueryKeys.detail(id), found);
-        return found;
+        const { data, error } = await this.supabase.client
+          .from(DB_TABLES.PROJETS)
+          .select("*")
+          .eq("id", id)
+          .maybeSingle();
+
+        if (error) throw error;
+        return data;
       }
-    }
-
-    // Fetch from database
-    const { data, error } = await this.supabase.client
-      .from(DB_TABLES.PROJETS)
-      .select("*")
-      .eq("id", id)
-      .maybeSingle();
-
-    if (error) throw error;
-
-    // Store in cache
-    this.queryClient.setQueryData(projetQueryKeys.detail(id), data);
-    return data;
+    });
   }
 
   /**
    * Get project UUID from id_projet
    */
   async getProjetIdUUID(idProjet: number): Promise<string> {
-    // Try to get from cache first
-    const cached = this.queryClient.getQueryData<string>(projetQueryKeys.byIdProjet(idProjet));
-    if (cached) return cached;
+    return this.queryClient.fetchQuery({
+      queryKey: projetQueryKeys.byIdProjet(idProjet),
+      queryFn: async () => {
+        // Try to find in the list cache first
+        const listCache = this.queryClient.getQueryData<Projet[]>(projetQueryKeys.list());
+        if (listCache) {
+          const found = listCache.find((p) => p.id_projet === idProjet);
+          if (found && found.id) return found.id;
+        }
 
-    // Try to find in the list cache
-    const listCache = this.queryClient.getQueryData<Projet[]>(projetQueryKeys.list());
-    if (listCache) {
-      const found = listCache.find((p) => p.id_projet === idProjet);
-      if (found && found.id) {
-        this.queryClient.setQueryData(projetQueryKeys.byIdProjet(idProjet), found.id);
-        return found.id;
+        const { data, error } = await this.supabase.client
+          .from(DB_TABLES.PROJETS)
+          .select("id")
+          .eq("id_projet", idProjet)
+          .single();
+
+        if (error) throw error;
+        return data.id;
       }
-    }
-
-    // Fetch from database
-    const { data, error } = await this.supabase.client
-      .from(DB_TABLES.PROJETS)
-      .select("id")
-      .eq("id_projet", idProjet)
-      .single();
-
-    if (error) throw error;
-
-    // Store in cache
-    this.queryClient.setQueryData(projetQueryKeys.byIdProjet(idProjet), data.id);
-    return data.id;
+    });
   }
 
   /**
    * Get all equipe-projet links
    */
   async getAllEquipeProjetLinks(): Promise<{ equipe_id: string; projet_id: string }[]> {
-    // Try to get from cache first
-    const cached = this.queryClient.getQueryData<{ equipe_id: string; projet_id: string }[]>(
-      projetQueryKeys.equipeLinks()
-    );
-    if (cached) return cached;
+    return this.queryClient.fetchQuery({
+      queryKey: projetQueryKeys.equipeLinks(),
+      queryFn: async () => {
+        const { data, error } = await this.supabase.client
+          .from(DB_TABLES.EQUIPES_PROJETS)
+          .select("*");
 
-    // Fetch from database
-    const { data, error } = await this.supabase.client
-      .from(DB_TABLES.EQUIPES_PROJETS)
-      .select("*");
-
-    if (error) throw error;
-
-    // Store in cache
-    this.queryClient.setQueryData(projetQueryKeys.equipeLinks(), data || []);
-    return data || [];
+        if (error) throw error;
+        return data || [];
+      }
+    });
   }
 
   // ============================================
