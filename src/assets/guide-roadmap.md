@@ -4,17 +4,8 @@
 
 ---
 
-## 🚀 Démarrage rapide
-
-Roadmap suit globalement une logique en **6 étapes**, dans cet ordre :
-
-```
-1. Organisation  →  2. Ressources  →  3. Capacité  →  4. Projets  →  5. Planification  →  6. Jalons
-```
-
----
-
-## 📖 Glossaire
+<details>
+<summary>📖 <strong>Glossaire</strong> (cliquez pour déplier)</summary>
 
 | Terme                | Définition                                                                                                             |
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------- |
@@ -24,9 +15,14 @@ Roadmap suit globalement une logique en **6 étapes**, dans cet ordre :
 | **RAF**              | Reste À Faire — calculé automatiquement à partir des chiffres Prévisionnel/Consommé et de la semaine en cours.         |
 | **Jalon**            | Évènement clé du projet : Sprint, Livraison ou MEP (Mise en Production).                                               |
 
+</details>
+
 ---
 
-## 1. Organisation — Structurer la société
+## 🚀 Démarrage rapide
+
+<details>
+<summary>1. Organisation — Structurer la société</summary>
 
 Onglet **Organisation**.
 
@@ -41,9 +37,12 @@ Société
 
 Les équipes créées ici seront les conteneurs auxquels vous rattacherez ensuite vos ressources.
 
+</details>
+
 ---
 
-## 2. Ressources — Définir qui peut travailler
+<details>
+<summary>2. Ressources — Définir qui peut travailler</summary>
 
 Onglet **Ressources**.
 
@@ -60,9 +59,12 @@ Renseignez le **Nb de Jours/Semaine** pour chaque ressource : le nombre de jours
 >
 > Cette précision est ce qui vous permettra d'annoncer une fin de développement avec une **marge raisonnable** plutôt qu'une promesse intenable.
 
+</details>
+
 ---
 
-## 3. Capacité — Projeter les disponibilités
+<details>
+<summary>3. Capacité — Projeter les disponibilités</summary>
 
 Onglet **Capacité**.
 
@@ -73,9 +75,12 @@ Pour chaque équipe :
 
 Cette projection est ce qui alimentera la vue Planification : sans capacité définie, pas de planification possible.
 
+</details>
+
 ---
 
-## 4. Projets — Référencer ce qu'il y a à faire
+<details>
+<summary>4. Projets — Référencer ce qu'il y a à faire</summary>
 
 Onglet **Projets**.
 
@@ -99,9 +104,12 @@ Créez vos projets. Ils deviennent **immédiatement disponibles dans la vue Plan
 
 Le RAF est mis à jour automatiquement et sert de base au suivi d'avancement.
 
+</details>
+
 ---
 
-## 5. Planification — Projeter les jours
+<details>
+<summary>5. Planification — Projeter les jours</summary>
 
 Onglet **Planification**.
 
@@ -121,9 +129,12 @@ Plusieurs vues sont disponibles selon ce que vous cherchez à voir :
 
 Testez les trois, gardez celle qui vous parle le plus.
 
+</details>
+
 ---
 
-## 6. Jalons — Marquer les évènements clés
+<details>
+<summary>6. Jalons — Marquer les évènements clés</summary>
 
 Trois types de jalons disponibles :
 
@@ -134,6 +145,8 @@ Trois types de jalons disponibles :
 | **MEP**       | Mise en Production          |
 
 Les jalons sont **visibles dans la vue Planification**, ce qui permet de les confronter visuellement à la charge prévue.
+
+</details>
 
 ---
 

@@ -179,6 +179,74 @@ import { marked } from 'marked';
       border-top: 1px solid #e5e7eb;
     }
 
+    /* Details/Summary styling */
+    :host ::ng-deep details {
+      margin: 24px 0;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      background: #f9fafb;
+      transition: all 0.2s ease;
+    }
+
+    :host ::ng-deep details[open] {
+      background: white;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    :host ::ng-deep summary {
+      padding: 16px 20px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1.2rem;
+      color: #111827;
+      outline: none;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: background-color 0.2s ease;
+    }
+
+    :host ::ng-deep summary:hover {
+      background-color: #f3f4f6;
+    }
+
+    :host ::ng-deep summary::-webkit-details-marker {
+      display: none;
+    }
+
+    :host ::ng-deep summary::before {
+      content: '▶';
+      font-size: 0.9rem;
+      color: #4f46e5;
+      transition: transform 0.2s ease;
+      background: #eef2ff;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+    }
+
+    :host ::ng-deep details[open] summary {
+      border-bottom: 1px solid #f3f4f6;
+      margin-bottom: 16px;
+    }
+
+    :host ::ng-deep details[open] summary::before {
+      transform: rotate(90deg);
+    }
+
+    :host ::ng-deep details .guide-content, 
+    :host ::ng-deep details > *:not(summary) {
+      padding: 0 16px 16px 16px;
+    }
+
+    :host ::ng-deep details table {
+       margin-top: 0;
+    }
+
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
