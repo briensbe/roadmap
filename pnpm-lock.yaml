@@ -47,6 +47,9 @@ importers:
       driver.js:
         specifier: ^1.4.0
         version: 1.4.0
+      highlight.js:
+        specifier: ^11.11.1
+        version: 11.11.1
       lexorank:
         specifier: ^1.0.5
         version: 1.0.5
@@ -56,6 +59,9 @@ importers:
       marked:
         specifier: ^18.0.3
         version: 18.0.3
+      marked-highlight:
+        specifier: ^2.2.4
+        version: 2.2.4(marked@18.0.3)
       rxjs:
         specifier: ^7.8.1
         version: 7.8.2
@@ -1944,6 +1950,10 @@ packages:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
     engines: {node: '>= 0.4'}
 
+  highlight.js@11.11.1:
+    resolution: {integrity: sha512-Xwwo44whKBVCYoliBQwaPvtd/2tYFkRQtXDWj1nackaV2JPXx3L0+Jvd8/qCJ2p+ML0/XVkJ2q+Mr+UVdpJK5w==}
+    engines: {node: '>=12.0.0'}
+
   hono@4.12.9:
     resolution: {integrity: sha512-wy3T8Zm2bsEvxKZM5w21VdHDDcwVS1yUFFY6i8UobSsKfFceT7TOwhbhfKsDyx7tYQlmRM5FLpIuYvNFyjctiA==}
     engines: {node: '>=16.9.0'}
@@ -2253,6 +2263,11 @@ packages:
   make-fetch-happen@15.0.5:
     resolution: {integrity: sha512-uCbIa8jWWmQZt4dSnEStkVC6gdakiinAm4PiGsywIkguF0eWMdcjDz0ECYhUolFU3pFLOev9VNPCEygydXnddg==}
     engines: {node: ^20.17.0 || >=22.9.0}
+
+  marked-highlight@2.2.4:
+    resolution: {integrity: sha512-PZxisNMJDduSjc0q6uvjsnqqHCXc9s0eyzxDO9sB1eNGJnd/H1/Fu+z6g/liC1dfJdFW4SftMwMlLvsBhUPrqQ==}
+    peerDependencies:
+      marked: '>=4 <19'
 
   marked@18.0.3:
     resolution: {integrity: sha512-7VT90JOkDeaRWpfjOReRGPEKn0ecdARBkDGL+tT1wZY0efPPqkUxLUSmzy/C7TIylQYJC9STISEsCHrqb/7VIA==}
@@ -5010,6 +5025,8 @@ snapshots:
     dependencies:
       function-bind: 1.1.2
 
+  highlight.js@11.11.1: {}
+
   hono@4.12.9: {}
 
   hosted-git-info@9.0.2:
@@ -5378,6 +5395,10 @@ snapshots:
       ssri: 13.0.1
     transitivePeerDependencies:
       - supports-color
+
+  marked-highlight@2.2.4(marked@18.0.3):
+    dependencies:
+      marked: 18.0.3
 
   marked@18.0.3: {}
 

@@ -1,4 +1,5 @@
 import { Component, OnInit, computed, signal, inject } from '@angular/core';
+import { trigger, transition, style, animate } from '@angular/animations';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -17,8 +18,18 @@ import {
   Shield,
   Type,
   Download,
-  FileJson
+  FileJson,
+  Copy,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Code
 } from 'lucide-angular';
+import { HttpClient } from '@angular/common/http';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { marked } from 'marked';
+import { markedHighlight } from 'marked-highlight';
+import hljs from 'highlight.js';
 import { SettingsService } from '../../services/settings.service';
 import { Setting, SettingType } from '../../models/settings.type';
 import { ConfirmModalComponent } from '../confirm-modal.component';
@@ -27,6 +38,17 @@ import { ConfirmModalComponent } from '../confirm-modal.component';
   selector: 'app-settings',
   standalone: true,
   imports: [CommonModule, FormsModule, LucideAngularModule, ConfirmModalComponent],
+  animations: [
+    trigger('slideInOut', [
+      transition(':enter', [
+        style({ height: '0', opacity: 0 }),
+        animate('300ms ease-out', style({ height: '*', opacity: 1 }))
+      ]),
+      transition(':leave', [
+        animate('300ms ease-in', style({ height: '0', opacity: 0 }))
+      ])
+    ])
+  ],
   template: `
     <div class="settings-container">
       <header class="settings-header">
@@ -130,35 +152,77 @@ import { ConfirmModalComponent } from '../confirm-modal.component';
         </div>
         <div class="tools-grid">
           <div class="tool-card">
-            <div class="tool-info">
-              <div class="tool-icon-wrapper cloud">
-                <lucide-icon [img]="FileJsonIcon" size="24"></lucide-icon>
+            <div class="tool-main">
+              <div class="tool-info">
+                <div class="tool-icon-wrapper cloud">
+                  <lucide-icon [img]="FileJsonIcon" size="24"></lucide-icon>
+                </div>
+                <div>
+                  <h3>Extracteur Jira Cloud</h3>
+                  <p>Bookmarklet pour extraire les données d'un ticket Jira Cloud vers le format JSON compatible.</p>
+                </div>
               </div>
-              <div>
-                <h3>Extracteur Jira Cloud</h3>
-                <p>Bookmarklet pour extraire les données d'un ticket Jira Cloud vers le format JSON compatible.</p>
+              <div class="tool-actions">
+                <a href="assets/scripts/extract-jira-cloud-bookmarklet.js" download="extract-jira-cloud.js" class="download-link">
+                  <lucide-icon [img]="DownloadIcon" size="16"></lucide-icon>
+                  Télécharger
+                </a>
+                <button class="tool-btn" (click)="loadAndToggleCode('cloud')">
+                  <lucide-icon [img]="showCloudCode() ? ChevronUpIcon : CodeIcon" size="16"></lucide-icon>
+                  {{ showCloudCode() ? 'Masquer' : 'Voir le code' }}
+                </button>
               </div>
             </div>
-            <a href="assets/scripts/extract-jira-cloud-bookmarklet.js" download="extract-jira-cloud.js" class="download-link">
-              <lucide-icon [img]="DownloadIcon" size="16"></lucide-icon>
-              Télécharger
-            </a>
+
+            @if (showCloudCode()) {
+              <div class="code-preview-container" @slideInOut>
+                <div class="code-header">
+                  <span class="file-name">extract-jira-cloud.js</span>
+                  <button class="copy-btn" (click)="copyToClipboard(cloudCodeRaw, 'cloud')" [class.success]="copySuccessCloud()">
+                    <lucide-icon [img]="copySuccessCloud() ? CheckIcon : CopyIcon" size="14"></lucide-icon>
+                    {{ copySuccessCloud() ? 'Copié !' : 'Copier' }}
+                  </button>
+                </div>
+                <div class="code-content" [innerHTML]="cloudCodeRendered()"></div>
+              </div>
+            }
           </div>
           
           <div class="tool-card">
-            <div class="tool-info">
-              <div class="tool-icon-wrapper datacenter">
-                <lucide-icon [img]="FileJsonIcon" size="24"></lucide-icon>
+            <div class="tool-main">
+              <div class="tool-info">
+                <div class="tool-icon-wrapper datacenter">
+                  <lucide-icon [img]="FileJsonIcon" size="24"></lucide-icon>
+                </div>
+                <div>
+                  <h3>Extracteur Jira DataCenter</h3>
+                  <p>Bookmarklet pour extraire les données d'un ticket Jira DataCenter / On-Premise.</p>
+                </div>
               </div>
-              <div>
-                <h3>Extracteur Jira DataCenter</h3>
-                <p>Bookmarklet pour extraire les données d'un ticket Jira DataCenter / On-Premise.</p>
+              <div class="tool-actions">
+                <a href="assets/scripts/extract-jira-datacenter-bookmarklet.js" download="extract-jira-datacenter.js" class="download-link">
+                  <lucide-icon [img]="DownloadIcon" size="16"></lucide-icon>
+                  Télécharger
+                </a>
+                <button class="tool-btn" (click)="loadAndToggleCode('datacenter')">
+                  <lucide-icon [img]="showDatacenterCode() ? ChevronUpIcon : CodeIcon" size="16"></lucide-icon>
+                  {{ showDatacenterCode() ? 'Masquer' : 'Voir le code' }}
+                </button>
               </div>
             </div>
-            <a href="assets/scripts/extract-jira-datacenter-bookmarklet.js" download="extract-jira-datacenter.js" class="download-link">
-              <lucide-icon [img]="DownloadIcon" size="16"></lucide-icon>
-              Télécharger
-            </a>
+
+            @if (showDatacenterCode()) {
+              <div class="code-preview-container" @slideInOut>
+                <div class="code-header">
+                  <span class="file-name">extract-jira-datacenter.js</span>
+                  <button class="copy-btn" (click)="copyToClipboard(datacenterCodeRaw, 'datacenter')" [class.success]="copySuccessDatacenter()">
+                    <lucide-icon [img]="copySuccessDatacenter() ? CheckIcon : CopyIcon" size="14"></lucide-icon>
+                    {{ copySuccessDatacenter() ? 'Copié !' : 'Copier' }}
+                  </button>
+                </div>
+                <div class="code-content" [innerHTML]="datacenterCodeRendered()"></div>
+              </div>
+            }
           </div>
         </div>
       </div>
@@ -614,20 +678,28 @@ import { ConfirmModalComponent } from '../confirm-modal.component';
     }
 
     .tools-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+      display: flex;
+      flex-direction: column;
       gap: 20px;
+      max-width: 1000px;
     }
-
+ 
     .tool-card {
       background: white;
       border-radius: 16px;
-      padding: 24px;
+      padding: 0;
       border: 1px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.2s;
+      overflow: hidden;
+    }
+
+    .tool-main {
+      padding: 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      transition: all 0.2s;
     }
 
     .tool-card:hover {
@@ -696,6 +768,133 @@ import { ConfirmModalComponent } from '../confirm-modal.component';
       color: #1e293b;
     }
 
+    .tool-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .tool-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      color: #4f46e5;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tool-btn:hover {
+      background: #f1f5f9;
+      border-color: #4f46e5;
+    }
+
+    .code-preview-container {
+      background: #ffffff;
+      border-top: 1px solid #e2e8f0;
+      overflow: hidden;
+    }
+
+    .code-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 16px;
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .file-name {
+      color: #64748b;
+      font-size: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    .copy-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: white;
+      border: 1px solid #e2e8f0;
+      color: #64748b;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover {
+      background: #f1f5f9;
+      color: #1e293b;
+    }
+
+    .copy-btn.success {
+      border-color: #22c55e;
+      color: #22c55e;
+      background: #f0fdf4;
+    }
+
+    .code-content {
+      max-height: 400px;
+      overflow-y: auto;
+      padding: 20px;
+      background: #fafafa;
+    }
+
+    :host ::ng-deep .code-content pre {
+      margin: 0;
+      background: transparent;
+    }
+
+    :host ::ng-deep .code-content code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #334155;
+    }
+
+    /* Highlight.js Light Theme (Atom One Light inspired) */
+    :host ::ng-deep .hljs-comment,
+    :host ::ng-deep .hljs-quote { color: #a0a1a7; font-style: italic; }
+    :host ::ng-deep .hljs-doctag,
+    :host ::ng-deep .hljs-keyword,
+    :host ::ng-deep .hljs-formula { color: #a626a4; }
+    :host ::ng-deep .hljs-section,
+    :host ::ng-deep .hljs-name,
+    :host ::ng-deep .hljs-selector-tag,
+    :host ::ng-deep .hljs-deletion,
+    :host ::ng-deep .hljs-subst { color: #e45649; }
+    :host ::ng-deep .hljs-literal { color: #0184a3; }
+    :host ::ng-deep .hljs-string,
+    :host ::ng-deep .hljs-regexp,
+    :host ::ng-deep .hljs-addition,
+    :host ::ng-deep .hljs-attribute,
+    :host ::ng-deep .hljs-meta-string { color: #50a14f; }
+    :host ::ng-deep .hljs-built_in,
+    :host ::ng-deep .hljs-class .hljs-title { color: #c18401; }
+    :host ::ng-deep .hljs-attr,
+    :host ::ng-deep .hljs-variable,
+    :host ::ng-deep .hljs-template-variable,
+    :host ::ng-deep .hljs-type,
+    :host ::ng-deep .hljs-selector-class,
+    :host ::ng-deep .hljs-selector-attr,
+    :host ::ng-deep .hljs-selector-pseudo,
+    :host ::ng-deep .hljs-number { color: #986801; }
+    :host ::ng-deep .hljs-symbol,
+    :host ::ng-deep .hljs-bullet,
+    :host ::ng-deep .hljs-link,
+    :host ::ng-deep .hljs-meta,
+    :host ::ng-deep .hljs-selector-id,
+    :host ::ng-deep .hljs-title { color: #4078f2; }
+    :host ::ng-deep .hljs-emphasis { font-style: italic; }
+    :host ::ng-deep .hljs-strong { font-weight: bold; }
+    :host ::ng-deep .hljs-link { text-decoration: underline; }
+
     @keyframes fadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
@@ -709,6 +908,18 @@ import { ConfirmModalComponent } from '../confirm-modal.component';
 })
 export class SettingsComponent implements OnInit {
   private settingsService = inject(SettingsService);
+  private http = inject(HttpClient);
+  private sanitizer = inject(DomSanitizer);
+
+  // Tools state
+  showCloudCode = signal(false);
+  showDatacenterCode = signal(false);
+  cloudCodeRaw = '';
+  datacenterCodeRaw = '';
+  cloudCodeRendered = signal<SafeHtml>('');
+  datacenterCodeRendered = signal<SafeHtml>('');
+  copySuccessCloud = signal(false);
+  copySuccessDatacenter = signal(false);
 
   searchQuery = signal('');
   settingsQuery = this.settingsService.getAllSettingsQuery();
@@ -758,13 +969,61 @@ export class SettingsComponent implements OnInit {
   UserIcon = User;
   DownloadIcon = Download;
   FileJsonIcon = FileJson;
+  CopyIcon = Copy;
+  CheckIcon = Check;
+  ChevronUpIcon = ChevronUp;
+  ChevronDownIcon = ChevronDown;
+  CodeIcon = Code;
 
   get valuePlaceholder(): string {
     return this.currentSetting.type === 'json' ? '{ "key": "value" }' : 'Entrez la valeur...';
   }
 
   ngOnInit() {
-    // No need to manually load, settingsQuery does it
+    // Configure marked with highlight.js
+    marked.use(markedHighlight({
+      langPrefix: 'hljs language-',
+      highlight(code, lang) {
+        const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+        return hljs.highlight(code, { language }).value;
+      }
+    }));
+  }
+
+  loadAndToggleCode(type: 'cloud' | 'datacenter') {
+    const isCloud = type === 'cloud';
+    const showSignal = isCloud ? this.showCloudCode : this.showDatacenterCode;
+    const rawProp = isCloud ? 'cloudCodeRaw' : 'datacenterCodeRaw';
+    const renderedSignal = isCloud ? this.cloudCodeRendered : this.datacenterCodeRendered;
+    const fileName = isCloud ? 'extract-jira-cloud-bookmarklet.js' : 'extract-jira-datacenter-bookmarklet.js';
+
+    if (showSignal()) {
+      showSignal.set(false);
+      return;
+    }
+
+    if (this[rawProp]) {
+      showSignal.set(true);
+      return;
+    }
+
+    this.http.get(`assets/scripts/${fileName}`, { responseType: 'text' }).subscribe(code => {
+      this[rawProp] = code;
+      const markdown = '```javascript\n' + code + '\n```';
+      renderedSignal.set(this.sanitizer.bypassSecurityTrustHtml(marked.parse(markdown) as string));
+      showSignal.set(true);
+    });
+  }
+
+  async copyToClipboard(code: string, type: 'cloud' | 'datacenter') {
+    try {
+      await navigator.clipboard.writeText(code);
+      const successSignal = type === 'cloud' ? this.copySuccessCloud : this.copySuccessDatacenter;
+      successSignal.set(true);
+      setTimeout(() => successSignal.set(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy code:', err);
+    }
   }
 
   getDefaultSetting(): Setting {
