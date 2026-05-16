@@ -14,7 +14,8 @@ import {
   Gauge,
   Layers,
   Flag,
-  User
+  User,
+  BookOpen
 } from 'lucide-angular';
 import { SidebarService } from '../services/sidebar.service';
 import { ReleaseNotesService } from '../services/release-notes.service';
@@ -24,6 +25,7 @@ interface NavigationItem {
   label: string;
   icon: any;
   route?: string;
+  href?: string;
 }
 
 @Component({
@@ -45,17 +47,29 @@ interface NavigationItem {
       </div>
 
       <div class="nav-items">
-        <a *ngFor="let item of navigationItems" 
-           class="nav-item"
-           [routerLink]="item.route"
-           routerLinkActive="active"
-           [routerLinkActiveOptions]="{exact: false}"
-           [title]="isCollapsed ? item.label : ''">
-          <div class="nav-item-icon">
-            <lucide-icon [img]="item.icon" [size]="20"></lucide-icon>
-          </div>
-          <span class="nav-item-label" *ngIf="!isCollapsed">{{ item.label }}</span>
-        </a>
+        <ng-container *ngFor="let item of navigationItems">
+          <a *ngIf="item.route" 
+             class="nav-item"
+             [routerLink]="item.route"
+             routerLinkActive="active"
+             [routerLinkActiveOptions]="{exact: false}"
+             [title]="isCollapsed ? item.label : ''">
+            <div class="nav-item-icon">
+              <lucide-icon [img]="item.icon" [size]="20"></lucide-icon>
+            </div>
+            <span class="nav-item-label" *ngIf="!isCollapsed">{{ item.label }}</span>
+          </a>
+          <a *ngIf="item.href" 
+             class="nav-item"
+             [href]="item.href"
+             target="_blank"
+             [title]="isCollapsed ? item.label : ''">
+            <div class="nav-item-icon">
+              <lucide-icon [img]="item.icon" [size]="20"></lucide-icon>
+            </div>
+            <span class="nav-item-label" *ngIf="!isCollapsed">{{ item.label }}</span>
+          </a>
+        </ng-container>
       </div>
 
       <div class="sidebar-footer">
@@ -266,6 +280,7 @@ export class SidebarNavigationComponent {
   Layers = Layers;
   Flag = Flag;
   User = User;
+  BookOpen = BookOpen;
 
   navigationItems: NavigationItem[] = [
     { label: 'Tableau de bord', icon: this.LayoutDashboard, route: '/dashboard' },
@@ -275,6 +290,7 @@ export class SidebarNavigationComponent {
     { label: 'Jalons', icon: this.Flag, route: '/jalons' },
     { label: 'Ressources', icon: this.Users, route: '/ressources' },
     { label: 'Organisation', icon: this.Building2, route: '/organisation' },
+    { label: 'Guide', icon: this.BookOpen, route: '/guide' },
     { label: 'Paramètres', icon: this.Settings, route: '/settings' },
     { label: 'Profil', icon: this.User, route: '/profile' }
   ];

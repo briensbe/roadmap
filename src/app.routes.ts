@@ -12,6 +12,7 @@ import { ForgotPasswordComponent } from "./auth/forgot-password/forgot-password.
 import { AuthGuard } from "./guards/auth.guard";
 import { ProfileComponent } from "./auth/profile/profile.component";
 import { UpdatePasswordComponent } from "./auth/update-password/update-password.component";
+import { GuideComponent } from "./components/guide/guide.component";
 
 export const routes: Routes = [
   { path: "login", component: LoginComponent },
@@ -31,6 +32,7 @@ export const routes: Routes = [
       { path: "jalons", component: MilestonesViewComponent },
       { path: "settings", loadComponent: () => import('./components/settings/settings.component').then(m => m.SettingsComponent) },
       { path: "profile", component: ProfileComponent },
+      { path: "guide", component: GuideComponent },
       { path: "update-password", component: UpdatePasswordComponent },
     ],
   },
