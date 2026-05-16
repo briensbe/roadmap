@@ -10,10 +10,10 @@ import { marked } from 'marked';
   imports: [CommonModule],
   template: `
     <div class="guide-page">
-      <div class="guide-header">
+      <!-- <div class="guide-header">
         <h1>Guide Utilisateur</h1>
         <p class="subtitle">Tout ce qu'il faut savoir pour maîtriser Roadmap</p>
-      </div>
+      </div> -->
       <div class="guide-container">
         <div class="guide-content" [innerHTML]="renderedContent"></div>
       </div>
@@ -259,7 +259,7 @@ export class GuideComponent implements OnInit {
   constructor(
     private http: HttpClient,
     private sanitizer: DomSanitizer
-  ) {}
+  ) { }
 
   ngOnInit() {
     this.http.get('assets/guide-roadmap.md', { responseType: 'text' })

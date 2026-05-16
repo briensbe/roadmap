@@ -2,7 +2,7 @@
 
 > Outil de planification de capacité et de projets pour équipes de développement.
 
----
+## 🚀 Démarrage rapide
 
 <details>
 <summary>📖 <strong>Glossaire</strong> (cliquez pour déplier)</summary>
@@ -16,10 +16,6 @@
 | **Jalon**            | Évènement clé du projet : Sprint, Livraison ou MEP (Mise en Production).                                               |
 
 </details>
-
----
-
-## 🚀 Démarrage rapide
 
 <details>
 <summary>1. Organisation — Structurer la société</summary>
@@ -38,8 +34,6 @@ Société
 Les équipes créées ici seront les conteneurs auxquels vous rattacherez ensuite vos ressources.
 
 </details>
-
----
 
 <details>
 <summary>2. Ressources — Définir qui peut travailler</summary>
@@ -61,8 +55,6 @@ Renseignez le **Nb de Jours/Semaine** pour chaque ressource : le nombre de jours
 
 </details>
 
----
-
 <details>
 <summary>3. Capacité — Projeter les disponibilités</summary>
 
@@ -76,8 +68,6 @@ Pour chaque équipe :
 Cette projection est ce qui alimentera la vue Planification : sans capacité définie, pas de planification possible.
 
 </details>
-
----
 
 <details>
 <summary>4. Projets — Référencer ce qu'il y a à faire</summary>
@@ -106,8 +96,6 @@ Le RAF est mis à jour automatiquement et sert de base au suivi d'avancement.
 
 </details>
 
----
-
 <details>
 <summary>5. Planification — Projeter les jours</summary>
 
@@ -131,8 +119,6 @@ Testez les trois, gardez celle qui vous parle le plus.
 
 </details>
 
----
-
 <details>
 <summary>6. Jalons — Marquer les évènements clés</summary>
 
@@ -147,8 +133,6 @@ Trois types de jalons disponibles :
 Les jalons sont **visibles dans la vue Planification**, ce qui permet de les confronter visuellement à la charge prévue.
 
 </details>
-
----
 
 ## ℹ️ Bon à savoir
 
