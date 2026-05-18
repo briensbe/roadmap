@@ -196,6 +196,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.openProjetDropdown = false;
     this.openResourceDropdown = false;
     this.openStatusDropdown = false;
+    this.showPeriodDropdown = false;
     this.showYearPopover = false;
     this.showChiffrePopover = false;
     this.clearSelection();
@@ -247,14 +248,20 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   filterResourceIds = storageSignal<string[]>("plan-view-filter-resources", []); // values like 'role:<id>' or 'personne:<id>'
   filterStatusIds = storageSignal<string[]>("plan-view-filter-statuses", []);
 
+  // Period filter (default: current week → +6 months; empty string = use default)
+  filterPeriodEnabled = storageSignal<boolean>("plan-view-filter-period-enabled", true);
+  filterPeriodStart   = storageSignal<string>("plan-view-filter-period-start", "");
+  filterPeriodEnd     = storageSignal<string>("plan-view-filter-period-end", "");
+
   isAnyFilterActiveExceptTeam = computed(() => {
     const hasSearch = this.globalSearch().trim().length > 0;
     const hasProjectFilter = this.filterProjetIds().length > 0 || this.filterProjetSearch().trim().length > 0;
     const hasStatusFilter = this.filterStatusIds().length > 0;
     const hasResourceFilter = this.filterResourceIds().length > 0;
     const hasWeekFilter = this.weekFilters().length > 0;
+    const hasPeriod = this.filterPeriodEnabled();
 
-    return hasSearch || hasProjectFilter || hasStatusFilter || hasResourceFilter || hasWeekFilter;
+    return hasSearch || hasProjectFilter || hasStatusFilter || hasResourceFilter || hasWeekFilter || hasPeriod;
   });
 
   reorderMessage = signal<string | null>(null);
@@ -277,6 +284,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   openProjetDropdown = false;
   openResourceDropdown = false;
   openStatusDropdown = false;
+  showPeriodDropdown = false;
 
   // Actions menu state
   showActionsMenu = false;
@@ -493,6 +501,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       this.openProjetDropdown = false;
       this.openResourceDropdown = false;
       this.openStatusDropdown = false;
+      this.showPeriodDropdown = false;
     }
   }
 
@@ -2812,14 +2821,152 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     return p ? `${p.prenom} ${p.nom} ` : "Pers: —";
   }
 
+  // ─── Period filter helpers ───────────────────────────────────────────────
+
+  /** Lundi de la semaine courante (YYYY-MM-DD) */
+  get defaultPeriodStart(): string {
+    const d = new Date();
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(d);
+    monday.setDate(diff);
+    return monday.toISOString().split('T')[0];
+  }
+
+  /** Aujourd'hui + 6 mois (YYYY-MM-DD) */
+  get defaultPeriodEnd(): string {
+    const d = new Date();
+    d.setMonth(d.getMonth() + 6);
+    return d.toISOString().split('T')[0];
+  }
+
+  get effectivePeriodStart(): string {
+    return this.filterPeriodStart() || this.defaultPeriodStart;
+  }
+
+  get effectivePeriodEnd(): string {
+    return this.filterPeriodEnd() || this.defaultPeriodEnd;
+  }
+
+  /** Vrai si le filtre période est actif */
+  get isPeriodFilterActive(): boolean {
+    return this.filterPeriodEnabled();
+  }
+
+  /** Retourne le preset actif (3/6/12) ou null si période personnalisée */
+  get activePeriodPreset(): number | null {
+    const start = this.effectivePeriodStart;
+    const end   = this.effectivePeriodEnd;
+    for (const months of [3, 6, 12]) {
+      const d = new Date(start);
+      d.setMonth(d.getMonth() + months);
+      if (d.toISOString().split('T')[0] === end) return months;
+    }
+    return null;
+  }
+
+  /** Label affiché dans le pill */
+  get periodLabel(): string {
+    if (!this.filterPeriodEnabled()) {
+      return "Désactivé (Tout afficher)";
+    }
+    const fmt = (s: string) => {
+      const [y, m, day] = s.split('-');
+      return `${day}/${m}/${y.slice(2)}`;
+    };
+    return `${fmt(this.effectivePeriodStart)} → ${fmt(this.effectivePeriodEnd)}`;
+  }
+
+  /** O(n) : retourne les IDs de projets ayant ≥1 charge dans [startDate, endDate] */
+  private getProjectsWithChargesInPeriod(startDate: string, endDate: string): Set<string> {
+    const result = new Set<string>();
+    for (const charge of this.allCharges) {
+      if (!charge.semaine_debut || !charge.projet_id) continue;
+      if ((charge.unite_ressource ?? 0) <= 0) continue;
+      const weekKey = charge.semaine_debut.split('T')[0];
+      if (weekKey >= startDate && weekKey <= endDate) {
+        result.add(charge.projet_id);
+      }
+    }
+    return result;
+  }
+
+  /** O(w) : retourne vrai si la map de charges contient ≥1 charge non nulle dans la période */
+  private hasChargesInPeriod(chargesMap: Map<string, number> | undefined, startDate: string, endDate: string): boolean {
+    if (!chargesMap || chargesMap.size === 0) return false;
+    for (const [weekKey, val] of chargesMap.entries()) {
+      if (val > 0 && weekKey >= startDate && weekKey <= endDate) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  togglePeriodDropdown(event: Event) {
+    event.stopPropagation();
+    this.showPeriodDropdown = !this.showPeriodDropdown;
+    if (this.showPeriodDropdown) {
+      this.openEquipeDropdown = false;
+      this.openProjetDropdown = false;
+      this.openResourceDropdown = false;
+      this.openStatusDropdown = false;
+    }
+    this.cdr.markForCheck();
+  }
+
+  setPeriodPreset(months: number) {
+    const start = this.defaultPeriodStart;
+    const d = new Date(start);
+    d.setMonth(d.getMonth() + months);
+    this.filterPeriodStart.set(start);
+    this.filterPeriodEnd.set(d.toISOString().split('T')[0]);
+    this.applyFilters();
+    this.cdr.markForCheck();
+  }
+
+  resetPeriodFilter() {
+    this.filterPeriodStart.set('');
+    this.filterPeriodEnd.set('');
+    this.applyFilters();
+    this.cdr.markForCheck();
+  }
+
+  onPeriodStartChange(val: string) {
+    this.filterPeriodStart.set(val);
+    this.applyFilters();
+    this.cdr.markForCheck();
+  }
+
+  onPeriodEndChange(val: string) {
+    this.filterPeriodEnd.set(val);
+    this.applyFilters();
+    this.cdr.markForCheck();
+  }
+
+  onPeriodToggle(enabled: boolean) {
+    this.filterPeriodEnabled.set(enabled);
+    this.applyFilters();
+    this.cdr.markForCheck();
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+
   applyFilters() {
     this.calculateUsage();
 
     const search = this.globalSearch().toLowerCase().trim();
+
+    // Period filter – computed once, O(n) pass on allCharges
+    const periodStart = this.effectivePeriodStart;
+    const periodEnd   = this.effectivePeriodEnd;
+    const periodEnabled = this.filterPeriodEnabled();
+    const activeProjectIds = periodEnabled ? this.getProjectsWithChargesInPeriod(periodStart, periodEnd) : new Set<string>();
+
     const hasSpecificFilter = this.filterEquipeIds().length > 0 ||
       this.filterProjetIds().length > 0 ||
       this.filterResourceIds().length > 0 ||
-      this.filterStatusIds().length > 0;
+      this.filterStatusIds().length > 0 ||
+      periodEnabled;
     const needsSearchFilter = search.length > 0;
 
     // 1. Index search matches once for O(1) lookups
@@ -2873,9 +3020,9 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       return false;
     };
 
-    if (!this.filterEquipeIds().length && !this.filterProjetIds().length && !this.filterResourceIds().length && !this.filterStatusIds().length && !search) {
+    if (!this.filterEquipeIds().length && !this.filterProjetIds().length && !this.filterResourceIds().length && !this.filterStatusIds().length && !search && !periodEnabled) {
       this.rows = [...this.rowsAll];
-      this.calculateFilteredMetrics(); // Ensure metrics are ready
+      this.calculateFilteredMetrics();
       if (this.displayFormat() === 'flat') this.buildFlatList();
       return;
     }
@@ -2914,14 +3061,16 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
         if (this.viewMode() === 'project' && parent.originalProject) {
           parentPassesStatut = this.filterStatusIds().includes(parent.originalProject.statut);
         } else if (this.viewMode() === 'team' || this.viewMode() === 'resource') {
-          // Parent is team or resource/team, status filter will be applied on children (projects)
           parentPassesStatut = true;
         }
       }
 
+      // Period filter – parent level: check if the parent has charges in the period
+      const parentPassesPeriod = this.hasChargesInPeriod(parent.totalCharges, periodStart, periodEnd);
+
+      if (!parentPassesPeriod) continue;
+
       if (!pMatches && !parentPassesEquipe && !parentPassesResource && !parentPassesProjet && !parentPassesStatut) {
-        // Optimization: if parent doesn't match and no specific project/team/status filter is active,
-        // we might still need to check children. But if the parent is a project and didn't pass project/status filter, skip.
         if (this.viewMode() === 'project' && (!parentPassesProjet || !parentPassesStatut)) continue;
       }
 
@@ -2950,6 +3099,10 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
         if (this.viewMode() === 'team' && !childPassesStatut) continue;
 
+        // Period filter – Child level: check if this child row has charges in the period
+        if (this.viewMode() === 'team' && !this.hasChargesInPeriod(child.charges, periodStart, periodEnd)) continue;
+        if (this.viewMode() === 'project' && !this.hasChargesInPeriod(child.charges, periodStart, periodEnd)) continue;
+
         // Filter grandchildren
         let grandchildrenMatch = child.resources;
         if (hasSpecificFilter || needsSearchFilter) {
@@ -2977,7 +3130,10 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
               }
             }
 
-            const isMatch = passesIdFilter && passesSearch;
+            // Period filter – Grandchild level: check if this grandchild row has charges in the period
+            const passesPeriod = this.hasChargesInPeriod(gr.charges, periodStart, periodEnd);
+
+            const isMatch = passesIdFilter && passesSearch && passesPeriod;
             if (isMatch) gMatchesAny = true;
             return isMatch;
           });
@@ -3002,7 +3158,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
         }
 
         const hasGrandchildFilter = isResourceMode
-          ? (this.filterProjetIds().length > 0 || this.filterStatusIds().length > 0)
+          ? (this.filterProjetIds().length > 0 || this.filterStatusIds().length > 0 || true /* period always active */)
           : this.filterResourceIds().length > 0;
         const hasGrandchildrenMatch = hasGrandchildFilter ? grandchildrenMatch.length > 0 : true;
 

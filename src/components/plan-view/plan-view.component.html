@@ -394,6 +394,82 @@
           </div>
         </div>
       </div>
+
+      <!-- Filtre Période -->
+      <div class="filter-group period-filter-group">
+        <div
+          class="filter-pill filter-pill-period"
+          [class.filter-pill-active]="filterPeriodEnabled()"
+          (click)="togglePeriodDropdown($event)"
+          id="period-filter-pill"
+        >
+          <span class="filter-title">Période</span>
+          <span class="chip-list">
+            <span class="chip period-chip" [class.period-chip-disabled]="!filterPeriodEnabled()">{{
+              periodLabel
+            }}</span>
+          </span>
+        </div>
+
+        <div class="filters-dropdown period-dropdown" *ngIf="showPeriodDropdown" (click)="$event.stopPropagation()">
+          <!-- Toggle Activer/Désactiver -->
+          <div class="period-toggle-row">
+            <span class="period-toggle-title">Filtrer par date les projets sans charges</span>
+            <label class="premium-switch">
+              <input type="checkbox" [ngModel]="filterPeriodEnabled()" (ngModelChange)="onPeriodToggle($event)" />
+              <span class="premium-slider"></span>
+            </label>
+          </div>
+
+          <div class="period-dropdown-divider"></div>
+
+          <!-- Section Contenu Période (grisée si désactivée) -->
+          <div class="period-dropdown-content" [class.disabled]="!filterPeriodEnabled()">
+            <div class="period-section-label">Raccourcis</div>
+            <div class="period-presets">
+              <button class="period-preset-btn" [class.active]="activePeriodPreset === 3" (click)="setPeriodPreset(3)">
+                3 mois
+              </button>
+              <button class="period-preset-btn" [class.active]="activePeriodPreset === 6" (click)="setPeriodPreset(6)">
+                6 mois
+              </button>
+              <button
+                class="period-preset-btn"
+                [class.active]="activePeriodPreset === 12"
+                (click)="setPeriodPreset(12)"
+              >
+                12 mois
+              </button>
+            </div>
+            <div class="period-section-label" style="margin-top: 12px">Dates personnalisées</div>
+            <div class="period-date-row">
+              <div class="period-date-field">
+                <label class="period-date-label">Du</label>
+                <input
+                  type="date"
+                  class="period-date-input"
+                  [ngModel]="effectivePeriodStart"
+                  (ngModelChange)="onPeriodStartChange($event)"
+                />
+              </div>
+              <span class="period-date-arrow">→</span>
+              <div class="period-date-field">
+                <label class="period-date-label">Au</label>
+                <input
+                  type="date"
+                  class="period-date-input"
+                  [ngModel]="effectivePeriodEnd"
+                  (ngModelChange)="onPeriodEndChange($event)"
+                />
+              </div>
+            </div>
+            <button class="period-reset-btn" (click)="resetPeriodFilter()">
+              <lucide-icon name="x" [size]="13"></lucide-icon>
+              Réinitialiser (6 mois)
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div *ngIf="getFilteredWeekCount() > 0" class="filter-status-badge">
@@ -1359,7 +1435,10 @@
         <ng-container *ngIf="viewMode() === 'project'">
           <div class="info-box">
             <lucide-icon [img]="Info" [size]="18"></lucide-icon>
-            <span>Les ressources définies dans <strong>Capacité</strong> pour cette équipe seront automatiquement ajoutées avec le projet.</span>
+            <span
+              >Les ressources définies dans <strong>Capacité</strong> pour cette équipe seront automatiquement ajoutées
+              avec le projet.</span
+            >
           </div>
           <div class="form-group">
             <label>Sélectionner une équipe</label>
