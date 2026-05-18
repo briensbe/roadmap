@@ -17,7 +17,6 @@ import {
   User,
   Shield,
   Type,
-  Download,
   FileJson,
   Copy,
   Check,
@@ -147,80 +146,39 @@ import { ConfirmModalComponent } from '../confirm-modal.component';
 
       <div class="tools-section">
         <div class="section-header">
-          <lucide-icon [img]="DownloadIcon" size="20"></lucide-icon>
+          <lucide-icon [img]="CodeIcon" size="20"></lucide-icon>
           <h2>Outils & Bookmarklets</h2>
         </div>
         <div class="tools-grid">
           <div class="tool-card">
             <div class="tool-main">
               <div class="tool-info">
-                <div class="tool-icon-wrapper cloud">
+                <div class="tool-icon-wrapper jira">
                   <lucide-icon [img]="FileJsonIcon" size="24"></lucide-icon>
                 </div>
                 <div>
-                  <h3>Extracteur Jira Cloud</h3>
-                  <p>Bookmarklet pour extraire les données d'un ticket Jira Cloud vers le format JSON compatible.</p>
+                  <h3>Extracteur Jira (Cloud & DataCenter)</h3>
+                  <p>Bookmarklet universel pour extraire les données d'un ticket Jira (Cloud ou DataCenter / On-Premise) vers le format JSON compatible.</p>
                 </div>
               </div>
               <div class="tool-actions">
-                <a href="assets/scripts/extract-jira-cloud-bookmarklet.js" download="extract-jira-cloud.js" class="download-link">
-                  <lucide-icon [img]="DownloadIcon" size="16"></lucide-icon>
-                  Télécharger
-                </a>
-                <button class="tool-btn" (click)="loadAndToggleCode('cloud')">
-                  <lucide-icon [img]="showCloudCode() ? ChevronUpIcon : CodeIcon" size="16"></lucide-icon>
-                  {{ showCloudCode() ? 'Masquer' : 'Voir le code' }}
+                <button class="tool-btn" (click)="loadAndToggleCode()">
+                  <lucide-icon [img]="showCode() ? ChevronUpIcon : CodeIcon" size="16"></lucide-icon>
+                  {{ showCode() ? 'Masquer' : 'Voir le code' }}
                 </button>
               </div>
             </div>
 
-            @if (showCloudCode()) {
+            @if (showCode()) {
               <div class="code-preview-container" @slideInOut>
                 <div class="code-header">
-                  <span class="file-name">extract-jira-cloud.js</span>
-                  <button class="copy-btn" (click)="copyToClipboard(cloudCodeRaw, 'cloud')" [class.success]="copySuccessCloud()">
-                    <lucide-icon [img]="copySuccessCloud() ? CheckIcon : CopyIcon" size="14"></lucide-icon>
-                    {{ copySuccessCloud() ? 'Copié !' : 'Copier' }}
+                  <span class="file-name">extract-jira.js</span>
+                  <button class="copy-btn" (click)="copyToClipboard(codeRaw)" [class.success]="copySuccess()">
+                    <lucide-icon [img]="copySuccess() ? CheckIcon : CopyIcon" size="14"></lucide-icon>
+                    {{ copySuccess() ? 'Copié !' : 'Copier' }}
                   </button>
                 </div>
-                <div class="code-content" [innerHTML]="cloudCodeRendered()"></div>
-              </div>
-            }
-          </div>
-          
-          <div class="tool-card">
-            <div class="tool-main">
-              <div class="tool-info">
-                <div class="tool-icon-wrapper datacenter">
-                  <lucide-icon [img]="FileJsonIcon" size="24"></lucide-icon>
-                </div>
-                <div>
-                  <h3>Extracteur Jira DataCenter</h3>
-                  <p>Bookmarklet pour extraire les données d'un ticket Jira DataCenter / On-Premise.</p>
-                </div>
-              </div>
-              <div class="tool-actions">
-                <a href="assets/scripts/extract-jira-datacenter-bookmarklet.js" download="extract-jira-datacenter.js" class="download-link">
-                  <lucide-icon [img]="DownloadIcon" size="16"></lucide-icon>
-                  Télécharger
-                </a>
-                <button class="tool-btn" (click)="loadAndToggleCode('datacenter')">
-                  <lucide-icon [img]="showDatacenterCode() ? ChevronUpIcon : CodeIcon" size="16"></lucide-icon>
-                  {{ showDatacenterCode() ? 'Masquer' : 'Voir le code' }}
-                </button>
-              </div>
-            </div>
-
-            @if (showDatacenterCode()) {
-              <div class="code-preview-container" @slideInOut>
-                <div class="code-header">
-                  <span class="file-name">extract-jira-datacenter.js</span>
-                  <button class="copy-btn" (click)="copyToClipboard(datacenterCodeRaw, 'datacenter')" [class.success]="copySuccessDatacenter()">
-                    <lucide-icon [img]="copySuccessDatacenter() ? CheckIcon : CopyIcon" size="14"></lucide-icon>
-                    {{ copySuccessDatacenter() ? 'Copié !' : 'Copier' }}
-                  </button>
-                </div>
-                <div class="code-content" [innerHTML]="datacenterCodeRendered()"></div>
+                <div class="code-content" [innerHTML]="codeRendered()"></div>
               </div>
             }
           </div>
@@ -722,14 +680,9 @@ import { ConfirmModalComponent } from '../confirm-modal.component';
       justify-content: center;
     }
 
-    .tool-icon-wrapper.cloud {
+    .tool-icon-wrapper.jira {
       background: #eff6ff;
       color: #3b82f6;
-    }
-
-    .tool-icon-wrapper.datacenter {
-      background: #f0fdf4;
-      color: #22c55e;
     }
 
     .tool-info h3 {
@@ -743,29 +696,8 @@ import { ConfirmModalComponent } from '../confirm-modal.component';
       font-size: 13px;
       color: #64748b;
       margin: 0;
-      max-width: 250px;
+      max-width: 600px;
       line-height: 1.4;
-    }
-
-    .download-link {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      color: #475569;
-      font-size: 13px;
-      font-weight: 500;
-      text-decoration: none;
-      transition: all 0.2s;
-    }
-
-    .download-link:hover {
-      background: #f1f5f9;
-      border-color: #cbd5e1;
-      color: #1e293b;
     }
 
     .tool-actions {
@@ -912,14 +844,10 @@ export class SettingsComponent implements OnInit {
   private sanitizer = inject(DomSanitizer);
 
   // Tools state
-  showCloudCode = signal(false);
-  showDatacenterCode = signal(false);
-  cloudCodeRaw = '';
-  datacenterCodeRaw = '';
-  cloudCodeRendered = signal<SafeHtml>('');
-  datacenterCodeRendered = signal<SafeHtml>('');
-  copySuccessCloud = signal(false);
-  copySuccessDatacenter = signal(false);
+  showCode = signal(false);
+  codeRaw = '';
+  codeRendered = signal<SafeHtml>('');
+  copySuccess = signal(false);
 
   searchQuery = signal('');
   settingsQuery = this.settingsService.getAllSettingsQuery();
@@ -967,7 +895,6 @@ export class SettingsComponent implements OnInit {
   SaveIcon = Save;
   GlobeIcon = Globe;
   UserIcon = User;
-  DownloadIcon = Download;
   FileJsonIcon = FileJson;
   CopyIcon = Copy;
   CheckIcon = Check;
@@ -990,37 +917,30 @@ export class SettingsComponent implements OnInit {
     }));
   }
 
-  loadAndToggleCode(type: 'cloud' | 'datacenter') {
-    const isCloud = type === 'cloud';
-    const showSignal = isCloud ? this.showCloudCode : this.showDatacenterCode;
-    const rawProp = isCloud ? 'cloudCodeRaw' : 'datacenterCodeRaw';
-    const renderedSignal = isCloud ? this.cloudCodeRendered : this.datacenterCodeRendered;
-    const fileName = isCloud ? 'extract-jira-cloud-bookmarklet.js' : 'extract-jira-datacenter-bookmarklet.js';
-
-    if (showSignal()) {
-      showSignal.set(false);
+  loadAndToggleCode() {
+    if (this.showCode()) {
+      this.showCode.set(false);
       return;
     }
 
-    if (this[rawProp]) {
-      showSignal.set(true);
+    if (this.codeRaw) {
+      this.showCode.set(true);
       return;
     }
 
-    this.http.get(`assets/scripts/${fileName}`, { responseType: 'text' }).subscribe(code => {
-      this[rawProp] = code;
+    this.http.get('assets/scripts/extract-jira-bookmarklet.js', { responseType: 'text' }).subscribe(code => {
+      this.codeRaw = code;
       const markdown = '```javascript\n' + code + '\n```';
-      renderedSignal.set(this.sanitizer.bypassSecurityTrustHtml(marked.parse(markdown) as string));
-      showSignal.set(true);
+      this.codeRendered.set(this.sanitizer.bypassSecurityTrustHtml(marked.parse(markdown) as string));
+      this.showCode.set(true);
     });
   }
 
-  async copyToClipboard(code: string, type: 'cloud' | 'datacenter') {
+  async copyToClipboard(code: string) {
     try {
       await navigator.clipboard.writeText(code);
-      const successSignal = type === 'cloud' ? this.copySuccessCloud : this.copySuccessDatacenter;
-      successSignal.set(true);
-      setTimeout(() => successSignal.set(false), 2000);
+      this.copySuccess.set(true);
+      setTimeout(() => this.copySuccess.set(false), 2000);
     } catch (err) {
       console.error('Failed to copy code:', err);
     }

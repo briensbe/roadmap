@@ -322,10 +322,11 @@ export class ProjectModalComponent implements OnInit {
   onJsonImported(data: any) {
     this.editableProjet = {
       ...this.editableProjet,
-      reference_externe: data.reference_externe,
-      nom_projet: data.nom_projet,
-      chef_projet: data.chef_projet,
-      description: data.description
+      reference_externe: data.reference_externe || this.editableProjet.reference_externe,
+      nom_projet: data.nom_projet || this.editableProjet.nom_projet,
+      chef_projet: data.chef_projet || this.editableProjet.chef_projet,
+      description: data.description || this.editableProjet.description,
+      code_projet: data.code_projet || this.editableProjet.code_projet
     };
     this.formErrors.nom_projet = false;
   }

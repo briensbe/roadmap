@@ -4,29 +4,43 @@ javascript: (function () {
   const match = window.location.href.match(/([A-Z][A-Z0-9]+-\d+)/);
   const issueKey = match ? match[1] : null;
 
-  /* Validation de base */
   if (!issueKey) {
     alert("Impossible de détecter une clé de ticket Jira sur cette page.");
     return;
   }
 
-  /* 2. Appel à l'API REST de votre instance DataCenter (utilise la session active) */
+  /* 2. Appel à l'API REST de votre instance DataCenter */
   fetch(`/rest/api/2/issue/${issueKey}`)
     .then((response) => {
       if (!response.ok) throw new Error("Erreur HTTP " + response.status);
       return response.json();
     })
     .then((jiraJson) => {
-      /* 3. MAPPING DES DONNÉES (Identique et compatible DataCenter) */
+      /* Gestion dynamique du custom field selon son type (String, Objet ou Tableau) */
+      const rawCustomField = jiraJson.fields.customfield_11112;
+      let customFieldValue = "";
+
+      if (rawCustomField) {
+        if (typeof rawCustomField === "object") {
+          /* Si c'est une liste déroulante, on prend la valeur sélectionnée */
+          customFieldValue = rawCustomField.value || rawCustomField.name || JSON.stringify(rawCustomField);
+        } else {
+          /* Si c'est du texte brut */
+          customFieldValue = rawCustomField;
+        }
+      }
+
+      /* 3. MAPPING DES DONNÉES */
       const monJsonSortie = {
         id: jiraJson.key,
         titre: jiraJson.fields.summary,
-        /* Sur DataCenter, la description est une bête chaîne de caractères (souvent du WikiText) */
         description: jiraJson.fields.description || "",
         statut: jiraJson.fields.status?.name || "",
         priorite: jiraJson.fields.priority?.name || "",
         reporter: jiraJson.fields.reporter?.displayName || "Non renseigné",
         cree_le: jiraJson.fields.created,
+        /* Intégration de votre clé personnalisée avec le label attendu */
+        "Previa/Triskell": customFieldValue,
       };
 
       /* 4. Conversion en texte et copie dans le presse-papier */

@@ -170,7 +170,8 @@ export class ProjectJsonImportComponent {
         reference_externe: data.id || "",
         nom_projet: data.titre || "",
         chef_projet: data.reporter || "",
-        description: data.description || ""
+        description: data.description || "",
+        code_projet: data["Previa/Triskell"] || ""
       };
 
       this.imported.emit(mappedData);
