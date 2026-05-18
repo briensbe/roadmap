@@ -414,7 +414,7 @@
         <div class="filters-dropdown period-dropdown" *ngIf="showPeriodDropdown" (click)="$event.stopPropagation()">
           <!-- Toggle Activer/Désactiver -->
           <div class="period-toggle-row">
-            <span class="period-toggle-title">Filtrer par date les projets sans charges</span>
+            <span class="period-toggle-title">Masquer par date les projets sans charges</span>
             <label class="premium-switch">
               <input type="checkbox" [ngModel]="filterPeriodEnabled()" (ngModelChange)="onPeriodToggle($event)" />
               <span class="premium-slider"></span>
@@ -463,10 +463,6 @@
                 />
               </div>
             </div>
-            <button class="period-reset-btn" (click)="resetPeriodFilter()">
-              <lucide-icon name="x" [size]="13"></lucide-icon>
-              Réinitialiser (6 mois)
-            </button>
           </div>
         </div>
       </div>

@@ -2368,6 +2368,8 @@ input:checked + .slider:before {
   gap: 0;
   padding: 14px;
   overflow: visible;
+  right: 0;
+  left: auto;
 }
 
 .period-section-label {

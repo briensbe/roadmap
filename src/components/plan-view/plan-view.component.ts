@@ -249,7 +249,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   filterStatusIds = storageSignal<string[]>("plan-view-filter-statuses", []);
 
   // Period filter (default: current week → +6 months; empty string = use default)
-  filterPeriodEnabled = storageSignal<boolean>("plan-view-filter-period-enabled", true);
+  filterPeriodEnabled = signal<boolean>(false);
   filterPeriodStart   = storageSignal<string>("plan-view-filter-period-start", "");
   filterPeriodEnd     = storageSignal<string>("plan-view-filter-period-end", "");
 
@@ -3066,7 +3066,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       }
 
       // Period filter – parent level: check if the parent has charges in the period
-      const parentPassesPeriod = this.hasChargesInPeriod(parent.totalCharges, periodStart, periodEnd);
+      const parentPassesPeriod = !periodEnabled || this.hasChargesInPeriod(parent.totalCharges, periodStart, periodEnd);
 
       if (!parentPassesPeriod) continue;
 
@@ -3100,8 +3100,10 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
         if (this.viewMode() === 'team' && !childPassesStatut) continue;
 
         // Period filter – Child level: check if this child row has charges in the period
-        if (this.viewMode() === 'team' && !this.hasChargesInPeriod(child.charges, periodStart, periodEnd)) continue;
-        if (this.viewMode() === 'project' && !this.hasChargesInPeriod(child.charges, periodStart, periodEnd)) continue;
+        if (periodEnabled) {
+          if (this.viewMode() === 'team' && !this.hasChargesInPeriod(child.charges, periodStart, periodEnd)) continue;
+          if (this.viewMode() === 'project' && !this.hasChargesInPeriod(child.charges, periodStart, periodEnd)) continue;
+        }
 
         // Filter grandchildren
         let grandchildrenMatch = child.resources;
@@ -3131,7 +3133,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
             }
 
             // Period filter – Grandchild level: check if this grandchild row has charges in the period
-            const passesPeriod = this.hasChargesInPeriod(gr.charges, periodStart, periodEnd);
+            const passesPeriod = !periodEnabled || this.hasChargesInPeriod(gr.charges, periodStart, periodEnd);
 
             const isMatch = passesIdFilter && passesSearch && passesPeriod;
             if (isMatch) gMatchesAny = true;
@@ -3158,7 +3160,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
         }
 
         const hasGrandchildFilter = isResourceMode
-          ? (this.filterProjetIds().length > 0 || this.filterStatusIds().length > 0 || true /* period always active */)
+          ? (this.filterProjetIds().length > 0 || this.filterStatusIds().length > 0 || periodEnabled)
           : this.filterResourceIds().length > 0;
         const hasGrandchildrenMatch = hasGrandchildFilter ? grandchildrenMatch.length > 0 : true;
 
