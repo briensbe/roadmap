@@ -92,7 +92,8 @@
   overflow: hidden;
 }
 
-.capacity-container[data-zoom="compact"] {
+/* Saisie mode compact zoom variable overrides */
+.capacity-container[data-planning-mode="saisie"][data-zoom="compact"] {
   --cell-width: 50px;
   --row-min-height: 32px;
   --cell-padding: 0 4px;
@@ -102,7 +103,9 @@
   --fs-10: 9px;
 }
 
-.capacity-container[data-zoom="normal"] {
+/* Saisie mode normal, and Visualisation mode (always normal layout sizes except cell-width) */
+.capacity-container[data-zoom="normal"],
+.capacity-container[data-planning-mode="visualisation"] {
   --cell-width: 80px;
   --row-min-height: 48px;
   --cell-padding: 8px;
@@ -2569,4 +2572,340 @@ input:checked + .slider:before {
   color: #64748b !important;
   border: 1px solid #e2e8f0;
 }
+
+/* ==========================================
+   GANTT VISUALISATION MODE PREMIUM STYLES
+   ========================================== */
+
+/* Segmented Control Switch for Saisie / Visualisation */
+.planning-mode-switch {
+  display: inline-flex;
+  align-items: center;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.switch-btn {
+  background: transparent;
+  border: none;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.switch-btn:hover {
+  color: #0f172a;
+}
+
+.switch-btn.active {
+  background: white;
+  color: #065f46;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+/* Gantt Grid & Column styles */
+.gantt-header-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.quarters-row, .months-row {
+  display: flex;
+  width: 100%;
+}
+
+.quarter-header-cell {
+  border-bottom: 1px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.month-header-cell {
+  border-right: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+/* Background grid for Gantt columns */
+.gantt-grid-bg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.gantt-grid-col {
+  border-right: 1px solid #f1f5f9;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* Gantt Bar & Wrapper styling */
+.gantt-weeks-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 0 8px; /* subtle horizontal padding to prevent overflow edge issues */
+}
+
+.gantt-bar-wrapper {
+  position: absolute;
+  height: 26px; /* Slightly compact but thick enough to read text */
+  display: flex;
+  align-items: center;
+  z-index: 2;
+  box-sizing: border-box;
+}
+
+.gantt-bar {
+  width: 100%;
+  height: 100%;
+  border-radius: 13px; /* Premium capsule shape */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  user-select: none;
+}
+
+.gantt-bar:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  filter: brightness(1.05);
+}
+
+.gantt-bar-label {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* Milestones styling */
+.gantt-milestone {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gantt-milestone:hover {
+  transform: translate(-50%, -50%) scale(1.25);
+  z-index: 4;
+}
+
+/* Jalon delivery shape: Perfect circle */
+.gantt-milestone.jalon-delivery {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* Jalon specification / production: Diamond shape */
+.gantt-milestone.jalon-diamond {
+  width: 14px;
+  height: 14px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.gantt-milestone.jalon-diamond:hover {
+  transform: translate(-50%, -50%) rotate(45deg) scale(1.25);
+}
+
+/* Text label for milestones inside shapes */
+.gantt-milestone-text {
+  font-size: 8px;
+  font-weight: 800;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Since diamond rotates, we rotate the text back so it remains horizontal! */
+.gantt-milestone.jalon-diamond .gantt-milestone-text {
+  transform: rotate(-45deg);
+}
+
+/* Absolute milestones in header row */
+.gantt-milestones-timeline {
+  height: 36px;
+  min-height: 36px !important;
+}
+
+.gantt-milestones-container {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+.absolute-jalon {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%) !important;
+  margin-top: 0 !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.15s ease, z-index 0.15s ease;
+}
+
+.absolute-jalon:hover {
+  transform: translate(-50%, -50%) scale(1.1) !important;
+  z-index: 10 !important;
+}
+
+/* Gantt Legend styling at bottom of the page */
+.gantt-legend-container {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 16px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  margin-top: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.gantt-legend-title {
+  font-weight: 700;
+  font-size: 13px;
+  color: #334155;
+}
+
+.gantt-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #475569;
+  font-weight: 500;
+}
+
+.legend-bar-sample {
+  width: 32px;
+  height: 12px;
+  border-radius: 6px;
+  background: #10b981;
+}
+
+.legend-diamond-sample {
+  width: 10px;
+  height: 10px;
+  background: #fef3c7; /* SP type */
+  border: 1.5px solid #92400e;
+  transform: rotate(45deg);
+}
+
+.legend-diamond-sample.mep {
+  background: #dbeafe; /* MEP type */
+  border-color: #1e40af;
+}
+
+.legend-circle-sample {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #d1fae5; /* LV type */
+  border: 1.5px solid #065f46;
+}
+
+/* Zoom levels custom adjustments for Gantt (Visualisation Mode) */
+.capacity-container[data-zoom="normal"] .gantt-header-container,
+.capacity-container[data-zoom="normal"] .gantt-grid-bg,
+.capacity-container[data-zoom="normal"] .gantt-weeks-container,
+.capacity-container[data-zoom="normal"] .gantt-milestones-timeline {
+  --cell-width: 37px; /* 1 month ≈ 2 weeks of Saisie normal (160px) */
+}
+
+.capacity-container[data-zoom="compact"] .gantt-header-container,
+.capacity-container[data-zoom="compact"] .gantt-grid-bg,
+.capacity-container[data-zoom="compact"] .gantt-weeks-container,
+.capacity-container[data-zoom="compact"] .gantt-milestones-timeline {
+  --cell-width: 23px; /* 1 month ≈ 2 weeks of Saisie compact (100px) */
+}
+
+/* Zoom control buttons styling in header */
+.gantt-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  margin-left: 8px;
+}
+
+.btn-zoom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #64748b;
+  transition: all 0.2s ease;
+}
+
+.btn-zoom:hover {
+  color: #0f172a;
+  background: rgba(15, 23, 42, 0.05) !important;
+}
+
+.btn-zoom.active {
+  background: white !important;
+  color: #065f46;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+/* Zoom level scaling for Visualisation mode only changes column widths, keeping heights and fonts standard */
+
 

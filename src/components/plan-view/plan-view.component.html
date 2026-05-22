@@ -1,4 +1,4 @@
-<div class="capacity-container" [attr.data-zoom]="zoomLevel()">
+<div class="capacity-container" [attr.data-zoom]="zoomLevel()" [attr.data-planning-mode]="planningMode()">
   <!-- Sexy Tooltip Singleton -->
   <div #tooltipElement class="sexy-tooltip" [class.visible]="activeTooltip">
     {{ activeTooltip }}
@@ -25,6 +25,42 @@
   <div class="capacity-header">
     <div class="header-left">
       <h1>Vue Planification</h1>
+      <div class="planning-mode-switch">
+        <button 
+          class="switch-btn" 
+          [class.active]="planningMode() === 'saisie'" 
+          (click)="planningMode.set('saisie')"
+        >
+          Saisie
+        </button>
+        <button 
+          class="switch-btn" 
+          [class.active]="planningMode() === 'visualisation'" 
+          (click)="planningMode.set('visualisation')"
+        >
+          Visualisation
+        </button>
+      </div>
+
+      <!-- Zoom direct pour le diagramme de Gantt (Visualisation) -->
+      <div class="gantt-zoom-controls" *ngIf="planningMode() === 'visualisation'">
+        <button 
+          class="btn-zoom" 
+          [class.active]="zoomLevel() === 'compact'" 
+          (click)="zoomLevel.set('compact')"
+          title="Zoom arrière (Plus compact)"
+        >
+          <lucide-icon [img]="SquareMinus" [size]="15"></lucide-icon>
+        </button>
+        <button 
+          class="btn-zoom" 
+          [class.active]="zoomLevel() === 'normal'" 
+          (click)="zoomLevel.set('normal')"
+          title="Zoom avant (Normal)"
+        >
+          <lucide-icon [img]="SquarePlus" [size]="15"></lucide-icon>
+        </button>
+      </div>
     </div>
 
     <div class="header-right">
@@ -504,7 +540,7 @@
           </div>
           <div class="resize-handle" (mousedown)="onResizeStart($event)"></div>
         </div>
-        <div class="weeks-container">
+        <div class="weeks-container" *ngIf="planningMode() === 'saisie'">
           <div
             *ngFor="let week of displayedWeeks; let i = index"
             class="week-header-cell"
@@ -522,6 +558,36 @@
             </button>
           </div>
         </div>
+
+        <!-- Double header in visualisation mode -->
+        <div class="weeks-container gantt-header-container" *ngIf="planningMode() === 'visualisation'" style="flex-direction: column; flex: 1;">
+          <!-- Quarters row -->
+          <div class="quarters-row" style="display: flex; width: 100%; border-bottom: 1px solid #e2e8f0; height: 30px; align-items: center;">
+            <div
+              *ngFor="let q of displayedQuarters"
+              class="quarter-header-cell"
+              [style.flex-grow]="q.weeksCount"
+              [style.flex-basis]="'calc(var(--cell-width, 80px) * ' + q.weeksCount + ')'"
+              [style.min-width]="'calc(var(--cell-width, 80px) * ' + q.weeksCount + ')'"
+              style="text-align: center; font-weight: 600; padding: 6px 0; border-right: 1px solid #e2e8f0; font-size: 12px; color: #475569; background: #f8fafc; height: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center;"
+            >
+              {{ q.label }}
+            </div>
+          </div>
+          <!-- Months row -->
+          <div class="months-row" style="display: flex; width: 100%; height: 30px; align-items: center;">
+            <div
+              *ngFor="let m of displayedMonths"
+              class="month-header-cell"
+              [style.flex-grow]="m.weeks.length"
+              [style.flex-basis]="'calc(var(--cell-width, 80px) * ' + m.weeks.length + ')'"
+              [style.min-width]="'calc(var(--cell-width, 80px) * ' + m.weeks.length + ')'"
+              style="text-align: center; padding: 6px 0; border-right: 1px solid #e2e8f0; font-size: 11px; color: #64748b; font-weight: 500; height: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center;"
+            >
+              {{ m.label }} (S{{ m.startWeekNum }})
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Milestones row (sticky top with offset) -->
@@ -533,7 +599,8 @@
         >
           <span style="font-weight: 600; font-size: 13px">Jalons</span>
         </div>
-        <div class="weeks-container">
+        <!-- Saisie Mode: Week cells -->
+        <div class="weeks-container" *ngIf="planningMode() === 'saisie'">
           <div
             *ngFor="let week of displayedWeeks"
             class="week-cell milestone-cell"
@@ -550,6 +617,36 @@
               >
                 {{ jalon.nom || "★" }}
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Visualisation Mode: Absolute Timeline with Month grid lines -->
+        <div class="weeks-container gantt-milestones-timeline" *ngIf="planningMode() === 'visualisation'" style="position: relative;">
+          <!-- Grille d'arrière-plan -->
+          <div class="gantt-grid-bg" style="position: absolute; inset: 0; display: flex; pointer-events: none; z-index: 1;">
+            <div
+              *ngFor="let m of displayedMonths"
+              class="gantt-grid-col"
+              [style.flex-grow]="m.weeks.length"
+              [style.flex-basis]="'calc(var(--cell-width, 80px) * ' + m.weeks.length + ')'"
+              [style.min-width]="'calc(var(--cell-width, 80px) * ' + m.weeks.length + ')'"
+              style="border-right: 1px solid #f1f5f9; height: 100%; box-sizing: border-box;"
+            ></div>
+          </div>
+          <!-- Absolute Milestones -->
+          <div class="gantt-milestones-container" style="position: absolute; inset: 0; z-index: 2; pointer-events: auto;">
+            <div
+              *ngFor="let jalon of visibleJalons"
+              class="jalon-item absolute-jalon"
+              [style.left.%]="getJalonLeftPercentage(jalon)"
+              [style.background-color]="getJalonColor(jalon.type)"
+              [style.color]="getJalonTextColor(jalon.type)"
+              [title]="jalon.nom + ' - ' + jalon.date_jalon"
+              (click)="openMilestoneModal(jalon, $event)"
+              style="position: absolute; transform: translateX(-50%); top: 50%; margin-top: -11px;"
+            >
+              {{ jalon.nom || "★" }}
             </div>
           </div>
         </div>
@@ -646,7 +743,7 @@
                     </div>
                   </div>
                 </div>
-                <div class="weeks-container">
+                <div class="weeks-container" *ngIf="planningMode() === 'saisie'">
                   <div
                     *ngFor="let week of displayedWeeks; trackBy: trackByWeek"
                     class="week-cell team-cell"
@@ -709,6 +806,50 @@
                       </div>
                     </div>
                   </div>
+                </div>
+
+                <!-- Visualisation Mode (Gantt) -->
+                <div class="weeks-container gantt-weeks-container" *ngIf="planningMode() === 'visualisation'">
+                  <!-- Grille d'arrière-plan -->
+                  <div class="gantt-grid-bg">
+                    <div
+                      *ngFor="let m of displayedMonths"
+                      class="gantt-grid-col"
+                      [style.flex-grow]="m.weeks.length"
+                      [style.flex-basis]="'calc(var(--cell-width, 80px) * ' + m.weeks.length + ')'"
+                      [style.min-width]="'calc(var(--cell-width, 80px) * ' + m.weeks.length + ')'"
+                    ></div>
+                  </div>
+                  <!-- Gantt Bar -->
+                  <div
+                    *ngIf="getGanttBar(row.totalCharges) as bar"
+                    class="gantt-bar-wrapper"
+                    [style.left.%]="bar.left"
+                    [style.width.%]="bar.width"
+                  >
+                    <div
+                      class="gantt-bar"
+                      [style.background-color]="getGanttBarColor(row)"
+                      [title]="row.label"
+                    >
+                      <span class="gantt-bar-label">{{ row.label }}</span>
+                    </div>
+                  </div>
+                  <!-- Milestones sur la ligne -->
+                  <ng-container *ngFor="let jalon of getGanttJalons(row)">
+                    <div
+                      class="gantt-milestone"
+                      [style.left.%]="getJalonLeftPercentage(jalon)"
+                      [style.background-color]="getJalonColor(jalon.type)"
+                      [style.color]="getJalonTextColor(jalon.type)"
+                      [title]="jalon.nom + ' - ' + jalon.date_jalon"
+                      [class.jalon-delivery]="jalon.type === 'LV'"
+                      [class.jalon-diamond]="jalon.type !== 'LV'"
+                      (click)="openMilestoneModal(jalon, $event); $event.stopPropagation()"
+                    >
+                      <span class="gantt-milestone-text">{{ jalon.nom || "★" }}</span>
+                    </div>
+                  </ng-container>
                 </div>
               </div>
 
@@ -817,7 +958,7 @@
                           </div>
                         </div>
                       </div>
-                      <div class="weeks-container">
+                      <div class="weeks-container" *ngIf="planningMode() === 'saisie'">
                         <div
                           *ngFor="let week of displayedWeeks; let i = index; trackBy: trackByWeek"
                           class="week-cell resource-detail-cell"
@@ -880,6 +1021,50 @@
                             </div>
                           </div>
                         </div>
+                      </div>
+
+                      <!-- Visualisation Mode (Gantt) -->
+                      <div class="weeks-container gantt-weeks-container" *ngIf="planningMode() === 'visualisation'">
+                        <!-- Grille d'arrière-plan -->
+                        <div class="gantt-grid-bg">
+                          <div
+                            *ngFor="let m of displayedMonths"
+                            class="gantt-grid-col"
+                            [style.flex-grow]="m.weeks.length"
+                            [style.flex-basis]="'calc(var(--cell-width, 80px) * ' + m.weeks.length + ')'"
+                            [style.min-width]="'calc(var(--cell-width, 80px) * ' + m.weeks.length + ')'"
+                          ></div>
+                        </div>
+                        <!-- Gantt Bar -->
+                        <div
+                          *ngIf="getGanttBar(resource.charges) as bar"
+                          class="gantt-bar-wrapper"
+                          [style.left.%]="bar.left"
+                          [style.width.%]="bar.width"
+                        >
+                          <div
+                            class="gantt-bar"
+                            [style.background-color]="getGanttBarColor(resource, row, child)"
+                            [title]="resource.label"
+                          >
+                            <span class="gantt-bar-label">{{ resource.label }}</span>
+                          </div>
+                        </div>
+                        <!-- Milestones sur la ligne -->
+                        <ng-container *ngFor="let jalon of getGanttJalons(resource, row, child)">
+                          <div
+                            class="gantt-milestone"
+                            [style.left.%]="getJalonLeftPercentage(jalon)"
+                            [style.background-color]="getJalonColor(jalon.type)"
+                            [style.color]="getJalonTextColor(jalon.type)"
+                            [title]="jalon.nom + ' - ' + jalon.date_jalon"
+                            [class.jalon-delivery]="jalon.type === 'LV'"
+                            [class.jalon-diamond]="jalon.type !== 'LV'"
+                            (click)="openMilestoneModal(jalon, $event); $event.stopPropagation()"
+                          >
+                            <span class="gantt-milestone-text">{{ jalon.nom || "★" }}</span>
+                          </div>
+                        </ng-container>
                       </div>
                     </div>
                   </ng-container>
@@ -972,11 +1157,56 @@
                           </div>
                         </div>
                       </div>
-                      <div class="weeks-container">
+                      <div class="weeks-container" *ngIf="planningMode() === 'saisie'">
                         <div
                           *ngFor="let week of displayedWeeks; trackBy: trackByWeek"
                           class="week-cell resource-cell"
                         ></div>
+                      </div>
+
+                      <!-- Visualisation Mode (Gantt) -->
+                      <div class="weeks-container gantt-weeks-container" *ngIf="planningMode() === 'visualisation'">
+                        <!-- Grille d'arrière-plan -->
+                        <div class="gantt-grid-bg">
+                          <div
+                            *ngFor="let m of displayedMonths"
+                            class="gantt-grid-col"
+                            [style.flex-grow]="m.weeks.length"
+                            [style.flex-basis]="'calc(var(--cell-width, 80px) * ' + m.weeks.length + ')'"
+                            [style.min-width]="'calc(var(--cell-width, 80px) * ' + m.weeks.length + ')'"
+                          ></div>
+                        </div>
+                        <!-- Gantt Bar -->
+                        <!-- Gantt Bar -->
+                        <div
+                          *ngIf="getGanttBar(child.charges) as bar"
+                          class="gantt-bar-wrapper"
+                          [style.left.%]="bar.left"
+                          [style.width.%]="bar.width"
+                        >
+                          <div
+                            class="gantt-bar"
+                            [style.background-color]="getGanttBarColor(child, row)"
+                            [title]="child.label"
+                          >
+                            <span class="gantt-bar-label">{{ child.label }}</span>
+                          </div>
+                        </div>
+                        <!-- Milestones sur la ligne -->
+                        <ng-container *ngFor="let jalon of getGanttJalons(child, row)">
+                          <div
+                            class="gantt-milestone"
+                            [style.left.%]="getJalonLeftPercentage(jalon)"
+                            [style.background-color]="getJalonColor(jalon.type)"
+                            [style.color]="getJalonTextColor(jalon.type)"
+                            [title]="jalon.nom + ' - ' + jalon.date_jalon"
+                            [class.jalon-delivery]="jalon.type === 'LV'"
+                            [class.jalon-diamond]="jalon.type !== 'LV'"
+                            (click)="openMilestoneModal(jalon, $event); $event.stopPropagation()"
+                          >
+                            <span class="gantt-milestone-text">{{ jalon.nom || "★" }}</span>
+                          </div>
+                        </ng-container>
                       </div>
                     </div>
 
@@ -1116,7 +1346,7 @@
                             </div>
                           </div>
                         </div>
-                        <div class="weeks-container">
+                        <div class="weeks-container" *ngIf="planningMode() === 'saisie'">
                           <div
                             *ngFor="let week of displayedWeeks; let i = index"
                             class="week-cell resource-detail-cell"
@@ -1179,6 +1409,50 @@
                               </div>
                             </div>
                           </div>
+                        </div>
+
+                        <!-- Visualisation Mode (Gantt) -->
+                        <div class="weeks-container gantt-weeks-container" *ngIf="planningMode() === 'visualisation'">
+                          <!-- Grille d'arrière-plan -->
+                          <div class="gantt-grid-bg">
+                            <div
+                              *ngFor="let m of displayedMonths"
+                              class="gantt-grid-col"
+                              [style.flex-grow]="m.weeks.length"
+                              [style.flex-basis]="'calc(var(--cell-width, 80px) * ' + m.weeks.length + ')'"
+                              [style.min-width]="'calc(var(--cell-width, 80px) * ' + m.weeks.length + ')'"
+                            ></div>
+                          </div>
+                          <!-- Gantt Bar -->
+                          <div
+                            *ngIf="getGanttBar(resource.charges) as bar"
+                            class="gantt-bar-wrapper"
+                            [style.left.%]="bar.left"
+                            [style.width.%]="bar.width"
+                          >
+                            <div
+                              class="gantt-bar"
+                              [style.background-color]="getGanttBarColor(resource, row, child)"
+                              [title]="resource.label"
+                            >
+                              <span class="gantt-bar-label">{{ resource.label }}</span>
+                            </div>
+                          </div>
+                          <!-- Milestones sur la ligne -->
+                          <ng-container *ngFor="let jalon of getGanttJalons(resource, row, child)">
+                            <div
+                              class="gantt-milestone"
+                              [style.left.%]="getJalonLeftPercentage(jalon)"
+                              [style.background-color]="getJalonColor(jalon.type)"
+                              [style.color]="getJalonTextColor(jalon.type)"
+                              [title]="jalon.nom + ' - ' + jalon.date_jalon"
+                              [class.jalon-delivery]="jalon.type === 'LV'"
+                              [class.jalon-diamond]="jalon.type !== 'LV'"
+                              (click)="openMilestoneModal(jalon, $event); $event.stopPropagation()"
+                            >
+                              <span class="gantt-milestone-text">{{ jalon.nom || "★" }}</span>
+                            </div>
+                          </ng-container>
                         </div>
                       </div>
                     </ng-container>
@@ -1316,7 +1590,7 @@
                 </ng-container>
               </div>
             </div>
-            <div class="weeks-container">
+            <div class="weeks-container" *ngIf="planningMode() === 'saisie'">
               <div
                 *ngFor="let week of displayedWeeks; let i = index; trackBy: trackByWeek"
                 class="week-cell resource-detail-cell"
@@ -1378,6 +1652,50 @@
                   </div>
                 </div>
               </div>
+            </div>
+
+            <!-- Visualisation Mode (Gantt) -->
+            <div class="weeks-container gantt-weeks-container" *ngIf="planningMode() === 'visualisation'">
+              <!-- Grille d'arrière-plan -->
+              <div class="gantt-grid-bg">
+                <div
+                  *ngFor="let m of displayedMonths"
+                  class="gantt-grid-col"
+                  [style.flex-grow]="m.weeks.length"
+                  [style.flex-basis]="'calc(var(--cell-width, 80px) * ' + m.weeks.length + ')'"
+                  [style.min-width]="'calc(var(--cell-width, 80px) * ' + m.weeks.length + ')'"
+                ></div>
+              </div>
+              <!-- Gantt Bar -->
+              <div
+                *ngIf="getGanttBar(row.resource.charges) as bar"
+                class="gantt-bar-wrapper"
+                [style.left.%]="bar.left"
+                [style.width.%]="bar.width"
+              >
+                <div
+                  class="gantt-bar"
+                  [style.background-color]="getGanttBarColor(row.resource, row.parent, row.child)"
+                  [title]="row.resource.label"
+                >
+                  <span class="gantt-bar-label">{{ row.resource.label }}</span>
+                </div>
+              </div>
+              <!-- Milestones sur la ligne -->
+              <ng-container *ngFor="let jalon of getGanttJalons(row.resource, row.parent, row.child)">
+                <div
+                  class="gantt-milestone"
+                  [style.left.%]="getJalonLeftPercentage(jalon)"
+                  [style.background-color]="getJalonColor(jalon.type)"
+                  [style.color]="getJalonTextColor(jalon.type)"
+                  [title]="jalon.nom + ' - ' + jalon.date_jalon"
+                  [class.jalon-delivery]="jalon.type === 'LV'"
+                  [class.jalon-diamond]="jalon.type !== 'LV'"
+                  (click)="openMilestoneModal(jalon, $event); $event.stopPropagation()"
+                >
+                  <span class="gantt-milestone-text">{{ jalon.nom || "★" }}</span>
+                </div>
+              </ng-container>
             </div>
           </div>
         </ng-container>
@@ -1735,6 +2053,27 @@
       >
         Consommé
       </button>
+    </div>
+  </div>
+
+  <!-- Gantt Legend -->
+  <div class="gantt-legend-container" *ngIf="planningMode() === 'visualisation'">
+    <span class="gantt-legend-title">Légende :</span>
+    <div class="gantt-legend-item">
+      <div class="legend-bar-sample"></div>
+      <span>Projet / Activité</span>
+    </div>
+    <div class="gantt-legend-item">
+      <div class="legend-diamond-sample"></div>
+      <span>Jalon Spécifications (SP)</span>
+    </div>
+    <div class="gantt-legend-item">
+      <div class="legend-diamond-sample mep"></div>
+      <span>Jalon Mise en Production (MEP)</span>
+    </div>
+    <div class="gantt-legend-item">
+      <div class="legend-circle-sample"></div>
+      <span>Jalon Livraison (LV)</span>
     </div>
   </div>
 

@@ -144,6 +144,8 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   showAvailability = storageSignal<boolean>("plan-view-show-availability", false);
   weekFilters = storageSignal<number[]>("plan-view-week-filters", []);
   chiffreMode = storageSignal<'initial' | 'revise' | 'previsionnel' | 'consomme'>("plan-view-chiffre-mode", "previsionnel");
+  planningMode = storageSignal<'saisie' | 'visualisation'>('plan-view-planning-mode', 'saisie');
+  displayedMonths: Array<{ key: string; label: string; year: number; quarterLabel: string; startWeekNum: number; weeks: Date[] }> = [];
   showGlobalFilters = signal<boolean>(false);
   private isDefaultExpanded = true;
   private manualStates = new Map<string, boolean>();
@@ -468,6 +470,8 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   AlertTriangle = AlertTriangle;
   Info = Info;
+  SquarePlus = SquarePlus;
+  SquareMinus = SquareMinus;
 
   constructor(
     private teamService: TeamService,
@@ -785,6 +789,179 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       week.setDate(week.getDate() + i * 7);
       this.displayedWeeks.push(week);
     }
+    
+    this.generateMonths();
+  }
+
+  generateMonths() {
+    this.displayedMonths = [];
+    if (!this.displayedWeeks || this.displayedWeeks.length === 0) return;
+
+    const monthGroups: { [key: string]: { key: string; label: string; year: number; monthNum: number; weeks: Date[]; startWeekNum: number } } = {};
+    const monthKeysOrder: string[] = [];
+
+    this.displayedWeeks.forEach((week) => {
+      const monthNum = week.getMonth();
+      const year = week.getFullYear();
+      const key = `${year}-${monthNum}`;
+
+      if (!monthGroups[key]) {
+        const monthNames = [
+          'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+          'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+        ];
+        const label = monthNames[monthNum];
+        const startWeekNum = this.getWeekNumber(week);
+        
+        monthGroups[key] = {
+          key,
+          label,
+          year,
+          monthNum,
+          weeks: [],
+          startWeekNum
+        };
+        monthKeysOrder.push(key);
+      }
+      monthGroups[key].weeks.push(week);
+    });
+
+    this.displayedMonths = monthKeysOrder.map(key => {
+      const group = monthGroups[key];
+      const quarterNum = Math.floor(group.monthNum / 3) + 1;
+      const quarterLabel = `T${quarterNum} ${group.year}`;
+
+      return {
+        key: group.key,
+        label: group.label,
+        year: group.year,
+        quarterLabel,
+        startWeekNum: group.startWeekNum,
+        weeks: group.weeks
+      };
+    });
+  }
+
+  get displayedQuarters() {
+    const quarters: { label: string; year: number; weeksCount: number; months: any[] }[] = [];
+    this.displayedMonths.forEach(m => {
+      let q = quarters.find(x => x.label === m.quarterLabel);
+      if (!q) {
+        q = {
+          label: m.quarterLabel,
+          year: m.year,
+          weeksCount: 0,
+          months: []
+        };
+        quarters.push(q);
+      }
+      q.months.push(m);
+      q.weeksCount += m.weeks.length;
+    });
+    return quarters;
+  }
+
+  getGanttBar(charges: Map<string, number> | undefined) {
+    if (!charges || charges.size === 0 || !this.displayedWeeks || this.displayedWeeks.length === 0) {
+      return null;
+    }
+
+    let firstIndex = -1;
+    let lastIndex = -1;
+
+    for (let i = 0; i < this.displayedWeeks.length; i++) {
+      const weekKey = this.displayedWeeks[i].toISOString().split("T")[0];
+      const val = charges.get(weekKey) || 0;
+      if (val > 0) {
+        if (firstIndex === -1) {
+          firstIndex = i;
+        }
+        lastIndex = i;
+      }
+    }
+
+    if (firstIndex === -1) {
+      return null;
+    }
+
+    const totalWeeks = this.displayedWeeks.length;
+    const left = (firstIndex / totalWeeks) * 100;
+    const width = ((lastIndex - firstIndex + 1) / totalWeeks) * 100;
+
+    return { left, width };
+  }
+
+  getAssociatedProject(row: any, parentRow?: any, childRow?: any): Projet | undefined {
+    if (this.viewMode() === 'project') {
+      return parentRow?.originalProject || row?.originalProject;
+    } else if (this.viewMode() === 'team') {
+      return childRow?.originalProject || row?.originalProject;
+    } else if (this.viewMode() === 'resource') {
+      const projId = row?.projectId || row?.resource?.projectId;
+      if (projId) {
+        return this.allProjects.find(p => p.id === projId);
+      }
+    }
+    return undefined;
+  }
+
+  getGanttBarColor(row: any, parentRow?: any, childRow?: any): string {
+    const project = this.getAssociatedProject(row, parentRow, childRow);
+    if (project && project.color) {
+      return project.color;
+    }
+    if (row && row.color) {
+      return row.color;
+    }
+    if (childRow && childRow.color) {
+      return childRow.color;
+    }
+    return '#10b981';
+  }
+
+  getGanttJalons(row: any, parentRow?: any, childRow?: any): Jalon[] {
+    const project = this.getAssociatedProject(row, parentRow, childRow);
+    if (!project || !project.id || !this.displayedWeeks || this.displayedWeeks.length === 0) {
+      return [];
+    }
+
+    const startOfTimeline = this.displayedWeeks[0];
+    const endOfTimeline = new Date(this.displayedWeeks[this.displayedWeeks.length - 1]);
+    endOfTimeline.setDate(endOfTimeline.getDate() + 7);
+
+    return this.allJalons.filter(j => {
+      if (j.projet_id !== project.id) return false;
+      const jDate = new Date(j.date_jalon);
+      return jDate >= startOfTimeline && jDate <= endOfTimeline;
+    });
+  }
+
+  getJalonLeftPercentage(jalon: Jalon): number {
+    if (!this.displayedWeeks || this.displayedWeeks.length === 0) return 0;
+    
+    const jDate = new Date(jalon.date_jalon).getTime();
+    const start = this.displayedWeeks[0].getTime();
+    
+    const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
+    const end = this.displayedWeeks[this.displayedWeeks.length - 1].getTime() + oneWeekMs;
+    
+    const totalDuration = end - start;
+    if (totalDuration <= 0) return 0;
+    
+    const fraction = (jDate - start) / totalDuration;
+    return Math.max(0, Math.min(100, fraction * 100));
+  }
+
+  get visibleJalons(): Jalon[] {
+    if (!this.displayedWeeks || this.displayedWeeks.length === 0) return [];
+    const start = this.displayedWeeks[0];
+    const end = new Date(this.displayedWeeks[this.displayedWeeks.length - 1]);
+    end.setDate(end.getDate() + 7);
+
+    return this.allJalons.filter(j => {
+      const d = new Date(j.date_jalon);
+      return d >= start && d <= end;
+    });
   }
 
   // trackBy functions for performance
