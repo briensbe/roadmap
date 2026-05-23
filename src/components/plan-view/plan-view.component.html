@@ -498,6 +498,95 @@
           </div>
         </div>
       </div>
+
+      <!-- Filtre Taille Projet -->
+      <div class="filter-group size-filter-group">
+        <div
+          class="filter-pill filter-pill-size"
+          [class.filter-pill-active]="filterSizeEnabled()"
+          (click)="toggleDropdown('size', $event)"
+          id="size-filter-pill"
+        >
+          <span class="filter-title">Taille Projet</span>
+          <span class="chip-list">
+            <span class="chip size-chip" [class.size-chip-disabled]="!filterSizeEnabled()">{{
+              sizeFilterLabel
+            }}</span>
+          </span>
+        </div>
+
+        <div class="filters-dropdown size-dropdown" *ngIf="openSizeDropdown" (click)="$event.stopPropagation()">
+          <!-- Toggle Activer/Désactiver -->
+          <div class="size-toggle-row">
+            <span class="size-toggle-title">Activer le filtre</span>
+            <label class="premium-switch">
+              <input type="checkbox" [ngModel]="filterSizeEnabled()" (ngModelChange)="onSizeFilterToggle($event)" />
+              <span class="premium-slider"></span>
+            </label>
+          </div>
+
+          <div class="size-dropdown-divider"></div>
+
+          <!-- Section Contenu Taille (grisée si désactivée) -->
+          <div class="size-dropdown-content" [class.disabled]="!filterSizeEnabled()">
+            <div class="size-field-group">
+              <label class="size-label">Critère</label>
+              <select
+                class="size-select"
+                [ngModel]="filterSizeCriterion()"
+                (ngModelChange)="onSizeCriterionChange($event)"
+              >
+                <optgroup label="Charges planifiées (jours)">
+                  <option value="charges_today">RAF (Dès cette sem.)</option>
+                  <option value="charges_all">Tout cumulé</option>
+                  <option value="charges_2025">Année 2025</option>
+                  <option value="charges_2026">Année 2026</option>
+                </optgroup>
+                <optgroup label="Chiffres Triskell (jours)">
+                  <option value="chiffre_initial">Initial</option>
+                  <option value="chiffre_revise">Révisé</option>
+                  <option value="chiffre_previsionnel">Prévisionnel</option>
+                  <option value="chiffre_consomme">Consommé</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <div class="size-field-group" style="margin-top: 12px">
+              <label class="size-label">Relation</label>
+              <div class="size-operator-buttons">
+                <button
+                  type="button"
+                  class="operator-btn"
+                  [class.active]="filterSizeOperator() === 'gte'"
+                  (click)="onSizeOperatorChange('gte')"
+                >
+                  Supérieur ou égal (≥)
+                </button>
+                <button
+                  type="button"
+                  class="operator-btn"
+                  [class.active]="filterSizeOperator() === 'lte'"
+                  (click)="onSizeOperatorChange('lte')"
+                >
+                  Inférieur ou égal (≤)
+                </button>
+              </div>
+            </div>
+
+            <div class="size-field-group" style="margin-top: 12px">
+              <label class="size-label">Valeur (jours)</label>
+              <input
+                type="number"
+                class="size-input"
+                placeholder="Ex: 100"
+                [ngModel]="filterSizeValue()"
+                (ngModelChange)="onSizeValueChange($event)"
+                min="0"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div *ngIf="getFilteredWeekCount() > 0" class="filter-status-badge">

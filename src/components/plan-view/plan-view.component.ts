@@ -199,6 +199,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.openResourceDropdown = false;
     this.openStatusDropdown = false;
     this.showPeriodDropdown = false;
+    this.openSizeDropdown = false;
     this.showYearPopover = false;
     this.showChiffrePopover = false;
     this.clearSelection();
@@ -255,6 +256,12 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   filterPeriodStart   = storageSignal<string>("plan-view-filter-period-start", "");
   filterPeriodEnd     = storageSignal<string>("plan-view-filter-period-end", "");
 
+  // Size filter
+  filterSizeEnabled = signal<boolean>(false);
+  filterSizeCriterion = storageSignal<'charges_today' | 'charges_all' | 'charges_2025' | 'charges_2026' | 'chiffre_initial' | 'chiffre_revise' | 'chiffre_previsionnel' | 'chiffre_consomme'>("plan-view-filter-size-criterion", "charges_all");
+  filterSizeOperator = storageSignal<'gte' | 'lte'>("plan-view-filter-size-operator", "gte");
+  filterSizeValue = storageSignal<number | null>("plan-view-filter-size-value", null);
+
   isAnyFilterActiveExceptTeam = computed(() => {
     const hasSearch = this.globalSearch().trim().length > 0;
     const hasProjectFilter = this.filterProjetIds().length > 0 || this.filterProjetSearch().trim().length > 0;
@@ -262,8 +269,9 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     const hasResourceFilter = this.filterResourceIds().length > 0;
     const hasWeekFilter = this.weekFilters().length > 0;
     const hasPeriod = this.filterPeriodEnabled();
+    const hasSize = this.filterSizeEnabled() && this.filterSizeValue() !== null;
 
-    return hasSearch || hasProjectFilter || hasStatusFilter || hasResourceFilter || hasWeekFilter || hasPeriod;
+    return hasSearch || hasProjectFilter || hasStatusFilter || hasResourceFilter || hasWeekFilter || hasPeriod || hasSize;
   });
 
   reorderMessage = signal<string | null>(null);
@@ -287,6 +295,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   openResourceDropdown = false;
   openStatusDropdown = false;
   showPeriodDropdown = false;
+  openSizeDropdown = false;
 
   // Actions menu state
   showActionsMenu = false;
@@ -506,6 +515,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       this.openResourceDropdown = false;
       this.openStatusDropdown = false;
       this.showPeriodDropdown = false;
+      this.openSizeDropdown = false;
     }
   }
 
@@ -2841,6 +2851,8 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       this.openProjetDropdown = false;
       this.openResourceDropdown = false;
       this.openStatusDropdown = false;
+      this.openSizeDropdown = false;
+      this.showPeriodDropdown = false;
       this.filterProjetSearch.set('');
     }
     // Close actions menu if clicking outside
@@ -2854,28 +2866,43 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  toggleDropdown(name: "equipe" | "projet" | "resource" | "statut", event: MouseEvent) {
+  toggleDropdown(name: "equipe" | "projet" | "resource" | "statut" | "size", event: MouseEvent) {
     event.stopPropagation();
     if (name === "equipe") {
       this.openEquipeDropdown = !this.openEquipeDropdown;
       this.openProjetDropdown = false;
       this.openResourceDropdown = false;
       this.openStatusDropdown = false;
+      this.openSizeDropdown = false;
+      this.showPeriodDropdown = false;
     } else if (name === "projet") {
       this.openProjetDropdown = !this.openProjetDropdown;
       this.openEquipeDropdown = false;
       this.openResourceDropdown = false;
       this.openStatusDropdown = false;
+      this.openSizeDropdown = false;
+      this.showPeriodDropdown = false;
     } else if (name === "resource") {
       this.openResourceDropdown = !this.openResourceDropdown;
       this.openEquipeDropdown = false;
       this.openProjetDropdown = false;
       this.openStatusDropdown = false;
-    } else {
+      this.openSizeDropdown = false;
+      this.showPeriodDropdown = false;
+    } else if (name === "statut") {
       this.openStatusDropdown = !this.openStatusDropdown;
       this.openEquipeDropdown = false;
       this.openProjetDropdown = false;
       this.openResourceDropdown = false;
+      this.openSizeDropdown = false;
+      this.showPeriodDropdown = false;
+    } else if (name === "size") {
+      this.openSizeDropdown = !this.openSizeDropdown;
+      this.openEquipeDropdown = false;
+      this.openProjetDropdown = false;
+      this.openResourceDropdown = false;
+      this.openStatusDropdown = false;
+      this.showPeriodDropdown = false;
     }
     if (!this.openProjetDropdown) {
       this.filterProjetSearch.set('');
@@ -3087,6 +3114,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       this.openProjetDropdown = false;
       this.openResourceDropdown = false;
       this.openStatusDropdown = false;
+      this.openSizeDropdown = false;
     }
     this.cdr.markForCheck();
   }
@@ -3126,6 +3154,116 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
+  // ─── Size filter helpers ─────────────────────────────────────────────────
+
+  get sizeFilterLabel(): string {
+    if (!this.filterSizeEnabled() || this.filterSizeValue() === null) {
+      return "Désactivé";
+    }
+    
+    let critLabel = '';
+    switch (this.filterSizeCriterion()) {
+      case 'charges_today': critLabel = 'Charges RAF'; break;
+      case 'charges_all': critLabel = 'Charges Tout'; break;
+      case 'charges_2025': critLabel = 'Charges 2025'; break;
+      case 'charges_2026': critLabel = 'Charges 2026'; break;
+      case 'chiffre_initial': critLabel = 'Chiffre Init.'; break;
+      case 'chiffre_revise': critLabel = 'Chiffre Rév.'; break;
+      case 'chiffre_previsionnel': critLabel = 'Chiffre Prév.'; break;
+      case 'chiffre_consomme': critLabel = 'Chiffre Conso.'; break;
+    }
+
+    const opLabel = this.filterSizeOperator() === 'gte' ? '≥' : '≤';
+    return `${critLabel} ${opLabel} ${this.filterSizeValue()} j`;
+  }
+
+  onSizeFilterToggle(enabled: boolean) {
+    this.filterSizeEnabled.set(enabled);
+    this.applyFilters();
+    this.cdr.markForCheck();
+  }
+
+  onSizeCriterionChange(val: any) {
+    this.filterSizeCriterion.set(val);
+    this.applyFilters();
+    this.cdr.markForCheck();
+  }
+
+  onSizeOperatorChange(val: 'gte' | 'lte') {
+    this.filterSizeOperator.set(val);
+    this.applyFilters();
+    this.cdr.markForCheck();
+  }
+
+  onSizeValueChange(val: number | null) {
+    this.filterSizeValue.set(val);
+    this.applyFilters();
+    this.cdr.markForCheck();
+  }
+
+  getProjectResourceTotal(project: Projet, period: 'today' | 'all' | '2025' | '2026'): number {
+    const resourceTotals = new Map<string, number>();
+    const todayWeekStart = this.calendarService.getWeekStart(new Date());
+
+    for (const charge of this.allCharges) {
+      if (charge.projet_id !== project.id || !charge.semaine_debut) continue;
+      
+      const date = new Date(charge.semaine_debut);
+      let match = false;
+      if (period === 'today') {
+        match = (date >= todayWeekStart);
+      } else if (period === 'all') {
+        match = true;
+      } else {
+        const isoYear = getISOWeekYear(date).toString();
+        match = (isoYear === period);
+      }
+      
+      if (match) {
+        let resourceKey = '';
+        let jours = 5;
+        if (charge.role_id) {
+          resourceKey = `role_${charge.role_id}`;
+          const role = this.availableRoles.find(r => r.id === charge.role_id);
+          jours = role?.jours_par_semaine || 5;
+        } else if (charge.personne_id) {
+          resourceKey = `personne_${charge.personne_id}`;
+          const pers = this.availablePersonnes.find(p => p.id === charge.personne_id);
+          jours = pers?.jours_par_semaine || 5;
+        } else {
+          continue;
+        }
+        
+        const currentSum = resourceTotals.get(resourceKey) || 0;
+        const val = (charge.unite_ressource || 0) * jours;
+        resourceTotals.set(resourceKey, currentSum + val);
+      }
+    }
+
+    // Find the maximum of all resource totals
+    let maxTotal = 0;
+    resourceTotals.forEach((total) => {
+      if (total > maxTotal) {
+        maxTotal = total;
+      }
+    });
+
+    return maxTotal;
+  }
+
+  getProjectChiffresTotal(project: Projet, category: 'initial' | 'revise' | 'previsionnel' | 'consomme'): number {
+    const idProjet = project.id_projet;
+    if (idProjet === null || idProjet === undefined) return 0;
+    
+    let sum = 0;
+    for (const c of this.allChiffres) {
+      if (c.id_projet === idProjet) {
+        sum += c[category] || 0;
+      }
+    }
+    return sum;
+  }
+
   // ─────────────────────────────────────────────────────────────────────────
 
   applyFilters() {
@@ -3139,11 +3277,38 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     const periodEnabled = this.filterPeriodEnabled();
     const activeProjectIds = periodEnabled ? this.getProjectsWithChargesInPeriod(periodStart, periodEnd) : new Set<string>();
 
+    // Size filter – computed once
+    const sizeEnabled = this.filterSizeEnabled() && this.filterSizeValue() !== null;
+    const sizeCriterion = this.filterSizeCriterion();
+    const sizeOperator = this.filterSizeOperator();
+    const sizeValue = this.filterSizeValue() ?? 0;
+
+    let matchingLargeProjectIds: Set<string> | null = null;
+    if (sizeEnabled) {
+      matchingLargeProjectIds = new Set<string>();
+      for (const p of this.allProjects) {
+        let val = 0;
+        if (sizeCriterion.startsWith('charges_')) {
+          const period = sizeCriterion.substring(8) as 'today' | 'all' | '2025' | '2026';
+          val = this.getProjectResourceTotal(p, period);
+        } else if (sizeCriterion.startsWith('chiffre_')) {
+          const category = sizeCriterion.substring(8) as 'initial' | 'revise' | 'previsionnel' | 'consomme';
+          val = this.getProjectChiffresTotal(p, category);
+        }
+        
+        const matches = sizeOperator === 'gte' ? (val >= sizeValue) : (val <= sizeValue);
+        if (matches) {
+          matchingLargeProjectIds.add(p.id!);
+        }
+      }
+    }
+
     const hasSpecificFilter = this.filterEquipeIds().length > 0 ||
       this.filterProjetIds().length > 0 ||
       this.filterResourceIds().length > 0 ||
       this.filterStatusIds().length > 0 ||
-      periodEnabled;
+      periodEnabled ||
+      sizeEnabled;
     const needsSearchFilter = search.length > 0;
 
     // 1. Index search matches once for O(1) lookups
@@ -3197,7 +3362,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       return false;
     };
 
-    if (!this.filterEquipeIds().length && !this.filterProjetIds().length && !this.filterResourceIds().length && !this.filterStatusIds().length && !search && !periodEnabled) {
+    if (!this.filterEquipeIds().length && !this.filterProjetIds().length && !this.filterResourceIds().length && !this.filterStatusIds().length && !search && !periodEnabled && !sizeEnabled) {
       this.rows = [...this.rowsAll];
       this.calculateFilteredMetrics();
       if (this.displayFormat() === 'flat') this.buildFlatList();
@@ -3242,10 +3407,11 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       }
 
-      // Period filter – parent level: check if the parent has charges in the period
+      // Period & Size filters – parent level
       const parentPassesPeriod = !periodEnabled || this.hasChargesInPeriod(parent.totalCharges, periodStart, periodEnd);
+      const parentPassesLargeProject = !sizeEnabled || this.viewMode() !== "project" || matchingLargeProjectIds!.has(parent.id);
 
-      if (!parentPassesPeriod) continue;
+      if (!parentPassesPeriod || !parentPassesLargeProject) continue;
 
       if (!pMatches && !parentPassesEquipe && !parentPassesResource && !parentPassesProjet && !parentPassesStatut) {
         if (this.viewMode() === 'project' && (!parentPassesProjet || !parentPassesStatut)) continue;
@@ -3274,7 +3440,12 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
           childPassesStatut = this.filterStatusIds().includes(child.originalProject.statut);
         }
 
-        if (this.viewMode() === 'team' && !childPassesStatut) continue;
+        let childPassesLargeProject = true;
+        if (sizeEnabled && this.viewMode() === 'team') {
+          childPassesLargeProject = matchingLargeProjectIds!.has(child.id);
+        }
+
+        if (this.viewMode() === 'team' && (!childPassesStatut || !childPassesLargeProject)) continue;
 
         // Period filter – Child level: check if this child row has charges in the period
         if (periodEnabled) {
@@ -3287,11 +3458,12 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
         if (hasSpecificFilter || needsSearchFilter) {
           grandchildrenMatch = child.resources.filter((gr) => {
             let passesIdFilter = true;
-            if (this.filterResourceIds().length || this.filterProjetIds().length || this.filterStatusIds().length) {
+            if (this.filterResourceIds().length || this.filterProjetIds().length || this.filterStatusIds().length || sizeEnabled) {
               if (isResourceMode) {
                 const project = this.allProjects.find(p => p.id === gr.projectId);
                 const passesStatut = this.filterStatusIds().length === 0 || (!!project && this.filterStatusIds().includes(project.statut));
-                passesIdFilter = (this.filterProjetIds().length === 0 || this.filterProjetIds().includes(gr.projectId!)) && passesStatut;
+                const passesLargeProject = !sizeEnabled || (!!project && matchingLargeProjectIds!.has(gr.projectId!));
+                passesIdFilter = (this.filterProjetIds().length === 0 || this.filterProjetIds().includes(gr.projectId!)) && passesStatut && passesLargeProject;
               } else {
                 passesIdFilter = this.filterResourceIds().length === 0 || this.filterResourceIds().some((sel) => {
                   const [t, id] = sel.split(":");
