@@ -3072,7 +3072,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   /** Label affiché dans le pill */
   get periodLabel(): string {
     if (!this.filterPeriodEnabled()) {
-      return "Désactivé (Tout afficher)";
+      return "Désactivé"; // Tout afficher
     }
     const fmt = (s: string) => {
       const [y, m, day] = s.split('-');
