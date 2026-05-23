@@ -54,7 +54,7 @@ interface ReleaseNote {
                 @if (notes[0]?.news) {
                   @for (newsItem of notes[0].news; track newsItem.title) {
                     <div class="news-section">
-                      <h4>{{ newsItem.title }}</h4>
+                      <h4 class="history-title">{{ newsItem.title }}</h4>
                       <ul>
                         @for (item of newsItem.items; track item) {
                           <li>{{ item }}</li>
@@ -264,7 +264,7 @@ interface ReleaseNote {
     .history-title {
        margin: 0 0 8px 0;
        font-size: 1.1rem;
-       color: #4f46e5;
+       color: #4f46e5 !important;
     }
     .date {
       color: #666;
