@@ -2673,7 +2673,7 @@ input:checked + .slider:before {
 .gantt-weeks-container {
   position: relative;
   height: 100%;
-  min-height: 48px;
+  min-height: var(--row-min-height, 48px);
   display: flex;
   align-items: center;
   box-sizing: border-box;
@@ -3063,4 +3063,27 @@ input:checked + .slider:before {
 .size-input:focus {
   border-color: #6366f1;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+/* Specific compact zoom visual tuning for Gantt elements */
+.capacity-container[data-zoom="compact"] .gantt-bar-wrapper {
+  height: 20px;
+}
+
+.capacity-container[data-zoom="compact"] .gantt-bar {
+  font-size: 9px;
+  border-radius: 10px;
+}
+
+.capacity-container[data-zoom="compact"] .gantt-milestone.jalon-delivery {
+  width: 14px;
+  height: 14px;
+}
+
+.capacity-container[data-zoom="compact"] .gantt-milestone.jalon-diamond {
+  width: 10px;
+  height: 10px;
+}
+
+.capacity-container[data-zoom="compact"] .gantt-milestone-text {
+  font-size: 8px;
 }

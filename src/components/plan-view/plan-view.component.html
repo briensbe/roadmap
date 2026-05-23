@@ -427,7 +427,7 @@
         </div>
       </div>
 
-      <!-- Filtre Période -->
+      <!-- Filtre Charges > 0 sur Période -->
       <div class="filter-group period-filter-group">
         <div
           class="filter-pill filter-pill-period"
@@ -435,7 +435,7 @@
           (click)="togglePeriodDropdown($event)"
           id="period-filter-pill"
         >
-          <span class="filter-title">Période</span>
+          <span class="filter-title">Charges > 0</span>
           <span class="chip-list">
             <span class="chip period-chip" [class.period-chip-disabled]="!filterPeriodEnabled()">{{
               periodLabel
