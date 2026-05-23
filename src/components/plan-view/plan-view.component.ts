@@ -3765,6 +3765,12 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.selectedCapacityYear.set('custom');
     this.showYearPopover = false;
   }
+  openProjectEdit(project: Projet) {
+    if (project) {
+      this.projectToEdit = { ...project };
+      this.showProjectModal = true;
+    }
+  }
   openProjectEditByResource(resource: ResourceRow) {
     if (resource.projectId) {
       const project = this.allProjects.find(p => p.id === resource.projectId);

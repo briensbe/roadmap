@@ -723,6 +723,15 @@
                         {{ viewMode() === "project" ? "Ajouter Equipe" : "Ajouter Projet(s)" }}
                       </button>
 
+                      <button
+                        class="line-menu-item"
+                        *ngIf="viewMode() === 'project' && row.originalProject"
+                        (click)="openProjectEdit(row.originalProject); closeLineMenu(); $event.stopPropagation()"
+                      >
+                        <lucide-icon [img]="Settings2" [size]="14"></lucide-icon>
+                        Modifier projet
+                      </button>
+
                       <!-- Move up/down actions only in project view -->
                       <button
                         class="line-menu-item"
@@ -1128,7 +1137,7 @@
                             *ngIf="activeLineMenuId === 'child-' + child.id + '-' + row.id"
                             (click)="$event.stopPropagation()"
                           >
-                            <button
+                             <button
                               class="line-menu-item"
                               (click)="
                                 viewMode() === 'resource'
@@ -1140,6 +1149,14 @@
                             >
                               <lucide-icon [img]="Plus" [size]="14"></lucide-icon>
                               {{ viewMode() === "resource" ? "Ajouter Projet(s)" : "Ajouter une ressource" }}
+                            </button>
+                            <button
+                              class="line-menu-item"
+                              *ngIf="viewMode() === 'team' && child.originalProject"
+                              (click)="openProjectEdit(child.originalProject); closeLineMenu(); $event.stopPropagation()"
+                            >
+                              <lucide-icon [img]="Settings2" [size]="14"></lucide-icon>
+                              Modifier projet
                             </button>
                             <button
                               class="line-menu-item danger"
