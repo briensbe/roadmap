@@ -1,4 +1,4 @@
-<div class="capacity-container" [attr.data-zoom]="zoomLevel()" [attr.data-planning-mode]="planningMode()">
+<div class="capacity-container" [attr.data-zoom]="zoomLevel()" [attr.data-planning-mode]="planningMode()" [style.--total-weeks]="displayedWeeks.length">
   <!-- Sexy Tooltip Singleton -->
   <div #tooltipElement class="sexy-tooltip" [class.visible]="activeTooltip">
     {{ activeTooltip }}

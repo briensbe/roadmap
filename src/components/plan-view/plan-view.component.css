@@ -92,8 +92,7 @@
   overflow: hidden;
 }
 
-/* Saisie mode compact zoom variable overrides */
-.capacity-container[data-planning-mode="saisie"][data-zoom="compact"] {
+.capacity-container[data-zoom="compact"] {
   --cell-width: 50px;
   --row-min-height: 32px;
   --cell-padding: 0 4px;
@@ -103,9 +102,7 @@
   --fs-10: 9px;
 }
 
-/* Saisie mode normal, and Visualisation mode (always normal layout sizes except cell-width) */
-.capacity-container[data-zoom="normal"],
-.capacity-container[data-planning-mode="visualisation"] {
+.capacity-container[data-zoom="normal"] {
   --cell-width: 80px;
   --row-min-height: 48px;
   --cell-padding: 8px;
@@ -2665,15 +2662,22 @@ input:checked + .slider:before {
 }
 
 /* Gantt Bar & Wrapper styling */
+.gantt-header-container,
+.gantt-milestones-timeline,
+.gantt-weeks-container {
+  min-width: calc(var(--cell-width) * var(--total-weeks));
+  width: calc(var(--cell-width) * var(--total-weeks));
+  flex-shrink: 0;
+}
+
 .gantt-weeks-container {
   position: relative;
-  width: 100%;
   height: 100%;
   min-height: 48px;
   display: flex;
   align-items: center;
   box-sizing: border-box;
-  padding: 0 8px; /* subtle horizontal padding to prevent overflow edge issues */
+  padding: 0;
 }
 
 .gantt-bar-wrapper {
