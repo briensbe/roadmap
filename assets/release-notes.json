@@ -1,5 +1,44 @@
 [
   {
+    "version": "2026.05.23",
+    "date": "2026-05-23",
+    "news": [
+      {
+        "title": "Mode Visualisation (façon Gantt)",
+        "items": [
+          "Ajout d'un mode Visualisation façon Gantt pour afficher le calendrier des projets sous forme de barres"
+        ],
+        "imageUrl": "assets/release-notes/2026-05-23-mode-visualisation.png",
+        "imageMaxHeight": 300
+      },
+      {
+        "title": "Filtre pour masquer les projets sans charges",
+        "items": [
+          "Afin de mieux visualiser les projets en cours, on peut masquer les projets n'ayant aucune charge sur une période donnée "
+        ],
+        "imageUrl": "assets/release-notes/2026-05-23-filtre-projet-sans-charge.png",
+        "imageMaxHeight": 200
+      },
+      {
+        "title": "Filtre par taille de projet",
+        "items": [
+          "Filtrez les projets en fonction de leurs charges planifiées (RAF, cumulé, 2025, 2026) ou de leurs chiffres Triskell (initial, révisé, prévisionnel, consommé)",
+          "Possibilité de définir un seuil (supérieur ou égal / inférieur ou égal) indépendamment des badges actuellement affichés",
+          "Les charges planifiées sont évaluées par rôle/ressource individuellement et non cumulées entre les rôles pour correspondre aux badges"
+        ],
+        "imageUrl": "assets/release-notes/2026-05-23-filtre-taille-projet.png",
+        "imageMaxHeight": 200
+      },
+      {
+        "title": "Menu contextuel & Ergonomie",
+        "items": [
+          "Option 'Modifier projet' ajoutée directement dans le menu contextuel (line-menu) des projets dans les vues Par équipe et Par projets",
+          "Amélioration de la barre de filtres qui s'affiche sur plusieurs lignes si l'espace est restreint pour éviter le débordement hors de l'écran"
+        ]
+      }
+    ]
+  },
+  {
     "version": "2026.05.15",
     "date": "2026-05-15",
     "news": [
