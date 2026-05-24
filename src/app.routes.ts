@@ -6,6 +6,7 @@ import { ProjectsViewComponent } from "./components/projects/projects-view.compo
 import { PlanViewComponent } from "./components/plan-view/plan-view.component";
 import { MilestonesViewComponent } from "./components/milestones-view.component";
 import { DashboardComponent } from "./components/dashboard/dashboard.component";
+import { DashboardSprintsComponent } from "./components/dashboard-sprints/dashboard-sprints.component";
 import { LoginComponent } from "./auth/login/login.component";
 import { SignupComponent } from "./auth/signup/signup.component";
 import { ForgotPasswordComponent } from "./auth/forgot-password/forgot-password.component";
@@ -24,13 +25,17 @@ export const routes: Routes = [
     children: [
       { path: "", redirectTo: "/dashboard", pathMatch: "full" },
       { path: "dashboard", component: DashboardComponent },
+      { path: "charges-sprints", component: DashboardSprintsComponent },
       { path: "organisation", component: OrganizationViewComponent },
       { path: "ressources", component: ResourceManagerComponent },
       { path: "capacite", component: CapacityViewComponent },
       { path: "projets", component: ProjectsViewComponent },
       { path: "planification", component: PlanViewComponent },
       { path: "jalons", component: MilestonesViewComponent },
-      { path: "settings", loadComponent: () => import('./components/settings/settings.component').then(m => m.SettingsComponent) },
+      {
+        path: "settings",
+        loadComponent: () => import("./components/settings/settings.component").then((m) => m.SettingsComponent),
+      },
       { path: "profile", component: ProfileComponent },
       { path: "guide", component: GuideComponent },
       { path: "update-password", component: UpdatePasswordComponent },

@@ -1,0 +1,179 @@
+<div class="sprint-dashboard-container">
+  <!-- Header -->
+  <div class="sprint-dashboard-header">
+    <h1 class="sprint-dashboard-title">ROADMAP – CHARGES PAR SPRINT</h1>
+    <p class="sprint-dashboard-subtitle">
+      PROJETS ACTIFS • {{ getActiveProjectsCount() }} projets • {{ selectedSprints.length }} sprints
+    </p>
+  </div>
+
+  <!-- Filters & Toolbar Bar -->
+  <div class="toolbar-bar">
+    <div class="toolbar-section grouper-par">
+      <span class="toolbar-label">GROUPER PAR</span>
+      <div class="btn-group">
+        <button 
+          class="toolbar-btn" 
+          [class.active]="groupMode === 'equipe'" 
+          (click)="changeGroupMode('equipe')">
+          <lucide-icon [img]="Users" [size]="14"></lucide-icon>
+          Équipe
+        </button>
+        <button 
+          class="toolbar-btn" 
+          [class.active]="groupMode === 'sprint'" 
+          (click)="changeGroupMode('sprint')">
+          <lucide-icon [img]="Calendar" [size]="14"></lucide-icon>
+          Sprint
+        </button>
+        <button 
+          class="toolbar-btn" 
+          [class.active]="groupMode === 'livraison'" 
+          (click)="changeGroupMode('livraison')">
+          <lucide-icon [img]="Flag" [size]="14"></lucide-icon>
+          Livraison
+        </button>
+        <button 
+          class="toolbar-btn" 
+          [class.active]="groupMode === 'mep'" 
+          (click)="changeGroupMode('mep')">
+          <lucide-icon [img]="Rocket" [size]="14"></lucide-icon>
+          MEP
+        </button>
+      </div>
+    </div>
+
+    <div class="toolbar-section sprint-range">
+      <span class="toolbar-label">SPRINTS</span>
+      <div class="select-range-wrapper">
+        <select [(ngModel)]="startSprintId" (change)="onSprintFilterChange()" class="sprint-select">
+          <option *ngFor="let s of allSprints" [value]="s.id">{{ s.nom }}</option>
+        </select>
+        <lucide-icon [img]="ArrowRight" [size]="14" class="range-arrow"></lucide-icon>
+        <select [(ngModel)]="endSprintId" (change)="onSprintFilterChange()" class="sprint-select">
+          <option *ngFor="let s of allSprints" [value]="s.id">{{ s.nom }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="toolbar-section legend">
+      <div class="legend-item"><span class="legend-dot green"></span> &lt; 4j</div>
+      <div class="legend-item"><span class="legend-dot blue"></span> 4-7j</div>
+      <div class="legend-item"><span class="legend-dot orange"></span> 7-10j</div>
+      <div class="legend-item"><span class="legend-dot red"></span> &ge; 10j</div>
+    </div>
+  </div>
+
+  <!-- Main Grid View -->
+  <div class="grid-table-container">
+    <table class="grid-table">
+      <thead>
+        <tr>
+          <th class="col-projet">
+            {{ groupMode === 'equipe' ? 'PROJET' : (groupMode === 'sprint' ? 'PROJET' : 'LIVRAISON / PROJET') }}
+          </th>
+          <th *ngFor="let col of columns" class="col-sprint">
+            <div class="col-header-title">{{ col.label }}</div>
+            <div class="col-header-sub" *ngIf="col.sublabel">{{ col.sublabel }}</div>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (group of groupedRows; track group.id) {
+          <!-- Group Header Row -->
+          <tr class="group-header-row">
+            <td [attr.colspan]="columns.length + 1">
+              <div class="group-header-cell-content">
+                <div class="group-info">
+                  <span class="group-indicator" [style.background-color]="group.color || '#3b82f6'"></span>
+                  <span class="group-name">{{ group.name }}</span>
+                  <span class="group-extra">{{ group.extraInfo }}</span>
+                </div>
+                <button class="btn-collapse" (click)="toggleGroup(group)">
+                  <lucide-icon [img]="group.expanded ? ChevronDown : ChevronRight" [size]="16"></lucide-icon>
+                  {{ group.expanded ? 'RÉDUIRE' : 'DÉVELOPPER' }}
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Project Rows inside this group -->
+          @if (group.expanded) {
+            @for (row of group.subRows; track row.projet.id) {
+              <tr class="project-row">
+                <!-- Project details -->
+                <td class="cell-project-info">
+                  <div class="project-info-wrapper">
+                    <div class="project-title-line">
+                      <span class="project-code" [style.color]="row.projet.color || '#64748b'">
+                        {{ row.projet.code_projet }}
+                      </span>
+                      <span class="project-name-text" [title]="row.projet.nom_projet">
+                        {{ row.projet.nom_projet }}
+                      </span>
+                    </div>
+                    <div class="project-meta-line">
+                      <span class="status-badge" [attr.data-status]="row.projet.statut">
+                        {{ row.projet.statut }}
+                      </span>
+                      <span class="project-total-label">{{ row.totalCharge }}j total</span>
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Sprints / Teams cells -->
+                @for (cell of row.cells; track $index) {
+                  <td class="cell-charge">
+                    @if (cell.jours > 0) {
+                      <div class="charge-card">
+                        <!-- Progress Gauge -->
+                        <div class="charge-gauge" [class]="cell.colorClass">
+                          <div class="gauge-fill" [style.width.%]="getGaugeWidth(cell.jours)"></div>
+                          <span class="gauge-label">{{ cell.jours | number:'1.0-1' }}j</span>
+                        </div>
+
+                        <!-- Milestone Badges inside cell -->
+                        <div class="cell-milestones" *ngIf="cell.milestones.length > 0">
+                          @for (ms of cell.milestones; track ms.id) {
+                            <span class="ms-badge" [class]="ms.type.toLowerCase()" [title]="ms.nom">
+                              <lucide-icon [img]="ms.type === 'LV' ? Flag : Rocket" [size]="10"></lucide-icon>
+                              {{ ms.type === 'LV' ? 'Livraison' : 'MEP' }}
+                            </span>
+                          }
+                        </div>
+                      </div>
+                    } @else {
+                      <span class="empty-cell-dash">—</span>
+                    }
+                  </td>
+                }
+              </tr>
+            }
+          }
+        }
+      </tbody>
+    </table>
+
+    <!-- Empty State -->
+    <div class="grid-empty-state" *ngIf="groupedRows.length === 0">
+      <p>Aucune charge planifiée pour les critères et sprints sélectionnés.</p>
+    </div>
+  </div>
+
+  <!-- Section 4: Bandeau des jalons (Footer) -->
+  <div class="sprint-dashboard-footer" *ngIf="footerMilestones.length > 0">
+    <span class="footer-label">JALONS</span>
+    <div class="footer-milestones-list">
+      @for (ms of footerMilestones; track ms.id) {
+        <div class="footer-ms-item" [class]="ms.type.toLowerCase()">
+          <span class="footer-ms-icon">
+            <lucide-icon [img]="ms.type === 'LV' ? Flag : Rocket" [size]="12"></lucide-icon>
+          </span>
+          <span class="footer-ms-type">{{ ms.type === 'LV' ? 'Livraison' : 'MEP' }}</span>
+          <span class="footer-ms-name">{{ ms.nom }}</span>
+          <span class="footer-ms-date">{{ formatDateYear(ms.date_jalon) }}</span>
+        </div>
+      }
+    </div>
+  </div>
+</div>

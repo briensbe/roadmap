@@ -284,6 +284,7 @@ export class SidebarNavigationComponent {
 
   navigationItems: NavigationItem[] = [
     { label: 'Tableau de bord', icon: this.LayoutDashboard, route: '/dashboard' },
+    { label: 'Charges par Sprint', icon: this.Layers, route: '/charges-sprints' },
     { label: 'Capacité', icon: this.Gauge, route: '/capacite' },
     { label: 'Planification', icon: this.Calendar, route: '/planification' },
     { label: 'Projets', icon: this.FolderKanban, route: '/projets' },
