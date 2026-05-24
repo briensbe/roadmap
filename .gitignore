@@ -64,3 +64,20 @@ supabase/.storage/
 environment.ts
 environment*
 .env
+
+# Claude Code
+.claude/
+
+# Alternative recommandée : versionner la config partagée de l'équipe
+# et n'exclure que les fichiers locaux/personnels.
+# Pour adopter cette approche, commenter la ligne `.claude/` ci-dessus
+# et décommenter les lignes ci-dessous :
+#
+# .claude/settings.local.json
+# .claude/cache/
+# CLAUDE.local.md
+#
+# Fichiers typiquement à garder versionnés dans ce cas :
+#   - CLAUDE.md (instructions partagées du projet, à la racine)
+#   - .claude/settings.json (config partagée : permissions, hooks)
+#   - .claude/commands/ (slash commands custom partagés)
