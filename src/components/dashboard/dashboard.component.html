@@ -3,7 +3,7 @@
   <div class="dashboard-header">
     <div class="header-left">
       <h1 class="dashboard-title">Tableau de bord</h1>
-      <p class="dashboard-subtitle">Vue d'ensemble de vos ressources et projets</p>
+      <p class="dashboard-subtitle">Aperçu des jalons clés, planification et activité des projets</p>
     </div>
     <div class="header-actions">
       <a [routerLink]="['/planification']" class="btn-planning">
@@ -13,160 +13,251 @@
     </div>
   </div>
 
-  <!-- Summary Cards -->
-  <div class="summary-cards">
-    <!-- Card Projets -->
-    <div class="summary-card">
+  <!-- Section 1: Jalons prioritaires (3 colonnes) -->
+  <div class="milestones-grid">
+    <!-- Card Livraisons -->
+    <div class="milestone-card livraisons">
       <div class="card-header">
         <div class="card-title-group">
-          <div class="card-icon" [style.background-color]="'#3b82f6'">
-            <lucide-icon [img]="FolderKanban" [size]="24"></lucide-icon>
+          <div class="card-icon icon-livraison">
+            <lucide-icon [img]="Flag" [size]="20"></lucide-icon>
           </div>
-          <h3 class="card-title">Projets</h3>
+          <h3>Prochaines Livraisons</h3>
         </div>
-        <a [routerLink]="['/projets']" class="card-link">Voir tout →</a>
+        <span class="badge count-badge">{{ upcomingLivraisons.length }}</span>
       </div>
-      <div class="card-content">
-        @if (projectStatusCounts.length > 0) {
-          @for (status of projectStatusCounts; track status.statut) {
-            <div class="stat-item" (mouseenter)="hoveredStatus = status.statut" (mouseleave)="hoveredStatus = null">
-              <div class="stat-number" [style.color]="'#3b82f6'">{{ status.count }}</div>
-              <div class="stat-label-wrapper">
-                <span class="stat-label">{{ status.statut.toLowerCase() }}</span>
+      <div class="card-list">
+        @if (upcomingLivraisons.length > 0) {
+          @for (jalon of upcomingLivraisons; track jalon.id) {
+            <div class="milestone-list-item">
+              <div class="item-main">
+                <span class="item-name">{{ jalon.nom }}</span>
+                <span class="item-project">{{ getProjectName(jalon.projet_id) || 'Global' }}</span>
+              </div>
+              <div class="item-date-group">
+                <span class="item-date">{{ formatDate(jalon.date_jalon) }}</span>
+                <span class="item-days" [class.urgent]="getDaysRemaining(jalon.date_jalon) <= 7">
+                  {{ getDaysRemainingText(jalon.date_jalon) }}
+                </span>
               </div>
             </div>
           }
         } @else {
-          <div class="empty-message">Aucun projet</div>
+          <div class="empty-list-message">Aucune livraison prévue</div>
         }
       </div>
     </div>
 
-    <!-- Card Ressources -->
-    <div class="summary-card">
+    <!-- Card MEPs -->
+    <div class="milestone-card meps">
       <div class="card-header">
         <div class="card-title-group">
-          <div class="card-icon" [style.background-color]="'#10b981'">
-            <lucide-icon [img]="Users" [size]="24"></lucide-icon>
+          <div class="card-icon icon-mep">
+            <lucide-icon [img]="Rocket" [size]="20"></lucide-icon>
           </div>
-          <h3 class="card-title">Ressources</h3>
+          <h3>Mises En Production</h3>
         </div>
-        <a [routerLink]="['/ressources']" class="card-link">Voir tout →</a>
+        <span class="badge count-badge">{{ upcomingMeps.length }}</span>
       </div>
-      <div class="card-content">
-        @if (rolesCount > 0 || personnesCount > 0) {
-          <div class="stat-item" (mouseenter)="hoveredResource = 'roles'" (mouseleave)="hoveredResource = null">
-            <div class="stat-number" [style.color]="'#10b981'">{{ rolesCount }}</div>
-            <div class="stat-label-wrapper">
-              <span class="stat-label">Rôles</span>
+      <div class="card-list">
+        @if (upcomingMeps.length > 0) {
+          @for (jalon of upcomingMeps; track jalon.id) {
+            <div class="milestone-list-item">
+              <div class="item-main">
+                <span class="item-name">{{ jalon.nom }}</span>
+                <span class="item-project">{{ getProjectName(jalon.projet_id) || 'Global' }}</span>
+              </div>
+              <div class="item-date-group">
+                <span class="item-date">{{ formatDate(jalon.date_jalon) }}</span>
+                <span class="item-days" [class.urgent]="getDaysRemaining(jalon.date_jalon) <= 7">
+                  {{ getDaysRemainingText(jalon.date_jalon) }}
+                </span>
+              </div>
             </div>
-          </div>
-          <div class="stat-item" (mouseenter)="hoveredResource = 'personnes'" (mouseleave)="hoveredResource = null">
-            <div class="stat-number" [style.color]="'#10b981'">{{ personnesCount }}</div>
-            <div class="stat-label-wrapper">
-              <span class="stat-label">Personnes</span>
-            </div>
-          </div>
+          }
         } @else {
-          <div class="empty-message">Aucune ressource</div>
+          <div class="empty-list-message">Aucune MEP prévue</div>
         }
       </div>
     </div>
 
-    <!-- Card Organisation -->
-    <div class="summary-card">
+    <!-- Card Sprints -->
+    <div class="milestone-card sprints">
       <div class="card-header">
         <div class="card-title-group">
-          <div class="card-icon" [style.background-color]="'#8b5cf6'">
-            <lucide-icon [img]="Building2" [size]="24"></lucide-icon>
+          <div class="card-icon icon-sprint">
+            <lucide-icon [img]="Calendar" [size]="20"></lucide-icon>
           </div>
-          <h3 class="card-title">Organisation</h3>
+          <h3>Prochains Sprints</h3>
         </div>
-        <a [routerLink]="['/organisation']" class="card-link">Voir tout →</a>
+        <span class="badge count-badge">{{ upcomingSprints.length }}</span>
       </div>
-      <div class="card-content">
-        @if (servicesCount > 0 || equipesCount > 0) {
-          <div class="stat-item">
-            <div class="stat-number" [style.color]="'#8b5cf6'">{{ servicesCount }}</div>
-            <div class="stat-label-wrapper">
-              <span class="stat-label">Services</span>
+      <div class="card-list">
+        @if (upcomingSprints.length > 0) {
+          @for (jalon of upcomingSprints; track jalon.id) {
+            <div class="milestone-list-item">
+              <div class="item-main">
+                <span class="item-name">{{ jalon.nom }}</span>
+                <span class="item-project">{{ getProjectName(jalon.projet_id) || 'Global' }}</span>
+              </div>
+              <div class="item-date-group">
+                <span class="item-date">{{ formatDate(jalon.date_jalon) }}</span>
+                <span class="item-days">
+                  {{ getDaysRemainingText(jalon.date_jalon) }}
+                </span>
+              </div>
             </div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-number" [style.color]="'#8b5cf6'">{{ equipesCount }}</div>
-            <div class="stat-label-wrapper">
-              <span class="stat-label">Équipes</span>
-            </div>
-          </div>
+          }
         } @else {
-          <div class="empty-message">Aucune organisation</div>
+          <div class="empty-list-message">Aucun sprint prévu</div>
         }
       </div>
     </div>
   </div>
 
-  <!-- Main Content Area -->
-  <div class="main-content">
-    <!-- Recent Projects -->
-    <div class="content-card">
-      <div class="content-card-header">
-        <h3 class="content-card-title">Projets récents</h3>
-        <a [routerLink]="['/projets']" class="content-card-link">Voir tout →</a>
+  <!-- Section 2: Contenu des sprints par équipe -->
+  <div class="section-title-wrapper">
+    <h2 class="main-section-title">Contenu des 3 prochains sprints par équipe</h2>
+    <div class="title-line"></div>
+  </div>
+
+  @if (sprintContentByTeam.length > 0) {
+    <div class="teams-container">
+      @for (teamInfo of sprintContentByTeam; track teamInfo.equipe.id) {
+        <div class="team-card">
+          <div class="team-card-header" [style.border-left-color]="teamInfo.equipe.color || '#3b82f6'">
+            <div class="team-title-group">
+              <lucide-icon [img]="Users" [size]="20" class="team-icon"></lucide-icon>
+              <h2 class="team-name">{{ teamInfo.equipe.nom }}</h2>
+              <span class="team-code" *ngIf="teamInfo.equipe.code">{{ teamInfo.equipe.code }}</span>
+            </div>
+          </div>
+
+          <div class="team-sprints-list">
+            @for (sprintInfo of teamInfo.sprints; track sprintInfo.sprint.id) {
+              <div class="sprint-group">
+                <div class="sprint-header">
+                  <lucide-icon [img]="Calendar" [size]="16" class="sprint-icon"></lucide-icon>
+                  <h3 class="sprint-name">
+                    {{ sprintInfo.sprint.nom }}
+                    <span class="sprint-date-badge">Fin : {{ formatDate(sprintInfo.dateFin) }}</span>
+                  </h3>
+                </div>
+
+                <div class="projects-list">
+                  @for (projInfo of sprintInfo.projets; track projInfo.projet.id) {
+                    <div class="project-row" [style.border-left-color]="projInfo.projet.color || '#64748b'">
+                      <div class="project-main-info">
+                        <div class="project-title-row">
+                          <span class="project-code" [style.color]="projInfo.projet.color || '#64748b'">
+                            {{ projInfo.projet.code_projet }}
+                          </span>
+                          <h4 class="project-name-text">
+                            {{ projInfo.projet.nom_projet }}
+                          </h4>
+                          <span class="status-badge" [attr.data-status]="projInfo.projet.statut">
+                            {{ projInfo.projet.statut }}
+                          </span>
+                        </div>
+                        
+                        <!-- Resource breakdown list -->
+                        <div class="resource-breakdown" *ngIf="projInfo.ressources.length > 0">
+                          @for (res of projInfo.ressources; track res.name) {
+                            <span class="res-pill">
+                              {{ res.name }} <span class="res-days">{{ res.jours }}j</span>
+                            </span>
+                          }
+                        </div>
+                      </div>
+
+                      <div class="project-stats-col">
+                        <div class="stat-pill engaged">
+                          <span class="stat-pill-label">Engagé sprint</span>
+                          <span class="stat-pill-value">{{ projInfo.joursEngages }} j</span>
+                        </div>
+                        <div class="stat-pill raf">
+                          <span class="stat-pill-label">RAF Total</span>
+                          <span class="stat-pill-value">{{ projInfo.raf }} j</span>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="empty-state-card">
+      <p>Aucun engagement de projet pour les 3 prochains sprints.</p>
+    </div>
+  }
+
+  <!-- Section 3: Activité récente des projets -->
+  <div class="section-title-wrapper">
+    <h2 class="main-section-title">Activité des projets (30 derniers jours)</h2>
+    <div class="title-line"></div>
+  </div>
+
+  <div class="activity-grid">
+    <!-- Added projects -->
+    <div class="activity-column">
+      <div class="activity-column-header">
+        <div class="header-title-group">
+          <lucide-icon [img]="Plus" [size]="18" class="icon-added"></lucide-icon>
+          <h3>Ajoutés récemment</h3>
+        </div>
+        <span class="badge activity-count added">{{ addedProjects.length }}</span>
       </div>
-      <div class="content-card-body">
-        @if (recentProjects.length > 0) {
-          @for (projet of recentProjects; track projet.id) {
-            <div class="project-item" [style.border-left-color]="projet.color || '#3b82f6'">
-              <div class="project-info">
-                <div class="project-header">
-                  <span class="project-code" [style.color]="projet.color || '#3b82f6'">{{ projet.code_projet }}</span>
-                  <span class="project-status" [attr.data-status]="projet.statut">{{ projet.statut }}</span>
-                </div>
-                <div class="project-name">{{ projet.nom_projet }}</div>
-                <div class="project-progress">
-                  <div class="progress-bar">
-                    <div class="progress-fill" [style.width.%]="getProgressPercent(projet)"></div>
-                  </div>
-                  <span class="progress-text">{{ getProgressText(projet) }}</span>
-                </div>
+      <div class="activity-list">
+        @if (addedProjects.length > 0) {
+          @for (item of addedProjects; track item.projet.id) {
+            <div class="activity-item" [style.border-left-color]="item.projet.color || '#3b82f6'">
+              <div class="activity-project-header">
+                <span class="project-code" [style.color]="item.projet.color || '#3b82f6'">{{ item.projet.code_projet }}</span>
+                <span class="status-badge small" [attr.data-status]="item.projet.statut">{{ item.projet.statut }}</span>
+              </div>
+              <div class="activity-project-name">{{ item.projet.nom_projet }}</div>
+              <div class="activity-time">
+                <lucide-icon [img]="Clock" [size]="12"></lucide-icon>
+                <span>Saisi le {{ formatDate(item.dateSaisie) }}</span>
               </div>
             </div>
           }
         } @else {
-          <div class="empty-state">Aucun projet récent</div>
+          <div class="empty-activity-message">Aucun projet ajouté ce mois-ci</div>
         }
       </div>
     </div>
 
-    <!-- Upcoming Milestones -->
-    <div class="content-card">
-      <div class="content-card-header">
-        <h3 class="content-card-title">Jalons à venir</h3>
-        <a [routerLink]="['/jalons']" class="content-card-link">Voir tout →</a>
+    <!-- Modified projects -->
+    <div class="activity-column">
+      <div class="activity-column-header">
+        <div class="header-title-group">
+          <lucide-icon [img]="Clock" [size]="18" class="icon-modified"></lucide-icon>
+          <h3>Modifiés récemment</h3>
+        </div>
+        <span class="badge activity-count modified">{{ modifiedProjects.length }}</span>
       </div>
-      <div class="content-card-body">
-        @if (upcomingJalons.length > 0) {
-          @for (jalon of upcomingJalons; track jalon.id) {
-            <div class="milestone-item">
-              <div class="milestone-bar" [style.background-color]="getMilestoneColor(jalon)"></div>
-              <div class="milestone-content">
-                <div class="milestone-header">
-                  <div class="milestone-title">{{ jalon.nom }}</div>
-                  <div class="milestone-date">{{ formatDate(jalon.date_jalon) }}</div>
-                </div>
-                <div class="milestone-meta">
-                  <div class="milestone-project">
-                    {{ getProjectName(jalon.projet_id) }}
-                  </div>
-                  <div class="milestone-days" [class.urgent]="getDaysRemaining(jalon.date_jalon) <= 7">
-                    {{ getDaysRemainingText(jalon.date_jalon) }}
-                  </div>
-                </div>
+      <div class="activity-list">
+        @if (modifiedProjects.length > 0) {
+          @for (item of modifiedProjects; track item.projet.id) {
+            <div class="activity-item" [style.border-left-color]="item.projet.color || '#3b82f6'">
+              <div class="activity-project-header">
+                <span class="project-code" [style.color]="item.projet.color || '#3b82f6'">{{ item.projet.code_projet }}</span>
+                <span class="status-badge small" [attr.data-status]="item.projet.statut">{{ item.projet.statut }}</span>
+              </div>
+              <div class="activity-project-name">{{ item.projet.nom_projet }}</div>
+              <div class="activity-time">
+                <lucide-icon [img]="Clock" [size]="12"></lucide-icon>
+                <span>Modifié le {{ formatDate(item.dateModification) }}</span>
               </div>
             </div>
           }
         } @else {
-          <div class="empty-state">Aucun jalon à venir</div>
+          <div class="empty-activity-message">Aucun projet modifié ce mois-ci</div>
         }
       </div>
     </div>
