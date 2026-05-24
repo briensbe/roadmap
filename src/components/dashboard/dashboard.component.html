@@ -133,63 +133,69 @@
                 <span class="team-code">{{ teamInfo.equipe.code }}</span>
               }
             </div>
+            <button class="btn-collapse" (click)="toggleTeam(teamInfo)">
+              <lucide-icon [img]="teamInfo.expanded ? ChevronDown : ChevronRight" [size]="16"></lucide-icon>
+              {{ teamInfo.expanded ? 'RÉDUIRE' : 'DÉVELOPPER' }}
+            </button>
           </div>
 
-          <div class="team-sprints-list">
-            @for (sprintInfo of teamInfo.sprints; track sprintInfo.sprint.id) {
-              <div class="sprint-group">
-                <div class="sprint-header">
-                  <lucide-icon [img]="Calendar" [size]="16" class="sprint-icon"></lucide-icon>
-                  <h3 class="sprint-name">
-                    {{ sprintInfo.sprint.nom }}
-                    <span class="sprint-date-badge">Fin : {{ formatDate(sprintInfo.dateFin) }}</span>
-                  </h3>
-                </div>
+          @if (teamInfo.expanded) {
+            <div class="team-sprints-list">
+              @for (sprintInfo of teamInfo.sprints; track sprintInfo.sprint.id) {
+                <div class="sprint-group">
+                  <div class="sprint-header">
+                    <lucide-icon [img]="Calendar" [size]="16" class="sprint-icon"></lucide-icon>
+                    <h3 class="sprint-name">
+                      {{ sprintInfo.sprint.nom }}
+                      <span class="sprint-date-badge">Fin : {{ formatDate(sprintInfo.dateFin) }}</span>
+                    </h3>
+                  </div>
 
-                <div class="projects-list">
-                  @for (projInfo of sprintInfo.projets; track projInfo.projet.id) {
-                    <div class="project-row" [style.border-left-color]="projInfo.projet.color || '#64748b'">
-                      <div class="project-main-info">
-                        <div class="project-title-row">
-                          <span class="project-code" [style.color]="projInfo.projet.color || '#64748b'">
-                            {{ projInfo.projet.code_projet }}
-                          </span>
-                          <h4 class="project-name-text">
-                            {{ projInfo.projet.nom_projet }}
-                          </h4>
-                          <span class="status-badge" [attr.data-status]="projInfo.projet.statut">
-                            {{ projInfo.projet.statut }}
-                          </span>
-                        </div>
-                        
-                        <!-- Resource breakdown list -->
-                        @if (projInfo.ressources.length > 0) {
-                          <div class="resource-breakdown">
-                            @for (res of projInfo.ressources; track res.name) {
-                              <span class="res-pill">
-                                {{ res.name }} <span class="res-days">{{ res.jours }}j</span>
-                              </span>
-                            }
+                  <div class="projects-list">
+                    @for (projInfo of sprintInfo.projets; track projInfo.projet.id) {
+                      <div class="project-row" [style.border-left-color]="projInfo.projet.color || '#64748b'">
+                        <div class="project-main-info">
+                          <div class="project-title-row">
+                            <span class="project-code" [style.color]="projInfo.projet.color || '#64748b'">
+                              {{ projInfo.projet.code_projet }}
+                            </span>
+                            <h4 class="project-name-text">
+                              {{ projInfo.projet.nom_projet }}
+                            </h4>
+                            <span class="status-badge" [attr.data-status]="projInfo.projet.statut">
+                              {{ projInfo.projet.statut }}
+                            </span>
                           </div>
-                        }
-                      </div>
+                          
+                          <!-- Resource breakdown list -->
+                          @if (projInfo.ressources.length > 0) {
+                            <div class="resource-breakdown">
+                              @for (res of projInfo.ressources; track res.name) {
+                                <span class="res-pill">
+                                  {{ res.name }} <span class="res-days">{{ res.jours }}j</span>
+                                </span>
+                              }
+                            </div>
+                          }
+                        </div>
 
-                      <div class="project-stats-col">
-                        <div class="stat-pill engaged">
-                          <span class="stat-pill-label">Engagé sprint</span>
-                          <span class="stat-pill-value">{{ projInfo.joursEngages }} j</span>
-                        </div>
-                        <div class="stat-pill raf">
-                          <span class="stat-pill-label">RAF Total</span>
-                          <span class="stat-pill-value">{{ projInfo.raf }} j</span>
+                        <div class="project-stats-col">
+                          <div class="stat-pill engaged">
+                            <span class="stat-pill-label">Engagé sprint</span>
+                            <span class="stat-pill-value">{{ projInfo.joursEngages }} j</span>
+                          </div>
+                          <div class="stat-pill raf">
+                            <span class="stat-pill-label">RAF Total</span>
+                            <span class="stat-pill-value">{{ projInfo.raf }} j</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  }
+                    }
+                  </div>
                 </div>
-              </div>
-            }
-          </div>
+              }
+            </div>
+          }
         </div>
       }
     </div>

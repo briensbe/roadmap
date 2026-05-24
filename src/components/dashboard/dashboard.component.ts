@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
-import { LucideAngularModule, Calendar, FolderKanban, Users, Building2, Flag, Rocket, Clock, Plus } from 'lucide-angular';
+import { LucideAngularModule, Calendar, FolderKanban, Users, Building2, Flag, Rocket, Clock, Plus, ChevronRight, ChevronDown } from 'lucide-angular';
 import { ProjetService } from '../../services/projet.service';
 import { RolesService } from '../../services/roles.service';
 import { PersonnesService } from '../../services/personnes.service';
@@ -37,6 +37,7 @@ interface SprintTeamInfo {
 interface TeamSprintContent {
   equipe: Equipe;
   sprints: SprintTeamInfo[];
+  expanded: boolean;
 }
 
 @Component({
@@ -56,6 +57,8 @@ export class DashboardComponent implements OnInit {
   Rocket = Rocket;
   Clock = Clock;
   Plus = Plus;
+  ChevronRight = ChevronRight;
+  ChevronDown = ChevronDown;
 
   projets: Projet[] = [];
   jalons: Jalon[] = [];
@@ -294,7 +297,8 @@ export class DashboardComponent implements OnInit {
       if (sprintInfos.length > 0) {
         this.sprintContentByTeam.push({
           equipe,
-          sprints: sprintInfos
+          sprints: sprintInfos,
+          expanded: true
         });
       }
     }
@@ -399,6 +403,10 @@ export class DashboardComponent implements OnInit {
     const month = date.toLocaleDateString('fr-FR', { month: 'short' });
     const year = date.getFullYear();
     return `${day} ${month} ${year}`;
+  }
+
+  toggleTeam(teamContent: TeamSprintContent) {
+    teamContent.expanded = !teamContent.expanded;
   }
 }
 
