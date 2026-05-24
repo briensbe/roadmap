@@ -549,6 +549,14 @@ export class DashboardSprintsComponent implements OnInit {
     return `${day} ${month} ${year}`;
   }
 
+  formatDateDDMM(dateStr: string): string {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    return `${day}/${month}`;
+  }
+
   getActiveProjectsCount(): number {
     const projectIds = new Set<string>();
     for (const group of this.groupedRows) {

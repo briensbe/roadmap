@@ -47,11 +47,11 @@
       <span class="toolbar-label">SPRINTS</span>
       <div class="select-range-wrapper">
         <select [(ngModel)]="startSprintId" (change)="onSprintFilterChange()" class="sprint-select">
-          <option *ngFor="let s of allSprints" [value]="s.id">{{ s.nom }}</option>
+          <option *ngFor="let s of allSprints" [value]="s.id">{{ s.nom }} ({{ formatDateDDMM(s.date_jalon) }})</option>
         </select>
         <lucide-icon [img]="ArrowRight" [size]="14" class="range-arrow"></lucide-icon>
         <select [(ngModel)]="endSprintId" (change)="onSprintFilterChange()" class="sprint-select">
-          <option *ngFor="let s of allSprints" [value]="s.id">{{ s.nom }}</option>
+          <option *ngFor="let s of allSprints" [value]="s.id">{{ s.nom }} ({{ formatDateDDMM(s.date_jalon) }})</option>
         </select>
       </div>
     </div>
