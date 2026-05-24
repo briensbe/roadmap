@@ -557,6 +557,15 @@ export class DashboardSprintsComponent implements OnInit {
     return `${day}/${month}`;
   }
 
+  getSprintOptionLabel(s: Jalon): string {
+    const name = s.nom || '';
+    const date = this.formatDateDDMM(s.date_jalon);
+    const targetLength = 12;
+    const paddingNeeded = Math.max(0, targetLength - name.length);
+    const paddedName = name + '\u00A0'.repeat(paddingNeeded);
+    return `${paddedName} (${date})`;
+  }
+
   getActiveProjectsCount(): number {
     const projectIds = new Set<string>();
     for (const group of this.groupedRows) {

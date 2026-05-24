@@ -109,6 +109,7 @@
 .sprint-select {
   border: none;
   background: transparent;
+  font-family: "Consolas", "Monaco", monospace;
   font-size: 13px;
   font-weight: 700;
   color: #334155;
