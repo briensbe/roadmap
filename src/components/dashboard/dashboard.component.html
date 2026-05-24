@@ -15,6 +15,39 @@
 
   <!-- Section 1: Jalons prioritaires (3 colonnes) -->
   <div class="milestones-grid">
+    <!-- Card Sprints -->
+    <div class="milestone-card sprints">
+      <div class="card-header">
+        <div class="card-title-group">
+          <div class="card-icon icon-sprint">
+            <lucide-icon [img]="Calendar" [size]="20"></lucide-icon>
+          </div>
+          <h3>Prochains Sprints</h3>
+        </div>
+        <span class="badge count-badge">{{ upcomingSprints.length }}</span>
+      </div>
+      <div class="card-list">
+        @if (upcomingSprints.length > 0) {
+          @for (jalon of upcomingSprints; track jalon.id) {
+            <div class="milestone-list-item">
+              <div class="item-main">
+                <span class="item-name">{{ jalon.nom }}</span>
+                <span class="item-project">{{ getProjectName(jalon.projet_id) || 'Global' }}</span>
+              </div>
+              <div class="item-date-group">
+                <span class="item-date">{{ formatDate(jalon.date_jalon) }}</span>
+                <span class="item-days">
+                  {{ getDaysRemainingText(jalon.date_jalon) }}
+                </span>
+              </div>
+            </div>
+          }
+        } @else {
+          <div class="empty-list-message">Aucun sprint prévu</div>
+        }
+      </div>
+    </div>
+
     <!-- Card Livraisons -->
     <div class="milestone-card livraisons">
       <div class="card-header">
@@ -77,39 +110,6 @@
           }
         } @else {
           <div class="empty-list-message">Aucune MEP prévue</div>
-        }
-      </div>
-    </div>
-
-    <!-- Card Sprints -->
-    <div class="milestone-card sprints">
-      <div class="card-header">
-        <div class="card-title-group">
-          <div class="card-icon icon-sprint">
-            <lucide-icon [img]="Calendar" [size]="20"></lucide-icon>
-          </div>
-          <h3>Prochains Sprints</h3>
-        </div>
-        <span class="badge count-badge">{{ upcomingSprints.length }}</span>
-      </div>
-      <div class="card-list">
-        @if (upcomingSprints.length > 0) {
-          @for (jalon of upcomingSprints; track jalon.id) {
-            <div class="milestone-list-item">
-              <div class="item-main">
-                <span class="item-name">{{ jalon.nom }}</span>
-                <span class="item-project">{{ getProjectName(jalon.projet_id) || 'Global' }}</span>
-              </div>
-              <div class="item-date-group">
-                <span class="item-date">{{ formatDate(jalon.date_jalon) }}</span>
-                <span class="item-days">
-                  {{ getDaysRemainingText(jalon.date_jalon) }}
-                </span>
-              </div>
-            </div>
-          }
-        } @else {
-          <div class="empty-list-message">Aucun sprint prévu</div>
         }
       </div>
     </div>
