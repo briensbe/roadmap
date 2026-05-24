@@ -303,10 +303,7 @@
   font-size: 14px;
   font-weight: 700;
   color: #1e293b;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 220px;
+  word-break: break-word;
 }
 
 .project-meta-line {
