@@ -65,6 +65,9 @@ environment.ts
 environment*
 .env
 
+# perso 
+private-docs/
+
 # Claude Code
 .claude/
 
