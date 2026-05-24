@@ -129,7 +129,9 @@
             <div class="team-title-group">
               <lucide-icon [img]="Users" [size]="20" class="team-icon"></lucide-icon>
               <h2 class="team-name">{{ teamInfo.equipe.nom }}</h2>
-              <span class="team-code" *ngIf="teamInfo.equipe.code">{{ teamInfo.equipe.code }}</span>
+              @if (teamInfo.equipe.code) {
+                <span class="team-code">{{ teamInfo.equipe.code }}</span>
+              }
             </div>
           </div>
 
@@ -161,13 +163,15 @@
                         </div>
                         
                         <!-- Resource breakdown list -->
-                        <div class="resource-breakdown" *ngIf="projInfo.ressources.length > 0">
-                          @for (res of projInfo.ressources; track res.name) {
-                            <span class="res-pill">
-                              {{ res.name }} <span class="res-days">{{ res.jours }}j</span>
-                            </span>
-                          }
-                        </div>
+                        @if (projInfo.ressources.length > 0) {
+                          <div class="resource-breakdown">
+                            @for (res of projInfo.ressources; track res.name) {
+                              <span class="res-pill">
+                                {{ res.name }} <span class="res-days">{{ res.jours }}j</span>
+                              </span>
+                            }
+                          </div>
+                        }
                       </div>
 
                       <div class="project-stats-col">
