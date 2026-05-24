@@ -116,6 +116,12 @@
                       <span class="status-badge" [attr.data-status]="row.projet.statut">
                         {{ row.projet.statut }}
                       </span>
+                      @if (row.isMainMilestoneTarget) {
+                        <span class="target-project-badge" [class]="groupMode">
+                          <lucide-icon [img]="groupMode === 'livraison' ? Flag : Rocket" [size]="10"></lucide-icon>
+                          Projet cible
+                        </span>
+                      }
                       <span class="project-total-label">{{ row.totalCharge }}j total</span>
                     </div>
                   </div>

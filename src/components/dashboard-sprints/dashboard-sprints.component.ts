@@ -49,6 +49,7 @@ interface GroupRow {
     projet: Projet;
     totalCharge: number;
     cells: CellData[]; // Map each column to a cell
+    isMainMilestoneTarget?: boolean;
   }>;
 }
 
@@ -350,44 +351,74 @@ export class DashboardSprintsComponent implements OnInit {
   }
 
   generateGroupedByMilestone(type: 'LV' | 'MEP') {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     const targetMilestones = this.jalons
-      .filter(j => j.type === type)
+      .filter(j => j.type === type && new Date(j.date_jalon) >= today)
       .sort((a, b) => new Date(a.date_jalon).getTime() - new Date(b.date_jalon).getTime());
 
     for (const ms of targetMilestones) {
-      const project = this.projets.find(p => p.id === ms.projet_id);
-      if (!project) continue;
-
       const subRows: GroupRow['subRows'] = [];
-      const cells: CellData[] = [];
       let milestoneTotalCharge = 0;
 
-      for (const sp of this.selectedSprints) {
-        // Global project charge in this sprint
-        const jours = this.getChargeForSprint(project.id!, sp.start, sp.end);
-        const colorClass = this.getColorClass(jours);
-        const milestones = this.getMilestonesForProjectInPeriod(project.id!, sp.start, sp.end);
+      const sStart = today;
+      const sEnd = new Date(ms.date_jalon);
+      sEnd.setHours(23, 59, 59, 999);
 
-        cells.push({ jours, colorClass, milestones });
-        milestoneTotalCharge += jours;
+      for (const project of this.projets) {
+        const isMainMilestoneTarget = (ms.projet_id === project.id);
+        const joursInPeriod = this.getChargeForSprint(project.id!, sStart, sEnd);
+        
+        // Include project if it has charges between today and the milestone date,
+        // OR if it is the target project of the milestone itself.
+        if (joursInPeriod <= 0 && !isMainMilestoneTarget) continue;
+
+        const cells: CellData[] = [];
+        let projectTotalCharge = 0;
+
+        for (const sp of this.selectedSprints) {
+          const jours = this.getChargeForSprint(project.id!, sp.start, sp.end);
+          const colorClass = this.getColorClass(jours);
+          const milestones = this.getMilestonesForProjectInPeriod(project.id!, sp.start, sp.end);
+
+          cells.push({ jours, colorClass, milestones });
+          projectTotalCharge += jours;
+        }
+
+        subRows.push({
+          projet: project,
+          totalCharge: Math.round(projectTotalCharge * 10) / 10,
+          cells,
+          isMainMilestoneTarget
+        });
+        milestoneTotalCharge += projectTotalCharge;
       }
 
-      subRows.push({
-        projet: project,
-        totalCharge: Math.round(milestoneTotalCharge * 10) / 10,
-        cells
-      });
+      if (subRows.length > 0) {
+        // Sort subRows: primary target project first, then by totalCharge descending
+        subRows.sort((a, b) => {
+          if (a.isMainMilestoneTarget && !b.isMainMilestoneTarget) return -1;
+          if (!a.isMainMilestoneTarget && b.isMainMilestoneTarget) return 1;
+          return b.totalCharge - a.totalCharge;
+        });
 
-      this.groupedRows.push({
-        id: ms.id!,
-        name: `${ms.nom} (${this.formatSingleDate(ms.date_jalon)})`,
-        code: project.code_projet,
-        color: project.color || '#64748b',
-        extraInfo: `Projet : ${project.nom_projet} • ${Math.round(milestoneTotalCharge * 10) / 10}j total`,
-        expanded: true,
-        totalCharge: Math.round(milestoneTotalCharge * 10) / 10,
-        subRows
-      });
+        const mainProj = this.projets.find(p => p.id === ms.projet_id);
+        const color = type === 'LV' ? '#3b82f6' : '#10b981'; // Blue for Livraison, Green for MEP
+        const groupName = `${type === 'LV' ? 'Livraison' : 'MEP'} du ${this.formatSingleDate(ms.date_jalon)}`;
+        const extraInfo = `${ms.nom}${mainProj ? ' [' + mainProj.nom_projet + ']' : ''} • ${subRows.length} projets • ${Math.round(milestoneTotalCharge * 10) / 10}j total`;
+
+        this.groupedRows.push({
+          id: ms.id!,
+          name: groupName,
+          code: '',
+          color: color,
+          extraInfo: extraInfo,
+          expanded: true,
+          totalCharge: Math.round(milestoneTotalCharge * 10) / 10,
+          subRows
+        });
+      }
     }
   }
 
