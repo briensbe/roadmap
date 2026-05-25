@@ -1,7 +1,7 @@
 [
   {
-    "version": "2026.05.23",
-    "date": "2026-05-23",
+    "version": "2026.05.25",
+    "date": "2026-05-25",
     "news": [
       {
         "title": "Mode Visualisation (façon Gantt)",
@@ -27,6 +27,18 @@
           "Les charges planifiées sont évaluées par rôle/ressource individuellement et non cumulées entre les rôles pour correspondre aux badges"
         ],
         "imageUrl": "assets/release-notes/2026-05-23-filtre-taille-projet.png",
+        "imageMaxHeight": 200
+      },
+      {
+        "title": "Vue dashboard modifiée",
+        "items": ["Vue dashboard modifiée pour afficher les 3 prochains sprints pour chaque équipe"],
+        "imageUrl": "assets/release-notes/2026-05-25-nouveau-dashboard.png",
+        "imageMaxHeight": 200
+      },
+      {
+        "title": "Test d'une autre Vue dashboard par regroupement",
+        "items": ["Test d'une Vue dashboard modifiée avec des regroupements dynamiques (Sprint, livraisons, MEP)"],
+        "imageUrl": "assets/release-notes/2026-05-25-dashboard-sprint.png",
         "imageMaxHeight": 200
       },
       {
@@ -65,13 +77,13 @@
           "il est possible de créer des projets à partir d'un fichier JSON",
           "Un bookmarklet (disponible dans Paramètres) est à installer pour extraire les données de Jira"
         ],
-        "imageUrl": "assets/release-notes/2025-05-15-importJson.png",
+        "imageUrl": "assets/release-notes/2026-05-15-importJson.png",
         "imageMaxHeight": 300
       },
       {
         "title": "Nouveau mode d'affichage des projets ",
         "items": ["Ajout d'une vue''Tableau'"],
-        "imageUrl": "assets/release-notes/2025-05-15-projects-table-view.png",
+        "imageUrl": "assets/release-notes/2026-05-15-projects-table-view.png",
         "imageMaxHeight": 200
       },
       {
