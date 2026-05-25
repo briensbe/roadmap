@@ -154,6 +154,8 @@
   border: 1px solid #f1f5f9;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.03);
   overflow-x: auto;
+  overflow-y: auto;
+  max-height: calc(100vh - 200px);
 }
 
 .grid-table {
@@ -170,13 +172,18 @@
 
 /* Column Header Styles */
 .grid-table th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  height: 68px;
+  box-sizing: border-box;
   background: #fcfdfe;
   font-weight: 700;
   color: #475569;
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  vertical-align: bottom;
+  vertical-align: middle;
   border-bottom: 2px solid #e2e8f0;
 }
 
@@ -206,10 +213,12 @@
 
 /* Group Header Row */
 .group-header-row td {
+  position: sticky;
+  top: 68px;
+  z-index: 9;
   background: #f8fafc;
   padding: 14px 20px;
-  border-top: 1px solid #e2e8f0;
-  border-bottom: 1px solid #e2e8f0;
+  box-shadow: inset 0 -1px 0 #e2e8f0, inset 0 1px 0 #e2e8f0;
 }
 
 .group-header-cell-content {
