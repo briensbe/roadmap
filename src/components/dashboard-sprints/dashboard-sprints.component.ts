@@ -1,28 +1,28 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { 
-  LucideAngularModule, 
-  Calendar, 
-  Flag, 
-  Rocket, 
-  Users, 
-  Building2, 
-  ArrowRight, 
-  Layers, 
-  ChevronRight, 
-  ChevronDown, 
-  SlidersHorizontal 
-} from 'lucide-angular';
-import { ProjetService } from '../../services/projet.service';
-import { RolesService } from '../../services/roles.service';
-import { PersonnesService } from '../../services/personnes.service';
-import { TeamService } from '../../services/team.service';
-import { JalonService } from '../../services/jalon.service';
-import { ChargeService } from '../../services/charge.service';
-import { Projet, Jalon, Charge, Equipe, Role, Personne } from '../../models/types';
+import { Component, OnInit } from "@angular/core";
+import { CommonModule } from "@angular/common";
+import { FormsModule } from "@angular/forms";
+import {
+  LucideAngularModule,
+  Calendar,
+  Flag,
+  Rocket,
+  Users,
+  Building2,
+  ArrowRight,
+  Layers,
+  ChevronRight,
+  ChevronDown,
+  SlidersHorizontal,
+} from "lucide-angular";
+import { ProjetService } from "../../services/projet.service";
+import { RolesService } from "../../services/roles.service";
+import { PersonnesService } from "../../services/personnes.service";
+import { TeamService } from "../../services/team.service";
+import { JalonService } from "../../services/jalon.service";
+import { ChargeService } from "../../services/charge.service";
+import { Projet, Jalon, Charge, Equipe, Role, Personne } from "../../models/types";
 
-export type GroupMode = 'equipe' | 'sprint' | 'livraison' | 'mep';
+export type GroupMode = "equipe" | "sprint" | "livraison" | "mep";
 
 interface SprintPeriod {
   sprint: Jalon;
@@ -54,11 +54,11 @@ interface GroupRow {
 }
 
 @Component({
-  selector: 'app-dashboard-sprints',
+  selector: "app-dashboard-sprints",
   standalone: true,
   imports: [CommonModule, FormsModule, LucideAngularModule],
-  templateUrl: './dashboard-sprints.component.html',
-  styleUrls: ['./dashboard-sprints.component.css']
+  templateUrl: "./dashboard-sprints.component.html",
+  styleUrls: ["./dashboard-sprints.component.css"],
 })
 export class DashboardSprintsComponent implements OnInit {
   // Lucide Icons
@@ -82,12 +82,12 @@ export class DashboardSprintsComponent implements OnInit {
 
   // Sprint selectors
   allSprints: Jalon[] = [];
-  startSprintId: string = '';
-  endSprintId: string = '';
+  startSprintId: string = "";
+  endSprintId: string = "";
   selectedSprints: SprintPeriod[] = [];
 
   // Group Mode
-  groupMode: GroupMode = 'equipe';
+  groupMode: GroupMode = "equipe";
 
   // Grouped rows to render in the table
   groupedRows: GroupRow[] = [];
@@ -104,8 +104,8 @@ export class DashboardSprintsComponent implements OnInit {
     private personnesService: PersonnesService,
     private teamService: TeamService,
     private jalonService: JalonService,
-    private chargeService: ChargeService
-  ) { }
+    private chargeService: ChargeService,
+  ) {}
 
   async ngOnInit() {
     await Promise.all([
@@ -113,7 +113,7 @@ export class DashboardSprintsComponent implements OnInit {
       this.loadJalons(),
       this.loadResources(),
       this.loadOrganization(),
-      this.loadCharges()
+      this.loadCharges(),
     ]);
     this.initSprints();
     this.generateData();
@@ -123,7 +123,7 @@ export class DashboardSprintsComponent implements OnInit {
     try {
       this.projets = await this.projetService.getAllProjets();
     } catch (error) {
-      console.error('Error loading projects:', error);
+      console.error("Error loading projects:", error);
     }
   }
 
@@ -131,7 +131,7 @@ export class DashboardSprintsComponent implements OnInit {
     try {
       this.jalons = await this.jalonService.getAllJalons();
     } catch (error) {
-      console.error('Error loading jalons:', error);
+      console.error("Error loading jalons:", error);
     }
   }
 
@@ -140,7 +140,7 @@ export class DashboardSprintsComponent implements OnInit {
       this.roles = await this.rolesService.getAllRoles();
       this.personnes = await this.personnesService.getAllPersonnes();
     } catch (error) {
-      console.error('Error loading resources:', error);
+      console.error("Error loading resources:", error);
     }
   }
 
@@ -148,7 +148,7 @@ export class DashboardSprintsComponent implements OnInit {
     try {
       this.equipes = await this.teamService.getAllEquipes();
     } catch (error) {
-      console.error('Error loading organization:', error);
+      console.error("Error loading organization:", error);
     }
   }
 
@@ -156,14 +156,14 @@ export class DashboardSprintsComponent implements OnInit {
     try {
       this.charges = await this.chargeService.getAllCharges();
     } catch (error) {
-      console.error('Error loading charges:', error);
+      console.error("Error loading charges:", error);
     }
   }
 
   initSprints() {
     // Sprints are jalons of type 'SP' sorted chronologically
     this.allSprints = this.jalons
-      .filter(j => j.type === 'SP')
+      .filter((j) => j.type === "SP")
       .sort((a, b) => new Date(a.date_jalon).getTime() - new Date(b.date_jalon).getTime());
 
     if (this.allSprints.length === 0) return;
@@ -172,12 +172,12 @@ export class DashboardSprintsComponent implements OnInit {
     today.setHours(0, 0, 0, 0);
 
     // Find the first upcoming sprint
-    const upcomingIdx = this.allSprints.findIndex(s => new Date(s.date_jalon) >= today);
+    const upcomingIdx = this.allSprints.findIndex((s) => new Date(s.date_jalon) >= today);
     const startIdx = upcomingIdx !== -1 ? upcomingIdx : Math.max(0, this.allSprints.length - 5);
     const endIdx = Math.min(startIdx + 4, this.allSprints.length - 1);
 
-    this.startSprintId = this.allSprints[startIdx]?.id || '';
-    this.endSprintId = this.allSprints[endIdx]?.id || '';
+    this.startSprintId = this.allSprints[startIdx]?.id || "";
+    this.endSprintId = this.allSprints[endIdx]?.id || "";
   }
 
   // Called when sprint filters or group mode changes
@@ -185,8 +185,8 @@ export class DashboardSprintsComponent implements OnInit {
     if (this.allSprints.length === 0 || !this.startSprintId || !this.endSprintId) return;
 
     // 1. Get the list of sprints in the range
-    const startIdx = this.allSprints.findIndex(s => s.id === this.startSprintId);
-    const endIdx = this.allSprints.findIndex(s => s.id === this.endSprintId);
+    const startIdx = this.allSprints.findIndex((s) => s.id === this.startSprintId);
+    const endIdx = this.allSprints.findIndex((s) => s.id === this.endSprintId);
 
     if (startIdx === -1 || endIdx === -1 || startIdx > endIdx) {
       return;
@@ -195,8 +195,8 @@ export class DashboardSprintsComponent implements OnInit {
     const rangeSprints = this.allSprints.slice(startIdx, endIdx + 1);
 
     // Build selectedSprints periods
-    this.selectedSprints = rangeSprints.map(s => {
-      const idx = this.allSprints.findIndex(all => all.id === s.id);
+    this.selectedSprints = rangeSprints.map((s) => {
+      const idx = this.allSprints.findIndex((all) => all.id === s.id);
       let start: Date;
       if (idx > 0) {
         const prev = new Date(this.allSprints[idx - 1].date_jalon);
@@ -215,38 +215,38 @@ export class DashboardSprintsComponent implements OnInit {
         sprint: s,
         start,
         end,
-        label: s.nom
+        label: s.nom,
       };
     });
 
     // 2. Generate columns
-    if (this.groupMode === 'sprint') {
+    if (this.groupMode === "sprint") {
       // Columns are Teams (Équipes)
-      this.columns = this.equipes.map(eq => ({
+      this.columns = this.equipes.map((eq) => ({
         id: eq.id!,
         label: eq.nom,
-        sublabel: eq.code || ''
+        sublabel: eq.code || "",
       }));
     } else {
       // Columns are Sprints
-      this.columns = this.selectedSprints.map(sp => ({
+      this.columns = this.selectedSprints.map((sp) => ({
         id: sp.sprint.id!,
         label: sp.sprint.nom,
-        sublabel: this.formatDateLabel(sp.start, sp.end)
+        sublabel: this.formatDateLabel(sp.start, sp.end),
       }));
     }
 
     // 3. Generate grouped rows
     this.groupedRows = [];
 
-    if (this.groupMode === 'equipe') {
+    if (this.groupMode === "equipe") {
       this.generateGroupedByTeam();
-    } else if (this.groupMode === 'sprint') {
+    } else if (this.groupMode === "sprint") {
       this.generateGroupedBySprint();
-    } else if (this.groupMode === 'livraison') {
-      this.generateGroupedByMilestone('LV');
-    } else if (this.groupMode === 'mep') {
-      this.generateGroupedByMilestone('MEP');
+    } else if (this.groupMode === "livraison") {
+      this.generateGroupedByMilestone("LV");
+    } else if (this.groupMode === "mep") {
+      this.generateGroupedByMilestone("MEP");
     }
 
     // 4. Generate footer milestones
@@ -255,10 +255,11 @@ export class DashboardSprintsComponent implements OnInit {
       const rangeEnd = this.selectedSprints[this.selectedSprints.length - 1].end;
 
       this.footerMilestones = this.jalons
-        .filter(j => 
-          (j.type === 'LV' || j.type === 'MEP') && 
-          new Date(j.date_jalon) >= rangeStart && 
-          new Date(j.date_jalon) <= rangeEnd
+        .filter(
+          (j) =>
+            (j.type === "LV" || j.type === "MEP") &&
+            new Date(j.date_jalon) >= rangeStart &&
+            new Date(j.date_jalon) <= rangeEnd,
         )
         .sort((a, b) => new Date(a.date_jalon).getTime() - new Date(b.date_jalon).getTime());
     }
@@ -268,7 +269,7 @@ export class DashboardSprintsComponent implements OnInit {
 
   generateGroupedByTeam() {
     for (const team of this.equipes) {
-      const subRows: GroupRow['subRows'] = [];
+      const subRows: GroupRow["subRows"] = [];
       let teamTotalCharge = 0;
 
       for (const project of this.projets) {
@@ -288,7 +289,7 @@ export class DashboardSprintsComponent implements OnInit {
           subRows.push({
             projet: project,
             totalCharge: Math.round(projectTotalCharge * 10) / 10,
-            cells
+            cells,
           });
           teamTotalCharge += projectTotalCharge;
         }
@@ -299,11 +300,11 @@ export class DashboardSprintsComponent implements OnInit {
           id: team.id!,
           name: team.nom,
           code: team.code,
-          color: team.color || '#3b82f6',
+          color: team.color || "#3b82f6",
           extraInfo: `${subRows.length} projets • ${Math.round(teamTotalCharge * 10) / 10}j de charge`,
           expanded: true,
           totalCharge: Math.round(teamTotalCharge * 10) / 10,
-          subRows
+          subRows,
         });
       }
     }
@@ -311,7 +312,7 @@ export class DashboardSprintsComponent implements OnInit {
 
   generateGroupedBySprint() {
     for (const sp of this.selectedSprints) {
-      const subRows: GroupRow['subRows'] = [];
+      const subRows: GroupRow["subRows"] = [];
       let sprintTotalCharge = 0;
 
       for (const project of this.projets) {
@@ -331,7 +332,7 @@ export class DashboardSprintsComponent implements OnInit {
           subRows.push({
             projet: project,
             totalCharge: Math.round(projectTotalCharge * 10) / 10,
-            cells
+            cells,
           });
           sprintTotalCharge += projectTotalCharge;
         }
@@ -344,41 +345,68 @@ export class DashboardSprintsComponent implements OnInit {
           extraInfo: `${subRows.length} projets • ${Math.round(sprintTotalCharge * 10) / 10}j de charge`,
           expanded: true,
           totalCharge: Math.round(sprintTotalCharge * 10) / 10,
-          subRows
+          subRows,
         });
       }
     }
   }
 
-  generateGroupedByMilestone(type: 'LV' | 'MEP') {
+  generateGroupedByMilestone(type: "LV" | "MEP") {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const targetMilestones = this.jalons
-      .filter(j => j.type === type && new Date(j.date_jalon) >= today)
+      .filter((j) => j.type === type && new Date(j.date_jalon) >= today)
       .sort((a, b) => new Date(a.date_jalon).getTime() - new Date(b.date_jalon).getTime());
 
-    for (const ms of targetMilestones) {
-      const subRows: GroupRow['subRows'] = [];
+    for (let i = 0; i < targetMilestones.length; i++) {
+      const ms = targetMilestones[i];
+      const subRows: GroupRow["subRows"] = [];
       let milestoneTotalCharge = 0;
 
-      const sStart = today;
-      const sEnd = new Date(ms.date_jalon);
-      sEnd.setHours(23, 59, 59, 999);
+      // Define delivery period
+      let periodStart = today;
+      if (i > 0) {
+        const prevDate = new Date(targetMilestones[i - 1].date_jalon);
+        periodStart = new Date(prevDate);
+        periodStart.setDate(periodStart.getDate() + 1);
+        periodStart.setHours(0, 0, 0, 0);
+      }
+      const periodEnd = new Date(ms.date_jalon);
+      periodEnd.setHours(23, 59, 59, 999);
+
+      // Define selected sprints range
+      const sprintsStart = this.selectedSprints[0].start;
+      const sprintsEnd = this.selectedSprints[this.selectedSprints.length - 1].end;
+
+      // Intersection of delivery period and selected sprints
+      const checkStart = periodStart > sprintsStart ? periodStart : sprintsStart;
+      const checkEnd = periodEnd < sprintsEnd ? periodEnd : sprintsEnd;
 
       for (const project of this.projets) {
-        const isMainMilestoneTarget = (ms.projet_id === project.id);
-        const joursInPeriod = this.getChargeForSprint(project.id!, sStart, sEnd);
+        const isMainMilestoneTarget = ms.projet_id === project.id;
         
-        // Include project if it has charges between today and the milestone date,
-        // OR if it is the target project of the milestone itself.
-        if (joursInPeriod <= 0 && !isMainMilestoneTarget) continue;
+        let joursInPeriod = 0;
+        if (checkStart <= checkEnd) {
+          joursInPeriod = this.getChargeForSprint(project.id!, checkStart, checkEnd);
+        }
+
+        // Include project only if it has charges in the intersection period
+        if (joursInPeriod <= 0) continue;
 
         const cells: CellData[] = [];
         let projectTotalCharge = 0;
 
         for (const sp of this.selectedSprints) {
-          const jours = this.getChargeForSprint(project.id!, sp.start, sp.end);
+          // Intersection of this sprint and the delivery period
+          const cellStart = sp.start > periodStart ? sp.start : periodStart;
+          const cellEnd = sp.end < periodEnd ? sp.end : periodEnd;
+
+          let jours = 0;
+          if (cellStart <= cellEnd) {
+            jours = this.getChargeForSprint(project.id!, cellStart, cellEnd);
+          }
+
           const colorClass = this.getColorClass(jours);
           const milestones = this.getMilestonesForProjectInPeriod(project.id!, sp.start, sp.end);
 
@@ -390,7 +418,7 @@ export class DashboardSprintsComponent implements OnInit {
           projet: project,
           totalCharge: Math.round(projectTotalCharge * 10) / 10,
           cells,
-          isMainMilestoneTarget
+          isMainMilestoneTarget,
         });
         milestoneTotalCharge += projectTotalCharge;
       }
@@ -403,20 +431,20 @@ export class DashboardSprintsComponent implements OnInit {
           return b.totalCharge - a.totalCharge;
         });
 
-        const mainProj = this.projets.find(p => p.id === ms.projet_id);
-        const color = type === 'LV' ? '#3b82f6' : '#10b981'; // Blue for Livraison, Green for MEP
-        const groupName = `${type === 'LV' ? 'Livraison' : 'MEP'} du ${this.formatSingleDate(ms.date_jalon)}`;
-        const extraInfo = `${ms.nom}${mainProj ? ' [' + mainProj.nom_projet + ']' : ''} • ${subRows.length} projets • ${Math.round(milestoneTotalCharge * 10) / 10}j total`;
+        const mainProj = this.projets.find((p) => p.id === ms.projet_id);
+        const color = type === "LV" ? "#3b82f6" : "#10b981"; // Blue for Livraison, Green for MEP
+        const groupName = `${type === "LV" ? "Livraison" : "MEP"} du ${this.formatSingleDate(ms.date_jalon)}`;
+        const extraInfo = `${ms.nom}${mainProj ? " [" + mainProj.nom_projet + "]" : ""} • ${subRows.length} projets • ${Math.round(milestoneTotalCharge * 10) / 10}j total`;
 
         this.groupedRows.push({
           id: ms.id!,
           name: groupName,
-          code: '',
+          code: "",
           color: color,
           extraInfo: extraInfo,
           expanded: true,
           totalCharge: Math.round(milestoneTotalCharge * 10) / 10,
-          subRows
+          subRows,
         });
       }
     }
@@ -425,10 +453,8 @@ export class DashboardSprintsComponent implements OnInit {
   // --- Calculation Helpers ---
 
   getChargeForSprintAndTeam(projetId: string, equipeId: string, sStart: Date, sEnd: Date): number {
-    const teamProjCharges = this.charges.filter(c => 
-      c.projet_id === projetId && 
-      c.equipe_id === equipeId && 
-      c.semaine_debut
+    const teamProjCharges = this.charges.filter(
+      (c) => c.projet_id === projetId && c.equipe_id === equipeId && c.semaine_debut,
     );
     let totalDays = 0;
     for (const c of teamProjCharges) {
@@ -441,10 +467,7 @@ export class DashboardSprintsComponent implements OnInit {
   }
 
   getChargeForSprint(projetId: string, sStart: Date, sEnd: Date): number {
-    const projCharges = this.charges.filter(c => 
-      c.projet_id === projetId && 
-      c.semaine_debut
-    );
+    const projCharges = this.charges.filter((c) => c.projet_id === projetId && c.semaine_debut);
     let totalDays = 0;
     for (const c of projCharges) {
       const joursParSem = this.getJoursParSemaine(c);
@@ -458,7 +481,8 @@ export class DashboardSprintsComponent implements OnInit {
   getOverlapWorkingDays(weekStartStr: string, sStart: Date, sEnd: Date): number {
     const wStart = new Date(weekStartStr);
     let overlapCount = 0;
-    for (let i = 0; i < 5; i++) { // Mon to Fri
+    for (let i = 0; i < 5; i++) {
+      // Mon to Fri
       const day = new Date(wStart);
       day.setDate(day.getDate() + i);
       day.setHours(0, 0, 0, 0);
@@ -471,38 +495,40 @@ export class DashboardSprintsComponent implements OnInit {
 
   getJoursParSemaine(charge: Charge): number {
     if (charge.role_id) {
-      const role = this.roles.find(r => r.id === charge.role_id);
+      const role = this.roles.find((r) => r.id === charge.role_id);
       return role?.jours_par_semaine ?? 5;
     }
     if (charge.personne_id) {
-      const pers = this.personnes.find(p => p.id === charge.personne_id);
+      const pers = this.personnes.find((p) => p.id === charge.personne_id);
       return pers?.jours_par_semaine ?? 5;
     }
     return 5;
   }
 
   getMilestonesForProjectInPeriod(projetId: string, sStart: Date, sEnd: Date): Jalon[] {
-    return this.jalons.filter(j => 
-      j.projet_id === projetId && 
-      (j.type === 'LV' || j.type === 'MEP') && 
-      new Date(j.date_jalon) >= sStart && 
-      new Date(j.date_jalon) <= sEnd
-    ).sort((a, b) => new Date(a.date_jalon).getTime() - new Date(b.date_jalon).getTime());
+    return this.jalons
+      .filter(
+        (j) =>
+          j.projet_id === projetId &&
+          (j.type === "LV" || j.type === "MEP") &&
+          new Date(j.date_jalon) >= sStart &&
+          new Date(j.date_jalon) <= sEnd,
+      )
+      .sort((a, b) => new Date(a.date_jalon).getTime() - new Date(b.date_jalon).getTime());
   }
 
   // --- UI Helpers ---
 
   getColorClass(jours: number): string {
-    if (jours <= 0) return 'none';
-    if (jours < 4) return 'green';
-    if (jours < 7) return 'blue';
-    if (jours < 10) return 'orange';
-    return 'red';
+    if (jours <= 0) return "none";
+    if (jours < 10) return "green";
+    if (jours <= 15) return "yellow";
+    return "red";
   }
 
   getGaugeWidth(jours: number): number {
-    // Scale where 12j represents 100% width
-    return Math.min((jours / 12) * 100, 100);
+    // Scale where 20j represents 100% width
+    return Math.min((jours / 20) * 100, 100);
   }
 
   toggleGroup(group: GroupRow) {
@@ -520,7 +546,7 @@ export class DashboardSprintsComponent implements OnInit {
 
   getProjectName(projetId?: string): string | null {
     if (!projetId) return null;
-    const projet = this.projets.find(p => p.id === projetId);
+    const projet = this.projets.find((p) => p.id === projetId);
     return projet?.nom_projet || null;
   }
 
@@ -528,41 +554,41 @@ export class DashboardSprintsComponent implements OnInit {
 
   formatDateLabel(start: Date, end: Date): string {
     const startDay = start.getDate();
-    const startMonth = start.toLocaleDateString('fr-FR', { month: 'short' });
+    const startMonth = start.toLocaleDateString("fr-FR", { month: "short" });
     const endDay = end.getDate();
-    const endMonth = end.toLocaleDateString('fr-FR', { month: 'short' });
+    const endMonth = end.toLocaleDateString("fr-FR", { month: "short" });
     return `${startDay} ${startMonth} - ${endDay} ${endMonth}`;
   }
 
   formatSingleDate(dateStr: string): string {
     const date = new Date(dateStr);
     const day = date.getDate();
-    const month = date.toLocaleDateString('fr-FR', { month: 'short' });
+    const month = date.toLocaleDateString("fr-FR", { month: "short" });
     return `${day} ${month}`;
   }
 
   formatDateYear(dateStr: string): string {
     const date = new Date(dateStr);
     const day = date.getDate();
-    const month = date.toLocaleDateString('fr-FR', { month: 'short' });
+    const month = date.toLocaleDateString("fr-FR", { month: "short" });
     const year = date.getFullYear();
     return `${day} ${month} ${year}`;
   }
 
   formatDateDDMM(dateStr: string): string {
-    if (!dateStr) return '';
+    if (!dateStr) return "";
     const date = new Date(dateStr);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
     return `${day}/${month}`;
   }
 
   getSprintOptionLabel(s: Jalon): string {
-    const name = s.nom || '';
+    const name = s.nom || "";
     const date = this.formatDateDDMM(s.date_jalon);
     const targetLength = 12;
     const paddingNeeded = Math.max(0, targetLength - name.length);
-    const paddedName = name + '\u00A0'.repeat(paddingNeeded);
+    const paddedName = name + "\u00A0".repeat(paddingNeeded);
     return `${paddedName} (${date})`;
   }
 

@@ -144,8 +144,7 @@
 }
 
 .legend-dot.green { background: #10b981; }
-.legend-dot.blue { background: #3b82f6; }
-.legend-dot.orange { background: #f59e0b; }
+.legend-dot.yellow { background: #eab308; }
 .legend-dot.red { background: #ef4444; }
 
 /* Grid Table */
@@ -383,12 +382,8 @@
   background: linear-gradient(90deg, #34d399 0%, #10b981 100%);
 }
 
-.charge-gauge.blue .gauge-fill {
-  background: linear-gradient(90deg, #60a5fa 0%, #3b82f6 100%);
-}
-
-.charge-gauge.orange .gauge-fill {
-  background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%);
+.charge-gauge.yellow .gauge-fill {
+  background: linear-gradient(90deg, #fef08a 0%, #eab308 100%);
 }
 
 .charge-gauge.red .gauge-fill {
