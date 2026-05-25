@@ -12,31 +12,19 @@
     <div class="toolbar-section grouper-par">
       <span class="toolbar-label">GROUPER PAR</span>
       <div class="btn-group">
-        <button 
-          class="toolbar-btn" 
-          [class.active]="groupMode === 'equipe'" 
-          (click)="changeGroupMode('equipe')">
+        <button class="toolbar-btn" [class.active]="groupMode === 'equipe'" (click)="changeGroupMode('equipe')">
           <lucide-icon [img]="Users" [size]="14"></lucide-icon>
           Équipe
         </button>
-        <button 
-          class="toolbar-btn" 
-          [class.active]="groupMode === 'sprint'" 
-          (click)="changeGroupMode('sprint')">
+        <button class="toolbar-btn" [class.active]="groupMode === 'sprint'" (click)="changeGroupMode('sprint')">
           <lucide-icon [img]="Calendar" [size]="14"></lucide-icon>
           Sprint
         </button>
-        <button 
-          class="toolbar-btn" 
-          [class.active]="groupMode === 'livraison'" 
-          (click)="changeGroupMode('livraison')">
+        <button class="toolbar-btn" [class.active]="groupMode === 'livraison'" (click)="changeGroupMode('livraison')">
           <lucide-icon [img]="Flag" [size]="14"></lucide-icon>
           Livraison
         </button>
-        <button 
-          class="toolbar-btn" 
-          [class.active]="groupMode === 'mep'" 
-          (click)="changeGroupMode('mep')">
+        <button class="toolbar-btn" [class.active]="groupMode === 'mep'" (click)="changeGroupMode('mep')">
           <lucide-icon [img]="Rocket" [size]="14"></lucide-icon>
           MEP
         </button>
@@ -69,7 +57,7 @@
       <thead>
         <tr>
           <th class="col-projet">
-            {{ groupMode === 'equipe' ? 'PROJET' : (groupMode === 'sprint' ? 'PROJET' : 'LIVRAISON / PROJET') }}
+            {{ groupMode === "equipe" ? "PROJET" : groupMode === "sprint" ? "PROJET" : "LIVRAISON / PROJET" }}
           </th>
           <th *ngFor="let col of columns" class="col-sprint">
             <div class="col-header-title">{{ col.label }}</div>
@@ -90,7 +78,7 @@
                 </div>
                 <button class="btn-collapse" (click)="toggleGroup(group)">
                   <lucide-icon [img]="group.expanded ? ChevronDown : ChevronRight" [size]="16"></lucide-icon>
-                  {{ group.expanded ? 'RÉDUIRE' : 'DÉVELOPPER' }}
+                  {{ group.expanded ? "RÉDUIRE" : "DÉVELOPPER" }}
                 </button>
               </div>
             </td>
@@ -134,7 +122,7 @@
                         <!-- Progress Gauge -->
                         <div class="charge-gauge" [class]="cell.colorClass">
                           <div class="gauge-fill" [style.width.%]="getGaugeWidth(cell.jours)"></div>
-                          <span class="gauge-label">{{ cell.jours | number:'1.0-1' }}j</span>
+                          <span class="gauge-label">{{ cell.jours | number: "1.0-1" }}j</span>
                         </div>
 
                         <!-- Milestone Badges inside cell -->
@@ -142,7 +130,7 @@
                           @for (ms of cell.milestones; track ms.id) {
                             <span class="ms-badge" [class]="ms.type.toLowerCase()" [title]="ms.nom">
                               <lucide-icon [img]="ms.type === 'LV' ? Flag : Rocket" [size]="10"></lucide-icon>
-                              {{ ms.type === 'LV' ? 'Livraison' : 'MEP' }}
+                              {{ ms.type === "LV" ? "Livraison" : "MEP" }}
                             </span>
                           }
                         </div>
@@ -174,7 +162,7 @@
           <span class="footer-ms-icon">
             <lucide-icon [img]="ms.type === 'LV' ? Flag : Rocket" [size]="12"></lucide-icon>
           </span>
-          <span class="footer-ms-type">{{ ms.type === 'LV' ? 'Livraison' : 'MEP' }}</span>
+          <span class="footer-ms-type">{{ ms.type === "LV" ? "Livraison" : "MEP" }}</span>
           <span class="footer-ms-name">{{ ms.nom }}</span>
           <span class="footer-ms-date">{{ formatDateYear(ms.date_jalon) }}</span>
         </div>
