@@ -63,7 +63,8 @@ interface ReleaseNote {
                       @if (newsItem.imageUrl) {
                         <div class="image-container">
                           <img [src]="newsItem.imageUrl" [alt]="newsItem.title" class="release-image"
-                               [style.max-height]="newsItem.imageMaxHeight ? newsItem.imageMaxHeight + 'px' : null">
+                               [style.max-height]="newsItem.imageMaxHeight ? newsItem.imageMaxHeight + 'px' : null"
+                               (click)="openImage(newsItem.imageUrl)">
                         </div>
                       }
                     </div>
@@ -77,7 +78,8 @@ interface ReleaseNote {
                   @if (notes[0]?.imageUrl) {
                     <div class="image-container">
                       <img [src]="notes[0].imageUrl" [alt]="notes[0].title" class="release-image"
-                           [style.max-height]="notes[0].imageMaxHeight ? notes[0].imageMaxHeight + 'px' : null">
+                           [style.max-height]="notes[0].imageMaxHeight ? notes[0].imageMaxHeight + 'px' : null"
+                           (click)="openImage(notes[0].imageUrl)">
                     </div>
                   }
                 }
@@ -100,7 +102,8 @@ interface ReleaseNote {
                         @if (newsItem.imageUrl) {
                           <div class="image-container mini">
                             <img [src]="newsItem.imageUrl" [alt]="newsItem.title" class="release-image"
-                                 [style.max-height]="newsItem.imageMaxHeight ? newsItem.imageMaxHeight + 'px' : null">
+                                 [style.max-height]="newsItem.imageMaxHeight ? newsItem.imageMaxHeight + 'px' : null"
+                                 (click)="openImage(newsItem.imageUrl)">
                           </div>
                         }
                       </div>
@@ -115,7 +118,8 @@ interface ReleaseNote {
                     @if (note.imageUrl) {
                       <div class="image-container mini">
                         <img [src]="note.imageUrl" [alt]="note.title" class="release-image"
-                             [style.max-height]="note.imageMaxHeight ? note.imageMaxHeight + 'px' : null">
+                             [style.max-height]="note.imageMaxHeight ? note.imageMaxHeight + 'px' : null"
+                             (click)="openImage(note.imageUrl)">
                       </div>
                     }
                   }
@@ -136,6 +140,13 @@ interface ReleaseNote {
             </div>
           </div>
         </div>
+
+        @if (activeImageUrl) {
+          <div class="image-viewer-overlay" (click)="closeImage(); $event.stopPropagation()">
+            <button class="image-viewer-close" (click)="closeImage(); $event.stopPropagation()">&times;</button>
+            <img [src]="activeImageUrl" class="image-viewer-content" (click)="$event.stopPropagation()" alt="Original size preview">
+          </div>
+        }
       </div>
     }
   `,
@@ -217,6 +228,7 @@ interface ReleaseNote {
       display: block;
       object-fit: contain;
       transition: transform 0.3s ease;
+      cursor: zoom-in;
     }
     .release-image:hover {
       transform: scale(1.02);
@@ -322,9 +334,61 @@ interface ReleaseNote {
     .egg-trigger:active {
       color: #007bff;
     }
+    .image-viewer-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      backdrop-filter: blur(8px);
+      cursor: zoom-out;
+      animation: fadeIn 0.2s ease-out;
+    }
+    .image-viewer-content {
+      max-width: 95%;
+      max-height: 90vh;
+      object-fit: contain;
+      border-radius: 4px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      cursor: default;
+      animation: zoomIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .image-viewer-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: white;
+      font-size: 2rem;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+    .image-viewer-close:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
     @keyframes slideUp {
       from { transform: translateY(20px); opacity: 0; }
       to { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes zoomIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
     }
   `]
 })
@@ -338,9 +402,11 @@ export class ReleaseNotesComponent implements OnInit, OnDestroy {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
+      this.activeImageUrl = null;
     }
   }
   showHistory = false;
+  activeImageUrl: string | null = null;
   private readonly STORAGE_KEY = 'last_seen_release_version';
   private subscription: Subscription | null = null;
   private hasBeenClosedInSession = false;
@@ -394,7 +460,9 @@ export class ReleaseNotesComponent implements OnInit, OnDestroy {
 
   @HostListener('document:keydown.escape')
   onEscapeKeydown() {
-    if (this.show) {
+    if (this.activeImageUrl) {
+      this.closeImage();
+    } else if (this.show) {
       this.close();
     }
   }
@@ -432,6 +500,16 @@ export class ReleaseNotesComponent implements OnInit, OnDestroy {
 
   toggleHistory() {
     this.showHistory = !this.showHistory;
+  }
+
+  openImage(url: string | undefined) {
+    if (url) {
+      this.activeImageUrl = url;
+    }
+  }
+
+  closeImage() {
+    this.activeImageUrl = null;
   }
 
   close() {
