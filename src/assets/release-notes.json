@@ -7,7 +7,7 @@
         "title": "Améliorations de la vue des Jalons",
         "items": ["Vue Liste améliorée, et ajout des vues Calendrier, Compacte et Timeline"],
         "imageUrl": "assets/release-notes/2026-06-07-releaseflow-calendars.png",
-        "imageMaxHeight": 200
+        "imageMaxHeight": 300
       }
     ]
   },

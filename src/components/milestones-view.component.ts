@@ -77,21 +77,21 @@ export class LucideIconsModule { }
             </button>
             <button
               class="tab-btn"
-              [class.active]="activeTab() === 'timeline'"
-              (click)="activeTab.set('timeline')"
-              title="Vue Timeline"
-            >
-              <lucide-icon name="git-commit" size="16"></lucide-icon>
-              <span>Timeline</span>
-            </button>
-            <button
-              class="tab-btn"
               [class.active]="activeTab() === 'compact'"
               (click)="activeTab.set('compact')"
               title="Vue Compacte"
             >
               <lucide-icon name="columns" size="16"></lucide-icon>
               <span>Compacte</span>
+            </button>
+            <button
+              class="tab-btn"
+              [class.active]="activeTab() === 'timeline'"
+              (click)="activeTab.set('timeline')"
+              title="Vue Timeline"
+            >
+              <lucide-icon name="git-commit" size="16"></lucide-icon>
+              <span>Timeline</span>
             </button>
           </div>
 
