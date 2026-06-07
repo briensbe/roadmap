@@ -20,7 +20,7 @@ import { JalonService } from '../../services/jalon.service';
             <div class="form-group-row">
               <div class="form-group flex-1">
                 <label>Type *</label>
-                <select [(ngModel)]="currentJalon.event_type" name="event_type" required>
+                <select [(ngModel)]="currentJalon.event_type" name="event_type" required (ngModelChange)="updateAutoTitle()">
                   <option value="autre">Autre</option>
                   <option value="livraison">Livraison (LV)</option>
                   <option value="mep">Mise en production (MEP)</option>
@@ -30,7 +30,7 @@ import { JalonService } from '../../services/jalon.service';
 
               <div class="form-group flex-1">
                 <label>Version</label>
-                <input [(ngModel)]="currentJalon.version" name="version" placeholder="Ex: 1.4.0">
+                <input [(ngModel)]="currentJalon.version" name="version" placeholder="Ex: 1.4.0" (ngModelChange)="updateAutoTitle()">
               </div>
             </div>
 
@@ -42,7 +42,7 @@ import { JalonService } from '../../services/jalon.service';
 
               <div class="form-group flex-1">
                 <label>Titre du jalon *</label>
-                <input [(ngModel)]="currentJalon.title" name="title" required placeholder="Ex: Livraison V1.4">
+                <input [(ngModel)]="currentJalon.title" name="title" required placeholder="Ex: Livraison V1.4" (input)="onTitleInput()">
               </div>
             </div>
 
@@ -242,11 +242,14 @@ export class MilestoneModalComponent implements OnChanges {
     event_type: 'autre'
   };
 
+  isTitleManuallyEdited = false;
+
   constructor(private jalonService: JalonService) { }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['jalon'] && this.jalon) {
       this.currentJalon = { ...this.jalon };
+      this.isTitleManuallyEdited = false;
     } else if (changes['visible'] && this.visible && !this.jalon) {
       // Reset if opening new
       this.currentJalon = {
@@ -256,7 +259,39 @@ export class MilestoneModalComponent implements OnChanges {
         event_date: new Date().toISOString().split('T')[0],
         event_type: 'autre'
       };
+      this.isTitleManuallyEdited = false;
     }
+  }
+
+  onTitleInput() {
+    this.isTitleManuallyEdited = true;
+  }
+
+  updateAutoTitle() {
+    if (this.isTitleManuallyEdited || this.isEditing) {
+      return;
+    }
+    const version = this.currentJalon.version ? this.currentJalon.version.trim() : '';
+    if (!version) {
+      this.currentJalon.title = '';
+      return;
+    }
+    let prefix = '';
+    switch (this.currentJalon.event_type) {
+      case 'livraison':
+        prefix = 'LV ';
+        break;
+      case 'mep':
+        prefix = 'MEP ';
+        break;
+      case 'sprint':
+        prefix = 'Sprint ';
+        break;
+      default:
+        prefix = 'Jalon ';
+        break;
+    }
+    this.currentJalon.title = `${prefix}${version}`;
   }
 
   get isEditing(): boolean {
