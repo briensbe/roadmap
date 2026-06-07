@@ -225,6 +225,8 @@ export class LucideIconsModule { }
         flex-direction: column;
         gap: 0.75rem;
         overflow-y: auto;
+        padding: 4px;
+        margin: -4px;
       }
 
       .milestone-card {
