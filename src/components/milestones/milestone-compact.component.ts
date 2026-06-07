@@ -4,6 +4,7 @@ import { FormsModule } from "@angular/forms";
 import { LucideAngularModule, Package, Rocket, Layers, Flag } from "lucide-angular";
 import { Jalon } from "../../models/types";
 import { DayEventsModalComponent } from "./day-events-modal.component";
+import { storageSignal } from "../../utils/storage-signal";
 
 @NgModule({
   imports: [LucideAngularModule.pick({ Package, Rocket, Layers, Flag })],
@@ -27,14 +28,14 @@ export class LucideIconsModule { }
         <div class="view-options">
           <div class="option-group">
             <label>Début:</label>
-            <input type="month" [ngModel]="startDateStr" (ngModelChange)="onStartDateChange($event)">
+            <input type="month" [ngModel]="startDateStr()" (ngModelChange)="onStartDateChange($event)">
           </div>
           <div class="option-group">
             <label>Mois:</label>
             <div class="count-controls">
-              <button class="count-btn" (click)="changeMonthsCount(-1)" [disabled]="monthsCount <= 1">-</button>
-              <span class="count-display">{{ monthsCount }}</span>
-              <button class="count-btn" (click)="changeMonthsCount(1)" [disabled]="monthsCount >= 12">+</button>
+              <button class="count-btn" (click)="changeMonthsCount(-1)" [disabled]="monthsCount() <= 1">-</button>
+              <span class="count-display">{{ monthsCount() }}</span>
+              <button class="count-btn" (click)="changeMonthsCount(1)" [disabled]="monthsCount() >= 12">+</button>
             </div>
           </div>
         </div>
@@ -673,9 +674,15 @@ export class MilestoneCompactComponent implements OnInit, OnChanges {
   @Output() edit = new EventEmitter<Jalon>();
   @Output() add = new EventEmitter<string>();
 
-  startDate = new Date();
+  startDateStr = storageSignal<string>("milestone-compact-start-date", new Date().toISOString().slice(0, 7));
+  
+  get startDate(): Date {
+    const [year, month] = this.startDateStr().split('-').map(Number);
+    return new Date(year, month - 1, 1);
+  }
+
   monthsData: any[] = [];
-  monthsCount = 4; // Default to 4 months
+  monthsCount = storageSignal<number>("milestone-compact-months-count", 4);
   dayNames = ["D", "L", "M", "M", "J", "V", "S"];
 
   // Day list modal state
@@ -688,9 +695,7 @@ export class MilestoneCompactComponent implements OnInit, OnChanges {
   emptyDayDate = '';
   emptyDayDateStr = '';
 
-  constructor() {
-    this.startDate.setDate(1); // Set to 1st of current month
-  }
+  constructor() { }
 
   ngOnInit(): void {
     this.generateCompactView();
@@ -703,31 +708,24 @@ export class MilestoneCompactComponent implements OnInit, OnChanges {
   }
 
   changeMonthsCount(delta: number): void {
-    const newCount = this.monthsCount + delta;
+    const newCount = this.monthsCount() + delta;
     if (newCount >= 1 && newCount <= 12) {
-      this.monthsCount = newCount;
+      this.monthsCount.set(newCount);
       this.generateCompactView();
     }
   }
 
   onStartDateChange(dateStr: string): void {
     if (dateStr) {
-      const [year, month] = dateStr.split('-').map(Number);
-      this.startDate = new Date(year, month - 1, 1);
+      this.startDateStr.set(dateStr);
       this.generateCompactView();
     }
-  }
-
-  get startDateStr(): string {
-    const year = this.startDate.getFullYear();
-    const month = String(this.startDate.getMonth() + 1).padStart(2, '0');
-    return `${year}-${month}`;
   }
 
   generateCompactView(): void {
     this.monthsData = [];
 
-    for (let i = 0; i < this.monthsCount; i++) {
+    for (let i = 0; i < this.monthsCount(); i++) {
       const monthDate = new Date(this.startDate.getFullYear(), this.startDate.getMonth() + i, 1);
       const monthTitle = monthDate.toLocaleDateString("fr-FR", {
         month: "long",
@@ -848,7 +846,7 @@ export class MilestoneCompactComponent implements OnInit, OnChanges {
   }
 
   getPeriodTitle(): string {
-    const endDate = new Date(this.startDate.getFullYear(), this.startDate.getMonth() + this.monthsCount, 0);
+    const endDate = new Date(this.startDate.getFullYear(), this.startDate.getMonth() + this.monthsCount(), 0);
     return `${this.startDate.toLocaleDateString("fr-FR", {
       month: "long",
       year: "numeric",
@@ -856,12 +854,14 @@ export class MilestoneCompactComponent implements OnInit, OnChanges {
   }
 
   previousPeriod(): void {
-    this.startDate = new Date(this.startDate.getFullYear(), this.startDate.getMonth() - this.monthsCount, 1);
+    const newDate = new Date(this.startDate.getFullYear(), this.startDate.getMonth() - this.monthsCount(), 1);
+    this.startDateStr.set(this.formatDateToString(newDate).slice(0, 7));
     this.generateCompactView();
   }
 
   nextPeriod(): void {
-    this.startDate = new Date(this.startDate.getFullYear(), this.startDate.getMonth() + this.monthsCount, 1);
+    const newDate = new Date(this.startDate.getFullYear(), this.startDate.getMonth() + this.monthsCount(), 1);
+    this.startDateStr.set(this.formatDateToString(newDate).slice(0, 7));
     this.generateCompactView();
   }
 
