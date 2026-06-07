@@ -512,13 +512,13 @@ export class MilestoneListComponent implements OnInit, OnChanges {
     return eventDate < today;
   }
 
-  getProjectName(projetId?: string): string {
+  getProjectName(projetId?: string | null): string {
     if (!projetId) return "Global";
     const project = this.projets.find((p) => p.id === projetId);
     return project ? project.nom_projet : "Global";
   }
 
-  getProjectColor(projetId?: string): string {
+  getProjectColor(projetId?: string | null): string {
     if (!projetId) return "#6b7280"; // Gray default
     const project = this.projets.find((p) => p.id === projetId);
     return project?.color || "#4f46e5";

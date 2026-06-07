@@ -42,7 +42,7 @@ import { JalonService } from '../../services/jalon.service';
             <div class="form-group flex-1">
               <label>Projet</label>
               <select [(ngModel)]="currentJalon.projet_id" name="projet_id">
-                <option [ngValue]="undefined">-- Aucun projet --</option>
+                <option [ngValue]="null">-- Aucun projet --</option>
                 <option *ngFor="let p of projets" [value]="p.id">{{ p.nom_projet }}</option>
               </select>
             </div>
@@ -274,7 +274,7 @@ export class MilestoneModalComponent implements OnChanges {
       event_type: this.currentJalon.event_type || 'autre',
       description: this.currentJalon.description || '',
       version: this.currentJalon.version || '',
-      projet_id: this.currentJalon.projet_id || undefined
+      projet_id: this.currentJalon.projet_id || null
     };
 
     try {

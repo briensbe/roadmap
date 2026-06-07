@@ -142,7 +142,7 @@ export interface Jalon {
   event_date: string;
   description: string;
   version: string;
-  projet_id?: string;
+  projet_id?: string | null;
   created_at?: string;
   updated_at?: string;
 }

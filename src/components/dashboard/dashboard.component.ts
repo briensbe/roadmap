@@ -374,7 +374,7 @@ export class DashboardComponent implements OnInit {
     return monday;
   }
 
-  getProjectName(projetId?: string): string | null {
+  getProjectName(projetId?: string | null): string | null {
     if (!projetId) return null;
     const projet = this.projets.find(p => p.id === projetId);
     return projet?.nom_projet || null;
