@@ -27,48 +27,57 @@ export class LucideIconsModule { }
       </div>
 
       <div class="calendar-grid">
-        <div class="day-header" *ngFor="let day of weekDays">{{ day }}</div>
+        @for (day of weekDays; track day) {
+          <div class="day-header">{{ day }}</div>
+        }
 
-        <div
-          *ngFor="let day of calendarDays"
-          class="calendar-day"
-          (click)="onDayClick(day)"
-          [class.other-month]="!day.isCurrentMonth"
-          [class.today]="day.isToday"
-        >
-          <div class="day-number">{{ day.dayNumber }}</div>
+        @for (day of calendarDays; track day.date) {
+          <div
+            class="calendar-day"
+            (click)="onDayClick(day)"
+            [class.other-month]="!day.isCurrentMonth"
+            [class.today]="day.isToday"
+          >
+            <div class="day-number">{{ day.dayNumber }}</div>
 
-          <div class="day-events">
-            <div
-              *ngFor="let jalon of getSlicedEvents(day.events)"
-              class="event-item"
-              [class.event-livraison]="jalon.event_type === 'livraison'"
-              [class.event-mep]="jalon.event_type === 'mep'"
-              [class.event-sprint]="jalon.event_type === 'sprint'"
-              [class.event-autre]="jalon.event_type === 'autre' || !jalon.event_type"
-              (click)="$event.stopPropagation(); edit.emit(jalon)"
-            >
-              <lucide-icon [name]="getIconName(jalon.event_type)" size="11"></lucide-icon>
-              <span class="event-title">{{ jalon.title }}</span>
+            <div class="day-events">
+              @for (jalon of getSlicedEvents(day.events); track jalon.id) {
+                <div
+                  class="event-item"
+                  [class.event-livraison]="jalon.event_type === 'livraison'"
+                  [class.event-mep]="jalon.event_type === 'mep'"
+                  [class.event-sprint]="jalon.event_type === 'sprint'"
+                  [class.event-autre]="jalon.event_type === 'autre' || !jalon.event_type"
+                  (click)="$event.stopPropagation(); edit.emit(jalon)"
+                >
+                  <lucide-icon [name]="getIconName(jalon.event_type)" size="11"></lucide-icon>
+                  <span class="event-title">{{ jalon.title }}</span>
+                </div>
+              }
+              @if (day.events.length > 3) {
+                <div class="more-events">
+                  + {{ day.events.length - 3 }} de plus...
+                </div>
+              }
+
+              @if (!readonly) {
+                <button class="add-event-btn" (click)="$event.stopPropagation(); add.emit(day.date)">+</button>
+              }
             </div>
-            <div class="more-events" *ngIf="day.events.length > 3">
-              + {{ day.events.length - 3 }} de plus...
-            </div>
-
-            <button class="add-event-btn" *ngIf="!readonly" (click)="$event.stopPropagation(); add.emit(day.date)">+</button>
           </div>
-        </div>
+        }
       </div>
 
-      <app-day-events-modal
-        *ngIf="showDayEventsModal"
-        [jalons]="selectedDayEvents"
-        [dateStr]="selectedDayDateStr"
-        [readonly]="readonly"
-        (close)="showDayEventsModal = false"
-        (openEvent)="onDayModalEdit($event)"
-        (add)="onDayModalAdd($event)"
-      ></app-day-events-modal>
+      @if (showDayEventsModal) {
+        <app-day-events-modal
+          [jalons]="selectedDayEvents"
+          [dateStr]="selectedDayDateStr"
+          [readonly]="readonly"
+          (close)="showDayEventsModal = false"
+          (openEvent)="onDayModalEdit($event)"
+          (add)="onDayModalAdd($event)"
+        ></app-day-events-modal>
+      }
     </div>
   `,
   styles: [

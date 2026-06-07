@@ -22,41 +22,50 @@ export class LucideIconsModule { }
         </div>
 
         <div class="modal-body">
-          <div *ngIf="jalons && jalons.length; else noEvents">
-            <div *ngFor="let jalon of jalons" class="day-event-row" (click)="emitOpenEvent(jalon)">
-              <div class="left">
-                <div
-                  class="type-badge"
-                  [class.badge-livraison]="jalon.event_type === 'livraison'"
-                  [class.badge-mep]="jalon.event_type === 'mep'"
-                  [class.badge-sprint]="jalon.event_type === 'sprint'"
-                  [class.badge-autre]="jalon.event_type === 'autre' || !jalon.event_type"
-                >
-                  <lucide-icon [name]="getIconName(jalon.event_type)" size="18"></lucide-icon>
+          @if (jalons && jalons.length) {
+            @for (jalon of jalons; track jalon.id) {
+              <div class="day-event-row" (click)="emitOpenEvent(jalon)">
+                <div class="left">
+                  <div
+                    class="type-badge"
+                    [class.badge-livraison]="jalon.event_type === 'livraison'"
+                    [class.badge-mep]="jalon.event_type === 'mep'"
+                    [class.badge-sprint]="jalon.event_type === 'sprint'"
+                    [class.badge-autre]="jalon.event_type === 'autre' || !jalon.event_type"
+                  >
+                    <lucide-icon [name]="getIconName(jalon.event_type)" size="18"></lucide-icon>
+                  </div>
+                  <div class="info">
+                    <div class="title">{{ jalon.title }}</div>
+                    @if (jalon.description) {
+                      <div class="desc">{{ jalon.description }}</div>
+                    }
+                    @if (jalon.version) {
+                      <div class="meta">Version: {{ jalon.version }}</div>
+                    }
+                  </div>
                 </div>
-                <div class="info">
-                  <div class="title">{{ jalon.title }}</div>
-                  <div class="desc" *ngIf="jalon.description">{{ jalon.description }}</div>
-                  <div class="meta" *ngIf="jalon.version">Version: {{ jalon.version }}</div>
-                </div>
+                @if (!readonly) {
+                  <div class="actions">
+                    <button class="icon-btn" (click)="$event.stopPropagation(); emitOpenEvent(jalon)" title="Modifier">
+                      <lucide-icon name="pen-line" size="16"></lucide-icon>
+                    </button>
+                  </div>
+                }
               </div>
-              <div class="actions" *ngIf="!readonly">
-                <button class="icon-btn" (click)="$event.stopPropagation(); emitOpenEvent(jalon)" title="Modifier">
-                  <lucide-icon name="pen-line" size="16"></lucide-icon>
-                </button>
-              </div>
-            </div>
-          </div>
-          <ng-template #noEvents>
+            }
+          } @else {
             <div class="empty-state">Aucun jalon pour ce jour.</div>
-          </ng-template>
+          }
         </div>
 
         <div class="modal-footer">
           <button class="btn-secondary" (click)="onClose()">Fermer</button>
-          <button class="btn-primary" (click)="onAdd()" *ngIf="!readonly">
-            <lucide-icon name="plus" size="14"></lucide-icon> Ajouter
-          </button>
+          @if (!readonly) {
+            <button class="btn-primary" (click)="onAdd()">
+              <lucide-icon name="plus" size="14"></lucide-icon> Ajouter
+            </button>
+          }
         </div>
       </div>
     </div>

@@ -41,77 +41,86 @@ export class LucideIconsModule { }
       </div>
 
       <div class="months-grid">
-        <div *ngFor="let monthData of monthsData" class="month-column">
-          <div class="month-title-wrapper">
-            <h3 class="month-title">{{ monthData.title }}</h3>
-          </div>
-          
-          <div class="compact-table">
-            <div class="table-header">
-              <div class="col-date">D</div>
-              <div class="col-day">J</div>
-              <div class="col-events">Jalons</div>
+        @for (monthData of monthsData; track monthData.title) {
+          <div class="month-column">
+            <div class="month-title-wrapper">
+              <h3 class="month-title">{{ monthData.title }}</h3>
             </div>
+            
+            <div class="compact-table">
+              <div class="table-header">
+                <div class="col-date">D</div>
+                <div class="col-day">J</div>
+                <div class="col-events">Jalons</div>
+              </div>
 
-            <div
-              *ngFor="let day of monthData.days"
-              class="table-row"
-              (click)="onRowClick(day)"
-              [class.has-events]="day.events.length > 0"
-              [class.today]="day.isToday"
-              [class.weekend]="day.isWeekend"
-              [class.holiday]="day.isHoliday"
-            >
-              <div class="col-date">{{ day.dayNumber }}</div>
-              <div class="col-day">{{ day.dayName }}</div>
-              <div class="col-events">
-                <div class="events-list">
-                  <div
-                    *ngFor="let jalon of day.events"
-                    class="compact-event"
-                    [class.event-livraison]="jalon.event_type === 'livraison'"
-                    [class.event-mep]="jalon.event_type === 'mep'"
-                    [class.event-sprint]="jalon.event_type === 'sprint'"
-                    [class.event-autre]="jalon.event_type === 'autre' || !jalon.event_type"
-                    (click)="$event.stopPropagation(); edit.emit(jalon)"
-                  >
-                    <lucide-icon [name]="getIconName(jalon.event_type)" size="11"></lucide-icon>
-                    <span class="compact-title">{{ jalon.title }}</span>
+              @for (day of monthData.days; track day.dateStr) {
+                <div
+                  class="table-row"
+                  (click)="onRowClick(day)"
+                  [class.has-events]="day.events.length > 0"
+                  [class.today]="day.isToday"
+                  [class.weekend]="day.isWeekend"
+                  [class.holiday]="day.isHoliday"
+                >
+                  <div class="col-date">{{ day.dayNumber }}</div>
+                  <div class="col-day">{{ day.dayName }}</div>
+                  <div class="col-events">
+                    <div class="events-list">
+                      @for (jalon of day.events; track jalon.id) {
+                        <div
+                          class="compact-event"
+                          [class.event-livraison]="jalon.event_type === 'livraison'"
+                          [class.event-mep]="jalon.event_type === 'mep'"
+                          [class.event-sprint]="jalon.event_type === 'sprint'"
+                          [class.event-autre]="jalon.event_type === 'autre' || !jalon.event_type"
+                          (click)="$event.stopPropagation(); edit.emit(jalon)"
+                        >
+                          <lucide-icon [name]="getIconName(jalon.event_type)" size="11"></lucide-icon>
+                          <span class="compact-title">{{ jalon.title }}</span>
+                        </div>
+                      }
+                    </div>
                   </div>
                 </div>
-              </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      @if (showDayEventsModal) {
+        <app-day-events-modal
+          [jalons]="selectedDayEvents"
+          [dateStr]="selectedDayDateStr"
+          [readonly]="readonly"
+          (close)="showDayEventsModal = false"
+          (openEvent)="onDayModalEdit($event)"
+          (add)="onDayModalAdd($event)"
+        ></app-day-events-modal>
+      }
+
+      @if (showEmptyDayModal) {
+        <div class="modal" (click)="closeEmptyDayModal()">
+          <div class="modal-content empty-day-modal" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h3>{{ emptyDayDate }}</h3>
+              <button class="close-btn" (click)="closeEmptyDayModal()">×</button>
+            </div>
+
+            <div class="modal-body">
+              <p class="empty-message">Aucun jalon prévu ce jour</p>
+            </div>
+
+            <div class="modal-footer">
+              <button class="btn-secondary" (click)="closeEmptyDayModal()">Fermer</button>
+              @if (!readonly) {
+                <button class="btn-primary" (click)="createEventFromEmptyDay()">+ Ajouter</button>
+              }
             </div>
           </div>
         </div>
-      </div>
-
-      <app-day-events-modal
-        *ngIf="showDayEventsModal"
-        [jalons]="selectedDayEvents"
-        [dateStr]="selectedDayDateStr"
-        [readonly]="readonly"
-        (close)="showDayEventsModal = false"
-        (openEvent)="onDayModalEdit($event)"
-        (add)="onDayModalAdd($event)"
-      ></app-day-events-modal>
-
-      <div class="modal" *ngIf="showEmptyDayModal" (click)="closeEmptyDayModal()">
-        <div class="modal-content empty-day-modal" (click)="$event.stopPropagation()">
-          <div class="modal-header">
-            <h3>{{ emptyDayDate }}</h3>
-            <button class="close-btn" (click)="closeEmptyDayModal()">×</button>
-          </div>
-
-          <div class="modal-body">
-            <p class="empty-message">Aucun jalon prévu ce jour</p>
-          </div>
-
-          <div class="modal-footer">
-            <button class="btn-secondary" (click)="closeEmptyDayModal()">Fermer</button>
-            <button class="btn-primary" (click)="createEventFromEmptyDay()" *ngIf="!readonly">+ Ajouter</button>
-          </div>
-        </div>
-      </div>
+      }
     </div>
   `,
   styles: [

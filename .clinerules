@@ -1,0 +1,5 @@
+# Règles de codage du projet
+
+## Angular & Typescript
+- Utiliser exclusivement la nouvelle syntaxe de contrôle de flux native d'Angular (blocs `@if` et `@for`) à la place des anciennes directives structurelles (`*ngIf`, `*ngFor`).
+- Préférer l'utilisation de typages stricts.

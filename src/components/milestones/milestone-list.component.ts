@@ -43,55 +43,67 @@ export class LucideIconsModule { }
       </div>
 
       <div class="cards-list">
-        <div class="milestone-card" *ngFor="let jalon of filteredJalons" [class.past-event]="isPastEvent(jalon.event_date)">
-          <div class="left">
-            <div
-              class="type-badge"
-              [class.badge-livraison]="jalon.event_type === 'livraison'"
-              [class.badge-mep]="jalon.event_type === 'mep'"
-              [class.badge-sprint]="jalon.event_type === 'sprint'"
-              [class.badge-autre]="jalon.event_type === 'autre' || !jalon.event_type"
-            >
-              <lucide-icon [name]="getIconName(jalon.event_type)" size="22"></lucide-icon>
+        @for (jalon of filteredJalons; track jalon.id) {
+          <div class="milestone-card" [class.past-event]="isPastEvent(jalon.event_date)">
+            <div class="left">
+              <div
+                class="type-badge"
+                [class.badge-livraison]="jalon.event_type === 'livraison'"
+                [class.badge-mep]="jalon.event_type === 'mep'"
+                [class.badge-sprint]="jalon.event_type === 'sprint'"
+                [class.badge-autre]="jalon.event_type === 'autre' || !jalon.event_type"
+              >
+                <lucide-icon [name]="getIconName(jalon.event_type)" size="22"></lucide-icon>
+              </div>
+
+              <div class="info">
+                <div class="row-1">
+                  <span class="title">{{ jalon.title }}</span>
+                  @if (isPastEvent(jalon.event_date)) {
+                    <span class="badge past">Passé</span>
+                  }
+                  @if (jalon.projet_id) {
+                    <span 
+                      class="badge project" 
+                      [style.background-color]="getProjectColor(jalon.projet_id) + '15'" 
+                      [style.color]="getProjectColor(jalon.projet_id)"
+                      [style.border]="'1px solid ' + getProjectColor(jalon.projet_id) + '30'"
+                    >
+                      {{ getProjectName(jalon.projet_id) }}
+                    </span>
+                  }
+                  @if (jalon.version) {
+                    <span class="badge version">v{{ jalon.version }}</span>
+                  }
+                </div>
+
+                <div class="row-2 date">
+                  {{ formatDate(jalon.event_date) }}
+                </div>
+
+                @if (jalon.description) {
+                  <div class="row-3 desc">
+                    {{ jalon.description }}
+                  </div>
+                }
+              </div>
             </div>
-
-            <div class="info">
-              <div class="row-1">
-                <span class="title">{{ jalon.title }}</span>
-                <span class="badge past" *ngIf="isPastEvent(jalon.event_date)">Passé</span>
-                <span 
-                  class="badge project" 
-                  [style.background-color]="getProjectColor(jalon.projet_id) + '15'" 
-                  [style.color]="getProjectColor(jalon.projet_id)"
-                  [style.border]="'1px solid ' + getProjectColor(jalon.projet_id) + '30'"
-                >
-                  {{ getProjectName(jalon.projet_id) }}
-                </span>
-                <span class="badge version" *ngIf="jalon.version">v{{ jalon.version }}</span>
+            @if (!readonly) {
+              <div class="actions-cell">
+                <button class="icon-btn edit-btn" (click)="edit.emit(jalon)" title="Modifier">
+                  <lucide-icon name="pen-line" size="20"></lucide-icon>
+                </button>
+                <button class="icon-btn delete-btn" (click)="delete.emit(jalon)" title="Supprimer">
+                  <lucide-icon name="trash-2" size="20"></lucide-icon>
+                </button>
               </div>
-
-              <div class="row-2 date">
-                {{ formatDate(jalon.event_date) }}
-              </div>
-
-              <div class="row-3 desc" *ngIf="jalon.description">
-                {{ jalon.description }}
-              </div>
-            </div>
+            }
           </div>
-          <div class="actions-cell" *ngIf="!readonly">
-            <button class="icon-btn edit-btn" (click)="edit.emit(jalon)" title="Modifier">
-              <lucide-icon name="pen-line" size="20"></lucide-icon>
-            </button>
-            <button class="icon-btn delete-btn" (click)="delete.emit(jalon)" title="Supprimer">
-              <lucide-icon name="trash-2" size="20"></lucide-icon>
-            </button>
+        } @empty {
+          <div class="empty-state">
+            <p>Aucun jalon trouvé</p>
           </div>
-        </div>
-
-        <div class="empty-state" *ngIf="filteredJalons.length === 0">
-          <p>Aucun jalon trouvé</p>
-        </div>
+        }
       </div>
     </div>
   `,

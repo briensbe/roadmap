@@ -31,57 +31,69 @@ export class LucideIconsModule { }
         <div class="timeline">
           <div class="timeline-line"></div>
 
-          <div
-            class="timeline-item"
-            *ngFor="let group of groupedJalons; let i = index"
-            [class.left]="!isHorizontal && i % 2 === 0"
-            [class.right]="!isHorizontal && i % 2 !== 0"
-          >
-            <div class="content">
-              <div class="date-badge">{{ formatDate(group.date) }}</div>
-              
-              <div class="events-group">
-                <div 
-                  class="card" 
-                  *ngFor="let jalon of group.jalons" 
-                  [class.is-livraison]="jalon.event_type === 'livraison'" 
-                  [class.is-mep]="jalon.event_type === 'mep'"
-                  [class.is-sprint]="jalon.event_type === 'sprint'"
-                  [class.is-autre]="jalon.event_type === 'autre' || !jalon.event_type"
-                  (click)="!readonly && edit.emit(jalon)"
-                  [class.clickable]="!readonly"
-                >
-                  <div class="card-header">
-                    <span class="type-icon">
-                      <lucide-icon [name]="getIconName(jalon.event_type)" size="18"></lucide-icon>
-                    </span>
-                    <div class="header-details">
-                      <span class="title">{{ jalon.title }}</span>
-                      <span class="version" *ngIf="jalon.version">v{{ jalon.version }}</span>
-                    </div>
-                  </div>
-                  <div class="card-body">
-                    <p *ngIf="jalon.description">{{ jalon.description }}</p>
-                    <span 
-                      class="project-badge"
-                      [style.background-color]="getProjectColor(jalon.projet_id) + '15'" 
-                      [style.color]="getProjectColor(jalon.projet_id)"
+          @for (group of groupedJalons; track group.date; let i = $index) {
+            <div
+              class="timeline-item"
+              [class.left]="!isHorizontal && i % 2 === 0"
+              [class.right]="!isHorizontal && i % 2 !== 0"
+            >
+              <div class="content">
+                <div class="date-badge">{{ formatDate(group.date) }}</div>
+                
+                <div class="events-group">
+                  @for (jalon of group.jalons; track jalon.id) {
+                    <div 
+                      class="card" 
+                      [class.is-livraison]="jalon.event_type === 'livraison'" 
+                      [class.is-mep]="jalon.event_type === 'mep'"
+                      [class.is-sprint]="jalon.event_type === 'sprint'"
+                      [class.is-autre]="jalon.event_type === 'autre' || !jalon.event_type"
+                      (click)="!readonly && edit.emit(jalon)"
+                      [class.clickable]="!readonly"
                     >
-                      {{ getProjectName(jalon.projet_id) }}
-                    </span>
-                  </div>
-                  <div class="card-actions" *ngIf="!readonly">
-                    <lucide-icon name="pen-line" size="14" class="edit-icon"></lucide-icon>
-                  </div>
+                      <div class="card-header">
+                        <span class="type-icon">
+                          <lucide-icon [name]="getIconName(jalon.event_type)" size="18"></lucide-icon>
+                        </span>
+                        <div class="header-details">
+                          <span class="title">{{ jalon.title }}</span>
+                          @if (jalon.version) {
+                            <span class="version">v{{ jalon.version }}</span>
+                          }
+                        </div>
+                      </div>
+                      <div class="card-body">
+                        @if (jalon.description) {
+                          <p>{{ jalon.description }}</p>
+                        }
+                        @if (jalon.projet_id) {
+                          <span 
+                            class="project-badge"
+                            [style.background-color]="getProjectColor(jalon.projet_id) + '15'" 
+                            [style.color]="getProjectColor(jalon.projet_id)"
+                          >
+                            {{ getProjectName(jalon.projet_id) }}
+                          </span>
+                        }
+                      </div>
+                      @if (!readonly) {
+                        <div class="card-actions">
+                          <lucide-icon name="pen-line" size="14" class="edit-icon"></lucide-icon>
+                        </div>
+                      }
+                    </div>
+                  }
                 </div>
               </div>
+              <div class="dot"></div>
             </div>
-            <div class="dot"></div>
-          </div>
-          
-          <div class="empty-state" *ngIf="jalons.length === 0">
-            <p>Aucun jalon à afficher dans la timeline</p>
-          </div>
+          }
+
+          @if (jalons.length === 0) {
+            <div class="empty-state">
+              <p>Aucun jalon à afficher dans la timeline</p>
+            </div>
+          }
         </div>
       </div>
     </div>

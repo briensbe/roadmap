@@ -9,62 +9,66 @@ import { JalonService } from '../../services/jalon.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div *ngIf="visible" class="modal-overlay" (click)="close()">
-      <div class="modal" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h2>{{ isEditing ? 'Modifier le jalon' : 'Nouveau Jalon' }}</h2>
-          <button class="modal-close" (click)="close()">×</button>
+    @if (visible) {
+      <div class="modal-overlay" (click)="close()">
+        <div class="modal" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h2>{{ isEditing ? 'Modifier le jalon' : 'Nouveau Jalon' }}</h2>
+            <button class="modal-close" (click)="close()">×</button>
+          </div>
+          <form (ngSubmit)="save()" class="form">
+            <div class="form-group">
+              <label>Titre du jalon *</label>
+              <input [(ngModel)]="currentJalon.title" name="title" required placeholder="Ex: Livraison V1.4">
+            </div>
+
+            <div class="form-group">
+              <label>Description</label>
+              <textarea [(ngModel)]="currentJalon.description" name="description" placeholder="Description du jalon..." rows="3"></textarea>
+            </div>
+
+            <div class="form-group-row">
+              <div class="form-group flex-1">
+                <label>Version</label>
+                <input [(ngModel)]="currentJalon.version" name="version" placeholder="Ex: 1.4.0">
+              </div>
+
+              <div class="form-group flex-1">
+                <label>Date *</label>
+                <input type="date" [(ngModel)]="currentJalon.event_date" name="event_date" required>
+              </div>
+            </div>
+
+            <div class="form-group-row">
+              <div class="form-group flex-1">
+                <label>Projet</label>
+                <select [(ngModel)]="currentJalon.projet_id" name="projet_id">
+                  <option [ngValue]="null">-- Aucun projet --</option>
+                  @for (p of projets; track p.id) {
+                    <option [value]="p.id">{{ p.nom_projet }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="form-group flex-1">
+                <label>Type *</label>
+                <select [(ngModel)]="currentJalon.event_type" name="event_type" required>
+                  <option value="autre">Autre</option>
+                  <option value="livraison">Livraison (LV)</option>
+                  <option value="mep">Mise en production (MEP)</option>
+                  <option value="sprint">Sprint (SP)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="modal-actions">
+              <button type="button" class="btn btn-secondary" (click)="close()">Annuler</button>
+              <button type="submit" class="btn btn-primary">{{ isEditing ? 'Mettre à jour' : 'Créer' }}</button>
+            </div>
+          </form>
         </div>
-        <form (ngSubmit)="save()" class="form">
-          <div class="form-group">
-            <label>Titre du jalon *</label>
-            <input [(ngModel)]="currentJalon.title" name="title" required placeholder="Ex: Livraison V1.4">
-          </div>
-
-          <div class="form-group">
-            <label>Description</label>
-            <textarea [(ngModel)]="currentJalon.description" name="description" placeholder="Description du jalon..." rows="3"></textarea>
-          </div>
-
-          <div class="form-group-row">
-            <div class="form-group flex-1">
-              <label>Version</label>
-              <input [(ngModel)]="currentJalon.version" name="version" placeholder="Ex: 1.4.0">
-            </div>
-
-            <div class="form-group flex-1">
-              <label>Date *</label>
-              <input type="date" [(ngModel)]="currentJalon.event_date" name="event_date" required>
-            </div>
-          </div>
-
-          <div class="form-group-row">
-            <div class="form-group flex-1">
-              <label>Projet</label>
-              <select [(ngModel)]="currentJalon.projet_id" name="projet_id">
-                <option [ngValue]="null">-- Aucun projet --</option>
-                <option *ngFor="let p of projets" [value]="p.id">{{ p.nom_projet }}</option>
-              </select>
-            </div>
-
-            <div class="form-group flex-1">
-              <label>Type *</label>
-              <select [(ngModel)]="currentJalon.event_type" name="event_type" required>
-                <option value="autre">Autre</option>
-                <option value="livraison">Livraison (LV)</option>
-                <option value="mep">Mise en production (MEP)</option>
-                <option value="sprint">Sprint (SP)</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="modal-actions">
-            <button type="button" class="btn btn-secondary" (click)="close()">Annuler</button>
-            <button type="submit" class="btn btn-primary">{{ isEditing ? 'Mettre à jour' : 'Créer' }}</button>
-          </div>
-        </form>
       </div>
-    </div>
+    }
   `,
   styles: [`
     .modal-overlay {
