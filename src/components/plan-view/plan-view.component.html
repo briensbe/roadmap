@@ -727,12 +727,12 @@
               <div
                 *ngFor="let jalon of getJalonsForWeek(week)"
                 class="jalon-item"
-                [style.background-color]="getJalonColor(jalon.type)"
-                [style.color]="getJalonTextColor(jalon.type)"
-                [title]="jalon.date_jalon"
+                [style.background-color]="getJalonColor(jalon.event_type)"
+                [style.color]="getJalonTextColor(jalon.event_type)"
+                [title]="jalon.event_date"
                 (click)="openMilestoneModal(jalon, $event)"
               >
-                {{ jalon.nom || "★" }}
+                {{ jalon.title || "★" }}
               </div>
             </div>
           </div>
@@ -767,13 +767,13 @@
               *ngFor="let jalon of visibleJalons"
               class="jalon-item absolute-jalon"
               [style.left.%]="getJalonLeftPercentage(jalon)"
-              [style.background-color]="getJalonColor(jalon.type)"
-              [style.color]="getJalonTextColor(jalon.type)"
-              [title]="jalon.nom + ' - ' + jalon.date_jalon"
+              [style.background-color]="getJalonColor(jalon.event_type)"
+              [style.color]="getJalonTextColor(jalon.event_type)"
+              [title]="jalon.title + ' - ' + jalon.event_date"
               (click)="openMilestoneModal(jalon, $event)"
               style="position: absolute; transform: translateX(-50%); top: 50%; margin-top: -11px"
             >
-              {{ jalon.nom || "★" }}
+              {{ jalon.title || "★" }}
             </div>
           </div>
         </div>
@@ -972,14 +972,14 @@
                     <div
                       class="gantt-milestone"
                       [style.left.%]="getJalonLeftPercentage(jalon)"
-                      [style.background-color]="getJalonColor(jalon.type)"
-                      [style.color]="getJalonTextColor(jalon.type)"
-                      [title]="jalon.nom + ' - ' + jalon.date_jalon"
-                      [class.jalon-delivery]="jalon.type === 'LV'"
-                      [class.jalon-diamond]="jalon.type !== 'LV'"
+                      [style.background-color]="getJalonColor(jalon.event_type)"
+                      [style.color]="getJalonTextColor(jalon.event_type)"
+                      [title]="jalon.title + ' - ' + jalon.event_date"
+                      [class.jalon-delivery]="(jalon.event_type === 'LV' || jalon.event_type === 'livraison')"
+                      [class.jalon-diamond]="(jalon.event_type !== 'LV' && jalon.event_type !== 'livraison')"
                       (click)="openMilestoneModal(jalon, $event); $event.stopPropagation()"
                     >
-                      <span class="gantt-milestone-text">{{ jalon.nom || "★" }}</span>
+                      <span class="gantt-milestone-text">{{ jalon.title || "★" }}</span>
                     </div>
                   </ng-container>
                 </div>
@@ -1187,14 +1187,14 @@
                           <div
                             class="gantt-milestone"
                             [style.left.%]="getJalonLeftPercentage(jalon)"
-                            [style.background-color]="getJalonColor(jalon.type)"
-                            [style.color]="getJalonTextColor(jalon.type)"
-                            [title]="jalon.nom + ' - ' + jalon.date_jalon"
-                            [class.jalon-delivery]="jalon.type === 'LV'"
-                            [class.jalon-diamond]="jalon.type !== 'LV'"
+                            [style.background-color]="getJalonColor(jalon.event_type)"
+                            [style.color]="getJalonTextColor(jalon.event_type)"
+                            [title]="jalon.title + ' - ' + jalon.event_date"
+                            [class.jalon-delivery]="(jalon.event_type === 'LV' || jalon.event_type === 'livraison')"
+                            [class.jalon-diamond]="(jalon.event_type !== 'LV' && jalon.event_type !== 'livraison')"
                             (click)="openMilestoneModal(jalon, $event); $event.stopPropagation()"
                           >
-                            <span class="gantt-milestone-text">{{ jalon.nom || "★" }}</span>
+                            <span class="gantt-milestone-text">{{ jalon.title || "★" }}</span>
                           </div>
                         </ng-container>
                       </div>
@@ -1339,14 +1339,14 @@
                           <div
                             class="gantt-milestone"
                             [style.left.%]="getJalonLeftPercentage(jalon)"
-                            [style.background-color]="getJalonColor(jalon.type)"
-                            [style.color]="getJalonTextColor(jalon.type)"
-                            [title]="jalon.nom + ' - ' + jalon.date_jalon"
-                            [class.jalon-delivery]="jalon.type === 'LV'"
-                            [class.jalon-diamond]="jalon.type !== 'LV'"
+                            [style.background-color]="getJalonColor(jalon.event_type)"
+                            [style.color]="getJalonTextColor(jalon.event_type)"
+                            [title]="jalon.title + ' - ' + jalon.event_date"
+                            [class.jalon-delivery]="(jalon.event_type === 'LV' || jalon.event_type === 'livraison')"
+                            [class.jalon-diamond]="(jalon.event_type !== 'LV' && jalon.event_type !== 'livraison')"
                             (click)="openMilestoneModal(jalon, $event); $event.stopPropagation()"
                           >
-                            <span class="gantt-milestone-text">{{ jalon.nom || "★" }}</span>
+                            <span class="gantt-milestone-text">{{ jalon.title || "★" }}</span>
                           </div>
                         </ng-container>
                       </div>
@@ -1585,14 +1585,14 @@
                             <div
                               class="gantt-milestone"
                               [style.left.%]="getJalonLeftPercentage(jalon)"
-                              [style.background-color]="getJalonColor(jalon.type)"
-                              [style.color]="getJalonTextColor(jalon.type)"
-                              [title]="jalon.nom + ' - ' + jalon.date_jalon"
-                              [class.jalon-delivery]="jalon.type === 'LV'"
-                              [class.jalon-diamond]="jalon.type !== 'LV'"
+                              [style.background-color]="getJalonColor(jalon.event_type)"
+                              [style.color]="getJalonTextColor(jalon.event_type)"
+                              [title]="jalon.title + ' - ' + jalon.event_date"
+                              [class.jalon-delivery]="(jalon.event_type === 'LV' || jalon.event_type === 'livraison')"
+                              [class.jalon-diamond]="(jalon.event_type !== 'LV' && jalon.event_type !== 'livraison')"
                               (click)="openMilestoneModal(jalon, $event); $event.stopPropagation()"
                             >
-                              <span class="gantt-milestone-text">{{ jalon.nom || "★" }}</span>
+                              <span class="gantt-milestone-text">{{ jalon.title || "★" }}</span>
                             </div>
                           </ng-container>
                         </div>
@@ -1828,14 +1828,14 @@
                 <div
                   class="gantt-milestone"
                   [style.left.%]="getJalonLeftPercentage(jalon)"
-                  [style.background-color]="getJalonColor(jalon.type)"
-                  [style.color]="getJalonTextColor(jalon.type)"
-                  [title]="jalon.nom + ' - ' + jalon.date_jalon"
-                  [class.jalon-delivery]="jalon.type === 'LV'"
-                  [class.jalon-diamond]="jalon.type !== 'LV'"
+                  [style.background-color]="getJalonColor(jalon.event_type)"
+                  [style.color]="getJalonTextColor(jalon.event_type)"
+                  [title]="jalon.title + ' - ' + jalon.event_date"
+                  [class.jalon-delivery]="(jalon.event_type === 'LV' || jalon.event_type === 'livraison')"
+                  [class.jalon-diamond]="(jalon.event_type !== 'LV' && jalon.event_type !== 'livraison')"
                   (click)="openMilestoneModal(jalon, $event); $event.stopPropagation()"
                 >
-                  <span class="gantt-milestone-text">{{ jalon.nom || "★" }}</span>
+                  <span class="gantt-milestone-text">{{ jalon.title || "★" }}</span>
                 </div>
               </ng-container>
             </div>

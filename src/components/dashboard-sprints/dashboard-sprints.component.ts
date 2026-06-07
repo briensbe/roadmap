@@ -163,8 +163,8 @@ export class DashboardSprintsComponent implements OnInit {
   initSprints() {
     // Sprints are jalons of type 'SP' sorted chronologically
     this.allSprints = this.jalons
-      .filter((j) => j.type === "SP")
-      .sort((a, b) => new Date(a.date_jalon).getTime() - new Date(b.date_jalon).getTime());
+      .filter((j) => j.event_type === "sprint" || j.event_type === "SP")
+      .sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
 
     if (this.allSprints.length === 0) return;
 
@@ -172,7 +172,7 @@ export class DashboardSprintsComponent implements OnInit {
     today.setHours(0, 0, 0, 0);
 
     // Find the first upcoming sprint
-    const upcomingIdx = this.allSprints.findIndex((s) => new Date(s.date_jalon) >= today);
+    const upcomingIdx = this.allSprints.findIndex((s) => new Date(s.event_date) >= today);
     const startIdx = upcomingIdx !== -1 ? upcomingIdx : Math.max(0, this.allSprints.length - 5);
     const endIdx = Math.min(startIdx + 4, this.allSprints.length - 1);
 
@@ -199,23 +199,23 @@ export class DashboardSprintsComponent implements OnInit {
       const idx = this.allSprints.findIndex((all) => all.id === s.id);
       let start: Date;
       if (idx > 0) {
-        const prev = new Date(this.allSprints[idx - 1].date_jalon);
+        const prev = new Date(this.allSprints[idx - 1].event_date);
         start = new Date(prev);
         start.setDate(start.getDate() + 1);
       } else {
-        const endD = new Date(s.date_jalon);
+        const endD = new Date(s.event_date);
         start = new Date(endD);
         start.setDate(start.getDate() - 13);
       }
       start.setHours(0, 0, 0, 0);
-      const end = new Date(s.date_jalon);
+      const end = new Date(s.event_date);
       end.setHours(23, 59, 59, 999);
 
       return {
         sprint: s,
         start,
         end,
-        label: s.nom,
+        label: s.title,
       };
     });
 
@@ -231,7 +231,7 @@ export class DashboardSprintsComponent implements OnInit {
       // Columns are Sprints
       this.columns = this.selectedSprints.map((sp) => ({
         id: sp.sprint.id!,
-        label: sp.sprint.nom,
+        label: sp.sprint.title,
         sublabel: this.formatDateLabel(sp.start, sp.end),
       }));
     }
@@ -257,11 +257,11 @@ export class DashboardSprintsComponent implements OnInit {
       this.footerMilestones = this.jalons
         .filter(
           (j) =>
-            (j.type === "LV" || j.type === "MEP") &&
-            new Date(j.date_jalon) >= rangeStart &&
-            new Date(j.date_jalon) <= rangeEnd,
+            (j.event_type === "livraison" || j.event_type === "LV" || j.event_type === "mep" || j.event_type === "MEP") &&
+            new Date(j.event_date) >= rangeStart &&
+            new Date(j.event_date) <= rangeEnd,
         )
-        .sort((a, b) => new Date(a.date_jalon).getTime() - new Date(b.date_jalon).getTime());
+        .sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
     }
   }
 
@@ -341,7 +341,7 @@ export class DashboardSprintsComponent implements OnInit {
       if (subRows.length > 0) {
         this.groupedRows.push({
           id: sp.sprint.id!,
-          name: sp.sprint.nom,
+          name: sp.sprint.title,
           extraInfo: `${subRows.length} projets • ${Math.round(sprintTotalCharge * 10) / 10}j de charge`,
           expanded: true,
           totalCharge: Math.round(sprintTotalCharge * 10) / 10,
@@ -356,8 +356,8 @@ export class DashboardSprintsComponent implements OnInit {
     today.setHours(0, 0, 0, 0);
 
     const targetMilestones = this.jalons
-      .filter((j) => j.type === type && new Date(j.date_jalon) >= today)
-      .sort((a, b) => new Date(a.date_jalon).getTime() - new Date(b.date_jalon).getTime());
+      .filter((j) => (j.event_type === 'livraison' || j.event_type === 'LV' || j.event_type === 'mep' || j.event_type === 'MEP') && (type === "LV" ? (j.event_type === "livraison" || j.event_type === "LV") : (j.event_type === "mep" || j.event_type === "MEP")) && new Date(j.event_date) >= today)
+      .sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
 
     for (let i = 0; i < targetMilestones.length; i++) {
       const ms = targetMilestones[i];
@@ -367,12 +367,12 @@ export class DashboardSprintsComponent implements OnInit {
       // Define delivery period
       let periodStart = today;
       if (i > 0) {
-        const prevDate = new Date(targetMilestones[i - 1].date_jalon);
+        const prevDate = new Date(targetMilestones[i - 1].event_date);
         periodStart = new Date(prevDate);
         periodStart.setDate(periodStart.getDate() + 1);
         periodStart.setHours(0, 0, 0, 0);
       }
-      const periodEnd = new Date(ms.date_jalon);
+      const periodEnd = new Date(ms.event_date);
       periodEnd.setHours(23, 59, 59, 999);
 
       // Define selected sprints range
@@ -433,8 +433,8 @@ export class DashboardSprintsComponent implements OnInit {
 
         const mainProj = this.projets.find((p) => p.id === ms.projet_id);
         const color = type === "LV" ? "#3b82f6" : "#10b981"; // Blue for Livraison, Green for MEP
-        const groupName = `${type === "LV" ? "Livraison" : "MEP"} du ${this.formatSingleDate(ms.date_jalon)}`;
-        const extraInfo = `${ms.nom}${mainProj ? " [" + mainProj.nom_projet + "]" : ""} • ${subRows.length} projets • ${Math.round(milestoneTotalCharge * 10) / 10}j total`;
+        const groupName = `${type === "LV" ? "Livraison" : "MEP"} du ${this.formatSingleDate(ms.event_date)}`;
+        const extraInfo = `${ms.title}${mainProj ? " [" + mainProj.nom_projet + "]" : ""} • ${subRows.length} projets • ${Math.round(milestoneTotalCharge * 10) / 10}j total`;
 
         this.groupedRows.push({
           id: ms.id!,
@@ -510,11 +510,11 @@ export class DashboardSprintsComponent implements OnInit {
       .filter(
         (j) =>
           j.projet_id === projetId &&
-          (j.type === "LV" || j.type === "MEP") &&
-          new Date(j.date_jalon) >= sStart &&
-          new Date(j.date_jalon) <= sEnd,
+          (j.event_type === "livraison" || j.event_type === "LV" || j.event_type === "mep" || j.event_type === "MEP") &&
+          new Date(j.event_date) >= sStart &&
+          new Date(j.event_date) <= sEnd,
       )
-      .sort((a, b) => new Date(a.date_jalon).getTime() - new Date(b.date_jalon).getTime());
+      .sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
   }
 
   // --- UI Helpers ---
@@ -584,8 +584,8 @@ export class DashboardSprintsComponent implements OnInit {
   }
 
   getSprintOptionLabel(s: Jalon): string {
-    const name = s.nom || "";
-    const date = this.formatDateDDMM(s.date_jalon);
+    const name = s.title || "";
+    const date = this.formatDateDDMM(s.event_date);
     const targetLength = 12;
     const paddingNeeded = Math.max(0, targetLength - name.length);
     const paddedName = name + "\u00A0".repeat(paddingNeeded);

@@ -137,11 +137,14 @@ export interface Charge {
 
 export interface Jalon {
   id?: string;
-  nom: string;
-  date_jalon: string;
+  title: string;
+  event_type: string;
+  event_date: string;
+  description: string;
+  version: string;
   projet_id?: string;
-  type: string;
   created_at?: string;
+  updated_at?: string;
 }
 
 export interface CustomField {

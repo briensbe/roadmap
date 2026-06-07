@@ -1,74 +1,109 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { LucideAngularModule, List, Calendar, GitCommit, Columns, Plus } from 'lucide-angular';
 import { JalonService } from '../services/jalon.service';
 import { ProjetService } from '../services/projet.service';
 import { Jalon, Projet } from '../models/types';
-import { MilestoneModalComponent } from './milestone-modal.component';
+import { MilestoneListComponent } from './milestones/milestone-list.component';
+import { MilestoneCalendarComponent } from './milestones/milestone-calendar.component';
+import { MilestoneCompactComponent } from './milestones/milestone-compact.component';
+import { MilestoneTimelineComponent } from './milestones/milestone-timeline.component';
+import { MilestoneModalComponent } from './milestones/milestone-modal.component';
 import { ConfirmModalComponent } from "./confirm-modal.component";
+
+@NgModule({
+  imports: [LucideAngularModule.pick({ List, Calendar, GitCommit, Columns, Plus })],
+  exports: [LucideAngularModule]
+})
+export class LucideIconsModule { }
 
 @Component({
   selector: 'app-milestones-view',
   standalone: true,
-  imports: [CommonModule, FormsModule, MilestoneModalComponent, ConfirmModalComponent],
+  imports: [
+    CommonModule, 
+    FormsModule, 
+    LucideIconsModule,
+    MilestoneListComponent,
+    MilestoneCalendarComponent,
+    MilestoneCompactComponent,
+    MilestoneTimelineComponent,
+    MilestoneModalComponent, 
+    ConfirmModalComponent
+  ],
   template: `
     <div class="milestones-container">
       <div class="milestones-header">
         <div>
           <h1>Jalons</h1>
-          <p class="subtitle">Gérez les jalons de vos projets</p>
+          <p class="subtitle">Gérez et visualisez la planification de vos projets</p>
         </div>
-        <button class="btn btn-primary" (click)="openCreateModal()">
-          + Nouveau Jalon
-        </button>
+
+        <div class="header-actions">
+          <div class="filter-group">
+            <label class="filter-label">Projet :</label>
+            <select class="project-select" [(ngModel)]="selectedProjetId">
+              <option [ngValue]="undefined">Tous les projets</option>
+              <option *ngFor="let p of projets" [value]="p.id">{{ p.nom_projet }}</option>
+            </select>
+          </div>
+
+          <div class="tabs-container">
+            <button class="tab-btn" [class.active]="activeTab === 'liste'" (click)="activeTab = 'liste'" title="Vue Liste">
+              <lucide-icon name="list" size="16"></lucide-icon>
+              <span>Liste</span>
+            </button>
+            <button class="tab-btn" [class.active]="activeTab === 'calendrier'" (click)="activeTab = 'calendrier'" title="Vue Calendrier">
+              <lucide-icon name="calendar" size="16"></lucide-icon>
+              <span>Calendrier</span>
+            </button>
+            <button class="tab-btn" [class.active]="activeTab === 'timeline'" (click)="activeTab = 'timeline'" title="Vue Timeline">
+              <lucide-icon name="git-commit" size="16"></lucide-icon>
+              <span>Timeline</span>
+            </button>
+            <button class="tab-btn" [class.active]="activeTab === 'compact'" (click)="activeTab = 'compact'" title="Vue Compacte">
+              <lucide-icon name="columns" size="16"></lucide-icon>
+              <span>Compacte</span>
+            </button>
+          </div>
+
+          <button class="btn btn-primary btn-add" (click)="openCreateModal()">
+            <lucide-icon name="plus" size="16"></lucide-icon>
+            Nouveau Jalon
+          </button>
+        </div>
       </div>
 
-      <div class="milestones-list">
-        <table class="milestones-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Nom</th>
-              <th>Projet</th>
-              <th>Type</th>
-              <th style="width: 100px;">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let jalon of jalons">
-              <td class="date-cell">{{ jalon.date_jalon | date:'dd/MM/yyyy' }}</td>
-              <td class="name-cell">{{ jalon.nom }}</td>
-              <td>
-                <span class="project-badge" *ngIf="getProject(jalon.projet_id)">
-                  {{ getProject(jalon.projet_id)?.nom_projet }}
-                </span>
-                <span *ngIf="!jalon.projet_id" class="no-project">-</span>
-              </td>
-              <td>
-                <span class="type-badge" [attr.data-type]="jalon.type">
-                  {{ jalon.type || 'Autre' }}
-                </span>
-              </td>
-              <td class="actions-cell">
-                <button class="action-btn edit" (click)="openEditModal(jalon)" title="Modifier">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                  </svg>
-                </button>
-                <button class="action-btn delete" (click)="deleteJalon(jalon)" title="Supprimer">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                  </svg>
-                </button>
-              </td>
-            </tr>
-            <tr *ngIf="jalons.length === 0">
-              <td colspan="5" class="empty-state">Aucun jalon trouvé</td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="view-content-wrapper">
+        <app-milestone-list
+          *ngIf="activeTab === 'liste'"
+          [jalons]="filteredJalons"
+          [projets]="projets"
+          (edit)="openEditModal($event)"
+          (delete)="askDeleteJalon($event)"
+        ></app-milestone-list>
+
+        <app-milestone-calendar
+          *ngIf="activeTab === 'calendrier'"
+          [jalons]="filteredJalons"
+          (edit)="openEditModal($event)"
+          (add)="openCreateModalAtDate($event)"
+        ></app-milestone-calendar>
+
+        <app-milestone-timeline
+          *ngIf="activeTab === 'timeline'"
+          [jalons]="filteredJalons"
+          [projets]="projets"
+          (edit)="openEditModal($event)"
+        ></app-milestone-timeline>
+
+        <app-milestone-compact
+          *ngIf="activeTab === 'compact'"
+          [jalons]="filteredJalons"
+          (edit)="openEditModal($event)"
+          (add)="openCreateModalAtDate($event)"
+        ></app-milestone-compact>
       </div>
     </div>
 
@@ -91,37 +126,117 @@ import { ConfirmModalComponent } from "./confirm-modal.component";
   styles: [`
     .milestones-container {
       padding: 32px;
-      background: #f5f7fa;
+      background: #f8fafc;
       min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
     }
 
     .milestones-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 32px;
+      flex-wrap: wrap;
+      gap: 16px;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 20px;
     }
 
     .milestones-header h1 {
       margin: 0 0 4px 0;
-      font-size: 32px;
+      font-size: 30px;
       font-weight: 700;
-      color: #111827;
+      color: #0f172a;
     }
 
     .subtitle {
       margin: 0;
-      color: #6b7280;
-      font-size: 16px;
+      color: #64748b;
+      font-size: 15px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .filter-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: #64748b;
+    }
+
+    .project-select {
+      padding: 8px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: white;
+      font-size: 14px;
+      color: #1e293b;
+      font-weight: 500;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .project-select:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+    .tabs-container {
+      display: flex;
+      background: #e2e8f0;
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+    }
+
+    .tab-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: #475569;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:hover {
+      color: #0f172a;
+    }
+
+    .tab-btn.active {
+      background: white;
+      color: #4f46e5;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     }
 
     .btn {
-      padding: 10px 20px;
+      padding: 8px 16px;
       border-radius: 8px;
       font-weight: 500;
       cursor: pointer;
       border: none;
       transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
     }
 
     .btn-primary {
@@ -133,136 +248,63 @@ import { ConfirmModalComponent } from "./confirm-modal.component";
       background: #4338ca;
     }
 
-    .milestones-list {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
+    .view-content-wrapper {
+      flex-grow: 1;
+      min-height: 400px;
     }
 
-    .milestones-table {
-      width: 100%;
-      border-collapse: collapse;
+    /* Dark Mode Overrides */
+    :host-context(body.dark-mode) .milestones-container {
+      background: #0f172a;
     }
 
-    .milestones-table th {
-      padding: 16px;
-      text-align: left;
-      font-size: 12px;
-      font-weight: 600;
-      color: #6b7280;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      border-bottom: 2px solid #e5e7eb;
-      background: #f9fafb;
+    :host-context(body.dark-mode) .milestones-header {
+      border-bottom-color: #1e293b;
     }
 
-    .milestones-table td {
-      padding: 16px;
-      border-bottom: 1px solid #f3f4f6;
-      color: #374151;
-      font-size: 14px;
+    :host-context(body.dark-mode) .milestones-header h1 {
+      color: #f8fafc;
     }
 
-    .milestones-table tr:last-child td {
-      border-bottom: none;
+    :host-context(body.dark-mode) .subtitle {
+      color: #94a3b8;
     }
 
-    .milestones-table tr:hover {
-      background: #f9fafb;
+    :host-context(body.dark-mode) .project-select {
+      background: #1f2937;
+      border-color: #374151;
+      color: #f9fafb;
     }
 
-    .date-cell {
-      font-family: 'Consolas', 'Monaco', monospace;
-      color: #6b7280;
+    :host-context(body.dark-mode) .project-select:focus {
+      border-color: #6366f1;
     }
 
-    .name-cell {
-      font-weight: 500;
-      color: #111827;
+    :host-context(body.dark-mode) .tabs-container {
+      background: #1f2937;
+      border-color: #374151;
     }
 
-    .project-badge {
-      display: inline-block;
-      padding: 2px 8px;
-      background: #e0e7ff;
-      color: #4338ca;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 500;
-    }
-
-    .no-project {
+    :host-context(body.dark-mode) .tab-btn {
       color: #9ca3af;
-      font-style: italic;
     }
 
-    /* Type Badges */
-    .type-badge {
-      padding: 4px 12px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-      background: #f3f4f6;
-      color: #4b5563;
+    :host-context(body.dark-mode) .tab-btn:hover {
+      color: #f9fafb;
     }
 
-    .type-badge[data-type="LV"] {
-      background: #d1fae5;
-      color: #065f46; /* Green */
-    }
-
-    .type-badge[data-type="MEP"] {
-      background: #dbeafe;
-      color: #1e40af; /* Blue */
-    }
-
-    .type-badge[data-type="SP"] {
-      background: #fef3c7;
-      color: #92400e; /* Amber */
-    }
-
-    .actions-cell {
-      display: flex;
-      gap: 8px;
-    }
-
-    .action-btn {
-      padding: 6px;
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      color: #9ca3af;
-      border-radius: 4px;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .action-btn:hover {
-      background: #f3f4f6;
-    }
-
-    .action-btn.edit:hover {
-      color: #4f46e5;
-    }
-
-    .action-btn.delete:hover {
-      color: #ef4444;
-    }
-
-    .empty-state {
-      text-align: center;
-      color: #9ca3af;
-      padding: 40px !important;
+    :host-context(body.dark-mode) .tab-btn.active {
+      background: #374151;
+      color: #818cf8;
     }
   `]
 })
 export class MilestonesViewComponent implements OnInit {
   jalons: Jalon[] = [];
   projets: Projet[] = [];
+
+  activeTab: 'liste' | 'calendrier' | 'timeline' | 'compact' = 'liste';
+  selectedProjetId: string | undefined = undefined;
 
   showModal = false;
   currentJalon: Partial<Jalon> | null = null;
@@ -302,13 +344,21 @@ export class MilestonesViewComponent implements OnInit {
     }
   }
 
-  getProject(id?: string): Projet | undefined {
-    if (!id) return undefined;
-    return this.projets.find(p => p.id === id);
+  get filteredJalons(): Jalon[] {
+    if (!this.selectedProjetId) return this.jalons;
+    return this.jalons.filter(j => j.projet_id === this.selectedProjetId);
   }
 
   openCreateModal() {
-    this.currentJalon = null; // null indicates new jalon default logic in modal
+    this.currentJalon = null;
+    this.showModal = true;
+  }
+
+  openCreateModalAtDate(dateStr: string | null) {
+    this.currentJalon = {
+      event_date: dateStr || new Date().toISOString().split('T')[0],
+      projet_id: this.selectedProjetId // Pre-populate with selected project if any
+    };
     this.showModal = true;
   }
 
@@ -321,11 +371,11 @@ export class MilestonesViewComponent implements OnInit {
     await this.loadData();
   }
 
-  async deleteJalon(jalon: Jalon) {
+  async askDeleteJalon(jalon: Jalon) {
     if (!jalon.id) return;
 
     this.confirmTitle = "Supprimer le jalon";
-    this.confirmMessage = "Êtes-vous sûr de vouloir supprimer ce jalon ?";
+    this.confirmMessage = `Êtes-vous sûr de vouloir supprimer le jalon "${jalon.title}" ?`;
 
     this.pendingConfirmAction = async () => {
       try {

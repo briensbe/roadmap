@@ -34,7 +34,7 @@ import { driver } from "driver.js";
 })
 export class LucideIconsModule { }
 
-import { MilestoneModalComponent } from '../milestone-modal.component';
+import { MilestoneModalComponent } from '../milestones/milestone-modal.component';
 import { ConfirmModalComponent } from '../confirm-modal.component';
 import { ChiffresModalComponent } from '../chiffres/chiffres-modal.component';
 
@@ -941,7 +941,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
     return this.allJalons.filter(j => {
       if (j.projet_id !== project.id) return false;
-      const jDate = new Date(j.date_jalon);
+      const jDate = new Date(j.event_date);
       return jDate >= startOfTimeline && jDate <= endOfTimeline;
     });
   }
@@ -949,7 +949,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   getJalonLeftPercentage(jalon: Jalon): number {
     if (!this.displayedWeeks || this.displayedWeeks.length === 0) return 0;
     
-    const jDate = new Date(jalon.date_jalon).getTime();
+    const jDate = new Date(jalon.event_date).getTime();
     const start = this.displayedWeeks[0].getTime();
     
     const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
@@ -969,7 +969,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     end.setDate(end.getDate() + 7);
 
     return this.allJalons.filter(j => {
-      const d = new Date(j.date_jalon);
+      const d = new Date(j.event_date);
       return d >= start && d <= end;
     });
   }
@@ -1159,25 +1159,25 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     endOfWeek.setHours(23, 59, 59, 999);
 
     return this.allJalons.filter(j => {
-      const jDate = new Date(j.date_jalon);
+      const jDate = new Date(j.event_date);
       return jDate >= startOfWeek && jDate <= endOfWeek;
     });
   }
 
   getJalonColor(type: string): string {
-    switch (type) {
-      case 'LV': return '#d1fae5'; // Green
-      case 'MEP': return '#dbeafe'; // Blue
-      case 'SP': return '#fef3c7'; // Amber
+    switch (type?.toLowerCase()) {
+      case 'livraison': case 'lv': return '#d1fae5'; // Green
+      case 'mep': return '#dbeafe'; // Blue
+      case 'sprint': case 'sp': return '#fef3c7'; // Amber
       default: return '#f3f4f6'; // Gray
     }
   }
 
   getJalonTextColor(type: string): string {
-    switch (type) {
-      case 'LV': return '#065f46';
-      case 'MEP': return '#1e40af';
-      case 'SP': return '#92400e';
+    switch (type?.toLowerCase()) {
+      case 'livraison': case 'lv': return '#065f46';
+      case 'mep': return '#1e40af';
+      case 'sprint': case 'sp': return '#92400e';
       default: return '#4b5563';
     }
   }

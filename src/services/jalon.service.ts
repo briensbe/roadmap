@@ -23,7 +23,7 @@ export class JalonService {
         const { data, error } = await this.supabase.client
             .from(DB_TABLES.JALONS)
             .select('*')
-            .order('date_jalon', { ascending: true });
+            .order('event_date', { ascending: true });
 
         if (error) throw error;
         this._jalonsCache = data || [];
@@ -35,7 +35,7 @@ export class JalonService {
             .from(DB_TABLES.JALONS)
             .select('*')
             .eq('projet_id', projetId)
-            .order('date_jalon', { ascending: true });
+            .order('event_date', { ascending: true });
 
         if (error) throw error;
         return data || [];

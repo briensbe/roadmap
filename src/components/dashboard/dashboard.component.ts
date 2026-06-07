@@ -171,24 +171,24 @@ export class DashboardComponent implements OnInit {
 
     // 1. Sort jalons chronologically
     const sortedJalons = [...this.jalons].sort((a, b) => 
-      new Date(a.date_jalon).getTime() - new Date(b.date_jalon).getTime()
+      new Date(a.event_date).getTime() - new Date(b.event_date).getTime()
     );
 
     // 2. Extract next milestones
     this.upcomingLivraisons = sortedJalons
-      .filter(j => j.type === 'LV' && new Date(j.date_jalon) >= today)
+      .filter(j => (j.event_type === 'livraison' || j.event_type === 'LV') && new Date(j.event_date) >= today)
       .slice(0, 3);
 
     this.upcomingMeps = sortedJalons
-      .filter(j => j.type === 'MEP' && new Date(j.date_jalon) >= today)
+      .filter(j => (j.event_type === 'mep' || j.event_type === 'MEP') && new Date(j.event_date) >= today)
       .slice(0, 2);
 
     this.upcomingSprints = sortedJalons
-      .filter(j => j.type === 'SP' && new Date(j.date_jalon) >= today)
+      .filter(j => (j.event_type === 'sprint' || j.event_type === 'SP') && new Date(j.event_date) >= today)
       .slice(0, 3);
 
     // 3. Sprint Content Grouped by Team
-    const allSprints = sortedJalons.filter(j => j.type === 'SP');
+    const allSprints = sortedJalons.filter(j => j.event_type === 'sprint' || j.event_type === 'SP');
     this.sprintContentByTeam = [];
 
     for (const equipe of this.equipes) {
@@ -199,17 +199,17 @@ export class DashboardComponent implements OnInit {
         const idx = allSprints.findIndex(s => s.id === sprint.id);
         let sStart: Date;
         if (idx > 0) {
-          const prevDate = new Date(allSprints[idx - 1].date_jalon);
+          const prevDate = new Date(allSprints[idx - 1].event_date);
           sStart = new Date(prevDate);
           sStart.setDate(sStart.getDate() + 1);
         } else {
           // If first sprint in list, assume 2 weeks duration
-          const endDate = new Date(sprint.date_jalon);
+          const endDate = new Date(sprint.event_date);
           sStart = new Date(endDate);
           sStart.setDate(sStart.getDate() - 13);
         }
         sStart.setHours(0, 0, 0, 0);
-        const sEnd = new Date(sprint.date_jalon);
+        const sEnd = new Date(sprint.event_date);
         sEnd.setHours(23, 59, 59, 999);
 
         // Find charges for this team overlapping the sprint
@@ -288,7 +288,7 @@ export class DashboardComponent implements OnInit {
         if (projetsInfo.length > 0) {
           sprintInfos.push({
             sprint: sprint,
-            dateFin: sprint.date_jalon,
+            dateFin: sprint.event_date,
             projets: projetsInfo
           });
         }

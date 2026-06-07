@@ -128,9 +128,9 @@
                         <!-- Milestone Badges inside cell -->
                         <div class="cell-milestones" *ngIf="cell.milestones.length > 0">
                           @for (ms of cell.milestones; track ms.id) {
-                            <span class="ms-badge" [class]="ms.type.toLowerCase()" [title]="ms.nom">
-                              <lucide-icon [img]="ms.type === 'LV' ? Flag : Rocket" [size]="10"></lucide-icon>
-                              {{ ms.type === "LV" ? "Livraison" : "MEP" }}
+                            <span class="ms-badge" [class]="(ms.event_type || '').toLowerCase()" [title]="ms.title">
+                              <lucide-icon [img]="(ms.event_type === 'LV' || ms.event_type === 'livraison') ? Flag : Rocket" [size]="10"></lucide-icon>
+                              {{ (ms.event_type === 'LV' || ms.event_type === 'livraison') ? "Livraison" : "MEP" }}
                             </span>
                           }
                         </div>
@@ -158,13 +158,13 @@
     <span class="footer-label">JALONS</span>
     <div class="footer-milestones-list">
       @for (ms of footerMilestones; track ms.id) {
-        <div class="footer-ms-item" [class]="ms.type.toLowerCase()">
+        <div class="footer-ms-item" [class]="(ms.event_type || '').toLowerCase()">
           <span class="footer-ms-icon">
-            <lucide-icon [img]="ms.type === 'LV' ? Flag : Rocket" [size]="12"></lucide-icon>
+            <lucide-icon [img]="(ms.event_type === 'LV' || ms.event_type === 'livraison') ? Flag : Rocket" [size]="12"></lucide-icon>
           </span>
-          <span class="footer-ms-type">{{ ms.type === "LV" ? "Livraison" : "MEP" }}</span>
-          <span class="footer-ms-name">{{ ms.nom }}</span>
-          <span class="footer-ms-date">{{ formatDateYear(ms.date_jalon) }}</span>
+          <span class="footer-ms-type">{{ (ms.event_type === 'LV' || ms.event_type === 'livraison') ? "Livraison" : "MEP" }}</span>
+          <span class="footer-ms-name">{{ ms.title }}</span>
+          <span class="footer-ms-date">{{ formatDateYear(ms.event_date) }}</span>
         </div>
       }
     </div>

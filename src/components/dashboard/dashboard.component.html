@@ -31,13 +31,13 @@
           @for (jalon of upcomingSprints; track jalon.id) {
             <div class="milestone-list-item">
               <div class="item-main">
-                <span class="item-name">{{ jalon.nom }}</span>
+                <span class="item-name">{{ jalon.title }}</span>
                 <span class="item-project">{{ getProjectName(jalon.projet_id) || 'Global' }}</span>
               </div>
               <div class="item-date-group">
-                <span class="item-date">{{ formatDate(jalon.date_jalon) }}</span>
+                <span class="item-date">{{ formatDate(jalon.event_date) }}</span>
                 <span class="item-days">
-                  {{ getDaysRemainingText(jalon.date_jalon) }}
+                  {{ getDaysRemainingText(jalon.event_date) }}
                 </span>
               </div>
             </div>
@@ -64,13 +64,13 @@
           @for (jalon of upcomingLivraisons; track jalon.id) {
             <div class="milestone-list-item">
               <div class="item-main">
-                <span class="item-name">{{ jalon.nom }}</span>
+                <span class="item-name">{{ jalon.title }}</span>
                 <span class="item-project">{{ getProjectName(jalon.projet_id) || 'Global' }}</span>
               </div>
               <div class="item-date-group">
-                <span class="item-date">{{ formatDate(jalon.date_jalon) }}</span>
-                <span class="item-days" [class.urgent]="getDaysRemaining(jalon.date_jalon) <= 7">
-                  {{ getDaysRemainingText(jalon.date_jalon) }}
+                <span class="item-date">{{ formatDate(jalon.event_date) }}</span>
+                <span class="item-days" [class.urgent]="getDaysRemaining(jalon.event_date) <= 7">
+                  {{ getDaysRemainingText(jalon.event_date) }}
                 </span>
               </div>
             </div>
@@ -97,13 +97,13 @@
           @for (jalon of upcomingMeps; track jalon.id) {
             <div class="milestone-list-item">
               <div class="item-main">
-                <span class="item-name">{{ jalon.nom }}</span>
+                <span class="item-name">{{ jalon.title }}</span>
                 <span class="item-project">{{ getProjectName(jalon.projet_id) || 'Global' }}</span>
               </div>
               <div class="item-date-group">
-                <span class="item-date">{{ formatDate(jalon.date_jalon) }}</span>
-                <span class="item-days" [class.urgent]="getDaysRemaining(jalon.date_jalon) <= 7">
-                  {{ getDaysRemainingText(jalon.date_jalon) }}
+                <span class="item-date">{{ formatDate(jalon.event_date) }}</span>
+                <span class="item-days" [class.urgent]="getDaysRemaining(jalon.event_date) <= 7">
+                  {{ getDaysRemainingText(jalon.event_date) }}
                 </span>
               </div>
             </div>
@@ -146,7 +146,7 @@
                   <div class="sprint-header">
                     <lucide-icon [img]="Calendar" [size]="16" class="sprint-icon"></lucide-icon>
                     <h3 class="sprint-name">
-                      {{ sprintInfo.sprint.nom }}
+                      {{ sprintInfo.sprint.title }}
                       <span class="sprint-date-badge">Fin : {{ formatDate(sprintInfo.dateFin) }}</span>
                     </h3>
                   </div>
