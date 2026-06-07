@@ -94,7 +94,7 @@ export class LucideIconsModule { }
         flex-direction: column;
         overflow: hidden;
         background: #f8fafc;
-        padding-top: 1rem;
+        padding: 1rem 1.5rem;
       }
       
       .timeline-container:has(.timeline-wrapper.horizontal) {

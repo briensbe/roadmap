@@ -102,7 +102,7 @@ export class LucideIconsModule { }
         flex-direction: column;
         height: 100%;
         background: white;
-        padding-top: 1rem;
+        padding: 1rem 1.5rem;
       }
 
       .filters-section {
