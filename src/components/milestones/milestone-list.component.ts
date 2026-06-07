@@ -44,7 +44,12 @@ export class LucideIconsModule { }
 
       <div class="cards-list">
         @for (jalon of filteredJalons; track jalon.id) {
-          <div class="milestone-card" [class.past-event]="isPastEvent(jalon.event_date)">
+          <div 
+            class="milestone-card" 
+            [class.past-event]="isPastEvent(jalon.event_date)"
+            [class.clickable]="!readonly"
+            (click)="!readonly && edit.emit(jalon)"
+          >
             <div class="left">
               <div
                 class="type-badge"
@@ -90,10 +95,10 @@ export class LucideIconsModule { }
             </div>
             @if (!readonly) {
               <div class="actions-cell">
-                <button class="icon-btn edit-btn" (click)="edit.emit(jalon)" title="Modifier">
+                <button class="icon-btn edit-btn" (click)="$event.stopPropagation(); edit.emit(jalon)" title="Modifier">
                   <lucide-icon name="pen-line" size="20"></lucide-icon>
                 </button>
-                <button class="icon-btn delete-btn" (click)="delete.emit(jalon)" title="Supprimer">
+                <button class="icon-btn delete-btn" (click)="$event.stopPropagation(); delete.emit(jalon)" title="Supprimer">
                   <lucide-icon name="trash-2" size="20"></lucide-icon>
                 </button>
               </div>
@@ -260,6 +265,10 @@ export class LucideIconsModule { }
 
       .milestone-card.past-event {
         opacity: 0.7;
+      }
+
+      .milestone-card.clickable {
+        cursor: pointer;
       }
 
       .left {
