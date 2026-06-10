@@ -45,7 +45,7 @@
       <div class="status-dropdown-container" style="position: relative;">
         <div
           class="filter-select select-trigger"
-          [class.active]="showStatusDropdown"
+          [class.active]="showStatusDropdown()"
           (click)="toggleStatusDropdown($event)"
           style="width: 170px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none;"
         >
@@ -55,7 +55,7 @@
           <lucide-icon [img]="ChevronDown" [size]="14" style="color: #64748b; flex-shrink: 0; margin-left: 4px;"></lucide-icon>
         </div>
 
-        @if (showStatusDropdown) {
+        @if (showStatusDropdown()) {
           <div class="dropdown-menu shadow-lg" (click)="$event.stopPropagation()" style="position: absolute; top: 100%; right: 0; width: 220px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 8px; z-index: 2000; display: flex; flex-direction: column; max-height: 400px; padding: 0; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);">
             <div class="dropdown-header" style="padding: 8px 12px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border-radius: 8px 8px 0 0; font-size: 11px; font-weight: 600; color: #64748b; user-select: none;">
               <span>{{ statusFilter().length }} sélectionné(s)</span>

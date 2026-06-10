@@ -26,7 +26,7 @@ export class ProjectsViewComponent implements OnInit {
   viewMode = storageSignal<"list" | "card" | "table">("projects_view_mode", "list");
   searchQuery = signal("");
   statusFilter = storageSignal<string[]>("projects_view_status_filter", []);
-  showStatusDropdown = false;
+  showStatusDropdown = signal(false);
   ChevronDown = ChevronDown;
 
   LucideCalculator = LucideCalculator;
@@ -120,7 +120,7 @@ export class ProjectsViewComponent implements OnInit {
 
     // Close status dropdown if clicked outside
     if (!target.closest('.status-dropdown-container')) {
-      this.showStatusDropdown = false;
+      this.showStatusDropdown.set(false);
     }
   }
 
@@ -144,7 +144,7 @@ export class ProjectsViewComponent implements OnInit {
 
   toggleStatusDropdown(event: MouseEvent) {
     event.stopPropagation();
-    this.showStatusDropdown = !this.showStatusDropdown;
+    this.showStatusDropdown.update(v => !v);
   }
 
   toggleStatusSelection(status: string) {
