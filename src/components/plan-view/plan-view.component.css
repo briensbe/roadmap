@@ -3087,3 +3087,9 @@ input:checked + .slider:before {
 .capacity-container[data-zoom="compact"] .gantt-milestone-text {
   font-size: 8px;
 }
+
+/* Local override to position selection toolbar absolutely inside the scroll container */
+:host ::ng-deep .selection-toolbar {
+  position: absolute;
+  z-index: 89; /* Above sticky parent rows (80) but below sticky headers (90/100) */
+}

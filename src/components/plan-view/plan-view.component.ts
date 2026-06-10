@@ -659,6 +659,11 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
             this.cdr.markForCheck();
           });
         }
+
+        // Check selection toolbar visibility on scroll if it is visible
+        if (this.selectedCells.length > 0 && this.isSelectionFinished && !this.isMovingSelection && !this.isSaving) {
+          this.checkToolbarVisibilityOnScroll();
+        }
       };
       // Attach to the calendar wrapper (the scrollable container)
       // Use capture phase to catch scroll on any child element
@@ -2706,6 +2711,37 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
       if (cellElement) {
         const rect = cellElement.getBoundingClientRect();
+
+        // Check if the cell has scrolled out of the visible area of the calendar
+        const wrapperEl = document.querySelector('.calendar-wrapper');
+        const headerEl = this.headerRowElement?.nativeElement;
+        const milestonesEl = this.milestonesRowElement?.nativeElement;
+        const labelEl = rowElement.querySelector('.label-cell');
+
+        if (wrapperEl && headerEl && milestonesEl && labelEl) {
+          const wrapperRect = wrapperEl.getBoundingClientRect();
+          const milestonesRect = milestonesEl.getBoundingClientRect();
+          const labelRect = labelEl.getBoundingClientRect();
+
+          const visibleTop = milestonesRect.bottom;
+          const visibleBottom = wrapperRect.bottom;
+          const visibleLeft = labelRect.right;
+          const visibleRight = wrapperRect.right;
+
+          // Check if cell is completely outside the visible scroll bounds
+          const cellIsHidden = 
+            rect.bottom <= visibleTop || // Scrolled above (under headers)
+            rect.top >= visibleBottom || // Scrolled below viewport
+            rect.right <= visibleLeft || // Scrolled left (under label column)
+            rect.left >= visibleRight;   // Scrolled right off screen
+
+          if (cellIsHidden) {
+            this.toolbarVisible = false;
+            this.cdr.detectChanges();
+            return;
+          }
+        }
+
         const viewportHeight = window.innerHeight;
         const viewportWidth = window.innerWidth;
 
@@ -2719,11 +2755,74 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
           rightSafetyMargin: 320
         });
 
-        this.toolbarPosition = pos;
+        // Convert viewport coordinates to calendar-wrapper relative absolute coordinates
+        if (wrapperEl) {
+          const wrapperRect = wrapperEl.getBoundingClientRect();
+          this.toolbarPosition = {
+            top: pos.top - wrapperRect.top + wrapperEl.scrollTop,
+            left: pos.left - wrapperRect.left + wrapperEl.scrollLeft,
+            transform: pos.transform
+          };
+        } else {
+          this.toolbarPosition = pos;
+        }
 
         // Make toolbar visible now that position is set
         this.toolbarVisible = true;
         this.cdr.detectChanges();
+      }
+    }
+  }
+
+  checkToolbarVisibilityOnScroll() {
+    if (!this.dragStartResource || this.dragEndWeekIndex < 0) return;
+
+    const firstCell = this.selectedCells[0];
+    if (!firstCell) return;
+
+    const uniqueId = this.getResourceUniqueId(
+      firstCell.resource,
+      { id: firstCell.childId } as ChildRow,
+      { id: firstCell.parentId } as ParentRow
+    );
+
+    const rowSelector = `[data-resource-id="${uniqueId}"]`;
+    const rowElement = document.querySelector(rowSelector);
+
+    if (rowElement) {
+      const cellSelector = `[data-week-index="${this.dragEndWeekIndex}"]`;
+      const cellElement = rowElement.querySelector(cellSelector);
+
+      if (cellElement) {
+        const rect = cellElement.getBoundingClientRect();
+        const wrapperEl = document.querySelector('.calendar-wrapper');
+        const headerEl = this.headerRowElement?.nativeElement;
+        const milestonesEl = this.milestonesRowElement?.nativeElement;
+        const labelEl = rowElement.querySelector('.label-cell');
+
+        if (wrapperEl && headerEl && milestonesEl && labelEl) {
+          const wrapperRect = wrapperEl.getBoundingClientRect();
+          const milestonesRect = milestonesEl.getBoundingClientRect();
+          const labelRect = labelEl.getBoundingClientRect();
+
+          const visibleTop = milestonesRect.bottom;
+          const visibleBottom = wrapperRect.bottom;
+          const visibleLeft = labelRect.right;
+          const visibleRight = wrapperRect.right;
+
+          // Check if cell is completely outside the visible scroll bounds
+          const cellIsHidden = 
+            rect.bottom <= visibleTop || // Scrolled under headers
+            rect.top >= visibleBottom || // Scrolled below viewport
+            rect.right <= visibleLeft || // Scrolled left under label column
+            rect.left >= visibleRight;   // Scrolled right off screen
+
+          const shouldBeVisible = !cellIsHidden;
+          if (this.toolbarVisible !== shouldBeVisible) {
+            this.toolbarVisible = shouldBeVisible;
+            this.cdr.detectChanges();
+          }
+        }
       }
     }
   }

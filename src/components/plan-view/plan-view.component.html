@@ -1847,25 +1847,24 @@
         </div>
       </div>
     </div>
+    <app-selection-toolbar
+      *ngIf="selectedCells.length > 0 && isSelectionFinished && !isMovingSelection && !isSaving"
+      [position]="toolbarPosition"
+      [visible]="toolbarVisible"
+      [selectedCount]="selectedCells.length"
+      [totalDays]="totalSelectedDays"
+      [selectionStartDate]="selectionStartWeekDate"
+      [daysPerWeek]="selectionDaysPerWeek"
+      [(value)]="bulkChargeValue"
+      [isSaving]="isSaving"
+      [applyLabel]="'Appliquer'"
+      [savingLabel]="'Application...'"
+      (apply)="applyBulkCharge($event)"
+      (project)="applyProjection($event)"
+      (cancel)="clearSelection()"
+    >
+    </app-selection-toolbar>
   </div>
-
-  <app-selection-toolbar
-    *ngIf="selectedCells.length > 0 && isSelectionFinished && !isMovingSelection && !isSaving"
-    [position]="toolbarPosition"
-    [visible]="toolbarVisible"
-    [selectedCount]="selectedCells.length"
-    [totalDays]="totalSelectedDays"
-    [selectionStartDate]="selectionStartWeekDate"
-    [daysPerWeek]="selectionDaysPerWeek"
-    [(value)]="bulkChargeValue"
-    [isSaving]="isSaving"
-    [applyLabel]="'Appliquer'"
-    [savingLabel]="'Application...'"
-    (apply)="applyBulkCharge($event)"
-    (project)="applyProjection($event)"
-    (cancel)="clearSelection()"
-  >
-  </app-selection-toolbar>
 
   <!-- Modal for linking -->
   <div *ngIf="showLinkModal" class="modal-overlay" (click)="closeLinkModal()">
