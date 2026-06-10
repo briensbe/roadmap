@@ -307,25 +307,41 @@
           </span>
         </div>
 
-        <div class="filters-dropdown" *ngIf="openEquipeDropdown" (click)="$event.stopPropagation()">
-          <div class="dropdown-list">
-            <label *ngFor="let e of allEquipes" class="dropdown-item" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-              <input
-                type="checkbox"
-                [value]="e.id"
-                (change)="onEquipeToggle(e.id, $event)"
-                [checked]="filterEquipeIds().includes(e.id!)"
-                style="margin: 0; cursor: pointer;"
-              />
-              <div
-                class="item-color-badge"
-                [style.background-color]="e.color || '#e2e8f0'"
-                style="width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;"
-              ></div>
-              <span class="item-label" style="font-size: 13px; color: #334155;">{{ e.nom }}</span>
-            </label>
+        @if (openEquipeDropdown) {
+          <div class="filters-dropdown" (click)="$event.stopPropagation()">
+            <div class="dropdown-header" style="padding: 8px 12px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border-radius: 8px 8px 0 0; font-size: 11px; font-weight: 600; color: #64748b; user-select: none;">
+              <span>{{ filterEquipeIds().length }} sélectionnée(s)</span>
+              @if (filterEquipeIds().length > 0) {
+                <button
+                  class="btn-clear"
+                  (click)="filterEquipeIds.set([]); applyFilters(); $event.stopPropagation()"
+                  style="background: transparent; border: none; color: #3b82f6; cursor: pointer; font-size: 11px; padding: 0; font-family: inherit;"
+                >
+                  Effacer
+                </button>
+              }
+            </div>
+            <div class="dropdown-list">
+              @for (e of allEquipes; track e.id) {
+                <label class="dropdown-item" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input
+                    type="checkbox"
+                    [value]="e.id"
+                    (change)="onEquipeToggle(e.id, $event)"
+                    [checked]="filterEquipeIds().includes(e.id!)"
+                    style="margin: 0; cursor: pointer;"
+                  />
+                  <div
+                    class="item-color-badge"
+                    [style.background-color]="e.color || '#e2e8f0'"
+                    style="width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;"
+                  ></div>
+                  <span class="item-label" style="font-size: 13px; color: #334155;">{{ e.nom }}</span>
+                </label>
+              }
+            </div>
           </div>
-        </div>
+        }
       </div>
 
       <div class="filter-group projet-filter-group">

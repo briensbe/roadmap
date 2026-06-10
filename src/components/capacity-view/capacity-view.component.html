@@ -43,31 +43,36 @@
               <lucide-icon name="chevron-down" [size]="14" style="color: #64748b; flex-shrink: 0; margin-left: 4px;"></lucide-icon>
             </div>
 
-            <div *ngIf="showTeamDropdown" class="team-dropdown shadow-lg">
-              <div class="dropdown-header">
-                <span>{{ selectedTeamIds().length }} sélectionnée(s)</span>
-                <button
-                  class="btn-clear"
-                  *ngIf="selectedTeamIds().length > 0"
-                  (click)="clearSelectedTeams(); $event.stopPropagation()"
-                >
-                  Effacer
-                </button>
-              </div>
-              <div class="dropdown-list">
-                <div
-                  *ngFor="let eq of allEquipes"
-                  class="dropdown-item"
-                  (click)="toggleTeamSelection(eq.id!); $event.stopPropagation()"
-                >
-                  <input type="checkbox" [checked]="isTeamSelected(eq.id!)" style="pointer-events: none;" />
-                  <div class="item-icon" [style.background-color]="eq.color || '#e2e8f0'" style="width: 12px; height: 12px; border-radius: 50%;">
-                  </div>
-                  <span class="item-label">{{ eq.nom }}</span>
+            @if (showTeamDropdown) {
+              <div class="team-dropdown shadow-lg">
+                <div class="dropdown-header">
+                  <span>{{ selectedTeamIds().length }} sélectionnée(s)</span>
+                  @if (selectedTeamIds().length > 0) {
+                    <button
+                      class="btn-clear"
+                      (click)="clearSelectedTeams(); $event.stopPropagation()"
+                    >
+                      Effacer
+                    </button>
+                  }
                 </div>
-                <div *ngIf="allEquipes.length === 0" class="no-results">Aucune équipe</div>
+                <div class="dropdown-list">
+                  @for (eq of allEquipes; track eq.id) {
+                    <div
+                      class="dropdown-item"
+                      (click)="toggleTeamSelection(eq.id!); $event.stopPropagation()"
+                    >
+                      <input type="checkbox" [checked]="isTeamSelected(eq.id!)" style="pointer-events: none;" />
+                      <div class="item-icon" [style.background-color]="eq.color || '#e2e8f0'" style="width: 12px; height: 12px; border-radius: 50%;">
+                      </div>
+                      <span class="item-label">{{ eq.nom }}</span>
+                    </div>
+                  } @empty {
+                    <div class="no-results">Aucune équipe</div>
+                  }
+                </div>
               </div>
-            </div>
+            }
           </div>
         </div>
         <div class="filter-item">
