@@ -109,6 +109,10 @@ interface FlatRow {
 export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('tooltipElement') tooltipElement?: ElementRef<HTMLElement>;
   @ViewChild('dragProjectionTooltip') dragProjectionTooltip?: ElementRef<HTMLElement>;
+  @ViewChild('headerRow') headerRowElement?: ElementRef<HTMLElement>;
+  @ViewChild('milestonesRow') milestonesRowElement?: ElementRef<HTMLElement>;
+
+  private resizeObserver?: ResizeObserver;
 
   // Milestone Modal props
   showMilestoneModal = false;
@@ -665,6 +669,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngAfterViewInit() {
     this.startTutorial();
+    this.setupResizeObserver();
   }
 
   restartTutorial() {
@@ -767,6 +772,9 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+    }
     if (this.globalMouseMoveListener) {
       this.globalMouseMoveListener();
     }
@@ -783,6 +791,47 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onSearchInput(value: string) {
     this.searchSubject.next(value);
+  }
+
+  setupResizeObserver() {
+    if (typeof ResizeObserver === 'undefined') return;
+
+    this.ngZone.runOutsideAngular(() => {
+      this.resizeObserver = new ResizeObserver(() => {
+        this.updateHeaderHeights();
+      });
+
+      const headerEl = this.headerRowElement?.nativeElement;
+      const milestonesEl = this.milestonesRowElement?.nativeElement;
+
+      if (headerEl) {
+        this.resizeObserver.observe(headerEl);
+      }
+      if (milestonesEl) {
+        this.resizeObserver.observe(milestonesEl);
+      }
+
+      // Initial measurement after rendering completes
+      setTimeout(() => {
+        this.updateHeaderHeights();
+      }, 0);
+    });
+  }
+
+  updateHeaderHeights() {
+    const headerEl = this.headerRowElement?.nativeElement;
+    const milestonesEl = this.milestonesRowElement?.nativeElement;
+
+    if (!headerEl || !milestonesEl) return;
+
+    const headerHeight = headerEl.offsetHeight;
+    const milestonesHeight = milestonesEl.offsetHeight;
+
+    const gridEl = headerEl.parentElement;
+    if (gridEl) {
+      gridEl.style.setProperty('--calendar-header-height', `${headerHeight}px`);
+      gridEl.style.setProperty('--milestones-header-height', `${milestonesHeight}px`);
+    }
   }
 
 

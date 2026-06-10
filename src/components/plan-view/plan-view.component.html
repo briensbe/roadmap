@@ -604,7 +604,7 @@
   <div class="calendar-wrapper" cdkScrollable>
     <div class="calendar-grid" [class.resizing]="isResizing">
       <!-- Header row (sticky top) -->
-      <div class="calendar-header-row">
+      <div class="calendar-header-row" #headerRow>
         <div
           class="label-cell header-label"
           [style.width.px]="labelColumnWidth()"
@@ -708,7 +708,7 @@
       </div>
 
       <!-- Milestones row (sticky top with offset) -->
-      <div class="milestones-header-row">
+      <div class="milestones-header-row" #milestonesRow>
         <div
           class="label-cell milestones-label"
           [style.width.px]="labelColumnWidth()"
