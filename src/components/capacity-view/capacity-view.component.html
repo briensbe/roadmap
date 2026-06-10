@@ -30,10 +30,45 @@
         "
       >
         <div class="filter-item">
-          <select [(ngModel)]="teamFilter" class="form-control form-control-sm" style="width: 150px">
-            <option value="all">Toutes les équipes</option>
-            <option *ngFor="let eq of allEquipes" [value]="eq.id">{{ eq.nom }}</option>
-          </select>
+          <div class="team-dropdown-container">
+            <div
+              class="form-control form-control-sm select-trigger"
+              [class.active]="showTeamDropdown"
+              (click)="toggleTeamDropdown($event)"
+              style="width: 180px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none;"
+            >
+              <span class="trigger-label" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                {{ getTeamFilterLabel() }}
+              </span>
+              <lucide-icon name="chevron-down" [size]="14" style="color: #64748b; flex-shrink: 0; margin-left: 4px;"></lucide-icon>
+            </div>
+
+            <div *ngIf="showTeamDropdown" class="team-dropdown shadow-lg">
+              <div class="dropdown-header">
+                <span>{{ selectedTeamIds().length }} sélectionnée(s)</span>
+                <button
+                  class="btn-clear"
+                  *ngIf="selectedTeamIds().length > 0"
+                  (click)="clearSelectedTeams(); $event.stopPropagation()"
+                >
+                  Effacer
+                </button>
+              </div>
+              <div class="dropdown-list">
+                <div
+                  *ngFor="let eq of allEquipes"
+                  class="dropdown-item"
+                  (click)="toggleTeamSelection(eq.id!); $event.stopPropagation()"
+                >
+                  <input type="checkbox" [checked]="isTeamSelected(eq.id!)" style="pointer-events: none;" />
+                  <div class="item-icon" [style.background-color]="eq.color || '#e2e8f0'" style="width: 12px; height: 12px; border-radius: 50%;">
+                  </div>
+                  <span class="item-label">{{ eq.nom }}</span>
+                </div>
+                <div *ngIf="allEquipes.length === 0" class="no-results">Aucune équipe</div>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="filter-item">
           <div class="filter-dropdown-container">

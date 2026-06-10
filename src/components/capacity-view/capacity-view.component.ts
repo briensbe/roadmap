@@ -48,7 +48,8 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   teamRows: TeamRow[] = [];
   allEquipes: Equipe[] = [];
 
-  teamFilter: string = "all";
+  selectedTeamIds = storageSignal<string[]>("capacity-view-selected-teams", []);
+  showTeamDropdown: boolean = false;
   resourceSearch: string = "";
   selectedResourceNames: Set<string> = new Set();
   showResourceDropdown: boolean = false;
@@ -263,8 +264,8 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
     let rows = this.teamRows;
 
     // Filter by team
-    if (this.teamFilter !== "all") {
-      rows = rows.filter(tr => tr.equipe.id === this.teamFilter);
+    if (this.selectedTeamIds().length > 0) {
+      rows = rows.filter(tr => this.selectedTeamIds().includes(tr.equipe.id!));
     }
 
     // Filter by resource search OR multi-select (by name)
@@ -318,6 +319,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
 
   toggleResourceDropdown(event: MouseEvent) {
     event.stopPropagation();
+    this.showTeamDropdown = false;
     this.showResourceDropdown = !this.showResourceDropdown;
 
     if (this.showResourceDropdown) {
@@ -330,6 +332,53 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
       };
       document.addEventListener('click', closeHandler);
     }
+  }
+
+  toggleTeamDropdown(event: MouseEvent) {
+    event.stopPropagation();
+    this.showResourceDropdown = false;
+    this.showTeamDropdown = !this.showTeamDropdown;
+
+    if (this.showTeamDropdown) {
+      const closeHandler = (e: MouseEvent) => {
+        const target = e.target as HTMLElement;
+        if (!target.closest('.team-dropdown-container')) {
+          this.showTeamDropdown = false;
+          document.removeEventListener('click', closeHandler);
+        }
+      };
+      document.addEventListener('click', closeHandler);
+    }
+  }
+
+  toggleTeamSelection(id: string) {
+    const current = this.selectedTeamIds();
+    if (current.includes(id)) {
+      this.selectedTeamIds.set(current.filter(x => x !== id));
+    } else {
+      this.selectedTeamIds.set([...current, id]);
+    }
+  }
+
+  isTeamSelected(id: string): boolean {
+    return this.selectedTeamIds().includes(id);
+  }
+
+  getTeamFilterLabel(): string {
+    const current = this.selectedTeamIds();
+    if (current.length === 0) {
+      return "Toutes les équipes";
+    }
+    if (current.length === 1) {
+      const id = current[0];
+      const eq = this.allEquipes.find(e => e.id === id);
+      return eq ? eq.nom : "Toutes les équipes";
+    }
+    return `${current.length} équipes`;
+  }
+
+  clearSelectedTeams() {
+    this.selectedTeamIds.set([]);
   }
 
   formatWeekHeader(date: Date): string {
@@ -471,6 +520,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   @HostListener('document:keydown.escape')
   onEscape() {
     this.showResourceDropdown = false;
+    this.showTeamDropdown = false;
     this.showAddResourceModal = false;
     this.showConfirmModal = false;
     this.showYearPopover = false;
