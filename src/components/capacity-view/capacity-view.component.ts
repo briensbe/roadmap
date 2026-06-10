@@ -154,6 +154,11 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
             this.cdr.markForCheck();
           });
         }
+
+        // Check selection toolbar visibility on scroll if it is visible
+        if (this.selectedCells.length > 0 && this.isSelectionFinished) {
+          this.checkToolbarVisibilityOnScroll();
+        }
       };
       // Attach to the document with capture phase to catch scroll on any child element
       document.addEventListener('scroll', scrollHandler, true);
@@ -463,6 +468,16 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
     this.tooltipY = y;
   }
 
+  @HostListener('document:keydown.escape')
+  onEscape() {
+    this.showResourceDropdown = false;
+    this.showAddResourceModal = false;
+    this.showConfirmModal = false;
+    this.showYearPopover = false;
+    this.clearSelection();
+    this.cdr.markForCheck();
+  }
+
   onMouseDown(event: MouseEvent, resource: ResourceRow) {
     this.isDragging = true;
     this.isSelectionFinished = false;
@@ -524,20 +539,38 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
 
         if (cellElement) {
           const rect = cellElement.getBoundingClientRect();
+
+          // Check if cell is scrolled out of the visible area
+          const wrapperEl = document.querySelector('.calendar-wrapper');
+          const headerEl = document.querySelector('.calendar-header-row');
+          const labelEl = rowElement.querySelector('.label-cell');
+
+          if (wrapperEl && headerEl && labelEl) {
+            const wrapperRect = wrapperEl.getBoundingClientRect();
+            const headerRect = headerEl.getBoundingClientRect();
+            const labelRect = labelEl.getBoundingClientRect();
+
+            const visibleTop = headerRect.bottom;
+            const visibleBottom = wrapperRect.bottom;
+            const visibleLeft = labelRect.right;
+            const visibleRight = wrapperRect.right;
+
+            const cellIsHidden = 
+              rect.bottom <= visibleTop || // Scrolled under header
+              rect.top >= visibleBottom || // Scrolled below viewport
+              rect.right <= visibleLeft || // Scrolled left under label column
+              rect.left >= visibleRight;   // Scrolled right off screen
+
+            if (cellIsHidden) {
+              this.toolbarVisible = false;
+              this.cdr.markForCheck();
+              return;
+            }
+          }
+
           const viewportHeight = window.innerHeight;
           const viewportWidth = window.innerWidth;
 
-          // Estimated toolbar dimensions (safe buffer)
-          const bottomSafetyMargin = 150; // Height of toolbar + some padding
-          const rightSafetyMargin = 320; // Width of toolbar + padding
-
-          const spaceBelow = viewportHeight - rect.bottom;
-
-          let top = rect.bottom;
-          let left = rect.left + rect.width / 2;
-          let transform = 'translate(-50%, 10px)'; // Default: centered below
-
-          // Check if we are too close to the bottom
           const pos = calculateBestToolbarPosition({
             rect,
             viewportWidth,
@@ -548,7 +581,17 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
             rightSafetyMargin: 320
           });
 
-          this.toolbarPosition = pos;
+          // Convert viewport coordinates to calendar-wrapper relative absolute coordinates
+          if (wrapperEl) {
+            const wrapperRect = wrapperEl.getBoundingClientRect();
+            this.toolbarPosition = {
+              top: pos.top - wrapperRect.top + wrapperEl.scrollTop,
+              left: pos.left - wrapperRect.left + wrapperEl.scrollLeft,
+              transform: pos.transform
+            };
+          } else {
+            this.toolbarPosition = pos;
+          }
 
           // Make toolbar visible now that position is set
           this.toolbarVisible = true;
@@ -556,6 +599,49 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
         }
       }
     }, 0);
+  }
+
+  checkToolbarVisibilityOnScroll() {
+    if (!this.dragStartResource || this.dragEndWeekIndex < 0) return;
+
+    const rowSelector = `[data-resource-id="${this.dragStartResource.uniqueId}"]`;
+    const rowElement = document.querySelector(rowSelector);
+
+    if (rowElement) {
+      const cellSelector = `[data-week-index="${this.dragEndWeekIndex}"]`;
+      const cellElement = rowElement.querySelector(cellSelector);
+
+      if (cellElement) {
+        const rect = cellElement.getBoundingClientRect();
+        const wrapperEl = document.querySelector('.calendar-wrapper');
+        const headerEl = document.querySelector('.calendar-header-row');
+        const labelEl = rowElement.querySelector('.label-cell');
+
+        if (wrapperEl && headerEl && labelEl) {
+          const wrapperRect = wrapperEl.getBoundingClientRect();
+          const headerRect = headerEl.getBoundingClientRect();
+          const labelRect = labelEl.getBoundingClientRect();
+
+          const visibleTop = headerRect.bottom;
+          const visibleBottom = wrapperRect.bottom;
+          const visibleLeft = labelRect.right;
+          const visibleRight = wrapperRect.right;
+
+          // Check if cell is completely outside the visible scroll bounds
+          const cellIsHidden = 
+            rect.bottom <= visibleTop || // Scrolled under header
+            rect.top >= visibleBottom || // Scrolled below viewport
+            rect.right <= visibleLeft || // Scrolled left under label column
+            rect.left >= visibleRight;   // Scrolled right off screen
+
+          const shouldBeVisible = !cellIsHidden;
+          if (this.toolbarVisible !== shouldBeVisible) {
+            this.toolbarVisible = shouldBeVisible;
+            this.cdr.detectChanges();
+          }
+        }
+      }
+    }
   }
 
   updateSelection() {
