@@ -59,23 +59,31 @@ interface OrgNode {
             <span class="logo-text">ResourceFlow</span>
           </div>
         </div>
-        <div class="header-right">
-          <button class="header-btn" (click)="openCreateModal('societe')">
-            <lucide-icon name="building-2" [size]="20"></lucide-icon>
-            Société
+        <div class="header-right dropdown-container" (click)="$event.stopPropagation()">
+          <button class="btn-create" (click)="toggleAddDropdown()">
+            <lucide-icon name="plus" [size]="20"></lucide-icon>
+            Ajouter
           </button>
-          <button class="header-btn" (click)="openCreateModal('departement')">
-            <lucide-icon name="layers" [size]="20"></lucide-icon>
-            Département
-          </button>
-          <button class="header-btn" (click)="openCreateModal('service')">
-            <lucide-icon name="box" [size]="20"></lucide-icon>
-            Service
-          </button>
-          <button class="header-btn" (click)="openCreateModal('equipe')">
-            <lucide-icon name="users" [size]="20"></lucide-icon>
-            Équipe
-          </button>
+          @if (showAddDropdown) {
+            <div class="add-dropdown">
+              <button (click)="selectAddOption('societe')">
+                <lucide-icon name="building-2" [size]="16"></lucide-icon>
+                Société
+              </button>
+              <button (click)="selectAddOption('departement')">
+                <lucide-icon name="layers" [size]="16"></lucide-icon>
+                Département
+              </button>
+              <button (click)="selectAddOption('service')">
+                <lucide-icon name="box" [size]="16"></lucide-icon>
+                Service
+              </button>
+              <button (click)="selectAddOption('equipe')">
+                <lucide-icon name="users" [size]="16"></lucide-icon>
+                Équipe
+              </button>
+            </div>
+          }
         </div>
       </header>
 
@@ -318,6 +326,24 @@ interface OrgNode {
     .header-right { display: flex; gap: 12px; }
     .header-btn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: white; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; color: #374151; transition: all 0.2s; }
     .header-btn:hover { background: #f9fafb; border-color: #d1d5db; color: #111827; }
+    .dropdown-container { position: relative; }
+    .btn-create { 
+      display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: #3b82f6; color: white; border: none; 
+      border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; font-size: 14px;
+    }
+    .btn-create:hover { background: #2563eb; transform: translateY(-1px); }
+    .btn-create:active { transform: translateY(0); }
+    .add-dropdown {
+      position: absolute; right: 0; top: 100%; margin-top: 8px; background: white; border: 1px solid #e5e7eb; border-radius: 12px; 
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); padding: 6px; min-width: 180px; z-index: 20;
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .add-dropdown button {
+      display: flex; align-items: center; gap: 10px; background: none; border: none; padding: 10px 14px; text-align: left; cursor: pointer; font-size: 14px; color: #374151; font-weight: 500; border-radius: 8px; width: 100%; transition: background 0.15s, color 0.15s;
+    }
+    .add-dropdown button lucide-icon { color: #6b7280; transition: color 0.15s; }
+    .add-dropdown button:hover { background: #f3f4f6; color: #111827; }
+    .add-dropdown button:hover lucide-icon { color: #3b82f6; }
     
     /* Main Content */
     .main-content { padding: 32px; }
@@ -462,6 +488,7 @@ export class OrganizationViewComponent implements OnInit {
   createModalType: 'societe' | 'departement' | 'service' | 'equipe' | null = null;
   editingNode: OrgNode | null = null;
   activeMenuId: string | null = null;
+  showAddDropdown = false;
 
   formData: FormData = {
     nom: '',
@@ -505,7 +532,17 @@ export class OrganizationViewComponent implements OnInit {
     // click outside to close menu
     window.addEventListener('click', () => {
       this.activeMenuId = null;
+      this.showAddDropdown = false;
     });
+  }
+
+  toggleAddDropdown() {
+    this.showAddDropdown = !this.showAddDropdown;
+  }
+
+  selectAddOption(type: 'societe' | 'departement' | 'service' | 'equipe') {
+    this.showAddDropdown = false;
+    this.openCreateModal(type);
   }
 
   async ngOnInit() {
