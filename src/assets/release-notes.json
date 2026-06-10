@@ -1,5 +1,32 @@
 [
   {
+    "version": "2026.06.10",
+    "date": "2026-06-10",
+    "news": [
+      {
+        "title": "Filtres d'équipes à choix multiples",
+        "items": [
+          "Sélectionnez plusieurs équipes simultanément dans les filtres des vues Planification et Capacité",
+          "Ajout de pastilles colorées devant le nom des équipes dans le filtre de la vue Planification pour une identification rapide"
+        ]
+      },
+      {
+        "title": "Ergonomie et Correctifs de navigation",
+        "items": [
+          "Ajustement de la position des popups sur la vue Capacité et possibilité de les fermer avec la touche 'Esc'",
+          "Résolution du bug de réinitialisation de la modale d'édition des projets",
+          "Amélioration des actions d'ajout de ressources dans la vue Organisation"
+        ]
+      },
+      {
+        "title": "Aide & Intégration Jira",
+        "items": [
+          "Ajout d'une section d'aide détaillée pour l'utilisation du bookmarklet d'extraction de données depuis Jira"
+        ]
+      }
+    ]
+  },
+  {
     "version": "2026.06.07",
     "date": "2026-06-07",
     "news": [
