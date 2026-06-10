@@ -309,14 +309,20 @@
 
         <div class="filters-dropdown" *ngIf="openEquipeDropdown" (click)="$event.stopPropagation()">
           <div class="dropdown-list">
-            <label *ngFor="let e of allEquipes" class="dropdown-item">
+            <label *ngFor="let e of allEquipes" class="dropdown-item" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
               <input
                 type="checkbox"
                 [value]="e.id"
                 (change)="onEquipeToggle(e.id, $event)"
                 [checked]="filterEquipeIds().includes(e.id!)"
+                style="margin: 0; cursor: pointer;"
               />
-              {{ e.nom }}
+              <div
+                class="item-color-badge"
+                [style.background-color]="e.color || '#e2e8f0'"
+                style="width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;"
+              ></div>
+              <span class="item-label" style="font-size: 13px; color: #334155;">{{ e.nom }}</span>
             </label>
           </div>
         </div>
