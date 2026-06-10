@@ -482,6 +482,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
     this.isDragging = true;
     this.isSelectionFinished = false;
     this.dragStartResource = resource;
+    this.bulkCapaciteValue = null;
 
     const target = event.target as HTMLElement;
     const cell = target.closest(".week-cell");
@@ -519,6 +520,16 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
     this.isDragging = false;
     if (this.selectedCells.length > 0) {
       this.isSelectionFinished = true;
+      
+      // If a single cell is selected, show its existing value
+      if (this.selectedCells.length === 1) {
+        const cell = this.selectedCells[0];
+        const val = this.getCapacite(cell.resource, cell.week);
+        this.bulkCapaciteValue = val > 0 ? val : null;
+      } else {
+        this.bulkCapaciteValue = null;
+      }
+      
       this.updateToolbarPosition();
     }
   }
@@ -673,6 +684,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
     this.dragStartResource = null;
     this.dragStartWeekIndex = -1;
     this.dragEndWeekIndex = -1;
+    this.bulkCapaciteValue = null;
   }
 
   async applyBulkCapacite(value: number | null) {

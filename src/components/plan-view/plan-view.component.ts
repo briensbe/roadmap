@@ -2474,6 +2474,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.dragStartResource = resource;
     this.dragStartChild = child;
     this.dragStartParent = parent;
+    this.bulkChargeValue = null;
 
     const target = event.target as HTMLElement;
     const cell = target.closest(".week-cell");
@@ -2532,9 +2533,13 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
         this.isSelectionFinished = true;
 
         // On ne pré-remplit la valeur que si on est dans le cas d'une projection vers du vide
-        // afin de ne pas casser le calcul de la somme réelle pour les sélections classiques
+        // ou pour une sélection à cellule unique (remplie ou vide) afin de ré-actualiser l'input.
         if (this.shouldShowProjectionTooltip()) {
           this.bulkChargeValue = this.dragStartCellValue;
+        } else if (this.selectedCells.length === 1) {
+          this.bulkChargeValue = this.dragStartCellValue;
+        } else {
+          this.bulkChargeValue = null;
         }
 
         this.updateToolbarPosition();
