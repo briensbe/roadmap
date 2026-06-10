@@ -1130,68 +1130,65 @@
                         </div>
                       </div>
                       <div class="weeks-container" *ngIf="planningMode() === 'saisie'">
-                        <div
-                          *ngFor="let week of displayedWeeks; let i = index; trackBy: trackByWeek"
-                          class="week-cell resource-detail-cell"
-                          [ngClass]="getCellSelectionClasses(resource, week, i, child, row)"
-                          [class.has-capacity]="resource.cellData?.[i]?.value! > 0"
-                          [class.cell-positive]="
-                            resource.cellData?.[i]?.showAvailability &&
-                            resource.cellData?.[i]?.hasCapRecord &&
-                            (resource.cellData?.[i]?.value! > 0 || showAvailability()) &&
-                            resource.cellData?.[i]?.isPositive
-                          "
-                          [class.cell-zero]="
-                            resource.cellData?.[i]?.showAvailability &&
-                            resource.cellData?.[i]?.hasCapRecord &&
-                            (resource.cellData?.[i]?.value! > 0 || showAvailability()) &&
-                            resource.cellData?.[i]?.isZero
-                          "
-                          [class.cell-negative]="
-                            resource.cellData?.[i]?.showAvailability &&
-                            resource.cellData?.[i]?.hasCapRecord &&
-                            (resource.cellData?.[i]?.value! > 0 || showAvailability()) &&
-                            resource.cellData?.[i]?.isNegative
-                          "
-                          [attr.data-week-index]="i"
-                        >
-                          <div class="cell-content">
-                            <div
-                              *ngIf="
-                                (resource.cellData?.[i]?.value! > 0 &&
-                                  (!isMovingSelection || moveGhostOffset === 0 || !isCellSelected(resource, week))) ||
-                                getGhostValue(resource, i) !== null
-                              "
-                              class="capacity-value"
-                            >
-                              {{
-                                (getGhostValue(resource, i) !== null
-                                  ? getGhostValue(resource, i)
-                                  : resource.cellData?.[i]?.value
-                                ) | number: "1.0-1"
-                              }}
-                            </div>
-                            <div
-                              class="availability-indicator"
-                              *ngIf="
-                                (!isMovingSelection || moveGhostOffset === 0 || !isCellSelected(resource, week)) &&
-                                resource.cellData?.[i]?.showAvailability &&
-                                (resource.cellData?.[i]?.value! > 0 ||
-                                  (showAvailability() &&
-                                    (resource.cellData?.[i]?.availability !== 0 ||
-                                      resource.cellData?.[i]?.hasCapRecord)))
-                              "
-                              [ngClass]="{
-                                'availability-positive': resource.cellData?.[i]?.isPositive,
-                                'availability-zero': resource.cellData?.[i]?.isZero,
-                                'availability-negative': resource.cellData?.[i]?.isNegative,
-                              }"
-                            >
-                              {{ resource.cellData?.[i]?.isPositive ? "+" : ""
-                              }}{{ resource.cellData?.[i]?.availability | number: "1.0-1" }}
+                        @for (week of displayedWeeks; track week.getTime(); let i = $index) {
+                          @let cell = resource.cellData?.[i];
+                          <div
+                            class="week-cell resource-detail-cell"
+                            [ngClass]="getCellSelectionClasses(resource, week, i, child, row)"
+                            [class.has-capacity]="cell?.value! > 0"
+                            [class.cell-positive]="
+                              cell?.showAvailability &&
+                              cell?.hasCapRecord &&
+                              (cell?.value! > 0 || showAvailability()) &&
+                              cell?.isPositive
+                            "
+                            [class.cell-zero]="
+                              cell?.showAvailability &&
+                              cell?.hasCapRecord &&
+                              (cell?.value! > 0 || showAvailability()) &&
+                              cell?.isZero
+                            "
+                            [class.cell-negative]="
+                              cell?.showAvailability &&
+                              cell?.hasCapRecord &&
+                              (cell?.value! > 0 || showAvailability()) &&
+                              cell?.isNegative
+                            "
+                            [attr.data-week-index]="i"
+                          >
+                            <div class="cell-content">
+                              @if ((cell?.value! > 0 &&
+                                    (!isMovingSelection || moveGhostOffset === 0 || !isCellSelected(resource, week))) ||
+                                  getGhostValue(resource, i) !== null) {
+                                <div class="capacity-value">
+                                  {{
+                                    (getGhostValue(resource, i) !== null
+                                      ? getGhostValue(resource, i)
+                                      : cell?.value
+                                    ) | number: "1.0-1"
+                                  }}
+                                </div>
+                              }
+                              @if ((!isMovingSelection || moveGhostOffset === 0 || !isCellSelected(resource, week)) &&
+                                  cell?.showAvailability &&
+                                  (cell?.value! > 0 ||
+                                    (showAvailability() &&
+                                      (cell?.availability !== 0 ||
+                                        cell?.hasCapRecord)))) {
+                                <div
+                                  class="availability-indicator"
+                                  [ngClass]="{
+                                    'availability-positive': cell?.isPositive,
+                                    'availability-zero': cell?.isZero,
+                                    'availability-negative': cell?.isNegative,
+                                  }"
+                                >
+                                  {{ cell?.isPositive ? "+" : "" }}{{ cell?.availability | number: "1.0-1" }}
+                                </div>
+                              }
                             </div>
                           </div>
-                        </div>
+                        }
                       </div>
 
                       <!-- Visualisation Mode (Gantt) -->
@@ -1528,68 +1525,65 @@
                           </div>
                         </div>
                         <div class="weeks-container" *ngIf="planningMode() === 'saisie'">
-                          <div
-                            *ngFor="let week of displayedWeeks; let i = index"
-                            class="week-cell resource-detail-cell"
-                            [ngClass]="getCellSelectionClasses(resource, week, i, child, row)"
-                            [class.has-capacity]="resource.cellData?.[i]?.value! > 0"
-                            [class.cell-positive]="
-                              resource.cellData?.[i]?.showAvailability &&
-                              resource.cellData?.[i]?.hasCapRecord &&
-                              (resource.cellData?.[i]?.value! > 0 || showAvailability()) &&
-                              resource.cellData?.[i]?.isPositive
-                            "
-                            [class.cell-zero]="
-                              resource.cellData?.[i]?.showAvailability &&
-                              resource.cellData?.[i]?.hasCapRecord &&
-                              (resource.cellData?.[i]?.value! > 0 || showAvailability()) &&
-                              resource.cellData?.[i]?.isZero
-                            "
-                            [class.cell-negative]="
-                              resource.cellData?.[i]?.showAvailability &&
-                              resource.cellData?.[i]?.hasCapRecord &&
-                              (resource.cellData?.[i]?.value! > 0 || showAvailability()) &&
-                              resource.cellData?.[i]?.isNegative
-                            "
-                            [attr.data-week-index]="i"
-                          >
-                            <div class="cell-content">
-                              <div
-                                *ngIf="
-                                  (resource.cellData?.[i]?.value! > 0 &&
-                                    (!isMovingSelection || moveGhostOffset === 0 || !isCellSelected(resource, week))) ||
-                                  getGhostValue(resource, i) !== null
-                                "
-                                class="capacity-value"
-                              >
-                                {{
-                                  (getGhostValue(resource, i) !== null
-                                    ? getGhostValue(resource, i)
-                                    : resource.cellData?.[i]?.value
-                                  ) | number: "1.0-1"
-                                }}
-                              </div>
-                              <div
-                                class="availability-indicator"
-                                *ngIf="
-                                  (!isMovingSelection || moveGhostOffset === 0 || !isCellSelected(resource, week)) &&
-                                  resource.cellData?.[i]?.showAvailability &&
-                                  (resource.cellData?.[i]?.value! > 0 ||
-                                    (showAvailability() &&
-                                      (resource.cellData?.[i]?.availability !== 0 ||
-                                        resource.cellData?.[i]?.hasCapRecord)))
-                                "
-                                [ngClass]="{
-                                  'availability-positive': resource.cellData?.[i]?.isPositive,
-                                  'availability-zero': resource.cellData?.[i]?.isZero,
-                                  'availability-negative': resource.cellData?.[i]?.isNegative,
-                                }"
-                              >
-                                {{ resource.cellData?.[i]?.isPositive ? "+" : ""
-                                }}{{ resource.cellData?.[i]?.availability | number: "1.0-1" }}
+                          @for (week of displayedWeeks; track week.getTime(); let i = $index) {
+                            @let cell = resource.cellData?.[i];
+                            <div
+                              class="week-cell resource-detail-cell"
+                              [ngClass]="getCellSelectionClasses(resource, week, i, child, row)"
+                              [class.has-capacity]="cell?.value! > 0"
+                              [class.cell-positive]="
+                                cell?.showAvailability &&
+                                cell?.hasCapRecord &&
+                                (cell?.value! > 0 || showAvailability()) &&
+                                cell?.isPositive
+                              "
+                              [class.cell-zero]="
+                                cell?.showAvailability &&
+                                cell?.hasCapRecord &&
+                                (cell?.value! > 0 || showAvailability()) &&
+                                cell?.isZero
+                              "
+                              [class.cell-negative]="
+                                cell?.showAvailability &&
+                                cell?.hasCapRecord &&
+                                (cell?.value! > 0 || showAvailability()) &&
+                                cell?.isNegative
+                              "
+                              [attr.data-week-index]="i"
+                            >
+                              <div class="cell-content">
+                                @if ((cell?.value! > 0 &&
+                                      (!isMovingSelection || moveGhostOffset === 0 || !isCellSelected(resource, week))) ||
+                                    getGhostValue(resource, i) !== null) {
+                                  <div class="capacity-value">
+                                    {{
+                                      (getGhostValue(resource, i) !== null
+                                        ? getGhostValue(resource, i)
+                                        : cell?.value
+                                      ) | number: "1.0-1"
+                                    }}
+                                  </div>
+                                }
+                                @if ((!isMovingSelection || moveGhostOffset === 0 || !isCellSelected(resource, week)) &&
+                                    cell?.showAvailability &&
+                                    (cell?.value! > 0 ||
+                                      (showAvailability() &&
+                                        (cell?.availability !== 0 ||
+                                          cell?.hasCapRecord)))) {
+                                  <div
+                                    class="availability-indicator"
+                                    [ngClass]="{
+                                      'availability-positive': cell?.isPositive,
+                                      'availability-zero': cell?.isZero,
+                                      'availability-negative': cell?.isNegative,
+                                    }"
+                                  >
+                                    {{ cell?.isPositive ? "+" : "" }}{{ cell?.availability | number: "1.0-1" }}
+                                  </div>
+                                }
                               </div>
                             </div>
-                          </div>
+                          }
                         </div>
 
                         <!-- Visualisation Mode (Gantt) -->
@@ -1772,67 +1766,64 @@
               </div>
             </div>
             <div class="weeks-container" *ngIf="planningMode() === 'saisie'">
-              <div
-                *ngFor="let week of displayedWeeks; let i = index; trackBy: trackByWeek"
-                class="week-cell resource-detail-cell"
-                [ngClass]="getCellSelectionClasses(row.resource, week, i, row.child, row.parent)"
-                [class.has-capacity]="row.resource.cellData?.[i]?.value! > 0"
-                [class.cell-positive]="
-                  row.resource.cellData?.[i]?.showAvailability &&
-                  row.resource.cellData?.[i]?.hasCapRecord &&
-                  (row.resource.cellData?.[i]?.value! > 0 || showAvailability()) &&
-                  row.resource.cellData?.[i]?.isPositive
-                "
-                [class.cell-zero]="
-                  row.resource.cellData?.[i]?.showAvailability &&
-                  row.resource.cellData?.[i]?.hasCapRecord &&
-                  (row.resource.cellData?.[i]?.value! > 0 || showAvailability()) &&
-                  row.resource.cellData?.[i]?.isZero
-                "
-                [class.cell-negative]="
-                  row.resource.cellData?.[i]?.showAvailability &&
-                  row.resource.cellData?.[i]?.hasCapRecord &&
-                  (row.resource.cellData?.[i]?.value! > 0 || showAvailability()) &&
-                  row.resource.cellData?.[i]?.isNegative
-                "
-                [attr.data-week-index]="i"
-              >
-                <div class="cell-content">
-                  <div
-                    *ngIf="
-                      (row.resource.cellData?.[i]?.value! > 0 &&
-                        (!isMovingSelection || moveGhostOffset === 0 || !isCellSelected(row.resource, week))) ||
-                      getGhostValue(row.resource, i) !== null
-                    "
-                    class="capacity-value"
-                  >
-                    {{
-                      (getGhostValue(row.resource, i) !== null
-                        ? getGhostValue(row.resource, i)
-                        : row.resource.cellData?.[i]?.value
-                      ) | number: "1.0-1"
-                    }}
-                  </div>
-                  <div
-                    class="availability-indicator"
-                    *ngIf="
-                      (!isMovingSelection || moveGhostOffset === 0 || !isCellSelected(row.resource, week)) &&
-                      row.resource.cellData?.[i]?.showAvailability &&
-                      (row.resource.cellData?.[i]?.value! > 0 ||
-                        (showAvailability() &&
-                          (row.resource.cellData?.[i]?.availability !== 0 || row.resource.cellData?.[i]?.hasCapRecord)))
-                    "
-                    [ngClass]="{
-                      'availability-positive': row.resource.cellData?.[i]?.isPositive,
-                      'availability-zero': row.resource.cellData?.[i]?.isZero,
-                      'availability-negative': row.resource.cellData?.[i]?.isNegative,
-                    }"
-                  >
-                    {{ row.resource.cellData?.[i]?.isPositive ? "+" : ""
-                    }}{{ row.resource.cellData?.[i]?.availability | number: "1.0-1" }}
+              @for (week of displayedWeeks; track week.getTime(); let i = $index) {
+                @let cell = row.resource.cellData?.[i];
+                <div
+                  class="week-cell resource-detail-cell"
+                  [ngClass]="getCellSelectionClasses(row.resource, week, i, row.child, row.parent)"
+                  [class.has-capacity]="cell?.value! > 0"
+                  [class.cell-positive]="
+                    cell?.showAvailability &&
+                    cell?.hasCapRecord &&
+                    (cell?.value! > 0 || showAvailability()) &&
+                    cell?.isPositive
+                  "
+                  [class.cell-zero]="
+                    cell?.showAvailability &&
+                    cell?.hasCapRecord &&
+                    (cell?.value! > 0 || showAvailability()) &&
+                    cell?.isZero
+                  "
+                  [class.cell-negative]="
+                    cell?.showAvailability &&
+                    cell?.hasCapRecord &&
+                    (cell?.value! > 0 || showAvailability()) &&
+                    cell?.isNegative
+                  "
+                  [attr.data-week-index]="i"
+                >
+                  <div class="cell-content">
+                    @if ((cell?.value! > 0 &&
+                          (!isMovingSelection || moveGhostOffset === 0 || !isCellSelected(row.resource, week))) ||
+                        getGhostValue(row.resource, i) !== null) {
+                      <div class="capacity-value">
+                        {{
+                          (getGhostValue(row.resource, i) !== null
+                            ? getGhostValue(row.resource, i)
+                            : cell?.value
+                          ) | number: "1.0-1"
+                        }}
+                      </div>
+                    }
+                    @if ((!isMovingSelection || moveGhostOffset === 0 || !isCellSelected(row.resource, week)) &&
+                        cell?.showAvailability &&
+                        (cell?.value! > 0 ||
+                          (showAvailability() &&
+                            (cell?.availability !== 0 || cell?.hasCapRecord)))) {
+                      <div
+                        class="availability-indicator"
+                        [ngClass]="{
+                          'availability-positive': cell?.isPositive,
+                          'availability-zero': cell?.isZero,
+                          'availability-negative': cell?.isNegative,
+                        }"
+                      >
+                        {{ cell?.isPositive ? "+" : "" }}{{ cell?.availability | number: "1.0-1" }}
+                      </div>
+                    }
                   </div>
                 </div>
-              </div>
+              }
             </div>
 
             <!-- Visualisation Mode (Gantt) -->
