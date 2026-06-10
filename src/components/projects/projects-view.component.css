@@ -219,9 +219,9 @@
 .status-badge {
   padding: 4px 12px;
   border-radius: 12px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 0.3px;
 }
 
@@ -949,5 +949,21 @@
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
+}
+
+.select-trigger {
+  background: white;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+.select-trigger:hover {
+  border-color: #cbd5e1;
+}
+
+.select-trigger.active {
+  border-color: #4f46e5 !important;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1) !important;
 }
 

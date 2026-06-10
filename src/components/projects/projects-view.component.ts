@@ -7,7 +7,7 @@ import { SettingsService } from "../../services/settings.service";
 import { Projet } from "../../models/types";
 import { ChiffresModalComponent } from "../chiffres/chiffres-modal.component";
 import { Chiffre } from "../../models/chiffres.type";
-import { LucideAngularModule, Plus, LucideCalculator, MoreVertical, Edit, Trash2, Copy, ExternalLink, FileDown, FileUp, AlertCircle } from "lucide-angular";
+import { LucideAngularModule, Plus, LucideCalculator, MoreVertical, Edit, Trash2, Copy, ExternalLink, FileDown, FileUp, AlertCircle, ChevronDown } from "lucide-angular";
 import { ConfirmModalComponent } from "../confirm-modal.component";
 import { ProjectModalComponent } from "../project-modal.component";
 import { CdkDragDrop, DragDropModule, moveItemInArray } from "@angular/cdk/drag-drop";
@@ -25,7 +25,9 @@ import * as XLSX from 'xlsx';
 export class ProjectsViewComponent implements OnInit {
   viewMode = storageSignal<"list" | "card" | "table">("projects_view_mode", "list");
   searchQuery = signal("");
-  statusFilter = signal("");
+  statusFilter = storageSignal<string[]>("projects_view_status_filter", []);
+  showStatusDropdown = false;
+  ChevronDown = ChevronDown;
 
   LucideCalculator = LucideCalculator;
   MoreVertical = MoreVertical;
@@ -65,7 +67,7 @@ export class ProjectsViewComponent implements OnInit {
         (projet.description && projet.description.toLowerCase().includes(search.toLowerCase())) ||
         (projet.chef_projet && projet.chef_projet.toLowerCase().includes(search.toLowerCase()));
 
-      const matchesStatus = !status || projet.statut === status;
+      const matchesStatus = status.length === 0 || status.includes(projet.statut);
 
       return matchesSearch && matchesStatus;
     });
@@ -109,11 +111,17 @@ export class ProjectsViewComponent implements OnInit {
 
   @HostListener("document:click", ["$event"])
   onDocumentClick(event: MouseEvent) {
+    const target = event.target as HTMLElement;
     // Close menu when clicking outside
     if (this.activeMenuId) {
       this.activeMenuId = null;
     }
     this.showExportMenu = false;
+
+    // Close status dropdown if clicked outside
+    if (!target.closest('.status-dropdown-container')) {
+      this.showStatusDropdown = false;
+    }
   }
 
   toggleMenu(event: MouseEvent, projetId: string) {
@@ -129,9 +137,42 @@ export class ProjectsViewComponent implements OnInit {
     // Read query params for status filter
     this.route.queryParams.subscribe(params => {
       if (params['status']) {
-        this.statusFilter.set(params['status']);
+        this.statusFilter.set([params['status']]);
       }
     });
+  }
+
+  toggleStatusDropdown(event: MouseEvent) {
+    event.stopPropagation();
+    this.showStatusDropdown = !this.showStatusDropdown;
+  }
+
+  toggleStatusSelection(status: string) {
+    const current = this.statusFilter();
+    if (current.includes(status)) {
+      this.statusFilter.set(current.filter(x => x !== status));
+    } else {
+      this.statusFilter.set([...current, status]);
+    }
+  }
+
+  isStatusSelected(status: string): boolean {
+    return this.statusFilter().includes(status);
+  }
+
+  getStatusFilterLabel(): string {
+    const current = this.statusFilter();
+    if (current.length === 0) {
+      return "Tous les statuts";
+    }
+    if (current.length === 1) {
+      return current[0];
+    }
+    return `${current.length} statuts`;
+  }
+
+  clearStatusFilter() {
+    this.statusFilter.set([]);
   }
 
   setViewMode(mode: "list" | "card" | "table") {

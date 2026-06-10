@@ -399,19 +399,36 @@
           </span>
         </div>
 
-        <div class="filters-dropdown" *ngIf="openStatusDropdown" (click)="$event.stopPropagation()">
-          <div class="dropdown-list">
-            <label *ngFor="let s of PROJECT_STATUSES" class="dropdown-item">
-              <input
-                type="checkbox"
-                [value]="s"
-                (change)="onStatutToggle(s, $event)"
-                [checked]="filterStatusIds().includes(s)"
-              />
-              {{ s }}
-            </label>
+        @if (openStatusDropdown) {
+          <div class="filters-dropdown" (click)="$event.stopPropagation()">
+            <div class="dropdown-header" style="padding: 8px 12px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border-radius: 8px 8px 0 0; font-size: 11px; font-weight: 600; color: #64748b; user-select: none;">
+              <span>{{ filterStatusIds().length }} sélectionné(s)</span>
+              @if (filterStatusIds().length > 0) {
+                <button
+                  class="btn-clear"
+                  (click)="filterStatusIds.set([]); applyFilters(); $event.stopPropagation()"
+                  style="background: transparent; border: none; color: #3b82f6; cursor: pointer; font-size: 11px; padding: 0; font-family: inherit;"
+                >
+                  Effacer
+                </button>
+              }
+            </div>
+            <div class="dropdown-list">
+              @for (s of PROJECT_STATUSES; track s) {
+                <label class="dropdown-item" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input
+                    type="checkbox"
+                    [value]="s"
+                    (change)="onStatutToggle(s, $event)"
+                    [checked]="filterStatusIds().includes(s)"
+                    style="margin: 0; cursor: pointer;"
+                  />
+                  <span class="status-badge" [attr.data-status]="s" style="margin: 0;">{{ s }}</span>
+                </label>
+              }
+            </div>
           </div>
-        </div>
+        }
       </div>
 
       <div class="filter-group">

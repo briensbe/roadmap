@@ -2288,9 +2288,9 @@ input:checked + .slider:before {
 .status-badge {
   padding: 4px 12px;
   border-radius: 12px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 0.3px;
   display: inline-block;
   white-space: nowrap;
