@@ -22,7 +22,8 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
-  Code
+  Code,
+  HelpCircle
 } from 'lucide-angular';
 import { HttpClient } from '@angular/common/http';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -179,6 +180,70 @@ import { ConfirmModalComponent } from '../confirm-modal.component';
                   </button>
                 </div>
                 <div class="code-content" [innerHTML]="codeRendered()"></div>
+              </div>
+            }
+          </div>
+
+          <div class="help-card">
+            <button class="help-header" (click)="toggleHelp()">
+              <div class="help-title">
+                <lucide-icon [img]="HelpCircleIcon" size="20" class="help-icon"></lucide-icon>
+                <span>Comment utiliser le bookmarklet ?</span>
+              </div>
+              <lucide-icon [img]="showHelp() ? ChevronUpIcon : ChevronDownIcon" size="18" class="chevron-icon"></lucide-icon>
+            </button>
+            
+            @if (showHelp()) {
+              <div class="help-content" @slideInOut>
+                <div class="steps-list">
+                  <!-- Step 1 -->
+                  <div class="step-item">
+                    <div class="step-header">
+                      <span class="step-number">1</span>
+                      <h4>Copier le code</h4>
+                    </div>
+                    <p class="step-text">Cliquez sur le bouton <strong>"Voir le code"</strong> ci-dessus puis sur <strong>"Copier"</strong> pour mettre le script de l'extracteur dans votre presse-papiers.</p>
+                    <div class="step-media">
+                      <img src="assets/release-notes/2026-06-10-bookmarklet-step1-copycode.gif" alt="Étape 1 : Copier le code">
+                    </div>
+                  </div>
+
+                  <!-- Step 2 -->
+                  <div class="step-item">
+                    <div class="step-header">
+                      <span class="step-number">2</span>
+                      <h4>Créer le favori (Bookmarklet)</h4>
+                    </div>
+                    <p class="step-text">Dans la barre de favoris de votre navigateur, créez un nouveau favori. Nommez-le (ex: <code>Extraire Jira</code>) et collez le code copié dans le champ <strong>URL / Adresse</strong>.</p>
+                    <div class="step-media">
+                      <img src="assets/release-notes/2026-06-10-bookmarklet-step2-createbookmark.gif" alt="Étape 2 : Créer le favori">
+                    </div>
+                  </div>
+
+                  <!-- Step 3 -->
+                  <div class="step-item">
+                    <div class="step-header">
+                      <span class="step-number">3</span>
+                      <h4>Utiliser le favori sur Jira</h4>
+                    </div>
+                    <p class="step-text">Rendez-vous sur la page d'un ticket Jira. Cliquez simplement sur votre favori <code>Extraire Jira</code>. Un message confirmera que les données ont été copiées au format JSON.</p>
+                    <div class="step-media">
+                      <img src="assets/release-notes/2026-06-10-bookmarklet-step3-extractJiraInfosCopy.gif" alt="Étape 3 : Utiliser sur Jira">
+                    </div>
+                  </div>
+
+                  <!-- Step 4 -->
+                  <div class="step-item">
+                    <div class="step-header">
+                      <span class="step-number">4</span>
+                      <h4>Importer le JSON du projet</h4>
+                    </div>
+                    <p class="step-text">Revenez sur l'application dans la section Projets, ouvrez la boîte de dialogue d'importation et collez le JSON extrait pour créer ou mettre à jour le projet.</p>
+                    <div class="step-media">
+                      <img src="assets/release-notes/2026-06-10-bookmarklet-step4-createProject.gif" alt="Étape 4 : Importer le JSON">
+                    </div>
+                  </div>
+                </div>
               </div>
             }
           </div>
@@ -827,6 +892,121 @@ import { ConfirmModalComponent } from '../confirm-modal.component';
     :host ::ng-deep .hljs-strong { font-weight: bold; }
     :host ::ng-deep .hljs-link { text-decoration: underline; }
 
+    /* Help FAQ Section */
+    .help-card {
+      background: white;
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+      overflow: hidden;
+      margin-top: 16px;
+      transition: all 0.2s;
+    }
+    .help-card:hover {
+      border-color: #cbd5e1;
+    }
+    .help-header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 24px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.2s;
+    }
+    .help-header:hover {
+      background: #f8fafc;
+    }
+    .help-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      color: #1e293b;
+    }
+    .help-icon {
+      color: #4f46e5;
+    }
+    .chevron-icon {
+      color: #64748b;
+    }
+    .help-content {
+      border-top: 1px solid #e2e8f0;
+      background: #f8fafc;
+      padding: 24px;
+    }
+    .steps-list {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .step-item {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .step-number {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      background: #eff6ff;
+      color: #2563eb;
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: 50%;
+    }
+    .step-header h4 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 600;
+      color: #1e293b;
+    }
+    .step-text {
+      margin: 0;
+      font-size: 13px;
+      color: #64748b;
+      line-height: 1.5;
+    }
+    .step-text code {
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: ui-monospace, monospace;
+      font-size: 12px;
+      color: #475569;
+    }
+    .step-media {
+      margin-top: 12px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #f1f5f9;
+      background: #f8fafc;
+      max-width: 600px;
+      width: 100%;
+      align-self: flex-start;
+    }
+    .step-media img {
+      width: 100%;
+      height: auto;
+      display: block;
+      object-fit: cover;
+    }
+
     @keyframes fadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
@@ -845,6 +1025,7 @@ export class SettingsComponent implements OnInit {
 
   // Tools state
   showCode = signal(false);
+  showHelp = signal(false);
   codeRaw = '';
   codeRendered = signal<SafeHtml>('');
   copySuccess = signal(false);
@@ -901,6 +1082,11 @@ export class SettingsComponent implements OnInit {
   ChevronUpIcon = ChevronUp;
   ChevronDownIcon = ChevronDown;
   CodeIcon = Code;
+  HelpCircleIcon = HelpCircle;
+
+  toggleHelp() {
+    this.showHelp.update(h => !h);
+  }
 
   get valuePlaceholder(): string {
     return this.currentSetting.type === 'json' ? '{ "key": "value" }' : 'Entrez la valeur...';
