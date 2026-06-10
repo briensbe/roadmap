@@ -37,7 +37,10 @@ interface NavigationItem {
       <div class="sidebar-header">
         <div class="logo-container">
           <div class="logo-icon" *ngIf="!isCollapsed">
-            <lucide-icon [img]="Building2" [size]="24"></lucide-icon>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#3b82f6"/>
+              <path d="M2 17L12 22L22 17V12L12 17L2 12V17Z" fill="#3b82f6" opacity="0.6"/>
+            </svg>
           </div>
           <span class="logo-text" *ngIf="!isCollapsed">ResourceFlow</span>
         </div>
@@ -116,12 +119,9 @@ interface NavigationItem {
     .logo-icon {
       width: 40px;
       height: 40px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: white;
       flex-shrink: 0;
     }
 

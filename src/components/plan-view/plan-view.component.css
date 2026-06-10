@@ -30,7 +30,7 @@
 /* Sticky Parent Rows in Tree View */
 .project-draggable-group > .calendar-row:first-child {
   position: sticky;
-  top: 100px; /* Offset for Header (60px) + Milestones (40px) */
+  top: calc(var(--calendar-header-height, 60px) + var(--milestones-header-height, 40px)); /* Dynamic offset using measured header and milestones heights */
   z-index: 80;
   background: #f9fafb;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -1181,7 +1181,7 @@
   border-bottom: 2px solid #e2e8f0;
   min-height: 40px;
   position: sticky;
-  top: 60px;
+  top: var(--calendar-header-height, 60px);
   z-index: 90;
 }
 
