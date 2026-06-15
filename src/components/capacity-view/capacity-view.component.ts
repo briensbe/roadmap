@@ -567,6 +567,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   }
 
   onMouseUp() {
+    if (!this.isDragging) return;
     this.isDragging = false;
     if (this.selectedCells.length > 0) {
       this.isSelectionFinished = true;
