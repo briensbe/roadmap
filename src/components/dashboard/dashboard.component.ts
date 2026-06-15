@@ -268,7 +268,10 @@ export class DashboardComponent implements OnInit {
 
           // Calculate project total RAF since current week Monday
           const currentWeekMonday = this.getWeekStart(new Date());
-          const currentWeekMondayStr = currentWeekMonday.toISOString().split('T')[0];
+          const year = currentWeekMonday.getFullYear();
+          const month = (currentWeekMonday.getMonth() + 1).toString().padStart(2, '0');
+          const day = currentWeekMonday.getDate().toString().padStart(2, '0');
+          const currentWeekMondayStr = `${year}-${month}-${day}`;
           
           const projCharges = this.charges.filter(c => 
             c.projet_id === entry.projet.id && 

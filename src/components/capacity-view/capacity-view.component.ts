@@ -846,21 +846,30 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
     );
   }
 
+  formatLocalDate(d: Date): string {
+    const year = d.getFullYear();
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const day = d.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   getResourceTotalPlannedDays(resource: ResourceRow): number {
     let total = 0;
     resource.weeks.forEach((val, weekStr) => {
-      const date = new Date(weekStr);
-
       if (this.selectedCapacityYear === 'today') {
         const todayWeekStart = this.calendarService.getWeekStart(new Date());
-        if (date >= todayWeekStart) {
+        const todayWeekStartStr = this.formatLocalDate(todayWeekStart);
+        if (weekStr >= todayWeekStartStr) {
           total += val * resource.jours_par_semaine;
         }
       } else if (this.selectedCapacityYear === 'custom' && this.selectedStartDate) {
-        if (date >= this.selectedStartDate) {
+        const selectedStartStr = this.formatLocalDate(this.selectedStartDate);
+        if (weekStr >= selectedStartStr) {
           total += val * resource.jours_par_semaine;
         }
       } else {
+        const [y, m, d] = weekStr.split('-').map(Number);
+        const date = new Date(y, m - 1, d);
         const isoYear = getISOWeekYear(date).toString();
         if (this.selectedCapacityYear === 'all' || isoYear === this.selectedCapacityYear) {
           total += val * resource.jours_par_semaine;

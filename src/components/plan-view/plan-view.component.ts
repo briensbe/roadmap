@@ -3354,20 +3354,30 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
+  formatLocalDate(d: Date): string {
+    const year = d.getFullYear();
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const day = d.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   getProjectResourceTotal(project: Projet, period: 'today' | 'all' | '2025' | '2026'): number {
     const resourceTotals = new Map<string, number>();
     const todayWeekStart = this.calendarService.getWeekStart(new Date());
+    const todayWeekStartStr = this.formatLocalDate(todayWeekStart);
 
     for (const charge of this.allCharges) {
       if (charge.projet_id !== project.id || !charge.semaine_debut) continue;
       
-      const date = new Date(charge.semaine_debut);
+      const chargeWeekStr = charge.semaine_debut.split('T')[0];
       let match = false;
       if (period === 'today') {
-        match = (date >= todayWeekStart);
+        match = (chargeWeekStr >= todayWeekStartStr);
       } else if (period === 'all') {
         match = true;
       } else {
+        const [y, m, d] = chargeWeekStr.split('-').map(Number);
+        const date = new Date(y, m - 1, d);
         const isoYear = getISOWeekYear(date).toString();
         match = (isoYear === period);
       }
@@ -3894,19 +3904,21 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   getResourceTotalPlannedDays(resource: ResourceRow): number {
     let total = 0;
     resource.charges.forEach((val, weekStr) => {
-      const date = new Date(weekStr);
-
       const yearSel = this.selectedCapacityYear();
       if (yearSel === 'today') {
         const todayWeekStart = this.calendarService.getWeekStart(new Date());
-        if (date >= todayWeekStart) {
+        const todayWeekStartStr = this.formatLocalDate(todayWeekStart);
+        if (weekStr >= todayWeekStartStr) {
           total += val * resource.jours_par_semaine;
         }
       } else if (yearSel === 'custom' && this.selectedStartDate) {
-        if (date >= this.selectedStartDate) {
+        const selectedStartStr = this.formatLocalDate(this.selectedStartDate);
+        if (weekStr >= selectedStartStr) {
           total += val * resource.jours_par_semaine;
         }
       } else {
+        const [y, m, d] = weekStr.split('-').map(Number);
+        const date = new Date(y, m - 1, d);
         const isoYear = getISOWeekYear(date).toString();
         if (yearSel === 'all' || isoYear === yearSel) {
           total += val * resource.jours_par_semaine;
