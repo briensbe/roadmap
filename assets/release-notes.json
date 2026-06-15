@@ -1,5 +1,25 @@
 [
   {
+    "version": "2026.06.15",
+    "date": "2026-06-15",
+    "news": [
+      {
+        "title": "Chiffres & Planification",
+        "items": [
+          "Ajout du mode 'Restant' (calculé comme Prévisionnel - Consommé) dans les options du badge de chiffres",
+          "Correction du calcul de la somme RAF dans le badge 'Dès le...' pour inclure correctement la semaine en cours"
+        ]
+      },
+      {
+        "title": "Ergonomie & Saisie",
+        "items": [
+          "Désactivation de la sélection de texte lors du glissement de souris pour la sélection multiple de cellules",
+          "Correction d'un bug où la valeur saisie de capacité était annulée lors de la perte de focus avant validation"
+        ]
+      }
+    ]
+  },
+  {
     "version": "2026.06.10",
     "date": "2026-06-10",
     "news": [
