@@ -147,7 +147,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   zoomLevel = storageSignal<"compact" | "normal">("plan-view-zoom-level", "normal");
   showAvailability = storageSignal<boolean>("plan-view-show-availability", false);
   weekFilters = storageSignal<number[]>("plan-view-week-filters", []);
-  chiffreMode = storageSignal<'initial' | 'revise' | 'previsionnel' | 'consomme'>("plan-view-chiffre-mode", "previsionnel");
+  chiffreMode = storageSignal<'initial' | 'revise' | 'previsionnel' | 'consomme' | 'restant'>("plan-view-chiffre-mode", "previsionnel");
   planningMode = storageSignal<'saisie' | 'visualisation'>('plan-view-planning-mode', 'saisie');
   displayedMonths: Array<{ key: string; label: string; year: number; quarterLabel: string; startWeekNum: number; weeks: Date[] }> = [];
   showGlobalFilters = signal<boolean>(false);
@@ -3989,6 +3989,11 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!chiffre) return null;
 
     const mode = this.chiffreMode();
+    if (mode === 'restant') {
+      const previsionnel = chiffre.previsionnel ?? 0;
+      const consomme = chiffre.consomme ?? 0;
+      return previsionnel - consomme;
+    }
     const value = (chiffre as any)[mode];
     return value !== undefined ? value : null;
   }
@@ -4000,10 +4005,11 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       case 'revise': return 'Rév.';
       case 'previsionnel': return 'Prév.';
       case 'consomme': return 'Conso.';
+      case 'restant': return 'Rest.';
     }
   }
 
-  switchChiffreMode(mode: 'initial' | 'revise' | 'previsionnel' | 'consomme') {
+  switchChiffreMode(mode: 'initial' | 'revise' | 'previsionnel' | 'consomme' | 'restant') {
     this.chiffreMode.set(mode);
     this.showChiffrePopover = false;
   }

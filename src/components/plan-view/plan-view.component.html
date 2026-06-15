@@ -2224,6 +2224,13 @@
       >
         Consommé
       </button>
+      <button
+        class="popover-item"
+        [class.active]="chiffreMode() === 'restant'"
+        (click)="switchChiffreMode('restant')"
+      >
+        Restant
+      </button>
     </div>
   </div>
 
