@@ -18,20 +18,22 @@ import { ToolbarPosition } from '../utils/selection-positioning';
       [style.opacity]="visible ? 1 : 0">
       
       <!-- Toolbar Tabs -->
-      <div class="toolbar-tabs">
-        <button 
-          class="tab-btn" 
-          [class.active]="mode === 'classic'" 
-          (click)="setMode('classic')">
-          Saisie
-        </button>
-        <button 
-          class="tab-btn" 
-          [class.active]="mode === 'projection'" 
-          (click)="setMode('projection')">
-          Projection
-        </button>
-      </div>
+      @if (showProjectionTab) {
+        <div class="toolbar-tabs">
+          <button 
+            class="tab-btn" 
+            [class.active]="mode === 'classic'" 
+            (click)="setMode('classic')">
+            Saisie
+          </button>
+          <button 
+            class="tab-btn" 
+            [class.active]="mode === 'projection'" 
+            (click)="setMode('projection')">
+            Projection
+          </button>
+        </div>
+      }
 
       <div class="selection-info">
         <ng-container *ngIf="mode === 'classic'">
@@ -271,6 +273,7 @@ export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
 
   @Input() selectionStartDate: Date | null = null;
   @Input() daysPerWeek: number = 5;
+  @Input() showProjectionTab: boolean = true;
 
   mode: 'classic' | 'projection' = 'classic';
   projectionResources: number = 1;

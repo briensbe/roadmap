@@ -266,21 +266,23 @@
         </div>
       </div>
     </div>
-    <app-selection-toolbar
-      *ngIf="selectedCells.length > 0 && isSelectionFinished"
-      [position]="toolbarPosition"
-      [visible]="toolbarVisible"
-      [selectedCount]="selectedCells.length"
-      [totalDays]="totalSelectedDays"
-      [selectionStartDate]="selectionStartWeekDate"
-      [daysPerWeek]="selectionDaysPerWeek"
-      [(value)]="bulkCapaciteValue"
-      placeholder="Capacité (unités)"
-      (apply)="applyBulkCapacite($event)"
-      (project)="applyCapacityProjection($event)"
-      (cancel)="clearSelection()"
-    >
-    </app-selection-toolbar>
+    @if (selectedCells.length > 0 && isSelectionFinished) {
+      <app-selection-toolbar
+        [position]="toolbarPosition"
+        [visible]="toolbarVisible"
+        [selectedCount]="selectedCells.length"
+        [totalDays]="totalSelectedDays"
+        [selectionStartDate]="selectionStartWeekDate"
+        [daysPerWeek]="selectionDaysPerWeek"
+        [(value)]="bulkCapaciteValue"
+        [showProjectionTab]="false"
+        placeholder="Capacité (unités)"
+        (apply)="applyBulkCapacite($event)"
+        (project)="applyCapacityProjection($event)"
+        (cancel)="clearSelection()"
+      >
+      </app-selection-toolbar>
+    }
   </div>
 
   <!-- Year Selection Popover -->
