@@ -752,8 +752,50 @@
           class="label-cell milestones-label"
           [style.width.px]="labelColumnWidth()"
           [style.minWidth.px]="labelColumnWidth()"
+          style="display: flex; align-items: center; justify-content: space-between; padding: 0 12px; gap: 8px;"
         >
           <span style="font-weight: 600; font-size: 13px">Jalons</span>
+          
+          <div class="filter-group milestone-filter-group" style="position: relative;">
+            <div class="filter-pill" (click)="toggleDropdown('jalon', $event)" style="min-width: auto; padding: 2px 8px; border-radius: 6px; display: flex; align-items: center; gap: 6px; background: #f8fafc; border: 1px solid #cbd5e1; cursor: pointer; min-height: 24px; box-shadow: none;">
+              <span style="font-size: 11px; font-weight: 600; color: #475569;">Filtrer</span>
+              <span class="chip-list" style="display: flex; gap: 2px; align-items: center;">
+                <span *ngFor="let type of filterJalonTypes()" class="chip" [style.background-color]="getJalonColor(type)" [style.color]="getJalonTextColor(type)" style="font-size: 9px; font-weight: 700; padding: 1px 4px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.05); margin: 0; line-height: 1.1;">{{ type }}</span>
+                <span *ngIf="filterJalonTypes().length === 0" class="chip placeholder" style="font-size: 9px; font-weight: 600; padding: 1px 4px; border-radius: 4px; background: #e2e8f0; color: #64748b; margin: 0; line-height: 1.1;">Tous</span>
+              </span>
+            </div>
+            
+            <div class="filters-dropdown" *ngIf="openJalonDropdown" (click)="$event.stopPropagation()" style="position: absolute; top: calc(100% + 4px); right: 0; min-width: 180px; z-index: 1200; background: white; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); padding: 6px; max-height: 250px; overflow-y: auto;">
+              <div class="dropdown-header" style="padding: 6px 8px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border-radius: 6px 6px 0 0; font-size: 10px; font-weight: 700; color: #475569; user-select: none; margin-bottom: 4px;">
+                <span>{{ filterJalonTypes().length }} sélectionné(s)</span>
+                <button
+                  *ngIf="filterJalonTypes().length > 0"
+                  class="btn-clear"
+                  (click)="filterJalonTypes.set([]); applyFilters(); $event.stopPropagation()"
+                  style="background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 10px; padding: 0; font-family: inherit; font-weight: 600;"
+                >
+                  Effacer
+                </button>
+              </div>
+              <div class="dropdown-list" style="display: flex; flex-direction: column; gap: 2px;">
+                <label *ngFor="let type of uniqueJalonTypes" class="dropdown-item" style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px 8px; border-radius: 6px; margin: 0;">
+                  <input
+                    type="checkbox"
+                    [value]="type"
+                    (change)="onJalonTypeToggle(type, $event)"
+                    [checked]="filterJalonTypes().includes(type)"
+                    style="margin: 0; cursor: pointer; width: 14px; height: 14px;"
+                  />
+                  <div
+                    class="item-color-badge"
+                    [style.background-color]="getJalonColor(type)"
+                    style="width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.1);"
+                  ></div>
+                  <span class="item-label" style="font-size: 11px; color: #1e293b; font-weight: 600;">{{ type }}</span>
+                </label>
+              </div>
+            </div>
+          </div>
         </div>
         <!-- Saisie Mode: Week cells -->
         <div class="weeks-container" *ngIf="planningMode() === 'saisie'">

@@ -204,6 +204,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.openStatusDropdown = false;
     this.showPeriodDropdown = false;
     this.openSizeDropdown = false;
+    this.openJalonDropdown = false;
     this.showYearPopover = false;
     this.showChiffrePopover = false;
     this.clearSelection();
@@ -254,6 +255,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   filterProjetSearch = storageSignal<string>("plan-view-filter-search", "");
   filterResourceIds = storageSignal<string[]>("plan-view-filter-resources", []); // values like 'role:<id>' or 'personne:<id>'
   filterStatusIds = storageSignal<string[]>("plan-view-filter-statuses", []);
+  filterJalonTypes = storageSignal<string[]>("plan-view-filter-jalon-types", []);
 
   // Period filter (default: current week → +6 months; empty string = use default)
   filterPeriodEnabled = signal<boolean>(false);
@@ -300,6 +302,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   openStatusDropdown = false;
   showPeriodDropdown = false;
   openSizeDropdown = false;
+  openJalonDropdown = false;
 
   // Actions menu state
   showActionsMenu = false;
@@ -520,6 +523,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       this.openStatusDropdown = false;
       this.showPeriodDropdown = false;
       this.openSizeDropdown = false;
+      this.openJalonDropdown = false;
     }
   }
 
@@ -993,8 +997,12 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     const endOfTimeline = new Date(this.displayedWeeks[this.displayedWeeks.length - 1]);
     endOfTimeline.setDate(endOfTimeline.getDate() + 7);
 
+    const activeTypes = this.filterJalonTypes();
     return this.allJalons.filter(j => {
       if (j.projet_id !== project.id) return false;
+      if (activeTypes.length > 0 && !activeTypes.includes(j.event_type)) {
+        return false;
+      }
       const jDate = new Date(j.event_date);
       return jDate >= startOfTimeline && jDate <= endOfTimeline;
     });
@@ -1022,10 +1030,24 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     const end = new Date(this.displayedWeeks[this.displayedWeeks.length - 1]);
     end.setDate(end.getDate() + 7);
 
+    const activeTypes = this.filterJalonTypes();
     return this.allJalons.filter(j => {
+      if (activeTypes.length > 0 && !activeTypes.includes(j.event_type)) {
+        return false;
+      }
       const d = new Date(j.event_date);
       return d >= start && d <= end;
     });
+  }
+
+  get uniqueJalonTypes(): string[] {
+    const types = new Set<string>();
+    for (const j of this.allJalons) {
+      if (j.event_type) {
+        types.add(j.event_type);
+      }
+    }
+    return Array.from(types).sort();
   }
 
   // trackBy functions for performance
@@ -1212,7 +1234,11 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     endOfWeek.setDate(startOfWeek.getDate() + 6);
     endOfWeek.setHours(23, 59, 59, 999);
 
+    const activeTypes = this.filterJalonTypes();
     return this.allJalons.filter(j => {
+      if (activeTypes.length > 0 && !activeTypes.includes(j.event_type)) {
+        return false;
+      }
       const jDate = new Date(j.event_date);
       return jDate >= startOfWeek && jDate <= endOfWeek;
     });
@@ -2998,14 +3024,15 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   @HostListener("document:click", ["$event"])
   onDocumentClick(event: Event) {
     const target = event.target as HTMLElement;
-    // Close filter dropdowns if clicking outside filters-bar
-    if (!target.closest(".filters-bar")) {
+    // Close filter dropdowns if clicking outside filters-bar and milestone-filter-group
+    if (!target.closest(".filters-bar") && !target.closest(".milestone-filter-group")) {
       this.openEquipeDropdown = false;
       this.openProjetDropdown = false;
       this.openResourceDropdown = false;
       this.openStatusDropdown = false;
       this.openSizeDropdown = false;
       this.showPeriodDropdown = false;
+      this.openJalonDropdown = false;
       this.filterProjetSearch.set('');
     }
     // Close actions menu if clicking outside
@@ -3019,7 +3046,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  toggleDropdown(name: "equipe" | "projet" | "resource" | "statut" | "size", event: MouseEvent) {
+  toggleDropdown(name: "equipe" | "projet" | "resource" | "statut" | "size" | "jalon", event: MouseEvent) {
     event.stopPropagation();
     if (name === "equipe") {
       this.openEquipeDropdown = !this.openEquipeDropdown;
@@ -3028,6 +3055,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       this.openStatusDropdown = false;
       this.openSizeDropdown = false;
       this.showPeriodDropdown = false;
+      this.openJalonDropdown = false;
     } else if (name === "projet") {
       this.openProjetDropdown = !this.openProjetDropdown;
       this.openEquipeDropdown = false;
@@ -3035,6 +3063,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       this.openStatusDropdown = false;
       this.openSizeDropdown = false;
       this.showPeriodDropdown = false;
+      this.openJalonDropdown = false;
     } else if (name === "resource") {
       this.openResourceDropdown = !this.openResourceDropdown;
       this.openEquipeDropdown = false;
@@ -3042,6 +3071,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       this.openStatusDropdown = false;
       this.openSizeDropdown = false;
       this.showPeriodDropdown = false;
+      this.openJalonDropdown = false;
     } else if (name === "statut") {
       this.openStatusDropdown = !this.openStatusDropdown;
       this.openEquipeDropdown = false;
@@ -3049,12 +3079,22 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       this.openResourceDropdown = false;
       this.openSizeDropdown = false;
       this.showPeriodDropdown = false;
+      this.openJalonDropdown = false;
     } else if (name === "size") {
       this.openSizeDropdown = !this.openSizeDropdown;
       this.openEquipeDropdown = false;
       this.openProjetDropdown = false;
       this.openResourceDropdown = false;
       this.openStatusDropdown = false;
+      this.showPeriodDropdown = false;
+      this.openJalonDropdown = false;
+    } else if (name === "jalon") {
+      this.openJalonDropdown = !this.openJalonDropdown;
+      this.openEquipeDropdown = false;
+      this.openProjetDropdown = false;
+      this.openResourceDropdown = false;
+      this.openStatusDropdown = false;
+      this.openSizeDropdown = false;
       this.showPeriodDropdown = false;
     }
     if (!this.openProjetDropdown) {
@@ -3101,6 +3141,15 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.filterEquipeIds.update(ids => {
       if (checked) return [...ids, id];
       return ids.filter((x) => x !== id);
+    });
+    this.applyFilters();
+  }
+
+  onJalonTypeToggle(type: string, event: Event) {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.filterJalonTypes.update(types => {
+      if (checked) return [...types, type];
+      return types.filter((x) => x !== type);
     });
     this.applyFilters();
   }
@@ -3268,6 +3317,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       this.openResourceDropdown = false;
       this.openStatusDropdown = false;
       this.openSizeDropdown = false;
+      this.openJalonDropdown = false;
     }
     this.cdr.markForCheck();
   }
