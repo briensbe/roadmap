@@ -1,5 +1,17 @@
 [
   {
+    "version": "2026.06.19",
+    "date": "2026-06-19",
+    "news": [
+      {
+        "title": "Filtrage par jalon",
+        "items": ["Ajout d'un filtre par jalon dans la barre de filtres pour rendre plus lisible la vue"],
+        "imageUrl": "assets/release-notes/2026-06-19-filtre-jalons.png",
+        "imageMaxHeight": 300
+      }
+    ]
+  },
+  {
     "version": "2026.06.15",
     "date": "2026-06-15",
     "news": [
