@@ -63,9 +63,17 @@
 
     <div class="header-right">
       <!-- Filtres -->
-      <button class="btn btn-actions" (click)="toggleGlobalFilters()" [class.active]="showGlobalFilters()">
+      <button
+        class="btn btn-actions filter-btn-toggle"
+        (click)="toggleGlobalFilters()"
+        [class.active]="showGlobalFilters()"
+        [class.has-filters]="activeFiltersCount() > 0"
+      >
         <lucide-icon [img]="Filter" [size]="16"></lucide-icon>
         Filtrer
+        @if (activeFiltersCount() > 0) {
+          <span class="filter-badge">{{ activeFiltersCount() }}</span>
+        }
       </button>
 
       <!-- Actions Menu -->
@@ -285,6 +293,25 @@
             </div>
           </div>
         </div>
+
+        @if (!showGlobalFilters() && activeFiltersCount() > 0) {
+          <div class="filter-summary-bar">
+            <div class="summary-content">
+              <lucide-icon [img]="Filter" [size]="14" class="summary-icon"></lucide-icon>
+              <span class="summary-label">Filtres actifs :</span>
+              <span class="summary-text">{{ activeFiltersSummary() }}</span>
+            </div>
+            <div class="summary-actions">
+              <button class="btn-summary btn-show" (click)="toggleGlobalFilters()">
+                Modifier
+              </button>
+              <button class="btn-summary btn-clear" (click)="clearAllFilters()" title="Réinitialiser tous les filtres">
+                <lucide-icon [img]="Trash2" [size]="12"></lucide-icon>
+                Effacer
+              </button>
+            </div>
+          </div>
+        }
 
         @if (showGlobalFilters()) {
           <div class="calendar-controls">

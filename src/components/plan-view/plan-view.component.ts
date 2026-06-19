@@ -15,7 +15,7 @@ import { ChiffresService } from "../../services/chiffres.service";
 import { Chiffre } from "../../models/chiffres.type";
 import { ResourceService } from "../../services/resource.service";
 
-import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown, LucideCalculator, Search, MoreVertical, ListTree, AlignJustify, Eye, EyeOff, Calendar, ChevronLeft, Network, Users, BookUser, Settings2, GripVertical, ArrowUp, ArrowDown, Play, AlertTriangle, Filter, Info } from "lucide-angular";
+import { LucideAngularModule, Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown, LucideCalculator, Search, MoreVertical, ListTree, AlignJustify, Eye, EyeOff, Calendar, ChevronLeft, Network, Users, BookUser, Settings2, GripVertical, ArrowUp, ArrowDown, Play, AlertTriangle, Filter, Info, Trash2 } from "lucide-angular";
 import * as XLSX from 'xlsx';
 import { getISOWeekYear } from "date-fns";
 import { calculateBestToolbarPosition, calculateBestPopoverPosition, ToolbarPosition, PopoverPosition } from "../../utils/selection-positioning";
@@ -29,7 +29,7 @@ import { calculateNewRank, sortByRank } from '../../utils/lexorank.utils';
 import { driver } from "driver.js";
 
 @NgModule({
-  imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown, LucideCalculator, Search, MoreVertical, ListTree, AlignJustify, Eye, EyeOff, Calendar, ChevronLeft, Network, Users, BookUser, Settings2, GripVertical, ArrowUp, ArrowDown, Play, AlertTriangle, Filter, Info })],
+  imports: [LucideAngularModule.pick({ Plus, ChevronDown, ChevronRight, User, Contact, X, SquarePlus, SquareMinus, ExternalLink, FunnelPlus, FunnelX, FileDown, LucideCalculator, Search, MoreVertical, ListTree, AlignJustify, Eye, EyeOff, Calendar, ChevronLeft, Network, Users, BookUser, Settings2, GripVertical, ArrowUp, ArrowDown, Play, AlertTriangle, Filter, Info, Trash2 })],
   exports: [LucideAngularModule]
 })
 export class LucideIconsModule { }
@@ -280,6 +280,61 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     return hasSearch || hasProjectFilter || hasStatusFilter || hasResourceFilter || hasWeekFilter || hasPeriod || hasSize;
   });
 
+  activeFiltersCount = computed(() => {
+    let count = 0;
+    if (this.globalSearch().trim()) count++;
+    if (this.filterEquipeIds().length) count += this.filterEquipeIds().length;
+    if (this.filterProjetIds().length) count += this.filterProjetIds().length;
+    if (this.filterStatusIds().length) count += this.filterStatusIds().length;
+    if (this.filterResourceIds().length) count += this.filterResourceIds().length;
+    if (this.filterPeriodEnabled()) count++;
+    if (this.filterSizeEnabled() && this.filterSizeValue() !== null) count++;
+    if (this.weekFilters().length) count += this.weekFilters().length;
+    return count;
+  });
+
+  activeFiltersSummary = computed(() => {
+    const parts: string[] = [];
+    if (this.globalSearch().trim()) parts.push("Recherche");
+    
+    const eqCount = this.filterEquipeIds().length;
+    if (eqCount > 0) parts.push(`${eqCount} équipe${eqCount > 1 ? 's' : ''}`);
+
+    const prCount = this.filterProjetIds().length;
+    if (prCount > 0) parts.push(`${prCount} projet${prCount > 1 ? 's' : ''}`);
+
+    const stCount = this.filterStatusIds().length;
+    if (stCount > 0) parts.push(`${stCount} statut${stCount > 1 ? 's' : ''}`);
+
+    const resCount = this.filterResourceIds().length;
+    if (resCount > 0) parts.push(`${resCount} ressource${resCount > 1 ? 's' : ''}`);
+
+    if (this.filterPeriodEnabled()) parts.push("Période");
+    if (this.filterSizeEnabled() && this.filterSizeValue() !== null) parts.push("Taille");
+
+    const wkCount = this.weekFilters().length;
+    if (wkCount > 0) parts.push(`${wkCount} semaine${wkCount > 1 ? 's' : ''}`);
+
+    return parts.join(', ');
+  });
+
+  clearAllFilters() {
+    this.globalSearch.set('');
+    this.filterEquipeIds.set([]);
+    this.filterProjetIds.set([]);
+    this.filterProjetSearch.set('');
+    this.filterResourceIds.set([]);
+    this.filterStatusIds.set([]);
+    this.filterPeriodEnabled.set(false);
+    this.filterPeriodStart.set('');
+    this.filterPeriodEnd.set('');
+    this.filterSizeEnabled.set(false);
+    this.filterSizeValue.set(null);
+    this.weekFilters.set([]);
+    this.applyFilters();
+    this.cdr.markForCheck();
+  }
+
   reorderMessage = signal<string | null>(null);
   private reorderMessageTimeout?: any;
 
@@ -483,6 +538,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   ArrowDown = ArrowDown;
   Play = Play;
   Filter = Filter;
+  Trash2 = Trash2;
 
   AlertTriangle = AlertTriangle;
   Info = Info;

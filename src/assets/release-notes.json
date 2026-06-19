@@ -8,6 +8,15 @@
         "items": ["Ajout d'un filtre par jalon dans la barre de filtres pour rendre plus lisible la vue"],
         "imageUrl": "assets/release-notes/2026-06-19-filtre-jalons.png",
         "imageMaxHeight": 300
+      },
+      {
+        "title": "Indicateurs visuels des filtres actifs",
+        "items": [
+          "Affichage d'un badge dynamique sur le bouton 'Filtrer' pour indiquer le nombre de filtres actifs",
+          "Ajout d'un bandeau de résumé listant les filtres appliqués pour une meilleure lisibilité globale"
+        ],
+        "imageUrl": "assets/release-notes/2026-06-19-visu-filtres.png",
+        "imageMaxHeight": 300
       }
     ]
   },
