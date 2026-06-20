@@ -61,11 +61,18 @@ FILE_PREFIX="${TIME_SUFFIX}_${PROJECT_REF:0:8}"
 SCHEMA_FILE="$BACKUP_PATH/schema_public_${FILE_PREFIX}.sql"
 DATA_FILE="$BACKUP_PATH/data_${FILE_PREFIX}.sql"
 
-echo "📄 Extraction du schéma public..."
-if supabase db dump --linked --schema public -f "$SCHEMA_FILE"; then
-    echo "✅ Schéma extrait."
+#echo "📄 Extraction du schéma public..."
+#if supabase db dump --linked --schema public -f "$SCHEMA_FILE"; then
+#    echo "✅ Schéma extrait."
+#else
+#    echo "❌ Erreur lors de l'extraction du schéma."
+#fi
+
+echo "📄 Extraction de tous les schémas ..."
+if supabase db dump --linked -f "$SCHEMA_FILE"; then
+    echo "✅ Schémas extraits."
 else
-    echo "❌ Erreur lors de l'extraction du schéma."
+    echo "❌ Erreur lors de l'extraction des schémas."
 fi
 
 echo "💾 Extraction des données..."
