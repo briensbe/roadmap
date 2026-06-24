@@ -23,7 +23,7 @@ export class ChargeService {
         const { data, error } = await this.supabase.client
             .from(DB_TABLES.CHARGES)
             .select('*')
-            .order('semaine_debut');
+            .order('semaine_debut', { nullsFirst: true });
 
         if (error) throw error;
         this._chargesCache = data || [];
@@ -40,7 +40,7 @@ export class ChargeService {
             .from(DB_TABLES.CHARGES)
             .select('*')
             .eq('projet_id', projectId)
-            .order('semaine_debut');
+            .order('semaine_debut', { nullsFirst: true });
 
         if (error) throw error;
         return data || [];
@@ -55,7 +55,7 @@ export class ChargeService {
             .from(DB_TABLES.CHARGES)
             .select('*')
             .eq('equipe_id', teamId)
-            .order('semaine_debut');
+            .order('semaine_debut', { nullsFirst: true });
 
         if (error) throw error;
         return data || [];
