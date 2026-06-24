@@ -1,5 +1,19 @@
 [
   {
+    "version": "2026.06.24",
+    "date": "2026-06-25",
+    "news": [
+      {
+        "title": "Correction bug critique d'ajout/suppression de projets, ressources, équipes !",
+        "items": [
+          "Tri de la base de données : Les requêtes vers Supabase demandaient un tri par date (.order('semaine_debut')). Par défaut, ce tri pouvait exclure ou mal gérer les enregistrements ayant une date à NULL.",
+          "La correction : ajout de l'option { nullsFirst: true }  ce qui donne .order('semaine_debut', { nullsFirst: true }); ",
+          "Cela force l'affichage des enregistrements ayant une date à NULL en première position."
+        ]
+      }
+    ]
+  },
+  {
     "version": "2026.06.19",
     "date": "2026-06-19",
     "news": [
