@@ -233,6 +233,7 @@ export class ExcelReader {
     let lastBudgetNomenclature: string | null = null;
     let lastBudgetObject: string | null = null;
     let lastActivityType: string | null = null;
+    let lastProjectCode: string | null = null;
 
     // Parse rows from row 7 onwards
     worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
@@ -255,10 +256,19 @@ export class ExcelReader {
       const projectName = this.getCleanStringValue(row.getCell(activiteIdx));
       if (!projectName) return;
 
-      // Resolve project code
-      const codeActivite = codeActiviteIdx !== -1 ? this.getCleanStringValue(row.getCell(codeActiviteIdx)) : null;
-      const codeEvolution = codeEvolutionIdx !== -1 ? this.getCleanStringValue(row.getCell(codeEvolutionIdx)) : null;
-      const projectCode = codeActivite || codeEvolution || "";
+      // Read current row project codes
+      const rawCodeActivite = codeActiviteIdx !== -1 ? this.getCleanStringValue(row.getCell(codeActiviteIdx)) : null;
+      const rawCodeEvolution = codeEvolutionIdx !== -1 ? this.getCleanStringValue(row.getCell(codeEvolutionIdx)) : null;
+
+      // Resolve priority: current Activity Code, then current Evolution Code
+      const currentExplicitCode = rawCodeActivite || rawCodeEvolution;
+
+      if (currentExplicitCode) {
+        lastProjectCode = currentExplicitCode;
+      }
+
+      // Final project code is either current explicit code, or forward-fill fallback
+      const projectCode = currentExplicitCode || lastProjectCode || "";
 
       // Parse Jira References
       const jiraRaw = jiraIdx !== -1 ? this.getCleanStringValue(row.getCell(jiraIdx)) : null;
