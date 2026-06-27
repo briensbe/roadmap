@@ -3,6 +3,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 export interface ReconciliationResult {
   totalProcessed: number;
   matched: number;
+  multiMatched: number;
   ambiguous: number;
   unmapped: number;
 }
@@ -25,7 +26,7 @@ export class RoadmapReconciliator {
     }
 
     if (!stagingRows || stagingRows.length === 0) {
-      return { totalProcessed: 0, matched: 0, ambiguous: 0, unmapped: 0 };
+      return { totalProcessed: 0, matched: 0, multiMatched: 0, ambiguous: 0, unmapped: 0 };
     }
 
     // Get all unique project codes in the staging table
@@ -62,11 +63,10 @@ export class RoadmapReconciliator {
     }
 
     let matchedCount = 0;
+    let multiMatchedCount = 0;
     let ambiguousCount = 0;
     let unmappedCount = 0;
 
-    // We'll prepare bulk updates if possible, or update rows one by one.
-    // Since this is a staging/batch processor run weekly, updating row-by-row or in batches is perfect.
     for (const row of stagingRows) {
       const code = row.project_code;
       const matchedDb = dbProjectsByCode[code] || [];
@@ -77,21 +77,23 @@ export class RoadmapReconciliator {
       const multipleExcelProjects = distinctProjectNames.length > 1;
 
       let projectId: string | null = null;
-      let status: 'matched' | 'ambiguous' | 'unmapped' = 'unmapped';
+      let projectIds: string[] | null = null;
+      let status: 'matched' | 'multi_matched' | 'ambiguous' | 'unmapped' = 'unmapped';
 
       if (matchedDb.length === 0) {
         // No match in production database
         projectId = null;
+        projectIds = null;
         status = 'unmapped';
         unmappedCount++;
       } else if (matchedDb.length === 1 && !multipleExcelProjects) {
-        // Perfect 1-to-1 match (allowing multiple services of the same project)
+        // Perfect 1-to-1 match
         projectId = matchedDb[0].id;
+        projectIds = null;
         status = 'matched';
         matchedCount++;
       } else {
-        // Ambiguity exists (either multiple projects in DB or multiple distinct projects in Excel share this code)
-        // Try strict matching using Jira references
+        // Multiple projects match in DB, or multiple distinct Excel projects share the code
         const rowJiras = row.jira_references || [];
         
         // Find DB projects where the reference_externe matches one of the row's Jira keys (allowing prefixes)
@@ -107,7 +109,6 @@ export class RoadmapReconciliator {
 
         if (strictMatches.length === 1) {
           // Check if any other distinct project in Excel with this code also matches the same DB project
-          // (i.e. another staging row with a different project name matches the same project)
           const otherConflictingRows = sameCodeStaging.filter(otherRow => {
             if (otherRow.project_name === row.project_name) return false; // same project, not a conflict
             const otherJiras = otherRow.jira_references || [];
@@ -120,30 +121,40 @@ export class RoadmapReconciliator {
           });
 
           if (otherConflictingRows.length === 0) {
-            // We resolved it uniquely!
+            // We resolved it uniquely via Jira!
             projectId = strictMatches[0].id;
+            projectIds = null;
             status = 'matched';
             matchedCount++;
           } else {
-            // Multiple distinct projects match the same database project
+            // Multiple distinct projects in Excel match the same database project (which was narrowed down by Jira)
+            // But because they map to the same target, it's ambiguous
             projectId = null;
+            projectIds = null;
             status = 'ambiguous';
             ambiguousCount++;
           }
-        } else {
-          // No strict matches or multiple strict matches
+        } else if (strictMatches.length > 1) {
+          // Multiple database projects match both code AND Jira references -> multi_matched!
           projectId = null;
+          projectIds = strictMatches.map(p => p.id);
+          status = 'multi_matched';
+          multiMatchedCount++;
+        } else {
+          // Multiple projects match on code, but none match on Jira (or no Jira refs provided) -> ambiguous
+          projectId = null;
+          projectIds = null;
           status = 'ambiguous';
           ambiguousCount++;
         }
       }
-
 
       // Update the row in the staging table
       const { error: updateError } = await this.supabase
         .from('roadmap_import_budget')
         .update({
           project_id: projectId,
+          project_ids: projectIds,
           reconciliation_status: status
         })
         .eq('id', row.id);
@@ -156,6 +167,7 @@ export class RoadmapReconciliator {
     return {
       totalProcessed: stagingRows.length,
       matched: matchedCount,
+      multiMatched: multiMatchedCount,
       ambiguous: ambiguousCount,
       unmapped: unmappedCount
     };

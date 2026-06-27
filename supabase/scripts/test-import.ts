@@ -188,6 +188,7 @@ async function run() {
   console.log("\n=== 🔄 Reconciliation Statistics ===");
   console.log(`Total Processed:          ${result.reconciliation.totalProcessed}`);
   console.log(`Successfully Matched:    ${result.reconciliation.matched}`);
+  console.log(`Multi-Matched Projects:   ${result.reconciliation.multiMatched}`);
   console.log(`Ambiguous Projects:       ${result.reconciliation.ambiguous}`);
   console.log(`Unmapped / New Projects:  ${result.reconciliation.unmapped}`);
   console.log("=================================================");

@@ -81,8 +81,8 @@ function askConfirmation(query: string): Promise<boolean> {
   return new Promise(resolve => {
     rl.question(query, answer => {
       rl.close();
-      const val = answer.trim().toLowerCase();
-      resolve(val === 'y' || val === 'yes');
+      const val = answer.trim();
+      resolve(val === "Y" || val.toLowerCase() === "yes");
     });
   });
 }
@@ -153,7 +153,9 @@ async function run() {
   }
 
   // Request Confirmation
-  const confirmed = await askConfirmation("\n❓ Are you sure you want to permanently delete all staging records on this database? (y/N): ");
+  const confirmed = await askConfirmation(
+    "\n❓ Are you sure you want to permanently delete all staging records on this database? (Y(yes)/N): ",
+  );
   if (!confirmed) {
     console.log("❌ Purge aborted by user.");
     process.exit(0);
