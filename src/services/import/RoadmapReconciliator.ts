@@ -94,10 +94,16 @@ export class RoadmapReconciliator {
         // Try strict matching using Jira references
         const rowJiras = row.jira_references || [];
         
-        // Find DB projects where the reference_externe matches one of the row's Jira keys
-        const strictMatches = matchedDb.filter(p => 
-          p.reference_externe && rowJiras.includes(p.reference_externe)
-        );
+        // Find DB projects where the reference_externe matches one of the row's Jira keys (allowing prefixes)
+        const strictMatches = matchedDb.filter(p => {
+          if (!p.reference_externe) return false;
+          const dbKey = p.reference_externe.trim().toLowerCase();
+          
+          return rowJiras.some((excelJira: string) => {
+            const excelKey = excelJira.trim().toLowerCase();
+            return excelKey === dbKey || excelKey.endsWith('-' + dbKey) || dbKey.endsWith('-' + excelKey);
+          });
+        });
 
         if (strictMatches.length === 1) {
           // Check if any other distinct project in Excel with this code also matches the same DB project
@@ -105,7 +111,12 @@ export class RoadmapReconciliator {
           const otherConflictingRows = sameCodeStaging.filter(otherRow => {
             if (otherRow.project_name === row.project_name) return false; // same project, not a conflict
             const otherJiras = otherRow.jira_references || [];
-            return otherJiras.includes(strictMatches[0].reference_externe || '');
+            const dbKey = (strictMatches[0].reference_externe || '').trim().toLowerCase();
+            
+            return otherJiras.some((excelJira: string) => {
+              const excelKey = excelJira.trim().toLowerCase();
+              return excelKey === dbKey || excelKey.endsWith('-' + dbKey) || dbKey.endsWith('-' + excelKey);
+            });
           });
 
           if (otherConflictingRows.length === 0) {
