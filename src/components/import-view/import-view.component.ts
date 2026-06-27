@@ -77,25 +77,37 @@ export class ImportViewComponent {
   // Filters State
   searchQuery = signal('');
   statusFilter = signal<string>('all'); // 'all', 'matched', 'multi_matched', 'ambiguous', 'unmapped'
-  typeFilter = signal<string>('all');
   serviceFilter = signal<string>('all');
 
-  // Available unique types & services in the current rows
+  // Available unique services in the current rows
   filterOptions = computed(() => {
     const rows = this.budgetRowsQuery.data() || [];
-    const types = new Set<string>();
     const services = new Set<string>();
 
     rows.forEach((r: ImportBudgetRow) => {
-      if (r.budget_type) types.add(r.budget_type);
       if (r.service_name) services.add(r.service_name);
     });
 
     return {
-      types: Array.from(types).sort(),
       services: Array.from(services).sort()
     };
   });
+
+  // Unique service colors helper
+  getServiceColorStyle(serviceName: string): { [key: string]: string } {
+    // Generate HSL color based on hash of service name to distribute colors evenly and dynamically
+    let hash = 0;
+    for (let i = 0; i < serviceName.length; i++) {
+      hash = serviceName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const h = Math.abs(hash % 360);
+    // Use nice pastels for labels: 75% saturation, 95% lightness for background, 30% lightness for text
+    return {
+      'background-color': `hsl(${h}, 70%, 93%)`,
+      'color': `hsl(${h}, 75%, 25%)`,
+      'border': `1px solid hsl(${h}, 60%, 80%)`
+    };
+  }
 
   // Reconciliation stats for the current batch
   stats = computed(() => {
@@ -120,15 +132,15 @@ export class ImportViewComponent {
     return { total, matched, multiMatched, ambiguous, unmapped, percent };
   });
 
-  // Filtered Rows list
+  // Regrouped rows computed for template display
   filteredRows = computed(() => {
     const rows = this.budgetRowsQuery.data() || [];
     const search = this.searchQuery().toLowerCase().trim();
     const status = this.statusFilter();
-    const type = this.typeFilter();
     const service = this.serviceFilter();
 
-    return rows.filter((r: ImportBudgetRow) => {
+    // 1. Filter rows
+    const filtered = rows.filter((r: ImportBudgetRow) => {
       const matchesSearch = !search ||
         (r.project_code && r.project_code.toLowerCase().includes(search)) ||
         (r.project_name && r.project_name.toLowerCase().includes(search)) ||
@@ -136,10 +148,26 @@ export class ImportViewComponent {
         (r.jira_references && r.jira_references.some((j: string) => j.toLowerCase().includes(search)));
 
       const matchesStatus = status === 'all' || r.reconciliation_status === status;
-      const matchesType = type === 'all' || r.budget_type === type;
       const matchesService = service === 'all' || r.service_name === service;
 
-      return matchesSearch && matchesStatus && matchesType && matchesService;
+      return matchesSearch && matchesStatus && matchesService;
+    });
+
+    // 2. Sort by Nomenclature -> Objet -> Type activité -> Project Code
+    return filtered.sort((a, b) => {
+      const nomA = a.budget_nomenclature || '';
+      const nomB = b.budget_nomenclature || '';
+      if (nomA !== nomB) return nomA.localeCompare(nomB);
+
+      const objA = a.budget_object || '';
+      const objB = b.budget_object || '';
+      if (objA !== objB) return objA.localeCompare(objB);
+
+      const actA = a.activity_type || '';
+      const actB = b.activity_type || '';
+      if (actA !== actB) return actA.localeCompare(actB);
+
+      return a.project_code.localeCompare(b.project_code);
     });
   });
 

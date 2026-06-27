@@ -239,6 +239,62 @@
   border: 1px solid #e2e8f0;
   overflow-x: auto;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  max-height: 70vh;
+}
+
+.legend-bar {
+  background: #f1f5f9;
+  border-left: 4px solid #64748b;
+  padding: 8px 16px;
+  font-size: 13px;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.group-header-row td {
+  padding: 0 !important;
+  border-bottom: none !important;
+}
+
+.group-breadcrumb {
+  position: sticky;
+  left: 0;
+  top: 0;
+  background: #f1f5f9;
+  border-bottom: 1px solid #cbd5e1;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  z-index: 10;
+}
+
+.breadcrumb-item {
+  white-space: nowrap;
+}
+
+.breadcrumb-item.nomenclature {
+  color: #1e293b;
+  font-weight: 700;
+}
+
+.breadcrumb-item.object {
+  color: #475569;
+}
+
+.breadcrumb-item.activity {
+  color: #64748b;
+}
+
+.breadcrumb-separator {
+  color: #94a3b8;
+  font-weight: bold;
 }
 
 .import-table {
