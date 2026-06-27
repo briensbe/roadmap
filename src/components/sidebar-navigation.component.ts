@@ -15,7 +15,8 @@ import {
   Layers,
   Flag,
   User,
-  BookOpen
+  BookOpen,
+  FileSpreadsheet
 } from 'lucide-angular';
 import { SidebarService } from '../services/sidebar.service';
 import { ReleaseNotesService } from '../services/release-notes.service';
@@ -251,7 +252,7 @@ interface NavigationItem {
     .version-text.clickable {
        cursor: pointer;
        transition: color 0.2s;
-    }
+     }
     
     .version-text.clickable:hover {
        color: #4f46e5;
@@ -281,6 +282,7 @@ export class SidebarNavigationComponent {
   Flag = Flag;
   User = User;
   BookOpen = BookOpen;
+  FileSpreadsheet = FileSpreadsheet;
 
   navigationItems: NavigationItem[] = [
     { label: 'Tableau de bord', icon: this.LayoutDashboard, route: '/dashboard' },
@@ -288,6 +290,7 @@ export class SidebarNavigationComponent {
     { label: 'Capacité', icon: this.Gauge, route: '/capacite' },
     { label: 'Planification', icon: this.Calendar, route: '/planification' },
     { label: 'Projets', icon: this.FolderKanban, route: '/projets' },
+    { label: 'Imports Triskell', icon: this.FileSpreadsheet, route: '/imports' },
     { label: 'Jalons', icon: this.Flag, route: '/jalons' },
     { label: 'Ressources', icon: this.Users, route: '/ressources' },
     { label: 'Organisation', icon: this.Building2, route: '/organisation' },

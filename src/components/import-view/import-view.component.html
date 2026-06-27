@@ -1,0 +1,379 @@
+<div class="import-container">
+  <!-- Header -->
+  <div class="import-header">
+    <div>
+      <h1>Importations Triskell</h1>
+      <p class="subtitle">Visualisez et réconciliez les lignes budgétaires importées du PPM</p>
+    </div>
+
+    <!-- Batch Selector Dropdown -->
+    <div class="batch-selector-container">
+      <label class="dropdown-label">Lot d'importation :</label>
+      <div class="select-wrapper">
+        <select
+          [ngModel]="selectedBatchId()"
+          (ngModelChange)="selectedBatchId.set($event)"
+          class="batch-select"
+        >
+          @for (batch of batchesQuery.data(); track batch.id) {
+            <option [value]="batch.id">
+              {{ formatDate(batch.excel_export_date) }} - {{ batch.filename }}
+            </option>
+          }
+        </select>
+        <lucide-icon [img]="ChevronDown" [size]="16" class="select-icon"></lucide-icon>
+      </div>
+    </div>
+  </div>
+
+  @if (selectedBatch()) {
+    <!-- Dashboard Stats Grid -->
+    <div class="stats-grid">
+      <div class="stat-card total">
+        <div class="stat-icon-wrapper">
+          <lucide-icon [img]="FileSpreadsheet" [size]="24"></lucide-icon>
+        </div>
+        <div class="stat-content">
+          <span class="stat-value">{{ stats().total }}</span>
+          <span class="stat-label">Lignes Budgétaires</span>
+        </div>
+      </div>
+
+      <div class="stat-card matched">
+        <div class="stat-icon-wrapper">
+          <lucide-icon [img]="CheckCircle2" [size]="24"></lucide-icon>
+        </div>
+        <div class="stat-content">
+          <span class="stat-value">{{ stats().matched }}</span>
+          <span class="stat-label">Réconciliés ({{ stats().percent }}%)</span>
+        </div>
+        <div class="progress-mini-bar">
+          <div class="progress-fill" [style.width.%]="stats().percent"></div>
+        </div>
+      </div>
+
+      <div class="stat-card multi">
+        <div class="stat-icon-wrapper">
+          <lucide-icon [img]="AlertTriangle" [size]="24"></lucide-icon>
+        </div>
+        <div class="stat-content">
+          <span class="stat-value">{{ stats().multiMatched }}</span>
+          <span class="stat-label">Multi-liens (Conflits)</span>
+        </div>
+      </div>
+
+      <div class="stat-card ambiguous">
+        <div class="stat-icon-wrapper">
+          <lucide-icon [img]="HelpCircle" [size]="24"></lucide-icon>
+        </div>
+        <div class="stat-content">
+          <span class="stat-value">{{ stats().ambiguous }}</span>
+          <span class="stat-label">Ambiguïtés</span>
+        </div>
+      </div>
+
+      <div class="stat-card unmapped">
+        <div class="stat-icon-wrapper">
+          <lucide-icon [img]="XCircle" [size]="24"></lucide-icon>
+        </div>
+        <div class="stat-content">
+          <span class="stat-value">{{ stats().unmapped }}</span>
+          <span class="stat-label">Orphelins (Non mappés)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters & Search Toolbar -->
+    <div class="toolbar">
+      <div class="search-box">
+        <lucide-icon [img]="Search" [size]="18" class="search-icon"></lucide-icon>
+        <input
+          type="text"
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+          placeholder="Rechercher par code, projet, manager, Jira..."
+          class="search-input"
+        />
+      </div>
+
+      <div class="filters-group">
+        <!-- Status Filter -->
+        <div class="filter-wrapper">
+          <select
+            [ngModel]="statusFilter()"
+            (ngModelChange)="statusFilter.set($event)"
+            class="filter-select"
+          >
+            <option value="all">Tous les statuts</option>
+            <option value="matched">Mappés</option>
+            <option value="multi_matched">Multi-liens</option>
+            <option value="ambiguous">Ambiguïtés</option>
+            <option value="unmapped">Orphelins</option>
+          </select>
+          <lucide-icon [img]="ChevronDown" [size]="14" class="filter-select-icon"></lucide-icon>
+        </div>
+
+        <!-- Budget Type Filter -->
+        <div class="filter-wrapper">
+          <select
+            [ngModel]="typeFilter()"
+            (ngModelChange)="typeFilter.set($event)"
+            class="filter-select"
+          >
+            <option value="all">Tous les types de budget</option>
+            @for (type of filterOptions().types; track type) {
+              <option [value]="type">{{ type }}</option>
+            }
+          </select>
+          <lucide-icon [img]="ChevronDown" [size]="14" class="filter-select-icon"></lucide-icon>
+        </div>
+
+        <!-- Service Filter -->
+        <div class="filter-wrapper">
+          <select
+            [ngModel]="serviceFilter()"
+            (ngModelChange)="serviceFilter.set($event)"
+            class="filter-select"
+          >
+            <option value="all">Tous les services</option>
+            @for (srv of filterOptions().services; track srv) {
+              <option [value]="srv">{{ srv }}</option>
+            }
+          </select>
+          <lucide-icon [img]="ChevronDown" [size]="14" class="filter-select-icon"></lucide-icon>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Budget Table -->
+    <div class="table-wrapper">
+      <table class="import-table">
+        <thead>
+          <tr>
+            <th>Projet Triskell (Excel)</th>
+            <th>Type / Objet</th>
+            <th>Service</th>
+            <th class="text-right">Initial</th>
+            <th class="text-right">Révisé</th>
+            <th class="text-right">Prév.</th>
+            <th class="text-right">Consom.</th>
+            <th>Lien Projet Roadmap</th>
+            <th class="actions-col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of filteredRows(); track row.id) {
+            <tr class="table-row">
+              <!-- Project Info -->
+              <td>
+                <div class="project-info">
+                  <div class="name-row">
+                    <span class="project-code">{{ row.project_code }}</span>
+                    <span class="project-name">{{ row.project_name }}</span>
+                  </div>
+                  <div class="sub-info">
+                    @if (row.project_manager) {
+                      <span class="pm-name">Chef : {{ row.project_manager }}</span>
+                    }
+                    @if (row.jira_references && row.jira_references.length > 0) {
+                      <span class="divider">•</span>
+                      <span class="jira-tags">
+                        @for (jira of row.jira_references; track jira) {
+                          <span class="jira-tag">{{ jira }}</span>
+                        }
+                      </span>
+                    }
+                  </div>
+                </div>
+              </td>
+
+              <!-- Budget Context -->
+              <td>
+                <div class="budget-context">
+                  <div class="nomenclature-val" [title]="row.budget_nomenclature">
+                    {{ row.budget_nomenclature || '—' }}
+                  </div>
+                  <div class="type-val">{{ row.budget_type }}</div>
+                </div>
+              </td>
+
+              <!-- Service -->
+              <td>
+                <span class="service-badge">{{ row.service_name }}</span>
+              </td>
+
+              <!-- JH Figures -->
+              <td class="text-right num-val">{{ row.initial_jh ? row.initial_jh + ' jh' : '—' }}</td>
+              <td class="text-right num-val">{{ row.revised_jh ? row.revised_jh + ' jh' : '—' }}</td>
+              <td class="text-right num-val highlight-prev">{{ row.previsionnel_jh ? row.previsionnel_jh + ' jh' : '—' }}</td>
+              <td class="text-right num-val">{{ row.consomme_jh ? row.consomme_jh + ' jh' : '—' }}</td>
+
+              <!-- Mapping Status -->
+              <td>
+                @switch (row.reconciliation_status) {
+                  @case ('matched') {
+                    <div class="status-linked">
+                      <span class="badge badge-success">Mappé</span>
+                      <a
+                        [routerLink]="['/projets']"
+                        [queryParams]="{ status: 'Tous les statuts' }"
+                        class="project-link"
+                      >
+                        {{ getProjectName(row.project_id) }}
+                        <lucide-icon [img]="ExternalLink" [size]="12"></lucide-icon>
+                      </a>
+                    </div>
+                  }
+                  @case ('multi_matched') {
+                    <div class="status-warning">
+                      <span class="badge badge-warning" title="Plusieurs projets Roadmap possèdent ce code de projet.">Multi-liens</span>
+                      <span class="status-explain">Conflit de code</span>
+                    </div>
+                  }
+                  @case ('ambiguous') {
+                    <div class="status-warning">
+                      <span class="badge badge-warning" title="Des ambiguïtés de nom ou de clés Jira empêchent le mapping automatique.">Ambigu</span>
+                      <span class="status-explain">Choix requis</span>
+                    </div>
+                  }
+                  @case ('unmapped') {
+                    <div class="status-danger">
+                      <span class="badge badge-danger">Orphelin</span>
+                      <span class="status-explain">Aucune référence</span>
+                    </div>
+                  }
+                }
+              </td>
+
+              <!-- Actions -->
+              <td class="text-right">
+                <button
+                  (click)="openReconcileModal(row.id)"
+                  class="btn-action"
+                  [title]="row.project_id ? 'Modifier la réconciliation' : 'Réconcilier manuellement'"
+                >
+                  <lucide-icon [img]="Link" [size]="16"></lucide-icon>
+                  <span class="action-text">{{ row.project_id ? 'Associer' : 'Mappé' }}</span>
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="9" class="empty-table">
+                Aucune ligne budgétaire ne correspond aux critères de recherche.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  @} @else {
+    <div class="loading-state">
+      <lucide-icon [img]="RefreshCw" [size]="40" class="spinner"></lucide-icon>
+      <p>Aucun lot d'importation disponible ou en cours de chargement...</p>
+    </div>
+  }
+</div>
+
+<!-- Manual Reconciliation Modal -->
+@if (reconcileActiveRowId() !== null && activeReconcileRow()) {
+  <div class="modal-overlay" (click)="closeReconcileModal()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+      
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h3>Réconciliation manuelle</h3>
+          <p class="modal-subtitle">
+            Ligne budgétaire Triskell : <strong>{{ activeReconcileRow()?.project_code }} - {{ activeReconcileRow()?.project_name }}</strong>
+          </p>
+        </div>
+        <button class="btn-close" (click)="closeReconcileModal()">×</button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body">
+        
+        <!-- Suggestions Area -->
+        @if (suggestedProjets().length > 0) {
+          <div class="suggestions-section">
+            <h4>Propositions de liaisons automatiques (codes identiques) :</h4>
+            <div class="suggestions-list">
+              @for (proj of suggestedProjets(); track proj.id) {
+                <div class="suggestion-item">
+                  <div class="proj-details">
+                    <span class="proj-indicator" [style.background-color]="proj.color || '#3b82f6'"></span>
+                    <div>
+                      <span class="proj-code">{{ proj.code_projet }}</span>
+                      <span class="proj-name">{{ proj.nom_projet }}</span>
+                    </div>
+                  </div>
+                  <button
+                    (click)="setReconciliation(activeReconcileRow()!.id, proj.id!)"
+                    class="btn btn-primary btn-sm"
+                  >
+                    <lucide-icon [img]="Check" [size]="14"></lucide-icon>
+                    Choisir ce projet
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Manual Search Area -->
+        <div class="manual-search-section">
+          <h4>Rechercher un projet Roadmap existant :</h4>
+          <div class="modal-search-box">
+            <lucide-icon [img]="Search" [size]="16" class="search-icon"></lucide-icon>
+            <input
+              type="text"
+              [ngModel]="reconcileSearchQuery()"
+              (ngModelChange)="reconcileSearchQuery.set($event)"
+              placeholder="Nom de projet, code, référence externe..."
+              class="modal-search-input"
+            />
+          </div>
+
+          <div class="projects-list-scroll">
+            @for (proj of availableProjetsForMapping(); track proj.id) {
+              <div
+                (click)="setReconciliation(activeReconcileRow()!.id, proj.id!)"
+                class="scroll-project-item"
+                [class.current]="activeReconcileRow()?.project_id === proj.id"
+              >
+                <div class="proj-details">
+                  <span class="proj-indicator" [style.background-color]="proj.color || '#3b82f6'"></span>
+                  <div>
+                    <span class="proj-code">{{ proj.code_projet }}</span>
+                    <span class="proj-name">{{ proj.nom_projet }}</span>
+                  </div>
+                </div>
+                @if (activeReconcileRow()?.project_id === proj.id) {
+                  <span class="badge badge-success">Actuel</span>
+                }
+              </div>
+            } @empty {
+              <div class="empty-results">Aucun projet Roadmap trouvé.</div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer">
+        @if (activeReconcileRow()?.project_id) {
+          <button
+            (click)="setReconciliation(activeReconcileRow()!.id, null)"
+            class="btn btn-secondary btn-danger-text"
+          >
+            <lucide-icon [img]="Unlink" [size]="16"></lucide-icon>
+            Délier le projet
+          </button>
+        }
+        <button (click)="closeReconcileModal()" class="btn btn-secondary">Annuler</button>
+      </div>
+
+    </div>
+  </div>
+}

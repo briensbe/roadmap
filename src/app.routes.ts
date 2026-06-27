@@ -33,6 +33,10 @@ export const routes: Routes = [
       { path: "planification", component: PlanViewComponent },
       { path: "jalons", component: MilestonesViewComponent },
       {
+        path: "imports",
+        loadComponent: () => import("./components/import-view/import-view.component").then((m) => m.ImportViewComponent),
+      },
+      {
         path: "settings",
         loadComponent: () => import("./components/settings/settings.component").then((m) => m.SettingsComponent),
       },
