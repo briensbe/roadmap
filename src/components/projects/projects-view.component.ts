@@ -134,10 +134,13 @@ export class ProjectsViewComponent implements OnInit {
   }
 
   async ngOnInit() {
-    // Read query params for status filter
+    // Read query params for status filter and search query
     this.route.queryParams.subscribe(params => {
       if (params['status']) {
         this.statusFilter.set([params['status']]);
+      }
+      if (params['search']) {
+        this.searchQuery.set(params['search']);
       }
     });
   }

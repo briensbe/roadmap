@@ -6,82 +6,94 @@
       <p class="subtitle">Visualisez et réconciliez les lignes budgétaires importées du PPM</p>
     </div>
 
-    <!-- Batch Selector Dropdown -->
+    <!-- Batch Selector Dropdown & Toggle Stats -->
     <div class="batch-selector-container">
-      <label class="dropdown-label">Lot d'importation :</label>
-      <div class="select-wrapper">
-        <select
-          [ngModel]="selectedBatchId()"
-          (ngModelChange)="selectedBatchId.set($event)"
-          class="batch-select"
+      <div class="header-actions-group">
+        <button 
+          (click)="showStats.set(!showStats())" 
+          class="btn-toggle-stats" 
+          [title]="showStats() ? 'Masquer les statistiques' : 'Afficher les statistiques'"
         >
-          @for (batch of batchesQuery.data(); track batch.id) {
-            <option [value]="batch.id">
-              {{ formatDate(batch.excel_export_date) }} - {{ batch.filename }}
-            </option>
-          }
-        </select>
-        <lucide-icon [img]="ChevronDown" [size]="16" class="select-icon"></lucide-icon>
+          <lucide-icon [img]="showStats() ? EyeOff : Eye" [size]="16"></lucide-icon>
+          <span>{{ showStats() ? 'Masquer Stats' : 'Stats' }}</span>
+        </button>
+
+        <div class="select-wrapper">
+          <select
+            [ngModel]="selectedBatchId()"
+            (ngModelChange)="selectedBatchId.set($event)"
+            class="batch-select"
+          >
+            @for (batch of batchesQuery.data(); track batch.id) {
+              <option [value]="batch.id">
+                {{ formatDate(batch.excel_export_date) }} - {{ batch.filename }}
+              </option>
+            }
+          </select>
+          <lucide-icon [img]="ChevronDown" [size]="16" class="select-icon"></lucide-icon>
+        </div>
       </div>
     </div>
   </div>
 
   @if (selectedBatch()) {
-    <!-- Dashboard Stats Grid -->
-    <div class="stats-grid">
-      <div class="stat-card total">
-        <div class="stat-icon-wrapper">
-          <lucide-icon [img]="FileSpreadsheet" [size]="24"></lucide-icon>
+    <!-- Dashboard Stats Grid (Masqué par défaut) -->
+    @if (showStats()) {
+      <div class="stats-grid">
+        <div class="stat-card total">
+          <div class="stat-icon-wrapper">
+            <lucide-icon [img]="FileSpreadsheet" [size]="24"></lucide-icon>
+          </div>
+          <div class="stat-content">
+            <span class="stat-value">{{ stats().total }}</span>
+            <span class="stat-label">Lignes Budgétaires</span>
+          </div>
         </div>
-        <div class="stat-content">
-          <span class="stat-value">{{ stats().total }}</span>
-          <span class="stat-label">Lignes Budgétaires</span>
-        </div>
-      </div>
 
-      <div class="stat-card matched">
-        <div class="stat-icon-wrapper">
-          <lucide-icon [img]="CheckCircle2" [size]="24"></lucide-icon>
+        <div class="stat-card matched">
+          <div class="stat-icon-wrapper">
+            <lucide-icon [img]="CheckCircle2" [size]="24"></lucide-icon>
+          </div>
+          <div class="stat-content">
+            <span class="stat-value">{{ stats().matched }}</span>
+            <span class="stat-label">Réconciliés ({{ stats().percent }}%)</span>
+          </div>
+          <div class="progress-mini-bar">
+            <div class="progress-fill" [style.width.%]="stats().percent"></div>
+          </div>
         </div>
-        <div class="stat-content">
-          <span class="stat-value">{{ stats().matched }}</span>
-          <span class="stat-label">Réconciliés ({{ stats().percent }}%)</span>
-        </div>
-        <div class="progress-mini-bar">
-          <div class="progress-fill" [style.width.%]="stats().percent"></div>
-        </div>
-      </div>
 
-      <div class="stat-card multi">
-        <div class="stat-icon-wrapper">
-          <lucide-icon [img]="AlertTriangle" [size]="24"></lucide-icon>
+        <div class="stat-card multi">
+          <div class="stat-icon-wrapper">
+            <lucide-icon [img]="AlertTriangle" [size]="24"></lucide-icon>
+          </div>
+          <div class="stat-content">
+            <span class="stat-value">{{ stats().multiMatched }}</span>
+            <span class="stat-label">Multi-liens (Conflits)</span>
+          </div>
         </div>
-        <div class="stat-content">
-          <span class="stat-value">{{ stats().multiMatched }}</span>
-          <span class="stat-label">Multi-liens (Conflits)</span>
-        </div>
-      </div>
 
-      <div class="stat-card ambiguous">
-        <div class="stat-icon-wrapper">
-          <lucide-icon [img]="HelpCircle" [size]="24"></lucide-icon>
+        <div class="stat-card ambiguous">
+          <div class="stat-icon-wrapper">
+            <lucide-icon [img]="HelpCircle" [size]="24"></lucide-icon>
+          </div>
+          <div class="stat-content">
+            <span class="stat-value">{{ stats().ambiguous }}</span>
+            <span class="stat-label">Ambiguïtés</span>
+          </div>
         </div>
-        <div class="stat-content">
-          <span class="stat-value">{{ stats().ambiguous }}</span>
-          <span class="stat-label">Ambiguïtés</span>
-        </div>
-      </div>
 
-      <div class="stat-card unmapped">
-        <div class="stat-icon-wrapper">
-          <lucide-icon [img]="XCircle" [size]="24"></lucide-icon>
-        </div>
-        <div class="stat-content">
-          <span class="stat-value">{{ stats().unmapped }}</span>
-          <span class="stat-label">Orphelins (Non mappés)</span>
+        <div class="stat-card unmapped">
+          <div class="stat-icon-wrapper">
+            <lucide-icon [img]="XCircle" [size]="24"></lucide-icon>
+          </div>
+          <div class="stat-content">
+            <span class="stat-value">{{ stats().unmapped }}</span>
+            <span class="stat-label">Orphelins (Non mappés)</span>
+          </div>
         </div>
       </div>
-    </div>
+    }
 
     <!-- Filters & Search Toolbar -->
     <div class="toolbar">
@@ -212,7 +224,7 @@
                       <span class="badge badge-success">Mappé</span>
                       <a
                         [routerLink]="['/projets']"
-                        [queryParams]="{ status: 'Tous les statuts' }"
+                        [queryParams]="{ search: getProjectUUIDCode(row.project_id) }"
                         class="project-link"
                       >
                         {{ getProjectName(row.project_id) }}

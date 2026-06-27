@@ -20,7 +20,9 @@ import {
   ChevronDown,
   Link,
   Unlink,
-  Check
+  Check,
+  Eye,
+  EyeOff
 } from 'lucide-angular';
 
 @Component({
@@ -50,9 +52,12 @@ export class ImportViewComponent {
   Link = Link;
   Unlink = Unlink;
   Check = Check;
+  Eye = Eye;
+  EyeOff = EyeOff;
 
   // Selected Batch ID state
   selectedBatchId = signal<string | null>(null);
+  showStats = signal<boolean>(false);
 
   // Queries
   batchesQuery = this.importService.getBatchesQuery();
