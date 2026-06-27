@@ -130,16 +130,11 @@
       </div>
     </div>
 
-    <!-- Currency/Unit Legend -->
-    <div class="legend-bar">
-      <span class="legend-text">💡 Toutes les charges budgétaires sont exprimées en <strong>Jours-Hommes (JH)</strong></span>
-    </div>
-
     <!-- Main Budget Table -->
     <div class="table-wrapper">
       <table class="import-table">
         <thead>
-          <tr>
+          <tr class="sticky-thead-row">
             <th>Projet Triskell (Excel)</th>
             <th>Service</th>
             <th class="text-right">Initial</th>
@@ -250,17 +245,17 @@
               <td class="text-right">
                 <button
                   (click)="openReconcileModal(row.id)"
-                  class="btn-action"
+                  class="btn-action-icon"
+                  [class.is-mapped]="row.project_id !== null"
                   [title]="row.project_id ? 'Modifier la réconciliation' : 'Réconcilier manuellement'"
                 >
                   <lucide-icon [img]="Link" [size]="16"></lucide-icon>
-                  <span class="action-text">{{ row.project_id ? 'Associer' : 'Mappé' }}</span>
                 </button>
               </td>
             </tr>
           } @empty {
             <tr>
-              <td colspan="9" class="empty-table">
+              <td colspan="8" class="empty-table">
                 Aucune ligne budgétaire ne correspond aux critères de recherche.
               </td>
             </tr>
@@ -268,7 +263,12 @@
         </tbody>
       </table>
     </div>
-  @} @else {
+
+    <!-- Currency/Unit Legend (déplacé sous le tableau) -->
+    <div class="legend-bar">
+      <span class="legend-text">💡 Toutes les charges budgétaires sont exprimées en <strong>Jours-Hommes (JH)</strong></span>
+    </div>
+  } @else {
     <div class="loading-state">
       <lucide-icon [img]="RefreshCw" [size]="40" class="spinner"></lucide-icon>
       <p>Aucun lot d'importation disponible ou en cours de chargement...</p>

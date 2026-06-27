@@ -259,21 +259,7 @@
   border-bottom: none !important;
 }
 
-.group-breadcrumb {
-  position: sticky;
-  left: 0;
-  top: 0;
-  background: #f1f5f9;
-  border-bottom: 1px solid #cbd5e1;
-  padding: 8px 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #475569;
-  z-index: 10;
-}
+
 
 .breadcrumb-item {
   white-space: nowrap;
@@ -474,29 +460,78 @@
 }
 
 /* Action button */
-.btn-action {
+.btn-action-icon {
   background: #ffffff;
-  border: 1px solid #e2e8f0;
-  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  width: 32px;
+  height: 32px;
   border-radius: 6px;
-  color: #475569;
-  font-weight: 600;
-  font-size: 12px;
+  color: #64748b;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
   transition: all 0.2s ease;
 }
 
-.btn-action:hover {
-  background: #f8fafc;
+.btn-action-icon:hover {
+  background: #f1f5f9;
   color: #3b82f6;
-  border-color: #bfdbfe;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.action-text {
-  font-family: inherit;
+.btn-action-icon.is-mapped {
+  background: #f0fdf4;
+  color: #16a34a;
+  border-color: #bbf7d0;
+}
+
+.btn-action-icon.is-mapped:hover {
+  background: #dcfce7;
+  color: #15803d;
+  border-color: #15803d;
+}
+
+/* Sticky styles */
+.import-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.sticky-thead-row th {
+  position: sticky;
+  top: 0;
+  background: #f8fafc;
+  z-index: 30;
+  box-shadow: inset 0 -1px 0 #e2e8f0;
+}
+
+.group-header-row {
+  position: sticky;
+  top: 45px; /* Décalage pour se caler pile sous l'entête des colonnes */
+  z-index: 20;
+}
+
+.group-header-row td {
+  padding: 0 !important;
+  border-bottom: none !important;
+  background: #f1f5f9;
+}
+
+.group-breadcrumb {
+  background: #f1f5f9;
+  border-bottom: 1px solid #cbd5e1;
+  border-top: 1px solid #cbd5e1;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
 
 /* Empty or Loading states */
