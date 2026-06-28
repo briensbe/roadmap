@@ -6,9 +6,21 @@
       <p class="subtitle">Visualisez et réconciliez les lignes budgétaires importées du PPM</p>
     </div>
 
-    <!-- Batch Selector Dropdown & Toggle Stats -->
+    <!-- Batch Selector Dropdown & Toggle Stats & Import Toggle -->
     <div class="batch-selector-container">
       <div class="header-actions-group">
+        @if (showImportButton()) {
+          <button 
+            (click)="toggleUploadArea()" 
+            class="btn-toggle-upload"
+            [class.active]="showUploadArea()"
+            title="Afficher ou masquer la zone d'importation Excel"
+          >
+            <lucide-icon [img]="FileUp" [size]="16"></lucide-icon>
+            <span>Nouvel Import</span>
+          </button>
+        }
+
         <button 
           (click)="showStats.set(!showStats())" 
           class="btn-toggle-stats" 
@@ -24,9 +36,9 @@
             (ngModelChange)="selectedBatchId.set($event)"
             class="batch-select"
           >
-            @for (batch of batchesQuery.data(); track batch.id) {
+            @for (batch of batchesQuery.data(); track batch.id; let idx = $index; let total = $count) {
               <option [value]="batch.id">
-                {{ formatDate(batch.excel_export_date) }} - {{ batch.filename }}
+                N° {{ total - idx }} (Importé le {{ formatDate(batch.imported_at || batch.excel_export_date) }}) - {{ batch.filename }}
               </option>
             }
           </select>
@@ -36,32 +48,34 @@
     </div>
   </div>
 
-  <!-- Drag & Drop Zone -->
-  <div 
-    class="excel-drop-zone"
-    [class.dragging]="isDragging()"
-    (dragover)="onDragOver($event)"
-    (dragleave)="onDragLeave($event)"
-    (drop)="onDrop($event)"
-    (click)="fileInput.click()"
-  >
-    <input 
-      type="file" 
-      #fileInput 
-      (change)="onFileSelected($event)" 
-      accept=".xlsx, .xls" 
-      style="display: none;" 
-    />
-    <div class="drop-zone-content">
-      <div class="icon-wrapper">
-        <lucide-icon [img]="Upload" [size]="28"></lucide-icon>
-      </div>
-      <div class="text-wrapper">
-        <p class="main-text">Glissez-déposez votre fichier d'export Triskell ici, ou <span>parcourez vos fichiers</span></p>
-        <p class="sub-text">Fichiers acceptés : Excel (.xlsx, .xls)</p>
+  <!-- Drag & Drop Zone (Absorbée / Masquée si un lot est sélectionné et l'upload non actif) -->
+  @if (showUploadArea() || !selectedBatchId()) {
+    <div 
+      class="excel-drop-zone transition-area"
+      [class.dragging]="isDragging()"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event)"
+      (click)="fileInput.click()"
+    >
+      <input 
+        type="file" 
+        #fileInput 
+        (change)="onFileSelected($event)" 
+        accept=".xlsx, .xls" 
+        style="display: none;" 
+      />
+      <div class="drop-zone-content">
+        <div class="icon-wrapper">
+          <lucide-icon [img]="Upload" [size]="28"></lucide-icon>
+        </div>
+        <div class="text-wrapper">
+          <p class="main-text">Glissez-déposez votre fichier d'export Triskell ici, ou <span>parcourez vos fichiers</span></p>
+          <p class="sub-text">Fichiers acceptés : Excel (.xlsx, .xls)</p>
+        </div>
       </div>
     </div>
-  </div>
+  }
 
   <!-- Processing / Loader State overlay -->
   @if (isProcessing()) {

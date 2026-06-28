@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -23,7 +23,8 @@ import {
   Check,
   Eye,
   EyeOff,
-  Upload
+  Upload,
+  FileUp
 } from 'lucide-angular';
 import { TriskellImportProcessor, ImportResult } from '../../services/import/TriskellImportProcessor';
 
@@ -57,10 +58,34 @@ export class ImportViewComponent {
   Eye = Eye;
   EyeOff = EyeOff;
   Upload = Upload;
+  FileUp = FileUp;
 
   // Selected Batch ID state
   selectedBatchId = signal<string | null>(null);
   showStats = signal<boolean>(false);
+  showUploadArea = signal<boolean>(true); // Visible par défaut à l'arrivée
+  showImportButton = signal<boolean>(false); // Apparaît dès qu'on a scrollé
+  hasScrolled = signal<boolean>(false); // Marqueur de premier scroll
+  window = window;
+
+  @HostListener('window:scroll', [])
+  onWindowScroll() {
+    const scrollOffset = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    
+    // Si on a scrollé de plus de 40px et qu'on ne l'a pas encore fait
+    if (scrollOffset > 40 && !this.hasScrolled()) {
+      this.hasScrolled.set(true);
+      this.showUploadArea.set(false);
+      this.showImportButton.set(true);
+    }
+  }
+
+  toggleUploadArea() {
+    this.showUploadArea.set(!this.showUploadArea());
+    if (this.showUploadArea()) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
 
   // Excel Upload States
   isDragging = signal<boolean>(false);
@@ -329,6 +354,9 @@ export class ImportViewComponent {
       // Auto select the newly created batch
       this.selectedBatchId.set(result.batchId);
       await queryClient.invalidateQueries({ queryKey: ['import-budget-rows', result.batchId] });
+      
+      // Auto collapse drag & drop area on success
+      this.showUploadArea.set(false);
 
     } catch (err: any) {
       console.error("Error processing Excel import:", err);

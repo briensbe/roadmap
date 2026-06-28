@@ -8,6 +8,7 @@ export interface ImportBatch {
   excel_export_date: string;
   filename: string;
   status: 'pending' | 'processed' | 'failed';
+  imported_at?: string;
 }
 
 export interface ImportBudgetRow {
