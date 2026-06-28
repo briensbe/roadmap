@@ -6,6 +6,7 @@ import { RoadmapReconciliator, ReconciliationResult } from './RoadmapReconciliat
 export interface ImportResult {
   batchId: string;
   excelExportDate: Date;
+  filename: string;
   totalRawRows: number;
   totalStagingRowsInserted: number;
   reconciliation: ReconciliationResult;
@@ -26,19 +27,30 @@ export class TriskellImportProcessor {
    * Main entrypoint to import an Excel file.
    */
   public async processImport(filePath: string, filename: string): Promise<ImportResult> {
+    const parsedData = await this.reader.readFile(filePath);
+    return this.executeImportWorkflow(parsedData, filename);
+  }
+
+  /**
+   * Entrypoint to import an Excel file from an ArrayBuffer (browser context).
+   */
+  public async processImportBuffer(buffer: ArrayBuffer, filename: string): Promise<ImportResult> {
+    const parsedData = await this.reader.readArrayBuffer(buffer);
+    return this.executeImportWorkflow(parsedData, filename);
+  }
+
+  private async executeImportWorkflow(parsedData: any, filename: string): Promise<ImportResult> {
     let batchId: string | null = null;
     let excelExportDate: Date | null = null;
 
     try {
-      // 1. Read and parse the Excel file
-      const parsedData = await this.reader.readFile(filePath);
       excelExportDate = parsedData.excelExportDate;
 
       // 2. Create the import batch tracking record (status = 'pending')
       const { data: batchData, error: batchError } = await this.supabase
         .from('roadmap_import_batches')
         .insert({
-          excel_export_date: excelExportDate.toISOString(),
+          excel_export_date: excelExportDate!.toISOString(),
           filename: filename,
           status: 'pending'
         })
@@ -94,6 +106,7 @@ export class TriskellImportProcessor {
       return {
         batchId,
         excelExportDate,
+        filename,
         totalRawRows: parsedData.rows.length,
         totalStagingRowsInserted: stagingRowsWithBatch.length,
         reconciliation: reconciliationResult

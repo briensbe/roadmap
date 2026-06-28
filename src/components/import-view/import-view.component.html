@@ -36,6 +36,111 @@
     </div>
   </div>
 
+  <!-- Drag & Drop Zone -->
+  <div 
+    class="excel-drop-zone"
+    [class.dragging]="isDragging()"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave($event)"
+    (drop)="onDrop($event)"
+    (click)="fileInput.click()"
+  >
+    <input 
+      type="file" 
+      #fileInput 
+      (change)="onFileSelected($event)" 
+      accept=".xlsx, .xls" 
+      style="display: none;" 
+    />
+    <div class="drop-zone-content">
+      <div class="icon-wrapper">
+        <lucide-icon [img]="Upload" [size]="28"></lucide-icon>
+      </div>
+      <div class="text-wrapper">
+        <p class="main-text">Glissez-déposez votre fichier d'export Triskell ici, ou <span>parcourez vos fichiers</span></p>
+        <p class="sub-text">Fichiers acceptés : Excel (.xlsx, .xls)</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Processing / Loader State overlay -->
+  @if (isProcessing()) {
+    <div class="processing-overlay">
+      <div class="processing-card">
+        <lucide-icon [img]="RefreshCw" [size]="36" class="spinner"></lucide-icon>
+        <h4>Traitement du fichier Excel en cours...</h4>
+        <p>Lecture, modélisation des données et exécution du réconciliateur automatique...</p>
+      </div>
+    </div>
+  }
+
+  <!-- Error dialog popup -->
+  @if (excelError()) {
+    <div class="modal-overlay" (click)="closeError()">
+      <div class="modal-container status-error-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>⚠️ Échec de l'importation</h3>
+          <button class="btn-close" (click)="closeError()">×</button>
+        </div>
+        <div class="modal-body error-body">
+          <p class="error-msg-detail">{{ excelError() }}</p>
+        </div>
+        <div class="modal-footer">
+          <button (click)="closeError()" class="btn btn-secondary">Fermer</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Success summary dialog popup -->
+  @if (excelSuccessSummary()) {
+    <div class="modal-overlay" (click)="closeSummary()">
+      <div class="modal-container success-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>✅ Importation réussie !</h3>
+          <button class="btn-close" (click)="closeSummary()">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="success-intro">
+            <p>Le fichier <strong>{{ excelSuccessSummary()?.filename }}</strong> a été traité avec succès.</p>
+            <p class="export-date-meta">Date de l'export Excel : {{ excelSuccessSummary()?.excelExportDate ? formatDate(excelSuccessSummary()!.excelExportDate.toISOString()) : '' }}</p>
+          </div>
+          
+          <div class="import-metrics-summary">
+            <div class="metric-row">
+              <span>Total lignes projets identifiés dans l'Excel :</span>
+              <strong>{{ excelSuccessSummary()?.totalRawRows }}</strong>
+            </div>
+            <div class="metric-row">
+              <span>Lignes découpées insérées en staging :</span>
+              <strong>{{ excelSuccessSummary()?.totalStagingRowsInserted }}</strong>
+            </div>
+            <div class="metric-divider"></div>
+            <div class="metric-row matched">
+              <span>Réconciliations automatiques réussies :</span>
+              <strong>{{ excelSuccessSummary()?.reconciliation?.matched }}</strong>
+            </div>
+            <div class="metric-row warning">
+              <span>Conflits détectés (multi-liens) :</span>
+              <strong>{{ excelSuccessSummary()?.reconciliation?.multiMatched }}</strong>
+            </div>
+            <div class="metric-row warning">
+              <span>Projets Triskell ambigus :</span>
+              <strong>{{ excelSuccessSummary()?.reconciliation?.ambiguous }}</strong>
+            </div>
+            <div class="metric-row danger">
+              <span>Nouveaux projets / Non cartographiés :</span>
+              <strong>{{ excelSuccessSummary()?.reconciliation?.unmapped }}</strong>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button (click)="closeSummary()" class="btn btn-primary">Fermer</button>
+        </div>
+      </div>
+    </div>
+  }
+
   @if (selectedBatch()) {
     <!-- Dashboard Stats Grid (Masqué par défaut) -->
     @if (showStats()) {

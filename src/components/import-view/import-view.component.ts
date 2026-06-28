@@ -22,8 +22,10 @@ import {
   Unlink,
   Check,
   Eye,
-  EyeOff
+  EyeOff,
+  Upload
 } from 'lucide-angular';
+import { TriskellImportProcessor, ImportResult } from '../../services/import/TriskellImportProcessor';
 
 @Component({
   selector: 'app-import-view',
@@ -54,10 +56,17 @@ export class ImportViewComponent {
   Check = Check;
   Eye = Eye;
   EyeOff = EyeOff;
+  Upload = Upload;
 
   // Selected Batch ID state
   selectedBatchId = signal<string | null>(null);
   showStats = signal<boolean>(false);
+
+  // Excel Upload States
+  isDragging = signal<boolean>(false);
+  isProcessing = signal<boolean>(false);
+  excelError = signal<string | null>(null);
+  excelSuccessSummary = signal<ImportResult | null>(null);
 
   // Queries
   batchesQuery = this.importService.getBatchesQuery();
@@ -254,5 +263,86 @@ export class ImportViewComponent {
       hour: '2-digit',
       minute: '2-digit'
     });
+  }
+
+  // Drag & Drop Handlers
+  onDragOver(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging.set(true);
+  }
+
+  onDragLeave(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging.set(false);
+  }
+
+  onDrop(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging.set(false);
+
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      this.processExcelFile(files[0]);
+    }
+  }
+
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.processExcelFile(input.files[0]);
+    }
+  }
+
+  private async processExcelFile(file: File) {
+    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+      this.excelError.set("Type de fichier invalide. Veuillez déposer un fichier Excel (.xlsx).");
+      return;
+    }
+
+    this.isProcessing.set(true);
+    this.excelError.set(null);
+    this.excelSuccessSummary.set(null);
+
+    try {
+      const reader = new FileReader();
+      
+      // Promisify FileReader load event
+      const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+        reader.onload = (e) => resolve(e.target?.result as ArrayBuffer);
+        reader.onerror = (err) => reject(err);
+        reader.readAsArrayBuffer(file);
+      });
+
+      // Initialize processor and invoke client-side pipeline
+      const processor = new TriskellImportProcessor(this.projetService['supabase'].client);
+      const result = await processor.processImportBuffer(arrayBuffer, file.name);
+
+      this.excelSuccessSummary.set(result);
+
+      // Invalidate query caches to trigger UI reload
+      const queryClient = this.importService['queryClient'];
+      await queryClient.invalidateQueries({ queryKey: ['import-batches'] });
+      
+      // Auto select the newly created batch
+      this.selectedBatchId.set(result.batchId);
+      await queryClient.invalidateQueries({ queryKey: ['import-budget-rows', result.batchId] });
+
+    } catch (err: any) {
+      console.error("Error processing Excel import:", err);
+      this.excelError.set(err.message || "Une erreur est survenue lors de la lecture du fichier Excel.");
+    } finally {
+      this.isProcessing.set(false);
+    }
+  }
+
+  closeSummary() {
+    this.excelSuccessSummary.set(null);
+  }
+
+  closeError() {
+    this.excelError.set(null);
   }
 }

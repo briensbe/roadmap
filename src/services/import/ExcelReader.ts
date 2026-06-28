@@ -102,7 +102,16 @@ export class ExcelReader {
   public async readFile(filePath: string): Promise<ExcelImportData> {
     const workbook = new Excel.Workbook();
     await workbook.xlsx.readFile(filePath);
+    return this.parseWorkbook(workbook);
+  }
 
+  public async readArrayBuffer(buffer: ArrayBuffer): Promise<ExcelImportData> {
+    const workbook = new Excel.Workbook();
+    await workbook.xlsx.load(buffer);
+    return this.parseWorkbook(workbook);
+  }
+
+  private parseWorkbook(workbook: Excel.Workbook): ExcelImportData {
     // Use first worksheet
     const worksheet = workbook.worksheets[0];
     if (!worksheet) {
