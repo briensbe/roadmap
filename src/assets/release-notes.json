@@ -1,5 +1,20 @@
 [
   {
+    "version": "2026.06.28",
+    "date": "2026-06-28",
+    "news": [
+      {
+        "title": "Module d'importation & réconciliation PPM Triskell",
+        "items": [
+          "Importation Excel en un clic : nouvelle zone Drag & Drop dynamique pour téléverser directement vos exports budgétaires Triskell.",
+          "Réconciliation assistée : moteur de recherche intégré pour associer ou modifier manuellement les mappings entre projets Triskell et projets Roadmap."
+        ],
+        "imageUrl": "assets/release-notes/2026-06-28-Imports-Triskell.png",
+        "imageMaxHeight": 300
+      }
+    ]
+  },
+  {
     "version": "2026.06.24",
     "date": "2026-06-25",
     "news": [
