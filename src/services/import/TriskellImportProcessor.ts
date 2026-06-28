@@ -4,7 +4,7 @@ import { RoadmapTransformer } from './RoadmapTransformer';
 import { RoadmapReconciliator, ReconciliationResult } from './RoadmapReconciliator';
 
 export interface ImportResult {
-  batchId: string;
+  batchId: number;
   excelExportDate: Date;
   filename: string;
   totalRawRows: number;
@@ -40,7 +40,7 @@ export class TriskellImportProcessor {
   }
 
   private async executeImportWorkflow(parsedData: any, filename: string): Promise<ImportResult> {
-    let batchId: string | null = null;
+    let batchId: number | null = null;
     let excelExportDate: Date | null = null;
 
     try {

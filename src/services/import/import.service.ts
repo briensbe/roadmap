@@ -3,7 +3,7 @@ import { SupabaseService } from '../supabase.service';
 import { QueryClient, injectQuery, injectMutation } from '@tanstack/angular-query-experimental';
 
 export interface ImportBatch {
-  id: string;
+  id: number;
   created_at: string;
   excel_export_date: string;
   filename: string;
@@ -13,7 +13,7 @@ export interface ImportBatch {
 
 export interface ImportBudgetRow {
   id: number;
-  batch_id: string;
+  batch_id: number;
   budget_type: string | null;
   budget_nomenclature: string | null;
   budget_object: string | null;
@@ -61,12 +61,12 @@ export class ImportService {
   /**
    * Get budget rows for a specific batch (passing a function to evaluate batchId reactively within injection context)
    */
-  getBudgetRowsQuery(batchIdFn: () => string | null) {
+  getBudgetRowsQuery(batchIdFn: () => number | null) {
     return injectQuery(() => ({
       queryKey: ['import-budget-rows', batchIdFn()],
       queryFn: async () => {
         const id = batchIdFn();
-        if (!id) return [];
+        if (id === null || id === undefined) return [];
         const { data, error } = await this.supabase.client
           .from('roadmap_import_budget')
           .select('*')

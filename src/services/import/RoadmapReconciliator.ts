@@ -14,7 +14,7 @@ export class RoadmapReconciliator {
   /**
    * Reconciles staging rows for the given batch with production projects.
    */
-  public async reconcile(batchId: string): Promise<ReconciliationResult> {
+  public async reconcile(batchId: number): Promise<ReconciliationResult> {
     // 1. Fetch all staging rows for this batch
     const { data: stagingRows, error: stagingError } = await this.supabase
       .from('roadmap_import_budget')

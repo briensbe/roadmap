@@ -61,7 +61,7 @@ export class ImportViewComponent {
   FileUp = FileUp;
 
   // Selected Batch ID state
-  selectedBatchId = signal<string | null>(null);
+  selectedBatchId = signal<number | null>(null);
   showStats = signal<boolean>(false);
   showUploadArea = signal<boolean>(true); // Visible par défaut à l'arrivée
   showImportButton = signal<boolean>(false); // Apparaît dès qu'on a scrollé
@@ -276,6 +276,12 @@ export class ImportViewComponent {
         this.closeReconcileModal();
       }
     });
+  }
+
+  toNumber(val: any): number | null {
+    if (val === null || val === undefined || val === '') return null;
+    const num = Number(val);
+    return isNaN(num) ? null : num;
   }
 
   formatDate(dateStr: string | undefined): string {

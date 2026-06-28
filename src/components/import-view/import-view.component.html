@@ -33,7 +33,7 @@
         <div class="select-wrapper">
           <select
             [ngModel]="selectedBatchId()"
-            (ngModelChange)="selectedBatchId.set($event)"
+            (ngModelChange)="selectedBatchId.set(toNumber($event))"
             class="batch-select"
           >
             @for (batch of batchesQuery.data(); track batch.id; let idx = $index; let total = $count) {
