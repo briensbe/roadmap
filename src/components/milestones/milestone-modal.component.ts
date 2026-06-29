@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Jalon, Projet } from '../../models/types';
 import { JalonService } from '../../services/jalon.service';
+import { ConfirmModalComponent } from '../confirm-modal.component';
 
 @Component({
   selector: 'app-milestone-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ConfirmModalComponent],
   template: `
     @if (visible) {
       <div class="modal-overlay" (click)="close()">
@@ -63,12 +64,28 @@ import { JalonService } from '../../services/jalon.service';
             </div>
 
             <div class="modal-actions">
-              <button type="button" class="btn btn-secondary" (click)="close()">Annuler</button>
-              <button type="submit" class="btn btn-primary">{{ isEditing ? 'Mettre à jour' : 'Créer' }}</button>
+              @if (isEditing) {
+                <button type="button" class="btn btn-danger" (click)="delete()">Supprimer</button>
+              } @else {
+                <div></div>
+              }
+              <div class="right-actions">
+                <button type="button" class="btn btn-secondary" (click)="close()">Annuler</button>
+                <button type="submit" class="btn btn-primary">{{ isEditing ? 'Mettre à jour' : 'Créer' }}</button>
+              </div>
             </div>
           </form>
         </div>
       </div>
+
+      <app-confirm-modal
+        [visible]="showConfirmModal"
+        title="Supprimer le jalon"
+        [message]="deleteConfirmMessage"
+        confirmLabel="Supprimer"
+        (confirm)="onConfirmDelete()"
+        (cancel)="showConfirmModal = false"
+      ></app-confirm-modal>
     }
   `,
   styles: [`
@@ -167,9 +184,14 @@ import { JalonService } from '../../services/jalon.service';
 
     .modal-actions {
       display: flex;
-      justify-content: flex-end;
-      gap: 12px;
+      justify-content: space-between;
+      align-items: center;
       margin-top: 16px;
+    }
+
+    .right-actions {
+      display: flex;
+      gap: 12px;
     }
 
     .btn {
@@ -199,6 +221,15 @@ import { JalonService } from '../../services/jalon.service';
       background: #d1d5db;
     }
 
+    .btn-danger {
+      background: #dc2626;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #b91c1c;
+    }
+
     /* Dark Mode */
     :host-context(body.dark-mode) .modal {
       background: #1f2937;
@@ -223,6 +254,12 @@ import { JalonService } from '../../services/jalon.service';
     :host-context(body.dark-mode) .btn-secondary:hover {
       background: #4b5563;
     }
+    :host-context(body.dark-mode) .btn-danger {
+      background: #b91c1c;
+    }
+    :host-context(body.dark-mode) .btn-danger:hover {
+      background: #991b1b;
+    }
     :host-context(body.dark-mode) input[type="date"]::-webkit-calendar-picker-indicator {
       filter: invert(1);
     }
@@ -234,6 +271,7 @@ export class MilestoneModalComponent implements OnChanges {
   @Input() projets: Projet[] = [];
   @Output() visibleChange = new EventEmitter<boolean>();
   @Output() saved = new EventEmitter<void>();
+  showConfirmModal = false;
 
   currentJalon: Partial<Jalon> = {
     title: '',
@@ -298,6 +336,10 @@ export class MilestoneModalComponent implements OnChanges {
     this.currentJalon.title = `${prefix}${version}`;
   }
 
+  get deleteConfirmMessage(): string {
+    return `Êtes-vous sûr de vouloir supprimer le jalon "${this.currentJalon.title || ''}" ?`;
+  }
+
   get isEditing(): boolean {
     return !!this.currentJalon.id;
   }
@@ -305,6 +347,23 @@ export class MilestoneModalComponent implements OnChanges {
   close() {
     this.visible = false;
     this.visibleChange.emit(false);
+  }
+
+  delete() {
+    if (!this.currentJalon.id) return;
+    this.showConfirmModal = true;
+  }
+
+  async onConfirmDelete() {
+    this.showConfirmModal = false;
+    if (!this.currentJalon.id) return;
+    try {
+      await this.jalonService.deleteJalon(this.currentJalon.id);
+      this.saved.emit();
+      this.close();
+    } catch (error) {
+      console.error('Error deleting jalon:', error);
+    }
   }
 
   async save() {
