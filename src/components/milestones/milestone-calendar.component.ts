@@ -1,12 +1,12 @@
 import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges, NgModule } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
-import { LucideAngularModule, Package, Rocket, Layers, Flag } from "lucide-angular";
+import { LucideAngularModule, Package, Rocket, Layers, Flag, Wrench } from "lucide-angular";
 import { Jalon } from "../../models/types";
 import { DayEventsModalComponent } from "./day-events-modal.component";
 
 @NgModule({
-  imports: [LucideAngularModule.pick({ Package, Rocket, Layers, Flag })],
+  imports: [LucideAngularModule.pick({ Package, Rocket, Layers, Flag, Wrench })],
   exports: [LucideAngularModule]
 })
 export class LucideIconsModule { }
@@ -45,6 +45,7 @@ export class LucideIconsModule { }
                 <div
                   class="event-item"
                   [class.event-livraison]="jalon.event_type === 'livraison'"
+                  [class.event-maintenance]="jalon.event_type === 'maintenance'"
                   [class.event-mep]="jalon.event_type === 'mep'"
                   [class.event-sprint]="jalon.event_type === 'sprint'"
                   [class.event-autre]="jalon.event_type === 'autre' || !jalon.event_type"
@@ -236,6 +237,11 @@ export class LucideIconsModule { }
         color: #065f46;
       }
 
+      .event-item.event-maintenance {
+        background: #f3e8ff;
+        color: #6b21a8;
+      }
+
       .event-item.event-mep {
         background: #dbeafe;
         color: #1e40af;
@@ -345,6 +351,11 @@ export class LucideIconsModule { }
       :host-context(body.dark-mode) .event-item.event-livraison {
         background: #064e3b;
         color: #a7f3d0;
+      }
+
+      :host-context(body.dark-mode) .event-item.event-maintenance {
+        background: #581c87;
+        color: #e9d5ff;
       }
 
       :host-context(body.dark-mode) .event-item.event-mep {
@@ -527,6 +538,8 @@ export class MilestoneCalendarComponent implements OnInit, OnChanges {
     switch (type) {
       case 'livraison':
         return 'package';
+      case 'maintenance':
+        return 'wrench';
       case 'mep':
         return 'rocket';
       case 'sprint':

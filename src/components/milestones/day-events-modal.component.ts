@@ -1,10 +1,10 @@
 import { Component, EventEmitter, Input, Output, NgModule } from "@angular/core";
 import { CommonModule } from "@angular/common";
-import { LucideAngularModule, PenLine, Plus, Package, Rocket, Layers, Flag } from "lucide-angular";
+import { LucideAngularModule, PenLine, Plus, Package, Rocket, Layers, Flag, Wrench } from "lucide-angular";
 import { Jalon } from "../../models/types";
 
 @NgModule({
-  imports: [LucideAngularModule.pick({ PenLine, Plus, Package, Rocket, Layers, Flag })],
+  imports: [LucideAngularModule.pick({ PenLine, Plus, Package, Rocket, Layers, Flag, Wrench })],
   exports: [LucideAngularModule]
 })
 export class LucideIconsModule { }
@@ -29,6 +29,7 @@ export class LucideIconsModule { }
                   <div
                     class="type-badge"
                     [class.badge-livraison]="jalon.event_type === 'livraison'"
+                    [class.badge-maintenance]="jalon.event_type === 'maintenance'"
                     [class.badge-mep]="jalon.event_type === 'mep'"
                     [class.badge-sprint]="jalon.event_type === 'sprint'"
                     [class.badge-autre]="jalon.event_type === 'autre' || !jalon.event_type"
@@ -144,6 +145,11 @@ export class LucideIconsModule { }
       .badge-livraison {
         background: #d1fae5;
         color: #065f46;
+      }
+
+      .badge-maintenance {
+        background: #f3e8ff;
+        color: #6b21a8;
       }
       .badge-mep {
         background: #dbeafe;
@@ -313,6 +319,8 @@ export class DayEventsModalComponent {
     switch (type) {
       case 'livraison':
         return 'package';
+      case 'maintenance':
+        return 'wrench';
       case 'mep':
         return 'rocket';
       case 'sprint':

@@ -1,6 +1,6 @@
 import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges, NgModule } from "@angular/core";
 import { CommonModule } from "@angular/common";
-import { LucideAngularModule, AlignJustify, Columns, PenLine, Package, Rocket, Layers, Flag } from "lucide-angular";
+import { LucideAngularModule, AlignJustify, Columns, PenLine, Package, Rocket, Layers, Flag, Wrench } from "lucide-angular";
 import { Jalon, Projet } from "../../models/types";
 
 interface TimelineGroup {
@@ -9,7 +9,7 @@ interface TimelineGroup {
 }
 
 @NgModule({
-  imports: [LucideAngularModule.pick({ AlignJustify, Columns, PenLine, Package, Rocket, Layers, Flag })],
+  imports: [LucideAngularModule.pick({ AlignJustify, Columns, PenLine, Package, Rocket, Layers, Flag, Wrench })],
   exports: [LucideAngularModule]
 })
 export class LucideIconsModule { }
@@ -45,6 +45,7 @@ export class LucideIconsModule { }
                     <div 
                       class="card" 
                       [class.is-livraison]="jalon.event_type === 'livraison'" 
+                      [class.is-maintenance]="jalon.event_type === 'maintenance'" 
                       [class.is-mep]="jalon.event_type === 'mep'"
                       [class.is-sprint]="jalon.event_type === 'sprint'"
                       [class.is-autre]="jalon.event_type === 'autre' || !jalon.event_type"
@@ -389,6 +390,10 @@ export class LucideIconsModule { }
         border-left-color: #10b981;
       }
 
+      .card.is-maintenance {
+        border-left-color: #8b5cf6;
+      }
+
       .card.is-mep {
         border-left-color: #3b82f6;
       }
@@ -422,6 +427,11 @@ export class LucideIconsModule { }
       .is-livraison .type-icon {
         background: #d1fae5;
         color: #065f46;
+      }
+
+      .is-maintenance .type-icon {
+        background: #f3e8ff;
+        color: #6b21a8;
       }
 
       .is-mep .type-icon {
@@ -678,6 +688,8 @@ export class MilestoneTimelineComponent implements OnInit, OnChanges {
     switch (type) {
       case 'livraison':
         return 'package';
+      case 'maintenance':
+        return 'wrench';
       case 'mep':
         return 'rocket';
       case 'sprint':

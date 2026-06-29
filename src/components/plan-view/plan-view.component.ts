@@ -1303,6 +1303,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   getJalonColor(type: string): string {
     switch (type?.toLowerCase()) {
       case 'livraison': case 'lv': return '#d1fae5'; // Green
+      case 'maintenance': case 'lvm': return '#f3e8ff'; // Purple
       case 'mep': return '#dbeafe'; // Blue
       case 'sprint': case 'sp': return '#fef3c7'; // Amber
       default: return '#f3f4f6'; // Gray
@@ -1312,6 +1313,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   getJalonTextColor(type: string): string {
     switch (type?.toLowerCase()) {
       case 'livraison': case 'lv': return '#065f46';
+      case 'maintenance': case 'lvm': return '#6b21a8';
       case 'mep': return '#1e40af';
       case 'sprint': case 'sp': return '#92400e';
       default: return '#4b5563';

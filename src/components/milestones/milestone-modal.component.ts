@@ -23,6 +23,7 @@ import { JalonService } from '../../services/jalon.service';
                 <select [(ngModel)]="currentJalon.event_type" name="event_type" required (ngModelChange)="updateAutoTitle()">
                   <option value="autre">Autre</option>
                   <option value="livraison">Livraison (LV)</option>
+                  <option value="maintenance">Livraison Maintenance (LVM)</option>
                   <option value="mep">Mise en production (MEP)</option>
                   <option value="sprint">Sprint (SP)</option>
                 </select>
@@ -280,6 +281,9 @@ export class MilestoneModalComponent implements OnChanges {
     switch (this.currentJalon.event_type) {
       case 'livraison':
         prefix = 'LV ';
+        break;
+      case 'maintenance':
+        prefix = 'LVM ';
         break;
       case 'mep':
         prefix = 'MEP ';
