@@ -1,5 +1,20 @@
 [
   {
+    "version": "2026.06.29",
+    "date": "2026-06-30",
+    "news": [
+      {
+        "title": "Amélioration des Jalons",
+        "items": [
+          "Mise en valeur du jour actuel : le jour en cours se distingue désormais mieux des week-ends grâce à une bordure et un fond contrastés.",
+          "Nouveau type de jalon 'Livraison Maintenance' (LVM)"
+        ],
+        "imageUrl": "assets/release-notes/2026-06-29-jalon-jour.png",
+        "imageMaxHeight": 150
+      }
+    ]
+  },
+  {
     "version": "2026.06.28",
     "date": "2026-06-28",
     "news": [
