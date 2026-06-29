@@ -330,7 +330,8 @@ export class LucideIconsModule { }
       }
 
       .table-row.today {
-        background: #eef2ff;
+        background: #e0e7ff;
+        box-shadow: inset 4px 0 0 0 #4f46e5;
       }
 
       .table-row.weekend,
@@ -598,6 +599,7 @@ export class LucideIconsModule { }
 
       :host-context(body.dark-mode) .table-row.today {
         background: #1e1b4b;
+        box-shadow: inset 4px 0 0 0 #6366f1;
       }
 
       :host-context(body.dark-mode) .table-row.weekend,

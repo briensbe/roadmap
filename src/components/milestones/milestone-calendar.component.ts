@@ -192,7 +192,8 @@ export class LucideIconsModule { }
       }
 
       .calendar-day.today {
-        background: #eef2ff;
+        background: #e0e7ff;
+        box-shadow: inset 0 0 0 2px #4f46e5;
       }
 
       .day-number {
@@ -334,6 +335,7 @@ export class LucideIconsModule { }
 
       :host-context(body.dark-mode) .calendar-day.today {
         background: #1e1b4b;
+        box-shadow: inset 0 0 0 2px #6366f1;
       }
 
       :host-context(body.dark-mode) .day-number {
