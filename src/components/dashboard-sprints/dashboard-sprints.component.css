@@ -1,6 +1,13 @@
 /* General Layout & Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
 .sprint-dashboard-container {
   padding: 32px;
   background: #f8fafc;
@@ -156,6 +163,8 @@
   overflow-x: auto;
   overflow-y: auto;
   max-height: calc(100vh - 200px);
+  width: 100%;
+  max-width: 100%;
 }
 
 .grid-table {

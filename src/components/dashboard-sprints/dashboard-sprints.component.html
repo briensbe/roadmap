@@ -35,11 +35,15 @@
       <span class="toolbar-label">SPRINTS</span>
       <div class="select-range-wrapper">
         <select [(ngModel)]="startSprintId" (change)="onSprintFilterChange()" class="sprint-select">
-          <option *ngFor="let s of allSprints" [value]="s.id">{{ getSprintOptionLabel(s) }}</option>
+          @for (s of allSprints; track s.id) {
+            <option [value]="s.id">{{ getSprintOptionLabel(s) }}</option>
+          }
         </select>
         <lucide-icon [img]="ArrowRight" [size]="14" class="range-arrow"></lucide-icon>
         <select [(ngModel)]="endSprintId" (change)="onSprintFilterChange()" class="sprint-select">
-          <option *ngFor="let s of allSprints" [value]="s.id">{{ getSprintOptionLabel(s) }}</option>
+          @for (s of allSprints; track s.id) {
+            <option [value]="s.id">{{ getSprintOptionLabel(s) }}</option>
+          }
         </select>
       </div>
     </div>
@@ -59,10 +63,14 @@
           <th class="col-projet">
             {{ groupMode === "equipe" ? "PROJET" : groupMode === "sprint" ? "PROJET" : "LIVRAISON / PROJET" }}
           </th>
-          <th *ngFor="let col of columns" class="col-sprint">
-            <div class="col-header-title">{{ col.label }}</div>
-            <div class="col-header-sub" *ngIf="col.sublabel">{{ col.sublabel }}</div>
-          </th>
+          @for (col of columns; track col.id) {
+            <th class="col-sprint">
+              <div class="col-header-title">{{ col.label }}</div>
+              @if (col.sublabel) {
+                <div class="col-header-sub">{{ col.sublabel }}</div>
+              }
+            </th>
+          }
         </tr>
       </thead>
       <tbody>
@@ -126,14 +134,16 @@
                         </div>
 
                         <!-- Milestone Badges inside cell -->
-                        <div class="cell-milestones" *ngIf="cell.milestones.length > 0">
-                          @for (ms of cell.milestones; track ms.id) {
-                            <span class="ms-badge" [class]="(ms.event_type || '').toLowerCase()" [title]="ms.title">
-                              <lucide-icon [img]="(ms.event_type === 'LV' || ms.event_type === 'livraison') ? Flag : Rocket" [size]="10"></lucide-icon>
-                              {{ (ms.event_type === 'LV' || ms.event_type === 'livraison') ? "Livraison" : "MEP" }}
-                            </span>
-                          }
-                        </div>
+                        @if (cell.milestones.length > 0) {
+                          <div class="cell-milestones">
+                            @for (ms of cell.milestones; track ms.id) {
+                              <span class="ms-badge" [class]="(ms.event_type || '').toLowerCase()" [title]="ms.title">
+                                <lucide-icon [img]="(ms.event_type === 'LV' || ms.event_type === 'livraison') ? Flag : Rocket" [size]="10"></lucide-icon>
+                                {{ (ms.event_type === 'LV' || ms.event_type === 'livraison') ? "Livraison" : "MEP" }}
+                              </span>
+                            }
+                          </div>
+                        }
                       </div>
                     } @else {
                       <span class="empty-cell-dash">—</span>
@@ -148,25 +158,29 @@
     </table>
 
     <!-- Empty State -->
-    <div class="grid-empty-state" *ngIf="groupedRows.length === 0">
-      <p>Aucune charge planifiée pour les critères et sprints sélectionnés.</p>
-    </div>
+    @if (groupedRows.length === 0) {
+      <div class="grid-empty-state">
+        <p>Aucune charge planifiée pour les critères et sprints sélectionnés.</p>
+      </div>
+    }
   </div>
 
   <!-- Section 4: Bandeau des jalons (Footer) -->
-  <div class="sprint-dashboard-footer" *ngIf="footerMilestones.length > 0">
-    <span class="footer-label">JALONS</span>
-    <div class="footer-milestones-list">
-      @for (ms of footerMilestones; track ms.id) {
-        <div class="footer-ms-item" [class]="(ms.event_type || '').toLowerCase()">
-          <span class="footer-ms-icon">
-            <lucide-icon [img]="(ms.event_type === 'LV' || ms.event_type === 'livraison') ? Flag : Rocket" [size]="12"></lucide-icon>
-          </span>
-          <span class="footer-ms-type">{{ (ms.event_type === 'LV' || ms.event_type === 'livraison') ? "Livraison" : "MEP" }}</span>
-          <span class="footer-ms-name">{{ ms.title }}</span>
-          <span class="footer-ms-date">{{ formatDateYear(ms.event_date) }}</span>
-        </div>
-      }
+  @if (footerMilestones.length > 0) {
+    <div class="sprint-dashboard-footer">
+      <span class="footer-label">JALONS</span>
+      <div class="footer-milestones-list">
+        @for (ms of footerMilestones; track ms.id) {
+          <div class="footer-ms-item" [class]="(ms.event_type || '').toLowerCase()">
+            <span class="footer-ms-icon">
+              <lucide-icon [img]="(ms.event_type === 'LV' || ms.event_type === 'livraison') ? Flag : Rocket" [size]="12"></lucide-icon>
+            </span>
+            <span class="footer-ms-type">{{ (ms.event_type === 'LV' || ms.event_type === 'livraison') ? "Livraison" : "MEP" }}</span>
+            <span class="footer-ms-name">{{ ms.title }}</span>
+            <span class="footer-ms-date">{{ formatDateYear(ms.event_date) }}</span>
+          </div>
+        }
+      </div>
     </div>
-  </div>
+  }
 </div>
