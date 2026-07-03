@@ -770,6 +770,10 @@
   width: max-content;
 }
 
+.equipe-filter-group .filters-dropdown {
+  max-height: 480px;
+}
+
 .dropdown-list {
   display: flex;
   flex-direction: column;
