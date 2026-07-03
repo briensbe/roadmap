@@ -1,6 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from '../supabase.service';
 import { QueryClient, injectQuery, injectMutation } from '@tanstack/angular-query-experimental';
+import { paginateQuery } from '../../utils/supabase-pagination';
+
 
 export interface ImportBatch {
   id: number;
@@ -47,13 +49,12 @@ export class ImportService {
     return injectQuery(() => ({
       queryKey: ['import-batches'],
       queryFn: async () => {
-        const { data, error } = await this.supabase.client
-          .from('roadmap_import_batches')
-          .select('*')
-          .order('excel_export_date', { ascending: false });
-
-        if (error) throw error;
-        return (data || []) as ImportBatch[];
+        return paginateQuery<ImportBatch>(() =>
+          this.supabase.client
+            .from('roadmap_import_batches')
+            .select('*')
+            .order('excel_export_date', { ascending: false })
+        );
       }
     }));
   }
@@ -67,14 +68,13 @@ export class ImportService {
       queryFn: async () => {
         const id = batchIdFn();
         if (id === null || id === undefined) return [];
-        const { data, error } = await this.supabase.client
-          .from('roadmap_import_budget')
-          .select('*')
-          .eq('batch_id', id)
-          .order('project_code', { ascending: true });
-
-        if (error) throw error;
-        return (data || []) as ImportBudgetRow[];
+        return paginateQuery<ImportBudgetRow>(() =>
+          this.supabase.client
+            .from('roadmap_import_budget')
+            .select('*')
+            .eq('batch_id', id)
+            .order('project_code', { ascending: true })
+        );
       },
       enabled: !!batchIdFn()
     }));

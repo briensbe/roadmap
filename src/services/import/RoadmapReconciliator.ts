@@ -1,4 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
+import { paginateQuery } from '../../utils/supabase-pagination';
+
 
 export interface ReconciliationResult {
   totalProcessed: number;
@@ -16,14 +18,12 @@ export class RoadmapReconciliator {
    */
   public async reconcile(batchId: number): Promise<ReconciliationResult> {
     // 1. Fetch all staging rows for this batch
-    const { data: stagingRows, error: stagingError } = await this.supabase
-      .from('roadmap_import_budget')
-      .select('id, project_code, project_name, jira_references')
-      .eq('batch_id', batchId);
-
-    if (stagingError) {
-      throw new Error(`Failed to fetch staging rows: ${stagingError.message}`);
-    }
+    const stagingRows = await paginateQuery<any>(() =>
+      this.supabase
+        .from('roadmap_import_budget')
+        .select('id, project_code, project_name, jira_references')
+        .eq('batch_id', batchId)
+    );
 
     if (!stagingRows || stagingRows.length === 0) {
       return { totalProcessed: 0, matched: 0, multiMatched: 0, ambiguous: 0, unmapped: 0 };
@@ -33,14 +33,12 @@ export class RoadmapReconciliator {
     const uniqueProjectCodes = Array.from(new Set(stagingRows.map(r => r.project_code)));
 
     // 2. Fetch all matching projects from roadmap_projets
-    const { data: dbProjects, error: projectsError } = await this.supabase
-      .from('roadmap_projets')
-      .select('id, code_projet, reference_externe')
-      .in('code_projet', uniqueProjectCodes);
-
-    if (projectsError) {
-      throw new Error(`Failed to fetch production projects: ${projectsError.message}`);
-    }
+    const dbProjects = await paginateQuery<any>(() =>
+      this.supabase
+        .from('roadmap_projets')
+        .select('id, code_projet, reference_externe')
+        .in('code_projet', uniqueProjectCodes)
+    );
 
     const projectsDb = dbProjects || [];
 
