@@ -3,10 +3,7 @@
  * @param queryFn A function returning a fresh query builder.
  * @param limit The page size (default 1000)
  */
-export async function paginateQuery<T>(
-  queryFn: () => any,
-  limit: number = 1000
-): Promise<T[]> {
+export async function paginateQuery<T>(queryFn: () => any, limit: number = 1000): Promise<T[]> {
   let allData: T[] = [];
   let from = 0;
   let hasMore = true;

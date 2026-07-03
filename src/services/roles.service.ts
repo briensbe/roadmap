@@ -1,174 +1,158 @@
-import { Injectable } from "@angular/core";
-import { SupabaseService } from "./supabase.service";
-import { DataSyncService } from "./data-sync.service";
-import { Role, RoleAttachment } from "../models/types";
-import { DB_TABLES } from "../constants/db-tables";
-import { paginateQuery } from "../utils/supabase-pagination";
-
+import { Injectable } from '@angular/core';
+import { SupabaseService } from './supabase.service';
+import { DataSyncService } from './data-sync.service';
+import { Role, RoleAttachment } from '../models/types';
+import { DB_TABLES } from '../constants/db-tables';
+import { paginateQuery } from '../utils/supabase-pagination';
 
 @Injectable({
-    providedIn: "root"
+  providedIn: 'root',
 })
 export class RolesService {
-    private _rolesCache: Role[] | null = null;
-    private _attachmentsCache: RoleAttachment[] | null = null;
+  private _rolesCache: Role[] | null = null;
+  private _attachmentsCache: RoleAttachment[] | null = null;
 
-    constructor(
-        private supabase: SupabaseService,
-        private dataSync: DataSyncService
-    ) {
-        this.dataSync.sync$.subscribe(() => this.clearLocalCache());
+  constructor(
+    private supabase: SupabaseService,
+    private dataSync: DataSyncService,
+  ) {
+    this.dataSync.sync$.subscribe(() => this.clearLocalCache());
+  }
+
+  public clearCache() {
+    this.clearLocalCache();
+    this.dataSync.notifyChange();
+  }
+
+  private clearLocalCache() {
+    this._rolesCache = null;
+    this._attachmentsCache = null;
+  }
+
+  /**
+   * Récupère tous les rôles avec gestion de cache
+   */
+  async getAllRoles(): Promise<Role[]> {
+    if (this._rolesCache) {
+      return this._rolesCache;
     }
 
-    public clearCache() {
-        this.clearLocalCache();
-        this.dataSync.notifyChange();
+    const data = await paginateQuery<Role>(() =>
+      this.supabase.client.from(DB_TABLES.ROLES).select('*').order('nom', { ascending: true }),
+    );
+
+    this._rolesCache = data || [];
+    return this._rolesCache;
+  }
+
+  /**
+   * Récupère tous les attachements de rôles avec gestion de cache
+   */
+  async getAllRoleAttachments(): Promise<RoleAttachment[]> {
+    if (this._attachmentsCache) {
+      return this._attachmentsCache;
     }
 
-    private clearLocalCache() {
-        this._rolesCache = null;
-        this._attachmentsCache = null;
-    }
+    const data = await paginateQuery<RoleAttachment>(() =>
+      this.supabase.client.from(DB_TABLES.ROLE_ATTACHMENTS).select('*'),
+    );
 
-    /**
-     * Récupère tous les rôles avec gestion de cache
-     */
-    async getAllRoles(): Promise<Role[]> {
-        if (this._rolesCache) {
-            return this._rolesCache;
-        }
+    this._attachmentsCache = data || [];
+    return this._attachmentsCache;
+  }
 
-        const data = await paginateQuery<Role>(() =>
-            this.supabase.client
-                .from(DB_TABLES.ROLES)
-                .select("*")
-                .order("nom", { ascending: true })
-        );
+  /**
+   * Récupère un rôle spécifique par son ID
+   */
+  async getRole(id: string): Promise<Role | null> {
+    const roles = await this.getAllRoles();
+    return roles.find((r) => r.id === id) || null;
+  }
 
-        this._rolesCache = data || [];
-        return this._rolesCache;
-    }
+  /**
+   * Récupère la liste des id_service à partir d'un role_id
+   * Utilise le cache des attachements pour une performance optimale
+   */
+  async getIdServiceListFromRoleId(roleId: string): Promise<number[]> {
+    const attachments = await this.getAllRoleAttachments();
+    return attachments
+      .filter((a) => a.role_id === roleId && a.id_service !== undefined && a.id_service !== null)
+      .map((a) => a.id_service as number);
+  }
 
-    /**
-     * Récupère tous les attachements de rôles avec gestion de cache
-     */
-    async getAllRoleAttachments(): Promise<RoleAttachment[]> {
-        if (this._attachmentsCache) {
-            return this._attachmentsCache;
-        }
+  //récupère la liste des service_id (UUID) à partir d'un role_id
+  async getServiceIdUUIDListFromRoleId(roleId: string): Promise<string[]> {
+    const attachments = await this.getAllRoleAttachments();
+    return attachments
+      .filter((a) => a.role_id === roleId && a.service_id !== undefined && a.service_id !== null)
+      .map((a) => a.service_id as string);
+  }
 
-        const data = await paginateQuery<RoleAttachment>(() =>
-            this.supabase.client
-                .from(DB_TABLES.ROLE_ATTACHMENTS)
-                .select("*")
-        );
+  /**
+   * Récupère les attachements pour un rôle spécifique
+   */
+  async getAttachmentsByRoleId(roleId: string): Promise<RoleAttachment[]> {
+    const attachments = await this.getAllRoleAttachments();
+    return attachments.filter((a) => a.role_id === roleId);
+  }
 
-        this._attachmentsCache = data || [];
-        return this._attachmentsCache;
-    }
+  async createRole(role: Partial<Role>): Promise<Role> {
+    const { data, error } = await this.supabase.client.from(DB_TABLES.ROLES).insert([role]).select().single();
 
-    /**
-     * Récupère un rôle spécifique par son ID
-     */
-    async getRole(id: string): Promise<Role | null> {
-        const roles = await this.getAllRoles();
-        return roles.find(r => r.id === id) || null;
-    }
+    if (error) throw error;
+    this.clearCache();
+    return data;
+  }
 
-    /**
-     * Récupère la liste des id_service à partir d'un role_id
-     * Utilise le cache des attachements pour une performance optimale
-     */
-    async getIdServiceListFromRoleId(roleId: string): Promise<number[]> {
-        const attachments = await this.getAllRoleAttachments();
-        return attachments
-            .filter(a => a.role_id === roleId && a.id_service !== undefined && a.id_service !== null)
-            .map(a => a.id_service as number);
-    }
+  async updateRole(id: string, role: Partial<Role>): Promise<Role> {
+    const { data, error } = await this.supabase.client
+      .from(DB_TABLES.ROLES)
+      .update(role)
+      .eq('id', id)
+      .select()
+      .single();
 
-    //récupère la liste des service_id (UUID) à partir d'un role_id
-    async getServiceIdUUIDListFromRoleId(roleId: string): Promise<string[]> {
-        const attachments = await this.getAllRoleAttachments();
-        return attachments
-            .filter(a => a.role_id === roleId && a.service_id !== undefined && a.service_id !== null)
-            .map(a => a.service_id as string);
-    }
+    if (error) throw error;
+    this.clearCache();
+    return data;
+  }
 
-    /**
-     * Récupère les attachements pour un rôle spécifique
-     */
-    async getAttachmentsByRoleId(roleId: string): Promise<RoleAttachment[]> {
-        const attachments = await this.getAllRoleAttachments();
-        return attachments.filter(a => a.role_id === roleId);
-    }
+  async deleteRole(id: string): Promise<void> {
+    const { error } = await this.supabase.client.from(DB_TABLES.ROLES).delete().eq('id', id);
 
-    async createRole(role: Partial<Role>): Promise<Role> {
-        const { data, error } = await this.supabase.client
-            .from(DB_TABLES.ROLES)
-            .insert([role])
-            .select()
-            .single();
+    if (error) throw error;
+    this.clearCache();
+  }
 
-        if (error) throw error;
-        this.clearCache();
-        return data;
-    }
+  async createRoleAttachment(attachment: Partial<RoleAttachment>): Promise<RoleAttachment> {
+    const { data, error } = await this.supabase.client
+      .from(DB_TABLES.ROLE_ATTACHMENTS)
+      .insert([attachment])
+      .select()
+      .single();
 
-    async updateRole(id: string, role: Partial<Role>): Promise<Role> {
-        const { data, error } = await this.supabase.client
-            .from(DB_TABLES.ROLES)
-            .update(role)
-            .eq("id", id)
-            .select()
-            .single();
+    if (error) throw error;
+    this.clearCache();
+    return data;
+  }
 
-        if (error) throw error;
-        this.clearCache();
-        return data;
-    }
+  async deleteRoleAttachment(id: string): Promise<void> {
+    const { error } = await this.supabase.client.from(DB_TABLES.ROLE_ATTACHMENTS).delete().eq('id', id);
 
-    async deleteRole(id: string): Promise<void> {
-        const { error } = await this.supabase.client
-            .from(DB_TABLES.ROLES)
-            .delete()
-            .eq("id", id);
+    if (error) throw error;
+    this.clearCache();
+  }
 
-        if (error) throw error;
-        this.clearCache();
-    }
+  async updateRoleAttachment(id: string, attachment: Partial<RoleAttachment>): Promise<RoleAttachment> {
+    const { data, error } = await this.supabase.client
+      .from(DB_TABLES.ROLE_ATTACHMENTS)
+      .update(attachment)
+      .eq('id', id)
+      .select()
+      .single();
 
-    async createRoleAttachment(attachment: Partial<RoleAttachment>): Promise<RoleAttachment> {
-        const { data, error } = await this.supabase.client
-            .from(DB_TABLES.ROLE_ATTACHMENTS)
-            .insert([attachment])
-            .select()
-            .single();
-
-        if (error) throw error;
-        this.clearCache();
-        return data;
-    }
-
-    async deleteRoleAttachment(id: string): Promise<void> {
-        const { error } = await this.supabase.client
-            .from(DB_TABLES.ROLE_ATTACHMENTS)
-            .delete()
-            .eq("id", id);
-
-        if (error) throw error;
-        this.clearCache();
-    }
-
-    async updateRoleAttachment(id: string, attachment: Partial<RoleAttachment>): Promise<RoleAttachment> {
-        const { data, error } = await this.supabase.client
-            .from(DB_TABLES.ROLE_ATTACHMENTS)
-            .update(attachment)
-            .eq("id", id)
-            .select()
-            .single();
-
-        if (error) throw error;
-        this.clearCache();
-        return data;
-    }
+    if (error) throw error;
+    this.clearCache();
+    return data;
+  }
 }

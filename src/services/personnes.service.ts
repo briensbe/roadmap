@@ -1,118 +1,105 @@
-import { Injectable } from "@angular/core";
-import { SupabaseService } from "./supabase.service";
-import { DataSyncService } from "./data-sync.service";
-import { Personne } from "../models/types";
-import { DB_TABLES } from "../constants/db-tables";
-import { paginateQuery } from "../utils/supabase-pagination";
-
+import { Injectable } from '@angular/core';
+import { SupabaseService } from './supabase.service';
+import { DataSyncService } from './data-sync.service';
+import { Personne } from '../models/types';
+import { DB_TABLES } from '../constants/db-tables';
+import { paginateQuery } from '../utils/supabase-pagination';
 
 @Injectable({
-    providedIn: "root"
+  providedIn: 'root',
 })
 export class PersonnesService {
-    private _personnesCache: Personne[] | null = null;
+  private _personnesCache: Personne[] | null = null;
 
-    constructor(
-        private supabase: SupabaseService,
-        private dataSync: DataSyncService
-    ) {
-        this.dataSync.sync$.subscribe(() => this.clearLocalCache());
+  constructor(
+    private supabase: SupabaseService,
+    private dataSync: DataSyncService,
+  ) {
+    this.dataSync.sync$.subscribe(() => this.clearLocalCache());
+  }
+
+  public clearCache() {
+    this.clearLocalCache();
+    this.dataSync.notifyChange();
+  }
+
+  private clearLocalCache() {
+    this._personnesCache = null;
+  }
+
+  /**
+   * Récupère toutes les personnes avec gestion de cache
+   */
+  async getAllPersonnes(): Promise<Personne[]> {
+    if (this._personnesCache) {
+      return this._personnesCache;
     }
 
-    public clearCache() {
-        this.clearLocalCache();
-        this.dataSync.notifyChange();
+    const data = await paginateQuery<Personne>(() =>
+      this.supabase.client.from(DB_TABLES.PERSONNES).select('*').order('nom', { ascending: true }),
+    );
+
+    this._personnesCache = data || [];
+    return this._personnesCache;
+  }
+
+  /**
+   * Récupère une personne spécifique par son ID
+   */
+  async getPersonne(id: string): Promise<Personne | null> {
+    // Tente de trouver dans le cache d'abord
+    if (this._personnesCache) {
+      const found = this._personnesCache.find((p) => p.id === id);
+      if (found) return found;
     }
 
-    private clearLocalCache() {
-        this._personnesCache = null;
+    const { data, error } = await this.supabase.client.from(DB_TABLES.PERSONNES).select('*').eq('id', id).maybeSingle();
+
+    if (error) throw error;
+    return data;
+  }
+
+  /**
+   * Récupère le service_id (UUID) et l'id_service (Serial) d'une personne
+   */
+  async getServiceIdsByPersonneId(
+    personneId: string,
+  ): Promise<{ service_id: string | null; id_service: number | null }> {
+    const personne = await this.getPersonne(personneId);
+    if (!personne) {
+      return { service_id: null, id_service: null };
     }
+    return {
+      service_id: personne.service_id || null,
+      id_service: personne.id_service || null,
+    };
+  }
 
-    /**
-     * Récupère toutes les personnes avec gestion de cache
-     */
-    async getAllPersonnes(): Promise<Personne[]> {
-        if (this._personnesCache) {
-            return this._personnesCache;
-        }
+  async createPersonne(personne: Partial<Personne>): Promise<Personne> {
+    const { data, error } = await this.supabase.client.from(DB_TABLES.PERSONNES).insert([personne]).select().single();
 
-        const data = await paginateQuery<Personne>(() =>
-            this.supabase.client
-                .from(DB_TABLES.PERSONNES)
-                .select("*")
-                .order("nom", { ascending: true })
-        );
+    if (error) throw error;
+    this.clearCache();
+    return data;
+  }
 
-        this._personnesCache = data || [];
-        return this._personnesCache;
-    }
+  async updatePersonne(id: string, personne: Partial<Personne>): Promise<Personne> {
+    const { data, error } = await this.supabase.client
+      .from(DB_TABLES.PERSONNES)
+      .update(personne)
+      .eq('id', id)
+      .select()
+      .single();
 
-    /**
-     * Récupère une personne spécifique par son ID
-     */
-    async getPersonne(id: string): Promise<Personne | null> {
-        // Tente de trouver dans le cache d'abord
-        if (this._personnesCache) {
-            const found = this._personnesCache.find(p => p.id === id);
-            if (found) return found;
-        }
+    if (error) throw error;
+    this.clearCache();
+    return data;
+  }
 
-        const { data, error } = await this.supabase.client
-            .from(DB_TABLES.PERSONNES)
-            .select("*")
-            .eq("id", id)
-            .maybeSingle();
+  async deletePersonne(id: string): Promise<void> {
+    const { error } = await this.supabase.client.from(DB_TABLES.PERSONNES).delete().eq('id', id);
 
-        if (error) throw error;
-        return data;
-    }
-
-    /**
-     * Récupère le service_id (UUID) et l'id_service (Serial) d'une personne
-     */
-    async getServiceIdsByPersonneId(personneId: string): Promise<{ service_id: string | null, id_service: number | null }> {
-        const personne = await this.getPersonne(personneId);
-        if (!personne) {
-            return { service_id: null, id_service: null };
-        }
-        return {
-            service_id: personne.service_id || null,
-            id_service: personne.id_service || null
-        };
-    }
-
-    async createPersonne(personne: Partial<Personne>): Promise<Personne> {
-        const { data, error } = await this.supabase.client
-            .from(DB_TABLES.PERSONNES)
-            .insert([personne])
-            .select()
-            .single();
-
-        if (error) throw error;
-        this.clearCache();
-        return data;
-    }
-
-    async updatePersonne(id: string, personne: Partial<Personne>): Promise<Personne> {
-        const { data, error } = await this.supabase.client
-            .from(DB_TABLES.PERSONNES)
-            .update(personne)
-            .eq("id", id)
-            .select()
-            .single();
-
-        if (error) throw error;
-        this.clearCache();
-        return data;
-    }
-
-    async deletePersonne(id: string): Promise<void> {
-        const { error } = await this.supabase.client
-            .from(DB_TABLES.PERSONNES)
-            .delete()
-            .eq("id", id);
-
-        if (error) throw error;
-        this.clearCache();
-    }
+    if (error) throw error;
+    this.clearCache();
+  }
 }

@@ -1,16 +1,15 @@
-import { Injectable, inject, OnDestroy } from "@angular/core";
-import { SupabaseService } from "./supabase.service";
-import { Projet, EquipeProjet } from "../models/types";
-import { LexoRank } from "lexorank";
-import { QueryClient, injectQuery, injectMutation } from "@tanstack/angular-query-experimental";
-import { projetQueryKeys } from "./projet.query-keys";
-import { RealtimeChannel } from "@supabase/supabase-js";
-import { DB_TABLES } from "../constants/db-tables";
-import { paginateQuery } from "../utils/supabase-pagination";
-
+import { Injectable, inject, OnDestroy } from '@angular/core';
+import { SupabaseService } from './supabase.service';
+import { Projet, EquipeProjet } from '../models/types';
+import { LexoRank } from 'lexorank';
+import { QueryClient, injectQuery, injectMutation } from '@tanstack/angular-query-experimental';
+import { projetQueryKeys } from './projet.query-keys';
+import { RealtimeChannel } from '@supabase/supabase-js';
+import { DB_TABLES } from '../constants/db-tables';
+import { paginateQuery } from '../utils/supabase-pagination';
 
 @Injectable({
-  providedIn: "root"
+  providedIn: 'root',
 })
 export class ProjetService implements OnDestroy {
   private supabase = inject(SupabaseService);
@@ -38,7 +37,7 @@ export class ProjetService implements OnDestroy {
         {
           event: '*',
           schema: 'public',
-          table: DB_TABLES.PROJETS
+          table: DB_TABLES.PROJETS,
         },
         (payload) => {
           console.log('Realtime event received:', payload);
@@ -54,7 +53,7 @@ export class ProjetService implements OnDestroy {
               this.handleDelete(payload.old as Projet);
               break;
           }
-        }
+        },
       )
       .subscribe((status) => {
         console.log('Realtime subscription status for projets :', status);
@@ -70,7 +69,7 @@ export class ProjetService implements OnDestroy {
       if (!old) return [newProjet];
 
       // Check if project already exists (avoid duplicates)
-      if (old.some(p => p.id === newProjet.id)) return old;
+      if (old.some((p) => p.id === newProjet.id)) return old;
 
       // Add and sort by rank
       const updated = [...old, newProjet];
@@ -89,7 +88,7 @@ export class ProjetService implements OnDestroy {
     this.queryClient.setQueryData(projetQueryKeys.list(), (old: Projet[] | undefined) => {
       if (!old) return old;
 
-      const updated = old.map(p => p.id === updatedProjet.id ? updatedProjet : p);
+      const updated = old.map((p) => (p.id === updatedProjet.id ? updatedProjet : p));
       // Re-sort in case rank changed
       return updated.sort((a, b) => (a.rank || '').localeCompare(b.rank || ''));
     });
@@ -105,7 +104,7 @@ export class ProjetService implements OnDestroy {
     // Remove from list cache
     this.queryClient.setQueryData(projetQueryKeys.list(), (old: Projet[] | undefined) => {
       if (!old) return old;
-      return old.filter(p => p.id !== deletedProjet.id);
+      return old.filter((p) => p.id !== deletedProjet.id);
     });
 
     // Remove detail cache
@@ -135,10 +134,7 @@ export class ProjetService implements OnDestroy {
       queryKey: projetQueryKeys.list(),
       queryFn: async () => {
         return paginateQuery<Projet>(() =>
-          this.supabase.client
-            .from(DB_TABLES.PROJETS)
-            .select("*")
-            .order("rank", { ascending: true })
+          this.supabase.client.from(DB_TABLES.PROJETS).select('*').order('rank', { ascending: true }),
         );
       },
       // Ajoutez ces 3 lignes ⬇️
@@ -147,7 +143,6 @@ export class ProjetService implements OnDestroy {
       refetchOnReconnect: false,
     }));
   }
-
 
   // ============================================
   // QUERIES - Read Operations
@@ -161,12 +156,9 @@ export class ProjetService implements OnDestroy {
       queryKey: projetQueryKeys.list(),
       queryFn: async () => {
         return paginateQuery<Projet>(() =>
-          this.supabase.client
-            .from(DB_TABLES.PROJETS)
-            .select("*")
-            .order("rank", { ascending: true })
+          this.supabase.client.from(DB_TABLES.PROJETS).select('*').order('rank', { ascending: true }),
         );
-      }
+      },
     });
   }
 
@@ -186,13 +178,13 @@ export class ProjetService implements OnDestroy {
 
         const { data, error } = await this.supabase.client
           .from(DB_TABLES.PROJETS)
-          .select("*")
-          .eq("id", id)
+          .select('*')
+          .eq('id', id)
           .maybeSingle();
 
         if (error) throw error;
         return data;
-      }
+      },
     });
   }
 
@@ -212,13 +204,13 @@ export class ProjetService implements OnDestroy {
 
         const { data, error } = await this.supabase.client
           .from(DB_TABLES.PROJETS)
-          .select("id")
-          .eq("id_projet", idProjet)
+          .select('id')
+          .eq('id_projet', idProjet)
           .single();
 
         if (error) throw error;
         return data.id;
-      }
+      },
     });
   }
 
@@ -230,11 +222,9 @@ export class ProjetService implements OnDestroy {
       queryKey: projetQueryKeys.equipeLinks(),
       queryFn: async () => {
         return paginateQuery<{ equipe_id: string; projet_id: string }>(() =>
-          this.supabase.client
-            .from(DB_TABLES.EQUIPES_PROJETS)
-            .select("*")
+          this.supabase.client.from(DB_TABLES.EQUIPES_PROJETS).select('*'),
         );
-      }
+      },
     });
   }
 
@@ -252,9 +242,9 @@ export class ProjetService implements OnDestroy {
         // 1. Fetch only the project with the highest rank to calculate next rank
         const { data: highestRankProject } = await this.supabase.client
           .from(DB_TABLES.PROJETS)
-          .select("rank")
-          .not("rank", "is", null)
-          .order("rank", { ascending: false })
+          .select('rank')
+          .not('rank', 'is', null)
+          .order('rank', { ascending: false })
           .limit(1)
           .maybeSingle();
 
@@ -272,11 +262,7 @@ export class ProjetService implements OnDestroy {
         projet.rank = newRank.toString();
 
         // 2. Insert the project
-        const { data, error } = await this.supabase.client
-          .from(DB_TABLES.PROJETS)
-          .insert([projet])
-          .select()
-          .single();
+        const { data, error } = await this.supabase.client.from(DB_TABLES.PROJETS).insert([projet]).select().single();
 
         if (error) throw error;
         return data;
@@ -290,7 +276,6 @@ export class ProjetService implements OnDestroy {
         this.queryClient.setQueryData(projetQueryKeys.detail(data.id!), data);
         this.queryClient.invalidateQueries({ queryKey: projetQueryKeys.equipeLinks() });
       },
-
     }));
   }
 
@@ -304,7 +289,7 @@ export class ProjetService implements OnDestroy {
         const { data, error } = await this.supabase.client
           .from(DB_TABLES.PROJETS)
           .update({ ...projet, updated_at: new Date().toISOString() })
-          .eq("id", id)
+          .eq('id', id)
           .select()
           .single();
 
@@ -322,11 +307,9 @@ export class ProjetService implements OnDestroy {
 
         // Optimistically update to the new value
         if (previousList) {
-          const updatedList = previousList.map((p) =>
-            p.id === id ? { ...p, ...projet } : p
-          );
+          const updatedList = previousList.map((p) => (p.id === id ? { ...p, ...projet } : p));
           // Vital: Sort the list so the UI reflects the new rank immediately
-          updatedList.sort((a, b) => (a.rank || "").localeCompare(b.rank || ""));
+          updatedList.sort((a, b) => (a.rank || '').localeCompare(b.rank || ''));
 
           this.queryClient.setQueryData(projetQueryKeys.list(), updatedList);
         }
@@ -365,10 +348,7 @@ export class ProjetService implements OnDestroy {
   deleteProjetMutation() {
     return injectMutation(() => ({
       mutationFn: async (id: string) => {
-        const { error } = await this.supabase.client
-          .from(DB_TABLES.PROJETS)
-          .delete()
-          .eq("id", id);
+        const { error } = await this.supabase.client.from(DB_TABLES.PROJETS).delete().eq('id', id);
 
         if (error) throw error;
         return id;
@@ -377,12 +357,11 @@ export class ProjetService implements OnDestroy {
         // Optimistic update: remove from list cache
         this.queryClient.setQueryData(projetQueryKeys.list(), (old: Projet[] | undefined) => {
           if (!old) return old;
-          return old.filter(p => p.id !== id);
+          return old.filter((p) => p.id !== id);
         });
         this.queryClient.removeQueries({ queryKey: projetQueryKeys.detail(id) });
         this.queryClient.invalidateQueries({ queryKey: projetQueryKeys.equipeLinks() });
       },
-
     }));
   }
 
@@ -397,9 +376,9 @@ export class ProjetService implements OnDestroy {
     // 1. Fetch only the project with the highest rank to calculate next rank
     const { data: highestRankProject } = await this.supabase.client
       .from(DB_TABLES.PROJETS)
-      .select("rank")
-      .not("rank", "is", null)
-      .order("rank", { ascending: false })
+      .select('rank')
+      .not('rank', 'is', null)
+      .order('rank', { ascending: false })
       .limit(1)
       .maybeSingle();
 
@@ -417,18 +396,14 @@ export class ProjetService implements OnDestroy {
     projet.rank = newRank.toString();
 
     // 2. Insert the project
-    const { data, error } = await this.supabase.client
-      .from(DB_TABLES.PROJETS)
-      .insert([projet])
-      .select()
-      .single();
+    const { data, error } = await this.supabase.client.from(DB_TABLES.PROJETS).insert([projet]).select().single();
 
     if (error) throw error;
 
     // 3. Update caches manually
     this.queryClient.setQueryData(projetQueryKeys.list(), (old: Projet[] | undefined) => {
       if (!old) return [data];
-      return [...old, data].sort((a, b) => (a.rank || "").localeCompare(b.rank || ""));
+      return [...old, data].sort((a, b) => (a.rank || '').localeCompare(b.rank || ''));
     });
     this.queryClient.setQueryData(projetQueryKeys.detail(data.id!), data);
 
@@ -445,7 +420,7 @@ export class ProjetService implements OnDestroy {
     const { data, error } = await this.supabase.client
       .from(DB_TABLES.PROJETS)
       .update({ ...projet, updated_at: new Date().toISOString() })
-      .eq("id", id)
+      .eq('id', id)
       .select()
       .single();
 
@@ -455,7 +430,7 @@ export class ProjetService implements OnDestroy {
     this.queryClient.setQueryData(projetQueryKeys.list(), (old: Projet[] | undefined) => {
       if (!old) return old;
       const updated = old.map((p) => (p.id === data.id ? data : p));
-      return updated.sort((a, b) => (a.rank || "").localeCompare(b.rank || ""));
+      return updated.sort((a, b) => (a.rank || '').localeCompare(b.rank || ''));
     });
 
     // Update detail cache manually
@@ -468,10 +443,7 @@ export class ProjetService implements OnDestroy {
    * Delete a project
    */
   async deleteProjet(id: string): Promise<void> {
-    const { error } = await this.supabase.client
-      .from(DB_TABLES.PROJETS)
-      .delete()
-      .eq("id", id);
+    const { error } = await this.supabase.client.from(DB_TABLES.PROJETS).delete().eq('id', id);
 
     if (error) throw error;
 
@@ -509,8 +481,8 @@ export class ProjetService implements OnDestroy {
     const { error } = await this.supabase.client
       .from(DB_TABLES.EQUIPES_PROJETS)
       .delete()
-      .eq("projet_id", projetId)
-      .eq("equipe_id", equipeId);
+      .eq('projet_id', projetId)
+      .eq('equipe_id', equipeId);
 
     if (error) throw error;
 

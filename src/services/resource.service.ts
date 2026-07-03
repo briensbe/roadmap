@@ -1,13 +1,12 @@
-import { Injectable } from "@angular/core";
-import { SupabaseService } from "./supabase.service";
-import { DataSyncService } from "./data-sync.service";
-import { Societe, Departement, Service, Equipe, Role, Personne } from "../models/types";
-import { DB_TABLES } from "../constants/db-tables";
-import { paginateQuery } from "../utils/supabase-pagination";
-
+import { Injectable } from '@angular/core';
+import { SupabaseService } from './supabase.service';
+import { DataSyncService } from './data-sync.service';
+import { Societe, Departement, Service, Equipe, Role, Personne } from '../models/types';
+import { DB_TABLES } from '../constants/db-tables';
+import { paginateQuery } from '../utils/supabase-pagination';
 
 @Injectable({
-  providedIn: "root",
+  providedIn: 'root',
 })
 export class ResourceService {
   // Simple in-memory caches
@@ -20,7 +19,7 @@ export class ResourceService {
 
   constructor(
     private supabase: SupabaseService,
-    private dataSync: DataSyncService
+    private dataSync: DataSyncService,
   ) {
     this.dataSync.sync$.subscribe(() => this.clearLocalCache());
   }
@@ -42,7 +41,7 @@ export class ResourceService {
   async getAllSocietes(): Promise<Societe[]> {
     if (this._societesCache) return this._societesCache;
     const data = await paginateQuery<Societe>(() =>
-      this.supabase.client.from(DB_TABLES.SOCIETES).select("*").order("nom")
+      this.supabase.client.from(DB_TABLES.SOCIETES).select('*').order('nom'),
     );
 
     this._societesCache = data || [];
@@ -59,7 +58,7 @@ export class ResourceService {
   async getAllDepartements(): Promise<Departement[]> {
     if (this._departementsCache) return this._departementsCache;
     const data = await paginateQuery<Departement>(() =>
-      this.supabase.client.from(DB_TABLES.DEPARTEMENTS).select("*").order("nom")
+      this.supabase.client.from(DB_TABLES.DEPARTEMENTS).select('*').order('nom'),
     );
 
     this._departementsCache = data || [];
@@ -67,7 +66,11 @@ export class ResourceService {
   }
 
   async createDepartement(departement: Partial<Departement>): Promise<Departement> {
-    const { data, error } = await this.supabase.client.from(DB_TABLES.DEPARTEMENTS).insert([departement]).select().single();
+    const { data, error } = await this.supabase.client
+      .from(DB_TABLES.DEPARTEMENTS)
+      .insert([departement])
+      .select()
+      .single();
     if (error) throw error;
     this.clearCache();
     return data;
@@ -76,7 +79,7 @@ export class ResourceService {
   async getAllServices(): Promise<Service[]> {
     if (this._servicesCache) return this._servicesCache;
     const data = await paginateQuery<Service>(() =>
-      this.supabase.client.from(DB_TABLES.SERVICES).select("*").order("nom")
+      this.supabase.client.from(DB_TABLES.SERVICES).select('*').order('nom'),
     );
 
     this._servicesCache = data || [];
@@ -93,7 +96,7 @@ export class ResourceService {
   async getAllEquipes(): Promise<Equipe[]> {
     if (this._equipesCache) return this._equipesCache;
     const data = await paginateQuery<Equipe>(() =>
-      this.supabase.client.from(DB_TABLES.EQUIPES).select("*").order("nom")
+      this.supabase.client.from(DB_TABLES.EQUIPES).select('*').order('nom'),
     );
 
     this._equipesCache = data || [];
@@ -109,9 +112,7 @@ export class ResourceService {
 
   async getAllRoles(): Promise<Role[]> {
     if (this._rolesCache) return this._rolesCache;
-    const data = await paginateQuery<Role>(() =>
-      this.supabase.client.from(DB_TABLES.ROLES).select("*").order("nom")
-    );
+    const data = await paginateQuery<Role>(() => this.supabase.client.from(DB_TABLES.ROLES).select('*').order('nom'));
 
     this._rolesCache = data || [];
     return this._rolesCache;
@@ -128,7 +129,7 @@ export class ResourceService {
     const { data, error } = await this.supabase.client
       .from(DB_TABLES.ROLES)
       .update(role)
-      .eq("id", id)
+      .eq('id', id)
       .select()
       .single();
     if (error) throw error;
@@ -137,7 +138,7 @@ export class ResourceService {
   }
 
   async deleteRole(id: string): Promise<void> {
-    const { error } = await this.supabase.client.from(DB_TABLES.ROLES).delete().eq("id", id);
+    const { error } = await this.supabase.client.from(DB_TABLES.ROLES).delete().eq('id', id);
     if (error) throw error;
     this.clearCache();
   }
@@ -145,7 +146,7 @@ export class ResourceService {
   async getAllPersonnes(): Promise<Personne[]> {
     if (this._personnesCache) return this._personnesCache;
     const data = await paginateQuery<Personne>(() =>
-      this.supabase.client.from(DB_TABLES.PERSONNES).select("*").order("nom")
+      this.supabase.client.from(DB_TABLES.PERSONNES).select('*').order('nom'),
     );
 
     this._personnesCache = data || [];
@@ -160,7 +161,7 @@ export class ResourceService {
   }
 
   async deletePersonne(id: string): Promise<void> {
-    const { error } = await this.supabase.client.from(DB_TABLES.PERSONNES).delete().eq("id", id);
+    const { error } = await this.supabase.client.from(DB_TABLES.PERSONNES).delete().eq('id', id);
     if (error) throw error;
     this.clearCache();
   }
@@ -169,7 +170,7 @@ export class ResourceService {
     const { data, error } = await this.supabase.client
       .from(DB_TABLES.PERSONNES)
       .update(personne)
-      .eq("id", id)
+      .eq('id', id)
       .select()
       .single();
     if (error) throw error;
@@ -190,7 +191,7 @@ export class ResourceService {
     const { data, error } = await this.supabase.client
       .from(DB_TABLES.SOCIETES)
       .update(societe)
-      .eq("id", id)
+      .eq('id', id)
       .select()
       .single();
     if (error) throw error;
@@ -199,7 +200,7 @@ export class ResourceService {
   }
 
   async deleteSociete(id: string): Promise<void> {
-    const { error } = await this.supabase.client.from(DB_TABLES.SOCIETES).delete().eq("id", id);
+    const { error } = await this.supabase.client.from(DB_TABLES.SOCIETES).delete().eq('id', id);
     if (error) throw error;
     this.clearCache();
   }
@@ -209,7 +210,7 @@ export class ResourceService {
     const { data, error } = await this.supabase.client
       .from(DB_TABLES.DEPARTEMENTS)
       .update(departement)
-      .eq("id", id)
+      .eq('id', id)
       .select()
       .single();
     if (error) throw error;
@@ -218,7 +219,7 @@ export class ResourceService {
   }
 
   async deleteDepartement(id: string): Promise<void> {
-    const { error } = await this.supabase.client.from(DB_TABLES.DEPARTEMENTS).delete().eq("id", id);
+    const { error } = await this.supabase.client.from(DB_TABLES.DEPARTEMENTS).delete().eq('id', id);
     if (error) throw error;
     this.clearCache();
   }
@@ -228,7 +229,7 @@ export class ResourceService {
     const { data, error } = await this.supabase.client
       .from(DB_TABLES.SERVICES)
       .update(service)
-      .eq("id", id)
+      .eq('id', id)
       .select()
       .single();
     if (error) throw error;
@@ -237,7 +238,7 @@ export class ResourceService {
   }
 
   async deleteService(id: string): Promise<void> {
-    const { error } = await this.supabase.client.from(DB_TABLES.SERVICES).delete().eq("id", id);
+    const { error } = await this.supabase.client.from(DB_TABLES.SERVICES).delete().eq('id', id);
     if (error) throw error;
     this.clearCache();
   }
@@ -247,7 +248,7 @@ export class ResourceService {
     const { data, error } = await this.supabase.client
       .from(DB_TABLES.EQUIPES)
       .update(equipe)
-      .eq("id", id)
+      .eq('id', id)
       .select()
       .single();
     if (error) throw error;
@@ -256,7 +257,7 @@ export class ResourceService {
   }
 
   async deleteEquipe(id: string): Promise<void> {
-    const { error } = await this.supabase.client.from(DB_TABLES.EQUIPES).delete().eq("id", id);
+    const { error } = await this.supabase.client.from(DB_TABLES.EQUIPES).delete().eq('id', id);
     if (error) throw error;
     this.clearCache();
   }

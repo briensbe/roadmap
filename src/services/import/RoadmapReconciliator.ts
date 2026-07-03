@@ -1,7 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { paginateQuery } from '../../utils/supabase-pagination';
 
-
 export interface ReconciliationResult {
   totalProcessed: number;
   matched: number;
@@ -22,7 +21,7 @@ export class RoadmapReconciliator {
       this.supabase
         .from('roadmap_import_budget')
         .select('id, project_code, project_name, jira_references')
-        .eq('batch_id', batchId)
+        .eq('batch_id', batchId),
     );
 
     if (!stagingRows || stagingRows.length === 0) {
@@ -30,14 +29,14 @@ export class RoadmapReconciliator {
     }
 
     // Get all unique project codes in the staging table
-    const uniqueProjectCodes = Array.from(new Set(stagingRows.map(r => r.project_code)));
+    const uniqueProjectCodes = Array.from(new Set(stagingRows.map((r) => r.project_code)));
 
     // 2. Fetch all matching projects from roadmap_projets
     const dbProjects = await paginateQuery<any>(() =>
       this.supabase
         .from('roadmap_projets')
         .select('id, code_projet, reference_externe')
-        .in('code_projet', uniqueProjectCodes)
+        .in('code_projet', uniqueProjectCodes),
     );
 
     const projectsDb = dbProjects || [];
@@ -71,7 +70,7 @@ export class RoadmapReconciliator {
       const sameCodeStaging = stagingRowsByCode[code] || [];
 
       // Determine if there are multiple distinct project names in Excel sharing this code
-      const distinctProjectNames = Array.from(new Set(sameCodeStaging.map(r => r.project_name)));
+      const distinctProjectNames = Array.from(new Set(sameCodeStaging.map((r) => r.project_name)));
       const multipleExcelProjects = distinctProjectNames.length > 1;
 
       let projectId: string | null = null;
@@ -93,12 +92,12 @@ export class RoadmapReconciliator {
       } else {
         // Multiple projects match in DB, or multiple distinct Excel projects share the code
         const rowJiras = row.jira_references || [];
-        
+
         // Find DB projects where the reference_externe matches one of the row's Jira keys (allowing prefixes)
-        const strictMatches = matchedDb.filter(p => {
+        const strictMatches = matchedDb.filter((p) => {
           if (!p.reference_externe) return false;
           const dbKey = p.reference_externe.trim().toLowerCase();
-          
+
           return rowJiras.some((excelJira: string) => {
             const excelKey = excelJira.trim().toLowerCase();
             return excelKey === dbKey || excelKey.endsWith('-' + dbKey) || dbKey.endsWith('-' + excelKey);
@@ -107,11 +106,11 @@ export class RoadmapReconciliator {
 
         if (strictMatches.length === 1) {
           // Check if any other distinct project in Excel with this code also matches the same DB project
-          const otherConflictingRows = sameCodeStaging.filter(otherRow => {
+          const otherConflictingRows = sameCodeStaging.filter((otherRow) => {
             if (otherRow.project_name === row.project_name) return false; // same project, not a conflict
             const otherJiras = otherRow.jira_references || [];
             const dbKey = (strictMatches[0].reference_externe || '').trim().toLowerCase();
-            
+
             return otherJiras.some((excelJira: string) => {
               const excelKey = excelJira.trim().toLowerCase();
               return excelKey === dbKey || excelKey.endsWith('-' + dbKey) || dbKey.endsWith('-' + excelKey);
@@ -135,7 +134,7 @@ export class RoadmapReconciliator {
         } else if (strictMatches.length > 1) {
           // Multiple database projects match both code AND Jira references -> multi_matched!
           projectId = null;
-          projectIds = strictMatches.map(p => p.id);
+          projectIds = strictMatches.map((p) => p.id);
           status = 'multi_matched';
           multiMatchedCount++;
         } else {
@@ -153,7 +152,7 @@ export class RoadmapReconciliator {
         .update({
           project_id: projectId,
           project_ids: projectIds,
-          reconciliation_status: status
+          reconciliation_status: status,
         })
         .eq('id', row.id);
 
@@ -167,7 +166,7 @@ export class RoadmapReconciliator {
       matched: matchedCount,
       multiMatched: multiMatchedCount,
       ambiguous: ambiguousCount,
-      unmapped: unmappedCount
+      unmapped: unmappedCount,
     };
   }
 }

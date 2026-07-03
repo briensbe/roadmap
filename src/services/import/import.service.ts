@@ -3,7 +3,6 @@ import { SupabaseService } from '../supabase.service';
 import { QueryClient, injectQuery, injectMutation } from '@tanstack/angular-query-experimental';
 import { paginateQuery } from '../../utils/supabase-pagination';
 
-
 export interface ImportBatch {
   id: number;
   created_at: string;
@@ -36,7 +35,7 @@ export interface ImportBudgetRow {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ImportService {
   private supabase = inject(SupabaseService);
@@ -53,9 +52,9 @@ export class ImportService {
           this.supabase.client
             .from('roadmap_import_batches')
             .select('*')
-            .order('excel_export_date', { ascending: false })
+            .order('excel_export_date', { ascending: false }),
         );
-      }
+      },
     }));
   }
 
@@ -73,10 +72,10 @@ export class ImportService {
             .from('roadmap_import_budget')
             .select('*')
             .eq('batch_id', id)
-            .order('project_code', { ascending: true })
+            .order('project_code', { ascending: true }),
         );
       },
-      enabled: !!batchIdFn()
+      enabled: !!batchIdFn(),
     }));
   }
 
@@ -91,7 +90,7 @@ export class ImportService {
           project_id: projectId,
           reconciliation_status: projectId ? 'matched' : 'unmapped',
           // Clear multi matched list if manually resolved
-          project_ids: null
+          project_ids: null,
         };
 
         const { data, error } = await this.supabase.client
@@ -107,7 +106,7 @@ export class ImportService {
       onSuccess: (data) => {
         // Invalidate the budget rows query to refetch updated staging rows
         this.queryClient.invalidateQueries({ queryKey: ['import-budget-rows', data.batch_id] });
-      }
+      },
     }));
   }
 }

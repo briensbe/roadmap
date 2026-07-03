@@ -4,12 +4,11 @@ import { Capacite, Charge, Jalon, WeekData } from '../models/types';
 import { DB_TABLES } from '../constants/db-tables';
 import { paginateQuery } from '../utils/supabase-pagination';
 
-
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class CalendarService {
-  constructor(private supabase: SupabaseService) { }
+  constructor(private supabase: SupabaseService) {}
 
   getWeekStart(date: Date): Date {
     const d = new Date(date);
@@ -23,7 +22,7 @@ export class CalendarService {
     const dayNum = d.getUTCDay() || 7;
     d.setUTCDate(d.getUTCDate() + 4 - dayNum);
     const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+    return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
   }
 
   //TODO: move to utils et surtout à réutiliser dans les autres services et components
@@ -46,9 +45,7 @@ export class CalendarService {
     societeId?: string;
   }): Promise<Capacite[]> {
     return paginateQuery<Capacite>(() => {
-      let query = this.supabase.client
-        .from(DB_TABLES.CAPACITES)
-        .select('*');
+      let query = this.supabase.client.from(DB_TABLES.CAPACITES).select('*');
 
       if (filters?.roleId) query = query.eq('role_id', filters.roleId);
       if (filters?.personneId) query = query.eq('personne_id', filters.personneId);
@@ -74,21 +71,14 @@ export class CalendarService {
       if (error) throw error;
       return data;
     } else {
-      const { data, error } = await this.supabase.client
-        .from(DB_TABLES.CAPACITES)
-        .insert([capacite])
-        .select()
-        .single();
+      const { data, error } = await this.supabase.client.from(DB_TABLES.CAPACITES).insert([capacite]).select().single();
       if (error) throw error;
       return data;
     }
   }
 
   private async findExistingCapacite(capacite: Partial<Capacite>): Promise<Capacite | null> {
-    let query = this.supabase.client
-      .from(DB_TABLES.CAPACITES)
-      .select('*')
-      .eq('semaine_debut', capacite.semaine_debut!);
+    let query = this.supabase.client.from(DB_TABLES.CAPACITES).select('*').eq('semaine_debut', capacite.semaine_debut!);
 
     if (capacite.role_id) query = query.eq('role_id', capacite.role_id);
     if (capacite.personne_id) query = query.eq('personne_id', capacite.personne_id);
@@ -112,9 +102,9 @@ export class CalendarService {
       serviceId?: string;
       departementId?: string;
       societeId?: string;
-    }
+    },
   ): Promise<void> {
-    const promises = weeks.map(week => {
+    const promises = weeks.map((week) => {
       const capacite: Partial<Capacite> = {
         semaine_debut: this.formatWeekStart(week),
         capacite: capaciteValue,
@@ -123,7 +113,7 @@ export class CalendarService {
         equipe_id: filters.equipeId,
         service_id: filters.serviceId,
         departement_id: filters.departementId,
-        societe_id: filters.societeId
+        societe_id: filters.societeId,
       };
       return this.setCapacite(capacite);
     });
@@ -133,9 +123,7 @@ export class CalendarService {
 
   async getCharges(projetId?: string): Promise<Charge[]> {
     return paginateQuery<Charge>(() => {
-      let query = this.supabase.client
-        .from(DB_TABLES.CHARGES)
-        .select('*');
+      let query = this.supabase.client.from(DB_TABLES.CHARGES).select('*');
 
       if (projetId) query = query.eq('projet_id', projetId);
 
@@ -144,11 +132,7 @@ export class CalendarService {
   }
 
   async createCharge(charge: Partial<Charge>): Promise<Charge> {
-    const { data, error } = await this.supabase.client
-      .from(DB_TABLES.CHARGES)
-      .insert([charge])
-      .select()
-      .single();
+    const { data, error } = await this.supabase.client.from(DB_TABLES.CHARGES).insert([charge]).select().single();
     if (error) throw error;
     return data;
   }
@@ -165,18 +149,13 @@ export class CalendarService {
   }
 
   async deleteCharge(id: string): Promise<void> {
-    const { error } = await this.supabase.client
-      .from(DB_TABLES.CHARGES)
-      .delete()
-      .eq('id', id);
+    const { error } = await this.supabase.client.from(DB_TABLES.CHARGES).delete().eq('id', id);
     if (error) throw error;
   }
 
   async getJalons(projetId?: string): Promise<Jalon[]> {
     return paginateQuery<Jalon>(() => {
-      let query = this.supabase.client
-        .from(DB_TABLES.JALONS)
-        .select('*');
+      let query = this.supabase.client.from(DB_TABLES.JALONS).select('*');
 
       if (projetId) query = query.eq('projet_id', projetId);
 
@@ -185,11 +164,7 @@ export class CalendarService {
   }
 
   async createJalon(jalon: Partial<Jalon>): Promise<Jalon> {
-    const { data, error } = await this.supabase.client
-      .from(DB_TABLES.JALONS)
-      .insert([jalon])
-      .select()
-      .single();
+    const { data, error } = await this.supabase.client.from(DB_TABLES.JALONS).insert([jalon]).select().single();
     if (error) throw error;
     return data;
   }

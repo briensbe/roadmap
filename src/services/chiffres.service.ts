@@ -1,17 +1,16 @@
-import { Injectable } from "@angular/core";
-import { SupabaseService } from "./supabase.service";
-import { Chiffre } from "../models/chiffres.type";
-import { ServicesService } from "./services.service";
-import { RolesService } from "./roles.service";
-import { PersonnesService } from "./personnes.service";
-import { ChargeService } from "./charge.service";
-import { ProjetService } from "./projet.service";
-import { DB_TABLES } from "../constants/db-tables";
-import { paginateQuery } from "../utils/supabase-pagination";
-
+import { Injectable } from '@angular/core';
+import { SupabaseService } from './supabase.service';
+import { Chiffre } from '../models/chiffres.type';
+import { ServicesService } from './services.service';
+import { RolesService } from './roles.service';
+import { PersonnesService } from './personnes.service';
+import { ChargeService } from './charge.service';
+import { ProjetService } from './projet.service';
+import { DB_TABLES } from '../constants/db-tables';
+import { paginateQuery } from '../utils/supabase-pagination';
 
 @Injectable({
-  providedIn: "root",
+  providedIn: 'root',
 })
 export class ChiffresService {
   private _chiffresCache: Chiffre[] | null = null;
@@ -22,8 +21,8 @@ export class ChiffresService {
     private rolesService: RolesService,
     private personnesService: PersonnesService,
     private chargeService: ChargeService,
-    private projetService: ProjetService
-  ) { }
+    private projetService: ProjetService,
+  ) {}
 
   private clearCache() {
     this._chiffresCache = null;
@@ -35,10 +34,7 @@ export class ChiffresService {
     }
 
     const data = await paginateQuery<Chiffre>(() =>
-      this.supabase.client
-        .from(DB_TABLES.CHIFFRES)
-        .select("*")
-        .order("date_mise_a_jour", { ascending: false })
+      this.supabase.client.from(DB_TABLES.CHIFFRES).select('*').order('date_mise_a_jour', { ascending: false }),
     );
 
     this._chiffresCache = data || [];
@@ -51,11 +47,7 @@ export class ChiffresService {
     }
 
     const data = await paginateQuery<Chiffre>(() =>
-      this.supabase.client
-        .from(DB_TABLES.CHIFFRES)
-        .select("*")
-        .eq("id_projet", idProjet)
-        .order("id_service")
+      this.supabase.client.from(DB_TABLES.CHIFFRES).select('*').eq('id_projet', idProjet).order('id_service'),
     );
 
     return data || [];
@@ -64,9 +56,9 @@ export class ChiffresService {
   async getChiffre(idProjet: number, idService: number): Promise<Chiffre | null> {
     const { data, error } = await this.supabase.client
       .from(DB_TABLES.CHIFFRES)
-      .select("*")
-      .eq("id_projet", idProjet)
-      .eq("id_service", idService)
+      .select('*')
+      .eq('id_projet', idProjet)
+      .eq('id_service', idService)
       .maybeSingle();
 
     if (error) throw error;
@@ -108,7 +100,7 @@ export class ChiffresService {
     const { data, error } = await this.supabase.client
       .from(DB_TABLES.CHIFFRES)
       .update(updateData)
-      .eq("id_chiffres", idChiffres)
+      .eq('id_chiffres', idChiffres)
       .select()
       .single();
 
@@ -118,14 +110,13 @@ export class ChiffresService {
   }
 
   async deleteChiffre(idChiffres: number): Promise<void> {
-    const { error } = await this.supabase.client.from(DB_TABLES.CHIFFRES).delete().eq("id_chiffres", idChiffres);
+    const { error } = await this.supabase.client.from(DB_TABLES.CHIFFRES).delete().eq('id_chiffres', idChiffres);
 
     if (error) throw error;
     this.clearCache();
   }
 
   async getRAFByDate(idProjet: number, idService: number, fromDate: string): Promise<number> {
-
     const id = await this.projetService.getProjetIdUUID(idProjet);
 
     // RAF = sum of charges after the specified date
@@ -136,7 +127,7 @@ export class ChiffresService {
     console.log(data);
 
     // dans data je veux filtrer à la fois sur les role_id ou les personne_id non nulls
-    //maintenant je veux filtrer sur le service correspondant 
+    //maintenant je veux filtrer sur le service correspondant
     const filteredData = [];
 
     for (const charge of data) {
@@ -162,13 +153,12 @@ export class ChiffresService {
       }
     }
 
-
-    console.log("filteredData : " + filteredData);
+    console.log('filteredData : ' + filteredData);
     //on ajoute les charges des roles et des personnes qui sont associées au service
-    const total = filteredData.reduce((sum, charge) => sum + (charge.unite_ressource || 0) * (charge.jours_par_semaine || 0), 0);
+    const total = filteredData.reduce(
+      (sum, charge) => sum + (charge.unite_ressource || 0) * (charge.jours_par_semaine || 0),
+      0,
+    );
     return total;
   }
-
 }
-
-
