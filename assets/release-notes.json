@@ -1,5 +1,17 @@
 [
   {
+    "version": "2026.07.03",
+    "date": "2026-07-03",
+    "news": [
+      {
+        "title": "Vraie correction du bug critique sur les requêtes Supabase",
+        "items": [
+          "Correction de la limite PostgREST : mise en place d'une boucle de pagination  (.range(from, to)) sur l'ensemble des requêtes de sélection pour assurer le chargement complet des données au-delà de 1000 lignes."
+        ]
+      }
+    ]
+  },
+  {
     "version": "2026.06.29",
     "date": "2026-06-30",
     "news": [
