@@ -1,17 +1,26 @@
 import { Component, OnInit, NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, Building2, Layers, Box, Users, ChevronRight, ChevronDown, MoreVertical, Plus } from 'lucide-angular';
+import {
+  LucideAngularModule,
+  Building2,
+  Layers,
+  Box,
+  Users,
+  ChevronRight,
+  ChevronDown,
+  MoreVertical,
+  Plus,
+} from 'lucide-angular';
 import { ResourceService } from '../services/resource.service';
 import { Societe, Departement, Service, Equipe } from '../models/types';
-import { ConfirmModalComponent } from "./confirm-modal.component";
-
+import { ConfirmModalComponent } from './confirm-modal.component';
 
 @NgModule({
   imports: [LucideAngularModule.pick({ Building2, Layers, Box, Users, ChevronRight, ChevronDown, MoreVertical, Plus })],
-  exports: [LucideAngularModule]
+  exports: [LucideAngularModule],
 })
-export class LucideIconsModule { }
+export class LucideIconsModule {}
 
 interface FormData {
   nom: string;
@@ -40,12 +49,7 @@ interface OrgNode {
 @Component({
   selector: 'app-organization-view',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    LucideIconsModule,
-    ConfirmModalComponent,
-  ],
+  imports: [CommonModule, FormsModule, LucideIconsModule, ConfirmModalComponent],
   template: `
     <div class="organization-view">
       <!-- Header -->
@@ -53,8 +57,8 @@ interface OrgNode {
         <div class="header-left">
           <div class="logo">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#3b82f6"/>
-              <path d="M2 17L12 22L22 17V12L12 17L2 12V17Z" fill="#3b82f6" opacity="0.6"/>
+              <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#3b82f6" />
+              <path d="M2 17L12 22L22 17V12L12 17L2 12V17Z" fill="#3b82f6" opacity="0.6" />
             </svg>
             <span class="logo-text">ResourceFlow</span>
           </div>
@@ -91,7 +95,7 @@ interface OrgNode {
       <main class="main-content">
         <h1 class="page-title">Organisation</h1>
         <p class="page-subtitle">Structurez votre organisation</p>
- 
+
         <!-- Summary Stats Section -->
         <div class="stats-grid">
           <div class="stat-card">
@@ -126,7 +130,7 @@ interface OrgNode {
           </div>
         </section>
       </main>
- 
+
       <!-- Modal Overlay -->
       @if (showCreateModal || showEditModal) {
         <div class="modal-overlay" (click)="closeModals()">
@@ -135,34 +139,32 @@ interface OrgNode {
               {{ showEditModal ? 'Modifier' : 'Créer' }}
               {{ getModalTitleType() }}
             </h2>
-  
+
             <div class="form-group">
               <label>Nom</label>
-              <input type="text" [(ngModel)]="formData.nom" placeholder="Nom">
+              <input type="text" [(ngModel)]="formData.nom" placeholder="Nom" />
             </div>
-  
+
             <div class="form-group">
               <label>Code</label>
-              <input type="text" [(ngModel)]="formData.code" placeholder="Code (e.g. CAT)">
+              <input type="text" [(ngModel)]="formData.code" placeholder="Code (e.g. CAT)" />
             </div>
-  
+
             <div class="form-group">
               <label>Couleur</label>
               <div class="color-palette">
                 @for (color of predefinedColors; track color) {
-                  <div 
-                    class="color-swatch" 
+                  <div
+                    class="color-swatch"
                     [style.background-color]="color"
                     [class.active]="formData.color === color && !isCustomColor"
-                    (click)="selectColor(color)"
-                  ></div>
+                    (click)="selectColor(color)"></div>
                 }
-                <div 
-                  class="color-swatch custom-trigger" 
+                <div
+                  class="color-swatch custom-trigger"
                   [class.active]="isCustomColor"
                   (click)="isCustomColor = !isCustomColor"
-                  title="Couleur personnalisée"
-                >
+                  title="Couleur personnalisée">
                   @if (!isCustomColor) {
                     <lucide-icon name="plus" [size]="16"></lucide-icon>
                   } @else {
@@ -170,17 +172,17 @@ interface OrgNode {
                   }
                 </div>
               </div>
-              
+
               @if (isCustomColor) {
                 <div class="custom-color-input-wrapper">
-                  <input type="color" [(ngModel)]="formData.color" class="color-input">
-                  <input type="text" [(ngModel)]="formData.color" placeholder="#000000" class="color-hex-input">
+                  <input type="color" [(ngModel)]="formData.color" class="color-input" />
+                  <input type="text" [(ngModel)]="formData.color" placeholder="#000000" class="color-hex-input" />
                 </div>
               }
             </div>
-  
+
             <!-- Parent Selectors based on type -->
-            @if ((createModalType === 'departement') || (editingNode?.type === 'departement')) {
+            @if (createModalType === 'departement' || editingNode?.type === 'departement') {
               <div class="form-group">
                 <label>Société de rattachement</label>
                 <select [(ngModel)]="formData.societe_id">
@@ -190,8 +192,8 @@ interface OrgNode {
                 </select>
               </div>
             }
-  
-            @if ((createModalType === 'service') || (editingNode?.type === 'service')) {
+
+            @if (createModalType === 'service' || editingNode?.type === 'service') {
               <div class="form-group">
                 <label>Département de rattachement</label>
                 <select [(ngModel)]="formData.departement_id">
@@ -201,8 +203,8 @@ interface OrgNode {
                 </select>
               </div>
             }
-  
-            @if ((createModalType === 'equipe') || (editingNode?.type === 'equipe')) {
+
+            @if (createModalType === 'equipe' || editingNode?.type === 'equipe') {
               <div class="form-group">
                 <label>Rattachement (Service ou Département)</label>
                 <select [(ngModel)]="formData.parentType" (change)="formData.parentId = ''">
@@ -211,8 +213,10 @@ interface OrgNode {
                 </select>
               </div>
             }
-  
-            @if (((createModalType === 'equipe') || (editingNode?.type === 'equipe')) && formData.parentType === 'service') {
+
+            @if (
+              (createModalType === 'equipe' || editingNode?.type === 'equipe') && formData.parentType === 'service'
+            ) {
               <div class="form-group">
                 <label>Service</label>
                 <select [(ngModel)]="formData.parentId">
@@ -222,8 +226,10 @@ interface OrgNode {
                 </select>
               </div>
             }
-  
-            @if (((createModalType === 'equipe') || (editingNode?.type === 'equipe')) && formData.parentType === 'departement') {
+
+            @if (
+              (createModalType === 'equipe' || editingNode?.type === 'equipe') && formData.parentType === 'departement'
+            ) {
               <div class="form-group">
                 <label>Département</label>
                 <select [(ngModel)]="formData.parentId">
@@ -233,7 +239,7 @@ interface OrgNode {
                 </select>
               </div>
             }
-  
+
             <div class="modal-actions">
               <button class="btn-cancel" (click)="closeModals()">Annuler</button>
               <button class="btn-confirm" (click)="showEditModal ? handleUpdate() : handleCreate()">Enregistrer</button>
@@ -241,14 +247,14 @@ interface OrgNode {
           </div>
         </div>
       }
- 
+
       <!-- Recursive Node Template -->
       <ng-template #nodeTemplate let-node>
-        <div class="tree-node" 
-             [style.margin-left.px]="node.level * 32" 
-             [class.menu-active]="activeMenuId === node.id"
-             (click)="toggleNode(node)">
-          
+        <div
+          class="tree-node"
+          [style.margin-left.px]="node.level * 32"
+          [class.menu-active]="activeMenuId === node.id"
+          (click)="toggleNode(node)">
           <!-- Expand/Collapse Icon -->
           @if (node.children.length > 0) {
             <div class="toggle-icon">
@@ -258,30 +264,34 @@ interface OrgNode {
             <!-- Spacer for leaves -->
             <div class="toggle-placeholder"></div>
           }
- 
+
           <!-- Type Icon -->
-          <div class="node-icon" [ngClass]="node.type" [style.background-color]="node.color || '#e5e7eb'" [style.color]="'#fff'">
-             @if (node.type === 'societe') {
-               <lucide-icon name="building-2" [size]="18"></lucide-icon>
-             }
-             @if (node.type === 'departement') {
-               <lucide-icon name="layers" [size]="18"></lucide-icon>
-             }
-             @if (node.type === 'service') {
-               <lucide-icon name="box" [size]="18"></lucide-icon>
-             }
-             @if (node.type === 'equipe') {
-               <lucide-icon name="users" [size]="18"></lucide-icon>
-             }
+          <div
+            class="node-icon"
+            [ngClass]="node.type"
+            [style.background-color]="node.color || '#e5e7eb'"
+            [style.color]="'#fff'">
+            @if (node.type === 'societe') {
+              <lucide-icon name="building-2" [size]="18"></lucide-icon>
+            }
+            @if (node.type === 'departement') {
+              <lucide-icon name="layers" [size]="18"></lucide-icon>
+            }
+            @if (node.type === 'service') {
+              <lucide-icon name="box" [size]="18"></lucide-icon>
+            }
+            @if (node.type === 'equipe') {
+              <lucide-icon name="users" [size]="18"></lucide-icon>
+            }
           </div>
- 
+
           <div class="node-info">
             <span class="node-name">{{ node.nom }}</span>
             @if (node.code) {
               <span class="node-code">({{ node.code }})</span>
             }
           </div>
- 
+
           <!-- Kebab Menu -->
           <div class="kebab-menu-container" (click)="$event.stopPropagation()">
             <button class="kebab-btn" (click)="toggleMenu(node, $event)">
@@ -295,7 +305,7 @@ interface OrgNode {
             }
           </div>
         </div>
- 
+
         <!-- Children -->
         @if (node.expanded) {
           @for (child of node.children; track child.id) {
@@ -303,7 +313,6 @@ interface OrgNode {
           }
         }
       </ng-template>
-
 
       <app-confirm-modal
         [visible]="showConfirmModal"
@@ -315,165 +324,504 @@ interface OrgNode {
       </app-confirm-modal>
     </div>
   `,
-  styles: [`
-    .organization-view { min-height: 100vh; background: #f3f4f6; font-family: 'Inter', sans-serif; }
-    
-    /* Header */
-    .header { background: white; padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; position: sticky; top: 0; z-index: 10; }
-    .header-left { display: flex; align-items: center; gap: 24px; }
-    .logo { display: flex; align-items: center; gap: 12px; }
-    .logo-text { font-size: 20px; font-weight: 700; color: #111827; }
-    .header-right { display: flex; gap: 12px; }
-    .header-btn { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: white; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; color: #374151; transition: all 0.2s; }
-    .header-btn:hover { background: #f9fafb; border-color: #d1d5db; color: #111827; }
-    .dropdown-container { position: relative; }
-    .btn-create { 
-      display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: #3b82f6; color: white; border: none; 
-      border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; font-size: 14px;
-    }
-    .btn-create:hover { background: #2563eb; transform: translateY(-1px); }
-    .btn-create:active { transform: translateY(0); }
-    .add-dropdown {
-      position: absolute; right: 0; top: 100%; margin-top: 8px; background: white; border: 1px solid #e5e7eb; border-radius: 12px; 
-      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); padding: 6px; min-width: 180px; z-index: 20;
-      display: flex; flex-direction: column; gap: 2px;
-    }
-    .add-dropdown button {
-      display: flex; align-items: center; gap: 10px; background: none; border: none; padding: 10px 14px; text-align: left; cursor: pointer; font-size: 14px; color: #374151; font-weight: 500; border-radius: 8px; width: 100%; transition: background 0.15s, color 0.15s;
-    }
-    .add-dropdown button lucide-icon { color: #6b7280; transition: color 0.15s; }
-    .add-dropdown button:hover { background: #f3f4f6; color: #111827; }
-    .add-dropdown button:hover lucide-icon { color: #3b82f6; }
-    
-    /* Main Content */
-    .main-content { padding: 32px; }
-    .page-title { font-size: 28px; font-weight: 700; color: #111827; margin: 0 0 4px 0; }
-    .page-subtitle { font-size: 14px; color: #6b7280; margin: 0 0 32px 0; }
+  styles: [
+    `
+      .organization-view {
+        min-height: 100vh;
+        background: #f3f4f6;
+        font-family: 'Inter', sans-serif;
+      }
 
-    /* Stats Grid */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 24px;
-      margin-bottom: 40px;
-    }
-    .stat-card {
-      background: white;
-      padding: 24px;
-      border-radius: 16px;
-      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      transition: all 0.2s;
-      border: 1px solid #f3f4f6;
-    }
-    .stat-card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
-    .stat-icon {
-      margin-bottom: 12px;
-      padding: 12px;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .stat-icon.societe { color: #3b82f6; background: #eff6ff; }
-    .stat-icon.departement { color: #8b5cf6; background: #f5f3ff; }
-    .stat-icon.service { color: #10b981; background: #ecfdf5; }
-    .stat-icon.equipe { color: #f97316; background: #fff7ed; }
-    .stat-value { font-size: 24px; font-weight: 700; color: #111827; line-height: 1; margin-bottom: 4px; }
-    .stat-label { font-size: 14px; color: #6b7280; font-weight: 500; }
-    
-    /* Organization Tree */
-    .org-structure { background: transparent; }
-    .tree-container { display: flex; flex-direction: column; gap: 12px; }
-    
-    .tree-node { 
-      display: flex; align-items: center; padding: 16px 20px; background: white; border-radius: 16px; 
-      border: 1px solid #e5e7eb; transition: all 0.2s; position: relative;
-      cursor: pointer;
-    }
-    .tree-node.menu-active { z-index: 100; }
-    .tree-node:hover { border-color: #3b82f6; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transform: translateY(-1px); }
-    
-    .toggle-icon { cursor: pointer; color: #9ca3af; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; margin-right: 12px; border-radius: 4px; }
-    .toggle-icon:hover { background: #e5e7eb; color: #4b5563; }
-    .toggle-placeholder { width: 32px; }
-    
-    .node-icon { 
-      width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 16px; 
-      background: #f3f4f6; color: #6b7280; flex-shrink: 0;
-    }
-    .node-icon.societe { /* Custom color applied inline */ }
-    
-    .node-info { flex: 1; display: flex; align-items: baseline; gap: 8px; }
-    .node-name { font-weight: 700; color: #111827; font-size: 16px; }
-    .node-code { font-size: 12px; color: #6b7280; font-weight: 500; }
-    
-    /* Kebab Menu */
-    .kebab-menu-container { position: relative; }
-    .kebab-btn { 
-      background: transparent; border: none; cursor: pointer; padding: 4px; border-radius: 4px; color: #9ca3af; display: flex;
-      opacity: 0; transition: opacity 0.2s;
-    }
-    .tree-node:hover .kebab-btn { opacity: 1; }
-    .kebab-btn:hover { background: #e5e7eb; color: #4b5563; }
-    
-    .menu-dropdown {
-      position: absolute; right: 0; top: 100%; background: white; border: 1px solid #e5e7eb; border-radius: 8px; 
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1); py: 4px; min-width: 120px; z-index: 20;
-      display: flex; flex-direction: column;
-    }
-    .menu-dropdown button {
-      background: none; border: none; padding: 8px 12px; text-align: left; cursor: pointer; font-size: 13px; color: #374151; width: 100%;
-    }
-    .menu-dropdown button:hover { background: #f3f4f6; }
-    .menu-dropdown button.delete-btn { color: #ef4444; }
-    .menu-dropdown button.delete-btn:hover { background: #fee2e2; }
+      /* Header */
+      .header {
+        background: white;
+        padding: 16px 32px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #e5e7eb;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+      }
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .logo-text {
+        font-size: 20px;
+        font-weight: 700;
+        color: #111827;
+      }
+      .header-right {
+        display: flex;
+        gap: 12px;
+      }
+      .header-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        color: #374151;
+        transition: all 0.2s;
+      }
+      .header-btn:hover {
+        background: #f9fafb;
+        border-color: #d1d5db;
+        color: #111827;
+      }
+      .dropdown-container {
+        position: relative;
+      }
+      .btn-create {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+        font-size: 14px;
+      }
+      .btn-create:hover {
+        background: #2563eb;
+        transform: translateY(-1px);
+      }
+      .btn-create:active {
+        transform: translateY(0);
+      }
+      .add-dropdown {
+        position: absolute;
+        right: 0;
+        top: 100%;
+        margin-top: 8px;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        box-shadow:
+          0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        padding: 6px;
+        min-width: 180px;
+        z-index: 20;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .add-dropdown button {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: none;
+        border: none;
+        padding: 10px 14px;
+        text-align: left;
+        cursor: pointer;
+        font-size: 14px;
+        color: #374151;
+        font-weight: 500;
+        border-radius: 8px;
+        width: 100%;
+        transition:
+          background 0.15s,
+          color 0.15s;
+      }
+      .add-dropdown button lucide-icon {
+        color: #6b7280;
+        transition: color 0.15s;
+      }
+      .add-dropdown button:hover {
+        background: #f3f4f6;
+        color: #111827;
+      }
+      .add-dropdown button:hover lucide-icon {
+        color: #3b82f6;
+      }
 
-    /* Modal */
-    .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 50;
-      backdrop-filter: blur(2px);
-    }
-    .modal-content {
-      background: white; border-radius: 16px; padding: 24px; width: 100%; max-width: 480px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
-    }
-    .modal-title { font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 24px; }
-    
-    .form-group { margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px; }
-    .form-group label { font-size: 14px; font-weight: 500; color: #374151; }
-    .form-group input, .form-group select {
-      padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; color: #111827;
-      transition: border-color 0.2s;
-    }
-    .form-group input:focus, .form-group select:focus { border-color: #3b82f6; outline: none; ring: 2px solid #fee2e2; }
-    
-    .color-input { width: 60px; height: 36px; padding: 2px; cursor: pointer; border-radius: 6px; border: 1px solid #d1d5db; }
-    .color-hex-input { flex: 1; text-transform: uppercase; }
+      /* Main Content */
+      .main-content {
+        padding: 32px;
+      }
+      .page-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 4px 0;
+      }
+      .page-subtitle {
+        font-size: 14px;
+        color: #6b7280;
+        margin: 0 0 32px 0;
+      }
 
-    .color-palette { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
-    .color-swatch { 
-      width: 28px; height: 28px; border-radius: 8px; cursor: pointer; transition: all 0.2s; 
-      border: 2px solid transparent; 
-    }
-    .color-swatch:hover { transform: scale(1.1); }
-    .color-swatch.active { border-color: #111827; box-shadow: 0 0 0 2px white, 0 0 0 4px #111827; }
-    
-    .custom-trigger { 
-      background: #f3f4f6; border: 1px dashed #d1d5db; display: flex; align-items: center; justify-content: center; color: #6b7280; 
-    }
-    .custom-trigger.active { border: 2px solid #111827; background: white; }
-    .custom-preview { width: 100%; height: 100%; border-radius: 6px; }
+      /* Stats Grid */
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 24px;
+        margin-bottom: 40px;
+      }
+      .stat-card {
+        background: white;
+        padding: 24px;
+        border-radius: 16px;
+        box-shadow:
+          0 4px 6px -1px rgba(0, 0, 0, 0.05),
+          0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transition: all 0.2s;
+        border: 1px solid #f3f4f6;
+      }
+      .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      }
+      .stat-icon {
+        margin-bottom: 12px;
+        padding: 12px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .stat-icon.societe {
+        color: #3b82f6;
+        background: #eff6ff;
+      }
+      .stat-icon.departement {
+        color: #8b5cf6;
+        background: #f5f3ff;
+      }
+      .stat-icon.service {
+        color: #10b981;
+        background: #ecfdf5;
+      }
+      .stat-icon.equipe {
+        color: #f97316;
+        background: #fff7ed;
+      }
+      .stat-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: #111827;
+        line-height: 1;
+        margin-bottom: 4px;
+      }
+      .stat-label {
+        font-size: 14px;
+        color: #6b7280;
+        font-weight: 500;
+      }
 
-    .custom-color-input-wrapper { display: flex; gap: 12px; align-items: center; margin-top: 12px; padding: 12px; background: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb; }
+      /* Organization Tree */
+      .org-structure {
+        background: transparent;
+      }
+      .tree-container {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
 
-    .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px; }
-    .btn-cancel { padding: 10px 20px; background: white; border: 1px solid #d1d5db; border-radius: 8px; font-weight: 500; color: #374151; cursor: pointer; }
-    .btn-confirm { padding: 10px 20px; background: #3b82f6; border: none; border-radius: 8px; font-weight: 500; color: white; cursor: pointer; }
-    .btn-confirm:hover { background: #2563eb; }
-    .btn-confirm:active { transform: translateY(1px); }
-  `]
+      .tree-node {
+        display: flex;
+        align-items: center;
+        padding: 16px 20px;
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #e5e7eb;
+        transition: all 0.2s;
+        position: relative;
+        cursor: pointer;
+      }
+      .tree-node.menu-active {
+        z-index: 100;
+      }
+      .tree-node:hover {
+        border-color: #3b82f6;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        transform: translateY(-1px);
+      }
+
+      .toggle-icon {
+        cursor: pointer;
+        color: #9ca3af;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        margin-right: 12px;
+        border-radius: 4px;
+      }
+      .toggle-icon:hover {
+        background: #e5e7eb;
+        color: #4b5563;
+      }
+      .toggle-placeholder {
+        width: 32px;
+      }
+
+      .node-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 16px;
+        background: #f3f4f6;
+        color: #6b7280;
+        flex-shrink: 0;
+      }
+      .node-icon.societe {
+        /* Custom color applied inline */
+      }
+
+      .node-info {
+        flex: 1;
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+      }
+      .node-name {
+        font-weight: 700;
+        color: #111827;
+        font-size: 16px;
+      }
+      .node-code {
+        font-size: 12px;
+        color: #6b7280;
+        font-weight: 500;
+      }
+
+      /* Kebab Menu */
+      .kebab-menu-container {
+        position: relative;
+      }
+      .kebab-btn {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        color: #9ca3af;
+        display: flex;
+        opacity: 0;
+        transition: opacity 0.2s;
+      }
+      .tree-node:hover .kebab-btn {
+        opacity: 1;
+      }
+      .kebab-btn:hover {
+        background: #e5e7eb;
+        color: #4b5563;
+      }
+
+      .menu-dropdown {
+        position: absolute;
+        right: 0;
+        top: 100%;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        py: 4px;
+        min-width: 120px;
+        z-index: 20;
+        display: flex;
+        flex-direction: column;
+      }
+      .menu-dropdown button {
+        background: none;
+        border: none;
+        padding: 8px 12px;
+        text-align: left;
+        cursor: pointer;
+        font-size: 13px;
+        color: #374151;
+        width: 100%;
+      }
+      .menu-dropdown button:hover {
+        background: #f3f4f6;
+      }
+      .menu-dropdown button.delete-btn {
+        color: #ef4444;
+      }
+      .menu-dropdown button.delete-btn:hover {
+        background: #fee2e2;
+      }
+
+      /* Modal */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+        backdrop-filter: blur(2px);
+      }
+      .modal-content {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        width: 100%;
+        max-width: 480px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      }
+      .modal-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 24px;
+      }
+
+      .form-group {
+        margin-bottom: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .form-group label {
+        font-size: 14px;
+        font-weight: 500;
+        color: #374151;
+      }
+      .form-group input,
+      .form-group select {
+        padding: 10px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #111827;
+        transition: border-color 0.2s;
+      }
+      .form-group input:focus,
+      .form-group select:focus {
+        border-color: #3b82f6;
+        outline: none;
+        ring: 2px solid #fee2e2;
+      }
+
+      .color-input {
+        width: 60px;
+        height: 36px;
+        padding: 2px;
+        cursor: pointer;
+        border-radius: 6px;
+        border: 1px solid #d1d5db;
+      }
+      .color-hex-input {
+        flex: 1;
+        text-transform: uppercase;
+      }
+
+      .color-palette {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 4px;
+      }
+      .color-swatch {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 2px solid transparent;
+      }
+      .color-swatch:hover {
+        transform: scale(1.1);
+      }
+      .color-swatch.active {
+        border-color: #111827;
+        box-shadow:
+          0 0 0 2px white,
+          0 0 0 4px #111827;
+      }
+
+      .custom-trigger {
+        background: #f3f4f6;
+        border: 1px dashed #d1d5db;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6b7280;
+      }
+      .custom-trigger.active {
+        border: 2px solid #111827;
+        background: white;
+      }
+      .custom-preview {
+        width: 100%;
+        height: 100%;
+        border-radius: 6px;
+      }
+
+      .custom-color-input-wrapper {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-top: 12px;
+        padding: 12px;
+        background: #f9fafb;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+      }
+
+      .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 32px;
+      }
+      .btn-cancel {
+        padding: 10px 20px;
+        background: white;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-weight: 500;
+        color: #374151;
+        cursor: pointer;
+      }
+      .btn-confirm {
+        padding: 10px 20px;
+        background: #3b82f6;
+        border: none;
+        border-radius: 8px;
+        font-weight: 500;
+        color: white;
+        cursor: pointer;
+      }
+      .btn-confirm:hover {
+        background: #2563eb;
+      }
+      .btn-confirm:active {
+        transform: translateY(1px);
+      }
+    `,
+  ],
 })
 export class OrganizationViewComponent implements OnInit {
   societes: Societe[] = [];
@@ -498,14 +846,27 @@ export class OrganizationViewComponent implements OnInit {
     departement_id: '',
     service_id: '',
     parentType: 'service',
-    parentId: ''
+    parentId: '',
   };
 
   predefinedColors = [
-    '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16',
-    '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9',
-    '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef',
-    '#ec4899', '#f43f5e'
+    '#ef4444',
+    '#f97316',
+    '#f59e0b',
+    '#eab308',
+    '#84cc16',
+    '#22c55e',
+    '#10b981',
+    '#14b8a6',
+    '#06b6d4',
+    '#0ea5e9',
+    '#3b82f6',
+    '#6366f1',
+    '#8b5cf6',
+    '#a855f7',
+    '#d946ef',
+    '#ec4899',
+    '#f43f5e',
   ];
 
   isCustomColor = false;
@@ -562,16 +923,16 @@ export class OrganizationViewComponent implements OnInit {
   }
 
   buildOrgTree() {
-    this.orgTree = this.societes.map(s => {
+    this.orgTree = this.societes.map((s) => {
       // Find departements for this societe
-      const sDepts = this.departements.filter(d => d.societe_id === s.id);
+      const sDepts = this.departements.filter((d) => d.societe_id === s.id);
 
-      const deptNodes: OrgNode[] = sDepts.map(d => {
+      const deptNodes: OrgNode[] = sDepts.map((d) => {
         // Find services for this departement
-        const dServices = this.services.filter(srv => srv.departement_id === d.id);
+        const dServices = this.services.filter((srv) => srv.departement_id === d.id);
 
-        const serviceNodes: OrgNode[] = dServices.map(srv => {
-          const sEquipes = this.equipes.filter(e => e.service_id === srv.id);
+        const serviceNodes: OrgNode[] = dServices.map((srv) => {
+          const sEquipes = this.equipes.filter((e) => e.service_id === srv.id);
           return {
             type: 'service',
             id: srv.id!,
@@ -579,7 +940,7 @@ export class OrganizationViewComponent implements OnInit {
             code: srv.code,
             color: srv.color,
             originalData: srv,
-            children: sEquipes.map(e => ({
+            children: sEquipes.map((e) => ({
               type: 'equipe',
               id: e.id!,
               nom: e.nom,
@@ -589,17 +950,17 @@ export class OrganizationViewComponent implements OnInit {
               children: [],
               expanded: false,
               level: 3,
-              parentId: srv.id
+              parentId: srv.id,
             })),
             expanded: false,
             level: 2,
-            parentId: d.id
+            parentId: d.id,
           };
         });
 
         // Also find equipes attached to department (if any)
-        const dDirectEquipes = this.equipes.filter(e => e.departement_id === d.id);
-        const equipeNodes: OrgNode[] = dDirectEquipes.map(e => ({
+        const dDirectEquipes = this.equipes.filter((e) => e.departement_id === d.id);
+        const equipeNodes: OrgNode[] = dDirectEquipes.map((e) => ({
           type: 'equipe',
           id: e.id!,
           nom: e.nom,
@@ -609,7 +970,7 @@ export class OrganizationViewComponent implements OnInit {
           children: [],
           expanded: false,
           level: 2, // Same level as Service if direct child of Dept
-          parentId: d.id
+          parentId: d.id,
         }));
 
         return {
@@ -622,7 +983,7 @@ export class OrganizationViewComponent implements OnInit {
           children: [...serviceNodes, ...equipeNodes],
           expanded: false,
           level: 1,
-          parentId: s.id
+          parentId: s.id,
         };
       });
 
@@ -635,7 +996,7 @@ export class OrganizationViewComponent implements OnInit {
         originalData: s,
         children: deptNodes,
         expanded: false,
-        level: 0
+        level: 0,
       };
     });
   }
@@ -657,11 +1018,21 @@ export class OrganizationViewComponent implements OnInit {
     this.createModalType = type;
     this.showCreateModal = true;
     this.showEditModal = false;
-    this.formData = { nom: '', code: '', color: '#3b82f6', societe_id: '', departement_id: '', service_id: '', parentType: 'service', parentId: '' };
+    this.formData = {
+      nom: '',
+      code: '',
+      color: '#3b82f6',
+      societe_id: '',
+      departement_id: '',
+      service_id: '',
+      parentType: 'service',
+      parentId: '',
+    };
 
     // Set default parents if possible (e.g. first one)
     if (type === 'departement' && this.societes.length > 0) this.formData.societe_id = this.societes[0].id ?? '';
-    if (type === 'service' && this.departements.length > 0) this.formData.departement_id = this.departements[0].id ?? '';
+    if (type === 'service' && this.departements.length > 0)
+      this.formData.departement_id = this.departements[0].id ?? '';
     if (type === 'equipe') {
       if (this.services.length > 0) {
         this.formData.parentType = 'service';
@@ -706,11 +1077,16 @@ export class OrganizationViewComponent implements OnInit {
   getModalTitleType() {
     const type = this.showEditModal ? this.editingNode?.type : this.createModalType;
     switch (type) {
-      case 'societe': return 'une Société';
-      case 'departement': return 'un Département';
-      case 'service': return 'un Service';
-      case 'equipe': return 'une Équipe';
-      default: return '';
+      case 'societe':
+        return 'une Société';
+      case 'departement':
+        return 'un Département';
+      case 'service':
+        return 'un Service';
+      case 'equipe':
+        return 'une Équipe';
+      default:
+        return '';
     }
   }
 
@@ -720,7 +1096,7 @@ export class OrganizationViewComponent implements OnInit {
         const payload: Partial<Societe> = {
           nom: this.formData.nom,
           code: this.formData.code,
-          color: this.formData.color
+          color: this.formData.color,
         };
         await this.resourceService.createSociete(payload);
       } else if (this.createModalType === 'departement') {
@@ -728,7 +1104,7 @@ export class OrganizationViewComponent implements OnInit {
           nom: this.formData.nom,
           code: this.formData.code,
           color: this.formData.color,
-          societe_id: this.formData.societe_id
+          societe_id: this.formData.societe_id,
         };
         await this.resourceService.createDepartement(payload);
       } else if (this.createModalType === 'service') {
@@ -736,7 +1112,7 @@ export class OrganizationViewComponent implements OnInit {
           nom: this.formData.nom,
           code: this.formData.code,
           color: this.formData.color,
-          departement_id: this.formData.departement_id
+          departement_id: this.formData.departement_id,
         };
         await this.resourceService.createService(payload);
       } else if (this.createModalType === 'equipe') {
@@ -747,9 +1123,9 @@ export class OrganizationViewComponent implements OnInit {
         };
         //en fonction du type de parent, on met le service_id ou le departement_id
         if (this.formData.parentType === 'service') {
-          payload.service_id = this.formData.parentId
+          payload.service_id = this.formData.parentId;
         } else if (this.formData.parentType === 'departement') {
-          payload.departement_id = this.formData.parentId
+          payload.departement_id = this.formData.parentId;
         }
 
         await this.resourceService.createEquipe(payload);
@@ -769,7 +1145,7 @@ export class OrganizationViewComponent implements OnInit {
         const payload: Partial<Societe> = {
           nom: this.formData.nom,
           code: this.formData.code,
-          color: this.formData.color
+          color: this.formData.color,
         };
         await this.resourceService.updateSociete(id, payload);
       } else if (this.editingNode.type === 'departement') {
@@ -777,7 +1153,7 @@ export class OrganizationViewComponent implements OnInit {
           nom: this.formData.nom,
           code: this.formData.code,
           color: this.formData.color,
-          societe_id: this.formData.societe_id
+          societe_id: this.formData.societe_id,
         };
         await this.resourceService.updateDepartement(id, payload);
       } else if (this.editingNode.type === 'service') {
@@ -785,7 +1161,7 @@ export class OrganizationViewComponent implements OnInit {
           nom: this.formData.nom,
           code: this.formData.code,
           color: this.formData.color,
-          departement_id: this.formData.departement_id
+          departement_id: this.formData.departement_id,
         };
         await this.resourceService.updateService(id, payload);
       } else if (this.editingNode.type === 'equipe') {
@@ -796,9 +1172,9 @@ export class OrganizationViewComponent implements OnInit {
         };
         //en fonction du type de parent, on met le service_id ou le departement_id
         if (this.formData.parentType === 'service') {
-          payload.service_id = this.formData.parentId
+          payload.service_id = this.formData.parentId;
         } else if (this.formData.parentType === 'departement') {
-          payload.departement_id = this.formData.parentId
+          payload.departement_id = this.formData.parentId;
         }
         await this.resourceService.updateEquipe(id, payload);
       }

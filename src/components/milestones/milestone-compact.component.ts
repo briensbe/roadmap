@@ -1,19 +1,19 @@
-import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges, NgModule } from "@angular/core";
-import { CommonModule } from "@angular/common";
-import { FormsModule } from "@angular/forms";
-import { LucideAngularModule, Package, Rocket, Layers, Flag, Wrench } from "lucide-angular";
-import { Jalon } from "../../models/types";
-import { DayEventsModalComponent } from "./day-events-modal.component";
-import { storageSignal } from "../../utils/storage-signal";
+import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges, NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { LucideAngularModule, Package, Rocket, Layers, Flag, Wrench } from 'lucide-angular';
+import { Jalon } from '../../models/types';
+import { DayEventsModalComponent } from './day-events-modal.component';
+import { storageSignal } from '../../utils/storage-signal';
 
 @NgModule({
   imports: [LucideAngularModule.pick({ Package, Rocket, Layers, Flag, Wrench })],
-  exports: [LucideAngularModule]
+  exports: [LucideAngularModule],
 })
-export class LucideIconsModule { }
+export class LucideIconsModule {}
 
 @Component({
-  selector: "app-milestone-compact",
+  selector: 'app-milestone-compact',
   standalone: true,
   imports: [CommonModule, FormsModule, LucideIconsModule, DayEventsModalComponent],
   template: `
@@ -24,11 +24,11 @@ export class LucideIconsModule { }
           <h2>{{ getPeriodTitle() }}</h2>
           <button class="nav-btn" (click)="nextPeriod()">›</button>
         </div>
-        
+
         <div class="view-options">
           <div class="option-group">
             <label>Début:</label>
-            <input type="month" [ngModel]="startDateStr()" (ngModelChange)="onStartDateChange($event)">
+            <input type="month" [ngModel]="startDateStr()" (ngModelChange)="onStartDateChange($event)" />
           </div>
           <div class="option-group">
             <label>Mois:</label>
@@ -47,7 +47,7 @@ export class LucideIconsModule { }
             <div class="month-title-wrapper">
               <h3 class="month-title">{{ monthData.title }}</h3>
             </div>
-            
+
             <div class="compact-table">
               <div class="table-header">
                 <div class="col-date">D</div>
@@ -62,8 +62,7 @@ export class LucideIconsModule { }
                   [class.has-events]="day.events.length > 0"
                   [class.today]="day.isToday"
                   [class.weekend]="day.isWeekend"
-                  [class.holiday]="day.isHoliday"
-                >
+                  [class.holiday]="day.isHoliday">
                   <div class="col-date">{{ day.dayNumber }}</div>
                   <div class="col-day">{{ day.dayName }}</div>
                   <div class="col-events">
@@ -76,8 +75,7 @@ export class LucideIconsModule { }
                           [class.event-mep]="jalon.event_type === 'mep'"
                           [class.event-sprint]="jalon.event_type === 'sprint'"
                           [class.event-autre]="jalon.event_type === 'autre' || !jalon.event_type"
-                          (click)="$event.stopPropagation(); edit.emit(jalon)"
-                        >
+                          (click)="$event.stopPropagation(); edit.emit(jalon)">
                           <lucide-icon [name]="getIconName(jalon.event_type)" size="11"></lucide-icon>
                           <span class="compact-title">{{ jalon.title }}</span>
                         </div>
@@ -98,8 +96,7 @@ export class LucideIconsModule { }
           [readonly]="readonly"
           (close)="showDayEventsModal = false"
           (openEvent)="onDayModalEdit($event)"
-          (add)="onDayModalAdd($event)"
-        ></app-day-events-modal>
+          (add)="onDayModalAdd($event)"></app-day-events-modal>
       }
 
       @if (showEmptyDayModal) {
@@ -204,7 +201,7 @@ export class LucideIconsModule { }
         font-weight: 500;
       }
 
-      .option-group input[type="month"] {
+      .option-group input[type='month'] {
         padding: 0.25rem 0.5rem;
         border: 1px solid #d1d5db;
         border-radius: 4px;
@@ -544,13 +541,13 @@ export class LucideIconsModule { }
         color: #d1d5db;
       }
 
-      :host-context(body.dark-mode) .option-group input[type="month"] {
+      :host-context(body.dark-mode) .option-group input[type='month'] {
         background: #111827;
         border-color: #374151;
         color: #f9fafb;
       }
 
-      :host-context(body.dark-mode) .option-group input[type="month"]::-webkit-calendar-picker-indicator {
+      :host-context(body.dark-mode) .option-group input[type='month']::-webkit-calendar-picker-indicator {
         filter: invert(1);
       }
 
@@ -687,16 +684,16 @@ export class MilestoneCompactComponent implements OnInit, OnChanges {
   @Output() edit = new EventEmitter<Jalon>();
   @Output() add = new EventEmitter<string>();
 
-  startDateStr = storageSignal<string>("milestone-compact-start-date", new Date().toISOString().slice(0, 7));
-  
+  startDateStr = storageSignal<string>('milestone-compact-start-date', new Date().toISOString().slice(0, 7));
+
   get startDate(): Date {
     const [year, month] = this.startDateStr().split('-').map(Number);
     return new Date(year, month - 1, 1);
   }
 
   monthsData: any[] = [];
-  monthsCount = storageSignal<number>("milestone-compact-months-count", 4);
-  dayNames = ["D", "L", "M", "M", "J", "V", "S"];
+  monthsCount = storageSignal<number>('milestone-compact-months-count', 4);
+  dayNames = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
 
   // Day list modal state
   showDayEventsModal = false;
@@ -708,7 +705,7 @@ export class MilestoneCompactComponent implements OnInit, OnChanges {
   emptyDayDate = '';
   emptyDayDateStr = '';
 
-  constructor() { }
+  constructor() {}
 
   ngOnInit(): void {
     this.generateCompactView();
@@ -740,9 +737,9 @@ export class MilestoneCompactComponent implements OnInit, OnChanges {
 
     for (let i = 0; i < this.monthsCount(); i++) {
       const monthDate = new Date(this.startDate.getFullYear(), this.startDate.getMonth() + i, 1);
-      const monthTitle = monthDate.toLocaleDateString("fr-FR", {
-        month: "long",
-        year: "numeric",
+      const monthTitle = monthDate.toLocaleDateString('fr-FR', {
+        month: 'long',
+        year: 'numeric',
       });
 
       const lastDay = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0).getDate();
@@ -754,7 +751,7 @@ export class MilestoneCompactComponent implements OnInit, OnChanges {
         const dayEvents = this.getJalonsByDate(dateStr);
 
         days.push({
-          dayNumber: String(day).padStart(2, "0"),
+          dayNumber: String(day).padStart(2, '0'),
           dayName: this.getDayName(date),
           dateStr: dateStr,
           isToday: this.isToday(date),
@@ -777,8 +774,8 @@ export class MilestoneCompactComponent implements OnInit, OnChanges {
 
   formatDateToString(date: Date): string {
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   }
 
@@ -808,12 +805,12 @@ export class MilestoneCompactComponent implements OnInit, OnChanges {
 
     // Fixed holidays
     const fixedHolidays = [
-      { m: 1, d: 1 },   // New Year
-      { m: 5, d: 1 },   // Labour Day
-      { m: 5, d: 8 },   // Victory Day
-      { m: 7, d: 14 },  // Bastille Day
-      { m: 8, d: 15 },  // Assumption
-      { m: 11, d: 1 },  // All Saints
+      { m: 1, d: 1 }, // New Year
+      { m: 5, d: 1 }, // Labour Day
+      { m: 5, d: 8 }, // Victory Day
+      { m: 7, d: 14 }, // Bastille Day
+      { m: 8, d: 15 }, // Assumption
+      { m: 11, d: 1 }, // All Saints
       { m: 11, d: 11 }, // Armistice
       { m: 12, d: 25 }, // Christmas
     ];
@@ -860,10 +857,10 @@ export class MilestoneCompactComponent implements OnInit, OnChanges {
 
   getPeriodTitle(): string {
     const endDate = new Date(this.startDate.getFullYear(), this.startDate.getMonth() + this.monthsCount(), 0);
-    return `${this.startDate.toLocaleDateString("fr-FR", {
-      month: "long",
-      year: "numeric",
-    })} - ${endDate.toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}`;
+    return `${this.startDate.toLocaleDateString('fr-FR', {
+      month: 'long',
+      year: 'numeric',
+    })} - ${endDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}`;
   }
 
   previousPeriod(): void {
@@ -896,7 +893,7 @@ export class MilestoneCompactComponent implements OnInit, OnChanges {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
-      year: 'numeric'
+      year: 'numeric',
     });
   }
 

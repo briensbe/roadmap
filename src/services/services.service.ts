@@ -1,127 +1,116 @@
-import { Injectable } from "@angular/core";
-import { SupabaseService } from "./supabase.service";
-import { DataSyncService } from "./data-sync.service";
-import { Service } from "../models/types";
-import { DB_TABLES } from "../constants/db-tables";
+import { Injectable } from '@angular/core';
+import { SupabaseService } from './supabase.service';
+import { DataSyncService } from './data-sync.service';
+import { Service } from '../models/types';
+import { DB_TABLES } from '../constants/db-tables';
 
 @Injectable({
-    providedIn: "root"
+  providedIn: 'root',
 })
 export class ServicesService {
-    private _servicesCache: Service[] | null = null;
+  private _servicesCache: Service[] | null = null;
 
-    constructor(
-        private supabase: SupabaseService,
-        private dataSync: DataSyncService
-    ) {
-        this.dataSync.sync$.subscribe(() => this.clearLocalCache());
+  constructor(
+    private supabase: SupabaseService,
+    private dataSync: DataSyncService,
+  ) {
+    this.dataSync.sync$.subscribe(() => this.clearLocalCache());
+  }
+
+  public clearCache() {
+    this.clearLocalCache();
+    this.dataSync.notifyChange();
+  }
+
+  private clearLocalCache() {
+    this._servicesCache = null;
+  }
+
+  /**
+   * Reccupère tous les services avec gestion de cache
+   */
+  async getAllServices(): Promise<Service[]> {
+    if (this._servicesCache) {
+      return this._servicesCache;
     }
 
-    public clearCache() {
-        this.clearLocalCache();
-        this.dataSync.notifyChange();
+    const { data, error } = await this.supabase.client
+      .from(DB_TABLES.SERVICES)
+      .select('*')
+      .order('nom', { ascending: true });
+
+    if (error) throw error;
+    this._servicesCache = data || [];
+    return this._servicesCache;
+  }
+
+  /**
+   * Trouve l'ID (UUID) à partir de l'id_service (Serial/Number)
+   */
+  async getIdByServiceId(id_service: number): Promise<string | null> {
+    const services = await this.getAllServices();
+    const service = services.find((s) => s.id_service === id_service);
+    return service?.id || null;
+  }
+
+  /**
+   * Trouve un service spécifique par son id_service (Serial/Number)
+   */
+  async getServiceByServiceId(id_service: number): Promise<Service | null> {
+    const services = await this.getAllServices();
+    return services.find((s) => s.id_service === id_service) || null;
+  }
+
+  /**
+   * Trouve l'id_service (Serial/Number) à partir de l'ID (UUID)
+   */
+  async getServiceIdById(id: string): Promise<number | null> {
+    const services = await this.getAllServices();
+    const service = services.find((s) => s.id === id);
+    return service?.id_service || null;
+  }
+
+  /**
+   * Récupère un service spécifique par son ID
+   */
+  async getService(id: string): Promise<Service | null> {
+    // Tente de trouver dans le cache d'abord
+    if (this._servicesCache) {
+      const found = this._servicesCache.find((s) => s.id === id);
+      if (found) return found;
     }
 
-    private clearLocalCache() {
-        this._servicesCache = null;
-    }
+    const { data, error } = await this.supabase.client.from(DB_TABLES.SERVICES).select('*').eq('id', id).maybeSingle();
 
-    /**
-     * Reccupère tous les services avec gestion de cache
-     */
-    async getAllServices(): Promise<Service[]> {
-        if (this._servicesCache) {
-            return this._servicesCache;
-        }
+    if (error) throw error;
+    return data;
+  }
 
-        const { data, error } = await this.supabase.client
-            .from(DB_TABLES.SERVICES)
-            .select("*")
-            .order("nom", { ascending: true });
+  async createService(service: Partial<Service>): Promise<Service> {
+    const { data, error } = await this.supabase.client.from(DB_TABLES.SERVICES).insert([service]).select().single();
 
-        if (error) throw error;
-        this._servicesCache = data || [];
-        return this._servicesCache;
-    }
+    if (error) throw error;
+    this.clearCache();
+    return data;
+  }
 
-    /**
-     * Trouve l'ID (UUID) à partir de l'id_service (Serial/Number)
-     */
-    async getIdByServiceId(id_service: number): Promise<string | null> {
-        const services = await this.getAllServices();
-        const service = services.find(s => s.id_service === id_service);
-        return service?.id || null;
-    }
+  async updateService(id: string, service: Partial<Service>): Promise<Service> {
+    const { data, error } = await this.supabase.client
+      .from(DB_TABLES.SERVICES)
+      .update(service)
+      .eq('id', id)
+      .select()
+      .single();
 
-    /**
-     * Trouve un service spécifique par son id_service (Serial/Number)
-     */
-    async getServiceByServiceId(id_service: number): Promise<Service | null> {
-        const services = await this.getAllServices();
-        return services.find(s => s.id_service === id_service) || null;
-    }
+    if (error) throw error;
+    this.clearCache();
+    return data;
+  }
 
-    /**
-     * Trouve l'id_service (Serial/Number) à partir de l'ID (UUID)
-     */
-    async getServiceIdById(id: string): Promise<number | null> {
-        const services = await this.getAllServices();
-        const service = services.find(s => s.id === id);
-        return service?.id_service || null;
-    }
+  async deleteService(id: string): Promise<void> {
+    const { error } = await this.supabase.client.from(DB_TABLES.SERVICES).delete().eq('id', id);
 
-    /**
-     * Récupère un service spécifique par son ID
-     */
-    async getService(id: string): Promise<Service | null> {
-        // Tente de trouver dans le cache d'abord
-        if (this._servicesCache) {
-            const found = this._servicesCache.find(s => s.id === id);
-            if (found) return found;
-        }
-
-        const { data, error } = await this.supabase.client
-            .from(DB_TABLES.SERVICES)
-            .select("*")
-            .eq("id", id)
-            .maybeSingle();
-
-        if (error) throw error;
-        return data;
-    }
-
-    async createService(service: Partial<Service>): Promise<Service> {
-        const { data, error } = await this.supabase.client
-            .from(DB_TABLES.SERVICES)
-            .insert([service])
-            .select()
-            .single();
-
-        if (error) throw error;
-        this.clearCache();
-        return data;
-    }
-
-    async updateService(id: string, service: Partial<Service>): Promise<Service> {
-        const { data, error } = await this.supabase.client
-            .from(DB_TABLES.SERVICES)
-            .update(service)
-            .eq("id", id)
-            .select()
-            .single();
-
-        if (error) throw error;
-        this.clearCache();
-        return data;
-    }
-
-    async deleteService(id: string): Promise<void> {
-        const { error } = await this.supabase.client
-            .from(DB_TABLES.SERVICES)
-            .delete()
-            .eq("id", id);
-
-        if (error) throw error;
-        this.clearCache();
-    }
+    if (error) throw error;
+    this.clearCache();
+  }
 }

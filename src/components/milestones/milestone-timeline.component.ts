@@ -1,7 +1,17 @@
-import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges, NgModule } from "@angular/core";
-import { CommonModule } from "@angular/common";
-import { LucideAngularModule, AlignJustify, Columns, PenLine, Package, Rocket, Layers, Flag, Wrench } from "lucide-angular";
-import { Jalon, Projet } from "../../models/types";
+import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges, NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import {
+  LucideAngularModule,
+  AlignJustify,
+  Columns,
+  PenLine,
+  Package,
+  Rocket,
+  Layers,
+  Flag,
+  Wrench,
+} from 'lucide-angular';
+import { Jalon, Projet } from '../../models/types';
 
 interface TimelineGroup {
   date: string;
@@ -10,18 +20,21 @@ interface TimelineGroup {
 
 @NgModule({
   imports: [LucideAngularModule.pick({ AlignJustify, Columns, PenLine, Package, Rocket, Layers, Flag, Wrench })],
-  exports: [LucideAngularModule]
+  exports: [LucideAngularModule],
 })
-export class LucideIconsModule { }
+export class LucideIconsModule {}
 
 @Component({
-  selector: "app-milestone-timeline",
+  selector: 'app-milestone-timeline',
   standalone: true,
   imports: [CommonModule, LucideIconsModule],
   template: `
     <div class="timeline-container">
       <div class="header">
-        <button class="toggle-btn" (click)="toggleMode()" [title]="isHorizontal ? 'Passer en vue verticale' : 'Passer en vue horizontale'">
+        <button
+          class="toggle-btn"
+          (click)="toggleMode()"
+          [title]="isHorizontal ? 'Passer en vue verticale' : 'Passer en vue horizontale'">
           <lucide-icon [name]="isHorizontal ? 'align-justify' : 'columns'" size="20"></lucide-icon>
           <span>{{ isHorizontal ? 'Vue Verticale' : 'Vue Horizontale' }}</span>
         </button>
@@ -35,23 +48,21 @@ export class LucideIconsModule { }
             <div
               class="timeline-item"
               [class.left]="!isHorizontal && i % 2 === 0"
-              [class.right]="!isHorizontal && i % 2 !== 0"
-            >
+              [class.right]="!isHorizontal && i % 2 !== 0">
               <div class="content">
                 <div class="date-badge">{{ formatDate(group.date) }}</div>
-                
+
                 <div class="events-group">
                   @for (jalon of group.jalons; track jalon.id) {
-                    <div 
-                      class="card" 
-                      [class.is-livraison]="jalon.event_type === 'livraison'" 
-                      [class.is-maintenance]="jalon.event_type === 'maintenance'" 
+                    <div
+                      class="card"
+                      [class.is-livraison]="jalon.event_type === 'livraison'"
+                      [class.is-maintenance]="jalon.event_type === 'maintenance'"
                       [class.is-mep]="jalon.event_type === 'mep'"
                       [class.is-sprint]="jalon.event_type === 'sprint'"
                       [class.is-autre]="jalon.event_type === 'autre' || !jalon.event_type"
                       (click)="!readonly && edit.emit(jalon)"
-                      [class.clickable]="!readonly"
-                    >
+                      [class.clickable]="!readonly">
                       <div class="card-header">
                         <span class="type-icon">
                           <lucide-icon [name]="getIconName(jalon.event_type)" size="18"></lucide-icon>
@@ -68,11 +79,10 @@ export class LucideIconsModule { }
                           <p>{{ jalon.description }}</p>
                         }
                         @if (jalon.projet_id) {
-                          <span 
+                          <span
                             class="project-badge"
-                            [style.background-color]="getProjectColor(jalon.projet_id) + '15'" 
-                            [style.color]="getProjectColor(jalon.projet_id)"
-                          >
+                            [style.background-color]="getProjectColor(jalon.projet_id) + '15'"
+                            [style.color]="getProjectColor(jalon.projet_id)">
                             {{ getProjectName(jalon.projet_id) }}
                           </span>
                         }
@@ -109,7 +119,7 @@ export class LucideIconsModule { }
         background: #f8fafc;
         padding: 1rem 1.5rem;
       }
-      
+
       .timeline-container:has(.timeline-wrapper.horizontal) {
         overflow-y: auto;
       }
@@ -134,7 +144,7 @@ export class LucideIconsModule { }
         font-weight: 500;
         color: #4b5563;
         transition: all 0.2s;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
       }
 
       .toggle-btn:hover {
@@ -356,7 +366,7 @@ export class LucideIconsModule { }
         font-size: 0.85rem;
         font-weight: 600;
         margin-bottom: 0.75rem;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         text-transform: capitalize;
       }
 
@@ -370,7 +380,9 @@ export class LucideIconsModule { }
         background: white;
         border-radius: 12px;
         padding: 1rem 1.25rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        box-shadow:
+          0 4px 6px -1px rgba(0, 0, 0, 0.05),
+          0 2px 4px -1px rgba(0, 0, 0, 0.03);
         border-left: 5px solid transparent;
         position: relative;
         overflow: hidden;
@@ -379,11 +391,13 @@ export class LucideIconsModule { }
 
       .card.clickable {
         cursor: pointer;
-        transition: box-shadow 0.2s, border-color 0.2s;
+        transition:
+          box-shadow 0.2s,
+          border-color 0.2s;
       }
 
       .card.clickable:hover {
-        box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
       }
 
       .card.is-livraison {
@@ -520,18 +534,20 @@ export class LucideIconsModule { }
           text-align: left;
         }
 
-        .timeline-item.left, .timeline-item.right {
+        .timeline-item.left,
+        .timeline-item.right {
           left: 0;
           text-align: left;
           padding-right: 0;
           padding-left: 70px;
         }
 
-        .timeline-item.left .dot, .timeline-item.right .dot {
+        .timeline-item.left .dot,
+        .timeline-item.right .dot {
           left: 20px;
           right: auto;
         }
-        
+
         .timeline-item::after {
           width: 40px;
           left: 30px;
@@ -664,24 +680,24 @@ export class MilestoneTimelineComponent implements OnInit, OnChanges {
   }
 
   formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString("fr-FR", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
+    return new Date(dateStr).toLocaleDateString('fr-FR', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
     });
   }
 
   getProjectName(projetId?: string | null): string {
-    if (!projetId) return "Global";
+    if (!projetId) return 'Global';
     const project = this.projets.find((p) => p.id === projetId);
-    return project ? project.nom_projet : "Global";
+    return project ? project.nom_projet : 'Global';
   }
 
   getProjectColor(projetId?: string | null): string {
-    if (!projetId) return "#6b7280";
+    if (!projetId) return '#6b7280';
     const project = this.projets.find((p) => p.id === projetId);
-    return project?.color || "#4f46e5";
+    return project?.color || '#4f46e5';
   }
 
   getIconName(type: string): string {

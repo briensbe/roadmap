@@ -1,4 +1,4 @@
-import * as Excel from "exceljs";
+import * as Excel from 'exceljs';
 
 export interface RawExcelRow {
   budgetType: string | null;
@@ -33,16 +33,16 @@ export class ExcelReader {
     if (cell.value === null || cell.value === undefined) return null;
 
     let val: string;
-    if (typeof cell.value === "object" && "richText" in cell.value) {
-      val = cell.value.richText.map((t) => t.text).join("");
-    } else if (typeof cell.value === "object" && "result" in cell.value) {
+    if (typeof cell.value === 'object' && 'richText' in cell.value) {
+      val = cell.value.richText.map((t) => t.text).join('');
+    } else if (typeof cell.value === 'object' && 'result' in cell.value) {
       val = String(cell.value.result);
     } else {
       val = String(cell.value);
     }
 
     const trimmed = val.trim();
-    return trimmed === "" ? null : trimmed;
+    return trimmed === '' ? null : trimmed;
   }
 
   /**
@@ -52,20 +52,20 @@ export class ExcelReader {
     const val = cell.value;
     if (val === null || val === undefined) return null;
 
-    if (typeof val === "number") {
+    if (typeof val === 'number') {
       return isNaN(val) ? null : val;
     }
-    if (typeof val === "object" && "result" in val) {
+    if (typeof val === 'object' && 'result' in val) {
       const res = val.result;
-      if (typeof res === "number") return isNaN(res) ? null : res;
+      if (typeof res === 'number') return isNaN(res) ? null : res;
       if (res === null || res === undefined) return null;
-      const strRes = String(res).trim().replace(/\s+/g, "").replace(",", ".");
+      const strRes = String(res).trim().replace(/\s+/g, '').replace(',', '.');
       const num = parseFloat(strRes);
       return isNaN(num) ? null : num;
     }
 
-    const str = String(val).trim().replace(/\s+/g, "").replace(",", ".");
-    if (str === "") return null;
+    const str = String(val).trim().replace(/\s+/g, '').replace(',', '.');
+    if (str === '') return null;
     const num = parseFloat(str);
     return isNaN(num) ? null : num;
   }
@@ -115,11 +115,11 @@ export class ExcelReader {
     // Use first worksheet
     const worksheet = workbook.worksheets[0];
     if (!worksheet) {
-      throw new Error("No worksheet found in the Excel file.");
+      throw new Error('No worksheet found in the Excel file.');
     }
 
     // 1. Parse export date from cell A1
-    const cellA1 = worksheet.getCell("A1");
+    const cellA1 = worksheet.getCell('A1');
     const a1Text = this.getCleanStringValue(cellA1);
     const excelExportDate = this.parseExportDate(a1Text);
 
@@ -165,21 +165,21 @@ export class ExcelReader {
       const cleanHeader = headerVal.toLowerCase();
 
       // Match fixed columns
-      if (cleanHeader === "type budget") budgetTypeIdx = c;
-      else if (cleanHeader === "nomenclature budgétaire" || cleanHeader === "nomenclature budgetaire")
+      if (cleanHeader === 'type budget') budgetTypeIdx = c;
+      else if (cleanHeader === 'nomenclature budgétaire' || cleanHeader === 'nomenclature budgetaire')
         budgetNomenclatureIdx = c;
-      else if (cleanHeader === "objet") budgetObjectIdx = c;
-      else if (cleanHeader === "type activité" || cleanHeader === "type activite") activityTypeIdx = c;
-      else if (cleanHeader === "code activité" || cleanHeader === "code activite") codeActiviteIdx = c;
-      else if (cleanHeader === "code évolution" || cleanHeader === "code evolution") codeEvolutionIdx = c;
-      else if (cleanHeader === "activité" || cleanHeader === "activite") activiteIdx = c;
-      else if (cleanHeader === "chef de projet") chefProjetIdx = c;
-      else if (cleanHeader === "statut") statutIdx = c;
+      else if (cleanHeader === 'objet') budgetObjectIdx = c;
+      else if (cleanHeader === 'type activité' || cleanHeader === 'type activite') activityTypeIdx = c;
+      else if (cleanHeader === 'code activité' || cleanHeader === 'code activite') codeActiviteIdx = c;
+      else if (cleanHeader === 'code évolution' || cleanHeader === 'code evolution') codeEvolutionIdx = c;
+      else if (cleanHeader === 'activité' || cleanHeader === 'activite') activiteIdx = c;
+      else if (cleanHeader === 'chef de projet') chefProjetIdx = c;
+      else if (cleanHeader === 'statut') statutIdx = c;
       else if (
-        cleanHeader === "références jira" ||
-        cleanHeader === "references jira" ||
-        cleanHeader === "ref jira" ||
-        cleanHeader.includes("jira")
+        cleanHeader === 'références jira' ||
+        cleanHeader === 'references jira' ||
+        cleanHeader === 'ref jira' ||
+        cleanHeader.includes('jira')
       )
         jiraIdx = c;
       else {
@@ -189,7 +189,7 @@ export class ExcelReader {
           // If we have a parent name in row 5, check if we should reuse or create new
           const lowerParent = parentVal.toLowerCase();
           // Skip total and variations columns
-          if (lowerParent.includes("total") || lowerParent.includes("variation")) {
+          if (lowerParent.includes('total') || lowerParent.includes('variation')) {
             currentService = null;
             continue;
           }
@@ -218,14 +218,14 @@ export class ExcelReader {
 
         // Map the sub-column metric
         if (currentService) {
-          if (cleanHeader.includes("initial")) currentService.metrics.initialIdx = c;
-          else if (cleanHeader.includes("révisé") || cleanHeader.includes("revise"))
+          if (cleanHeader.includes('initial')) currentService.metrics.initialIdx = c;
+          else if (cleanHeader.includes('révisé') || cleanHeader.includes('revise'))
             currentService.metrics.revisedIdx = c;
-          else if (cleanHeader.includes("prévisionnel") || cleanHeader.includes("previsionnel"))
+          else if (cleanHeader.includes('prévisionnel') || cleanHeader.includes('previsionnel'))
             currentService.metrics.previsionnelIdx = c;
-          else if (cleanHeader.includes("consommé") || cleanHeader.includes("consomme"))
+          else if (cleanHeader.includes('consommé') || cleanHeader.includes('consomme'))
             currentService.metrics.consommeIdx = c;
-          else if (cleanHeader.includes("restant")) currentService.metrics.restantIdx = c;
+          else if (cleanHeader.includes('restant')) currentService.metrics.restantIdx = c;
         }
       }
     }
@@ -277,7 +277,7 @@ export class ExcelReader {
       }
 
       // Final project code is either current explicit code, or forward-fill fallback
-      const projectCode = currentExplicitCode || lastProjectCode || "";
+      const projectCode = currentExplicitCode || lastProjectCode || '';
 
       // Parse Jira References
       const jiraRaw = jiraIdx !== -1 ? this.getCleanStringValue(row.getCell(jiraIdx)) : null;

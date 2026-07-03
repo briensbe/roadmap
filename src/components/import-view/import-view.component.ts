@@ -24,7 +24,7 @@ import {
   Eye,
   EyeOff,
   Upload,
-  FileUp
+  FileUp,
 } from 'lucide-angular';
 import { TriskellImportProcessor, ImportResult } from '../../services/import/TriskellImportProcessor';
 
@@ -33,7 +33,7 @@ import { TriskellImportProcessor, ImportResult } from '../../services/import/Tri
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink, LucideAngularModule],
   templateUrl: './import-view.component.html',
-  styleUrl: './import-view.component.css'
+  styleUrl: './import-view.component.css',
 })
 export class ImportViewComponent {
   private importService = inject(ImportService);
@@ -71,7 +71,7 @@ export class ImportViewComponent {
   @HostListener('window:scroll', [])
   onWindowScroll() {
     const scrollOffset = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-    
+
     // Si on a scrollé de plus de 40px et qu'on ne l'a pas encore fait
     if (scrollOffset > 40 && !this.hasScrolled()) {
       this.hasScrolled.set(true);
@@ -110,7 +110,7 @@ export class ImportViewComponent {
       setTimeout(() => this.selectedBatchId.set(batches[0].id), 0);
       return batches[0];
     }
-    return batches.find(b => b.id === id) || null;
+    return batches.find((b) => b.id === id) || null;
   });
 
   // Filters State
@@ -128,7 +128,7 @@ export class ImportViewComponent {
     });
 
     return {
-      services: Array.from(services).sort()
+      services: Array.from(services).sort(),
     };
   });
 
@@ -143,8 +143,8 @@ export class ImportViewComponent {
     // Use nice pastels for labels: 75% saturation, 95% lightness for background, 30% lightness for text
     return {
       'background-color': `hsl(${h}, 70%, 93%)`,
-      'color': `hsl(${h}, 75%, 25%)`,
-      'border': `1px solid hsl(${h}, 60%, 80%)`
+      color: `hsl(${h}, 75%, 25%)`,
+      border: `1px solid hsl(${h}, 60%, 80%)`,
     };
   }
 
@@ -159,10 +159,18 @@ export class ImportViewComponent {
 
     rows.forEach((r: ImportBudgetRow) => {
       switch (r.reconciliation_status) {
-        case 'matched': matched++; break;
-        case 'multi_matched': multiMatched++; break;
-        case 'ambiguous': ambiguous++; break;
-        case 'unmapped': unmapped++; break;
+        case 'matched':
+          matched++;
+          break;
+        case 'multi_matched':
+          multiMatched++;
+          break;
+        case 'ambiguous':
+          ambiguous++;
+          break;
+        case 'unmapped':
+          unmapped++;
+          break;
       }
     });
 
@@ -180,7 +188,8 @@ export class ImportViewComponent {
 
     // 1. Filter rows
     const filtered = rows.filter((r: ImportBudgetRow) => {
-      const matchesSearch = !search ||
+      const matchesSearch =
+        !search ||
         (r.project_code && r.project_code.toLowerCase().includes(search)) ||
         (r.project_name && r.project_name.toLowerCase().includes(search)) ||
         (r.project_manager && r.project_manager.toLowerCase().includes(search)) ||
@@ -219,11 +228,12 @@ export class ImportViewComponent {
     const search = this.reconcileSearchQuery().toLowerCase().trim();
     const projets = this.projetsQuery.data() || [];
 
-    return projets.filter(p =>
-      !search ||
-      p.nom_projet.toLowerCase().includes(search) ||
-      p.code_projet.toLowerCase().includes(search) ||
-      (p.reference_externe && p.reference_externe.toLowerCase().includes(search))
+    return projets.filter(
+      (p) =>
+        !search ||
+        p.nom_projet.toLowerCase().includes(search) ||
+        p.code_projet.toLowerCase().includes(search) ||
+        (p.reference_externe && p.reference_externe.toLowerCase().includes(search)),
     );
   });
 
@@ -240,11 +250,11 @@ export class ImportViewComponent {
     if (!row) return [];
 
     if (row.project_ids && row.project_ids.length > 0) {
-      return projets.filter(p => row.project_ids!.includes(p.id!));
+      return projets.filter((p) => row.project_ids!.includes(p.id!));
     }
 
     // fallback: find projects matching the code
-    return projets.filter(p => p.code_projet === row.project_code);
+    return projets.filter((p) => p.code_projet === row.project_code);
   });
 
   openReconcileModal(rowId: number) {
@@ -259,23 +269,26 @@ export class ImportViewComponent {
   getProjectName(projectId: string | null): string {
     if (!projectId) return '—';
     const projets = this.projetsQuery.data() || [];
-    const p = projets.find(x => x.id === projectId);
+    const p = projets.find((x) => x.id === projectId);
     return p ? p.nom_projet : 'Projet inconnu';
   }
 
   getProjectUUIDCode(projectId: string | null): string {
     if (!projectId) return '';
     const projets = this.projetsQuery.data() || [];
-    const p = projets.find(x => x.id === projectId);
+    const p = projets.find((x) => x.id === projectId);
     return p ? p.code_projet : '';
   }
 
   async setReconciliation(rowId: number, projectId: string | null) {
-    this.reconcileMutation.mutate({ rowId, projectId }, {
-      onSuccess: () => {
-        this.closeReconcileModal();
-      }
-    });
+    this.reconcileMutation.mutate(
+      { rowId, projectId },
+      {
+        onSuccess: () => {
+          this.closeReconcileModal();
+        },
+      },
+    );
   }
 
   toNumber(val: any): number | null {
@@ -292,7 +305,7 @@ export class ImportViewComponent {
       month: '2-digit',
       year: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   }
 
@@ -329,7 +342,7 @@ export class ImportViewComponent {
 
   private async processExcelFile(file: File) {
     if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
-      this.excelError.set("Type de fichier invalide. Veuillez déposer un fichier Excel (.xlsx).");
+      this.excelError.set('Type de fichier invalide. Veuillez déposer un fichier Excel (.xlsx).');
       return;
     }
 
@@ -339,7 +352,7 @@ export class ImportViewComponent {
 
     try {
       const reader = new FileReader();
-      
+
       // Promisify FileReader load event
       const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
         reader.onload = (e) => resolve(e.target?.result as ArrayBuffer);
@@ -356,17 +369,16 @@ export class ImportViewComponent {
       // Invalidate query caches to trigger UI reload
       const queryClient = this.importService['queryClient'];
       await queryClient.invalidateQueries({ queryKey: ['import-batches'] });
-      
+
       // Auto select the newly created batch
       this.selectedBatchId.set(result.batchId);
       await queryClient.invalidateQueries({ queryKey: ['import-budget-rows', result.batchId] });
-      
+
       // Auto collapse drag & drop area on success
       this.showUploadArea.set(false);
-
     } catch (err: any) {
-      console.error("Error processing Excel import:", err);
-      this.excelError.set(err.message || "Une erreur est survenue lors de la lecture du fichier Excel.");
+      console.error('Error processing Excel import:', err);
+      this.excelError.set(err.message || 'Une erreur est survenue lors de la lecture du fichier Excel.');
     } finally {
       this.isProcessing.set(false);
     }

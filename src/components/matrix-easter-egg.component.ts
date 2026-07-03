@@ -2,33 +2,11 @@ import { Component, ElementRef, EventEmitter, HostListener, OnDestroy, OnInit, O
 import { CommonModule } from '@angular/common';
 
 const MESSAGES: string[][] = [
-  [
-    "Congratulations!",
-    "You found the",
-    "only \"Easter Egg\"",
-    "of da Tutti Viewer! ;)!"
-  ],
-  [
-    "So what do you win?",
-    "My credit card code?...",
-    "...no!"
-  ],
-  [
-    "Just a little",
-    "word from \"Fuj\"",
-    "(so,... who am I?  :o)"
-  ],
-  [
-    "\"Big-Up\" to the",
-    "whole Netfinca team",
-    "I worked with",
-    "from 2001 to 2003!"
-  ],
-  [
-    "\"Tout de bon\"",
-    "to all of you and",
-    "to the Netfinca project"
-  ]
+  ['Congratulations!', 'You found the', 'only "Easter Egg"', 'of da Tutti Viewer! ;)!'],
+  ['So what do you win?', 'My credit card code?...', '...no!'],
+  ['Just a little', 'word from "Fuj"', '(so,... who am I?  :o)'],
+  ['"Big-Up" to the', 'whole Netfinca team', 'I worked with', 'from 2001 to 2003!'],
+  ['"Tout de bon"', 'to all of you and', 'to the Netfinca project'],
 ];
 
 class ColumnEffect {
@@ -47,7 +25,7 @@ class ColumnEffect {
     private width: number,
     private height: number,
     private speed: number,
-    private beginFadeOut: number
+    private beginFadeOut: number,
   ) {
     this.originalColor = { ...color };
     this.currentColor = { ...color };
@@ -83,7 +61,7 @@ class ColumnEffect {
         } else {
           ctx.font = `${this.fontSize}px monospace`;
         }
-        
+
         const randomChar = String.fromCharCode(Math.floor(Math.random() * (130 - 65) + 65));
         const posY = this.y - (i * this.height + 1) + offset;
         ctx.fillText(randomChar, this.x, posY);
@@ -101,7 +79,7 @@ class ColumnEffect {
       const lineToBeginIn = Math.ceil((Math.ceil(ctx.canvas.height / this.height) - this.goals.length) / 2) + 1;
       ctx.font = `${this.fontSize}px monospace`;
       ctx.fillStyle = `rgb(${this.originalColor.r}, ${this.originalColor.g}, ${this.originalColor.b})`;
-      
+
       let newY = lineToBeginIn * this.height + 1;
       for (const char of this.goals) {
         if (char && char !== ' ') {
@@ -131,65 +109,73 @@ class ColumnEffect {
       </div>
     </div>
   `,
-  styles: [`
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.9);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 10000;
-      backdrop-filter: blur(10px);
-    }
-    .modal-card {
-      background: black;
-      border: 2px solid #00ff46;
-      border-radius: 8px;
-      width: 80%;
-      max-width: 800px;
-      height: 60vh;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 0 0 40px rgba(0, 255, 70, 0.6);
-      overflow: hidden;
-      position: relative;
-      animation: zoomIn 0.3s ease-out;
-    }
-    .close-icon-floating {
-      position: absolute;
-      top: 10px;
-      right: 15px;
-      background: none;
-      border: none;
-      color: #00ff46;
-      font-size: 32px;
-      cursor: pointer;
-      line-height: 1;
-      z-index: 10;
-      transition: all 0.2s;
-      text-shadow: 0 0 10px rgba(0, 255, 70, 0.8);
-    }
-    .close-icon-floating:hover {
-      color: white;
-      transform: scale(1.1);
-    }
-    .canvas-container {
-      flex: 1;
-      position: relative;
-      overflow: hidden;
-    }
-    canvas {
-      display: block;
-    }
-    @keyframes zoomIn {
-      from { transform: scale(0.95); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
-    }
-  `]
+  styles: [
+    `
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.9);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        backdrop-filter: blur(10px);
+      }
+      .modal-card {
+        background: black;
+        border: 2px solid #00ff46;
+        border-radius: 8px;
+        width: 80%;
+        max-width: 800px;
+        height: 60vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 0 40px rgba(0, 255, 70, 0.6);
+        overflow: hidden;
+        position: relative;
+        animation: zoomIn 0.3s ease-out;
+      }
+      .close-icon-floating {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        background: none;
+        border: none;
+        color: #00ff46;
+        font-size: 32px;
+        cursor: pointer;
+        line-height: 1;
+        z-index: 10;
+        transition: all 0.2s;
+        text-shadow: 0 0 10px rgba(0, 255, 70, 0.8);
+      }
+      .close-icon-floating:hover {
+        color: white;
+        transform: scale(1.1);
+      }
+      .canvas-container {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+      }
+      canvas {
+        display: block;
+      }
+      @keyframes zoomIn {
+        from {
+          transform: scale(0.95);
+          opacity: 0;
+        }
+        to {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+    `,
+  ],
 })
 export class MatrixEasterEggComponent implements OnInit, OnDestroy {
   @ViewChild('canvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
@@ -205,9 +191,9 @@ export class MatrixEasterEggComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     setTimeout(() => {
-        this.initCanvas();
-        this.createColumns();
-        this.animate();
+      this.initCanvas();
+      this.createColumns();
+      this.animate();
     }, 100);
   }
 
@@ -226,7 +212,7 @@ export class MatrixEasterEggComponent implements OnInit, OnDestroy {
     const canvas = this.canvasRef.nativeElement;
     const container = this.containerRef.nativeElement;
     this.ctx = canvas.getContext('2d', { alpha: false })!;
-    
+
     canvas.width = container.clientWidth;
     canvas.height = container.clientHeight;
   }
@@ -236,13 +222,13 @@ export class MatrixEasterEggComponent implements OnInit, OnDestroy {
     const colWidth = 20;
     const canvasWidth = this.canvasRef.nativeElement.width;
     const numCols = Math.floor(canvasWidth / colWidth);
-    
-    const maxLineLen = Math.max(...currentMsg.map(l => l.length));
+
+    const maxLineLen = Math.max(...currentMsg.map((l) => l.length));
     const paddingLeftCols = Math.floor((numCols - maxLineLen) / 2);
-    
+
     const relativeCol = colIndex - paddingLeftCols;
-    
-    return currentMsg.map(line => {
+
+    return currentMsg.map((line) => {
       if (relativeCol >= 0 && relativeCol < line.length) {
         return line[relativeCol];
       }
@@ -257,23 +243,25 @@ export class MatrixEasterEggComponent implements OnInit, OnDestroy {
     const numCols = Math.ceil(canvas.width / colWidth);
 
     for (let i = 0; i < numCols; i++) {
-        const speed = 2 + Math.random() * 4;
-        const fadeStart = canvas.height * 0.3 + Math.random() * (canvas.height * 0.4);
-        const numLetters = 10 + Math.floor(Math.random() * 10);
-        const goals = this.getGoalsForCurrentMessage(i);
+      const speed = 2 + Math.random() * 4;
+      const fadeStart = canvas.height * 0.3 + Math.random() * (canvas.height * 0.4);
+      const numLetters = 10 + Math.floor(Math.random() * 10);
+      const goals = this.getGoalsForCurrentMessage(i);
 
-        this.columns.push(new ColumnEffect(
-            goals,
-            i * colWidth,
-            0,
-            numLetters,
-            { r: 0, g: 255, b: 70 },
-            fontSize,
-            colWidth,
-            fontSize + 4,
-            speed,
-            fadeStart
-        ));
+      this.columns.push(
+        new ColumnEffect(
+          goals,
+          i * colWidth,
+          0,
+          numLetters,
+          { r: 0, g: 255, b: 70 },
+          fontSize,
+          colWidth,
+          fontSize + 4,
+          speed,
+          fadeStart,
+        ),
+      );
     }
   }
 
@@ -295,7 +283,7 @@ export class MatrixEasterEggComponent implements OnInit, OnDestroy {
     // Now draw the revealed text with optional zoom
     if (allFinished && !this.isWaitingForNext) {
       this.isWaitingForNext = true;
-      setTimeout(() => this.nextMessage(), 3000); 
+      setTimeout(() => this.nextMessage(), 3000);
     }
 
     if (this.zoomFactor > 1.0) {
@@ -305,7 +293,7 @@ export class MatrixEasterEggComponent implements OnInit, OnDestroy {
       this.ctx.translate(centerX, centerY);
       this.ctx.scale(this.zoomFactor, this.zoomFactor);
       this.ctx.translate(-centerX, -centerY);
-      
+
       for (const column of this.columns) {
         column.drawReveal(this.ctx);
       }
@@ -322,8 +310,8 @@ export class MatrixEasterEggComponent implements OnInit, OnDestroy {
   private nextMessage() {
     this.currentMessageIndex++;
     if (this.currentMessageIndex >= MESSAGES.length) {
-        setTimeout(() => this.close.emit(), 3000);
-        return;
+      setTimeout(() => this.close.emit(), 3000);
+      return;
     }
 
     const canvas = this.canvasRef.nativeElement;
@@ -331,9 +319,9 @@ export class MatrixEasterEggComponent implements OnInit, OnDestroy {
     this.isWaitingForNext = false;
 
     for (let i = 0; i < this.columns.length; i++) {
-        const goals = this.getGoalsForCurrentMessage(i);
-        const fadeStart = canvas.height * 0.3 + Math.random() * (canvas.height * 0.4);
-        this.columns[i].reset(goals, fadeStart);
+      const goals = this.getGoalsForCurrentMessage(i);
+      const fadeStart = canvas.height * 0.3 + Math.random() * (canvas.height * 0.4);
+      this.columns[i].reset(goals, fadeStart);
     }
   }
 }

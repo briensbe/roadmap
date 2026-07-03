@@ -1,16 +1,16 @@
-import { Component, EventEmitter, Input, Output, NgModule } from "@angular/core";
-import { CommonModule } from "@angular/common";
-import { LucideAngularModule, PenLine, Plus, Package, Rocket, Layers, Flag, Wrench } from "lucide-angular";
-import { Jalon } from "../../models/types";
+import { Component, EventEmitter, Input, Output, NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { LucideAngularModule, PenLine, Plus, Package, Rocket, Layers, Flag, Wrench } from 'lucide-angular';
+import { Jalon } from '../../models/types';
 
 @NgModule({
   imports: [LucideAngularModule.pick({ PenLine, Plus, Package, Rocket, Layers, Flag, Wrench })],
-  exports: [LucideAngularModule]
+  exports: [LucideAngularModule],
 })
-export class LucideIconsModule { }
+export class LucideIconsModule {}
 
 @Component({
-  selector: "app-day-events-modal",
+  selector: 'app-day-events-modal',
   standalone: true,
   imports: [CommonModule, LucideIconsModule],
   template: `
@@ -32,8 +32,7 @@ export class LucideIconsModule { }
                     [class.badge-maintenance]="jalon.event_type === 'maintenance'"
                     [class.badge-mep]="jalon.event_type === 'mep'"
                     [class.badge-sprint]="jalon.event_type === 'sprint'"
-                    [class.badge-autre]="jalon.event_type === 'autre' || !jalon.event_type"
-                  >
+                    [class.badge-autre]="jalon.event_type === 'autre' || !jalon.event_type">
                     <lucide-icon [name]="getIconName(jalon.event_type)" size="18"></lucide-icon>
                   </div>
                   <div class="info">
@@ -299,7 +298,7 @@ export class DayEventsModalComponent {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
-      year: 'numeric'
+      year: 'numeric',
     });
   }
 

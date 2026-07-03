@@ -1,18 +1,18 @@
-import { Component, inject, OnInit } from "@angular/core";
-import { SupabaseService } from "../../services/supabase.service";
+import { Component, inject, OnInit } from '@angular/core';
+import { SupabaseService } from '../../services/supabase.service';
 // import { ThemeService, type Theme } from "../services/theme.service";
-import { LucideAngularModule } from "lucide-angular";
-import { CommonModule } from "@angular/common";
-import { Router } from "@angular/router";
-import { User } from "../types/user.type";
+import { LucideAngularModule } from 'lucide-angular';
+import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import { User } from '../types/user.type';
 // import { ProfileTutorialService } from "../../services/profiletutorial.service";
 
 @Component({
-  selector: "app-profile",
+  selector: 'app-profile',
   standalone: true,
   imports: [LucideAngularModule, CommonModule],
-  templateUrl: "./profile.component.html",
-  styleUrl: "./profile.component.css",
+  templateUrl: './profile.component.html',
+  styleUrl: './profile.component.css',
 })
 export class ProfileComponent implements OnInit {
   private readonly supabaseService = inject(SupabaseService);
@@ -20,7 +20,7 @@ export class ProfileComponent implements OnInit {
   loading = false;
   showInfo = false;
   private readonly router = inject(Router);
-//désactivation de la partie darkmode
+  //désactivation de la partie darkmode
   /*
   public readonly themeService = inject(ThemeService);
 
@@ -31,11 +31,10 @@ export class ProfileComponent implements OnInit {
     { value: 'system', label: 'Navigateur', icon: 'monitor' },
   ];
 */
-  ngOnInit() {
-  }
-    
+  ngOnInit() {}
+
   //Désactivation de la partie tuto
-/*
+  /*
   constructor(private tuto: ProfileTutorialService) {}
 
   ngOnInit() {
@@ -64,7 +63,7 @@ export class ProfileComponent implements OnInit {
       // Le signal se met à jour automatiquement via getUser() ou le listener
 
       if (!data?.user) {
-        this.router.navigate(["/login"]);
+        this.router.navigate(['/login']);
       }
     } finally {
       this.loading = false;
@@ -72,12 +71,12 @@ export class ProfileComponent implements OnInit {
   }
   async signOut() {
     await this.supabaseService.signOut();
-    this.router.navigate(["/login"]);
+    this.router.navigate(['/login']);
   }
 
   async updatePassword() {
     // await this.supabaseService.signOut();
-    this.router.navigate(["/update-password"]);
+    this.router.navigate(['/update-password']);
   }
 
   // désactivation de la partie Darkmode

@@ -52,7 +52,7 @@ export class TriskellImportProcessor {
         .insert({
           excel_export_date: excelExportDate!.toISOString(),
           filename: filename,
-          status: 'pending'
+          status: 'pending',
         })
         .select('id')
         .single();
@@ -67,19 +67,17 @@ export class TriskellImportProcessor {
       const stagingRows = this.transformer.transform(parsedData.rows);
 
       // Attach batch_id to all staging rows
-      const stagingRowsWithBatch = stagingRows.map(row => ({
+      const stagingRowsWithBatch = stagingRows.map((row) => ({
         ...row,
         batch_id: batchId,
-        reconciliation_status: 'pending'
+        reconciliation_status: 'pending',
       }));
 
       // 4. Bulk insert staging rows into roadmap_import_budget (chunked for safety)
       const chunkSize = 200;
       for (let i = 0; i < stagingRowsWithBatch.length; i += chunkSize) {
         const chunk = stagingRowsWithBatch.slice(i, i + chunkSize);
-        const { error: insertError } = await this.supabase
-          .from('roadmap_import_budget')
-          .insert(chunk);
+        const { error: insertError } = await this.supabase.from('roadmap_import_budget').insert(chunk);
 
         if (insertError) {
           throw new Error(`Failed to insert staging rows chunk (index ${i}): ${insertError.message}`);
@@ -109,16 +107,12 @@ export class TriskellImportProcessor {
         filename,
         totalRawRows: parsedData.rows.length,
         totalStagingRowsInserted: stagingRowsWithBatch.length,
-        reconciliation: reconciliationResult
+        reconciliation: reconciliationResult,
       };
-
     } catch (error) {
       // If we created a batch, mark it as failed
       if (batchId) {
-        await this.supabase
-          .from('roadmap_import_batches')
-          .update({ status: 'failed' })
-          .eq('id', batchId);
+        await this.supabase.from('roadmap_import_batches').update({ status: 'failed' }).eq('id', batchId);
       }
       throw error;
     }

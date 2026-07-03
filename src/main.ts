@@ -1,22 +1,22 @@
-import { Component, HostListener, OnInit, inject, effect } from "@angular/core";
-import { bootstrapApplication } from "@angular/platform-browser";
-import { provideAnimations } from "@angular/platform-browser/animations";
-import { provideRouter, RouterOutlet, Router } from "@angular/router";
-import { CommonModule } from "@angular/common";
-import { SidebarNavigationComponent } from "./components/sidebar-navigation.component";
-import { SidebarService } from "./services/sidebar.service";
-import { routes } from "../src/app.routes";
-import { provideAngularQuery, QueryClient } from "@tanstack/angular-query-experimental";
-import { provideHttpClient } from "@angular/common/http";
-import { ReleaseNotesComponent } from "./components/release-notes.component";
+import { Component, HostListener, OnInit, inject, effect } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { provideAnimations } from '@angular/platform-browser/animations';
+import { provideRouter, RouterOutlet, Router } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { SidebarNavigationComponent } from './components/sidebar-navigation.component';
+import { SidebarService } from './services/sidebar.service';
+import { routes } from '../src/app.routes';
+import { provideAngularQuery, QueryClient } from '@tanstack/angular-query-experimental';
+import { provideHttpClient } from '@angular/common/http';
+import { ReleaseNotesComponent } from './components/release-notes.component';
 
-import { MatrixEasterEggComponent } from "./components/matrix-easter-egg.component";
+import { MatrixEasterEggComponent } from './components/matrix-easter-egg.component';
 
-import { EasterEggService } from "./services/easter-egg.service";
-import { SupabaseService } from "./services/supabase.service";
+import { EasterEggService } from './services/easter-egg.service';
+import { SupabaseService } from './services/supabase.service';
 
 @Component({
-  selector: "app-root",
+  selector: 'app-root',
   standalone: true,
   imports: [CommonModule, RouterOutlet, SidebarNavigationComponent, ReleaseNotesComponent, MatrixEasterEggComponent],
   template: `
@@ -67,15 +67,15 @@ export class App implements OnInit {
       if (!user) {
         // Clear all query data in memory to prevent stale information showing up
         this.queryClient.clear();
-        
+
         const currentUrl = this.router.url;
-        const publicRoutes = ["/login", "/signup", "/forgot-password"];
-        const isPublic = publicRoutes.some(route => currentUrl.includes(route));
+        const publicRoutes = ['/login', '/signup', '/forgot-password'];
+        const isPublic = publicRoutes.some((route) => currentUrl.includes(route));
 
         // Redirect to login only if on a protected route
-        if (!isPublic && currentUrl !== "/") {
-          const queryParams = this.supabaseService.isLocalLogout ? {} : { reason: "session_expired" };
-          this.router.navigate(["/login"], { queryParams });
+        if (!isPublic && currentUrl !== '/') {
+          const queryParams = this.supabaseService.isLocalLogout ? {} : { reason: 'session_expired' };
+          this.router.navigate(['/login'], { queryParams });
         }
       }
     });
@@ -97,15 +97,17 @@ bootstrapApplication(App, {
     provideAnimations(),
     provideHttpClient(),
     provideRouter(routes),
-    provideAngularQuery(new QueryClient({
-      defaultOptions: {
-        queries: {
-          staleTime: 1000 * 60 * 5, // 5 minutes
-          gcTime: 1000 * 60 * 10, // 10 minutes (formerly cacheTime)
-          retry: 1,
-          refetchOnWindowFocus: false,
+    provideAngularQuery(
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 1000 * 60 * 5, // 5 minutes
+            gcTime: 1000 * 60 * 10, // 10 minutes (formerly cacheTime)
+            retry: 1,
+            refetchOnWindowFocus: false,
+          },
         },
-      },
-    })),
+      }),
+    ),
   ],
 });

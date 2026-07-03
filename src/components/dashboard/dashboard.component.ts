@@ -1,7 +1,19 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
-import { LucideAngularModule, Calendar, FolderKanban, Users, Building2, Flag, Rocket, Clock, Plus, ChevronRight, ChevronDown } from 'lucide-angular';
+import {
+  LucideAngularModule,
+  Calendar,
+  FolderKanban,
+  Users,
+  Building2,
+  Flag,
+  Rocket,
+  Clock,
+  Plus,
+  ChevronRight,
+  ChevronDown,
+} from 'lucide-angular';
 import { ProjetService } from '../../services/projet.service';
 import { RolesService } from '../../services/roles.service';
 import { PersonnesService } from '../../services/personnes.service';
@@ -45,7 +57,7 @@ interface TeamSprintContent {
   standalone: true,
   imports: [CommonModule, RouterLink, LucideAngularModule],
   templateUrl: './dashboard.component.html',
-  styleUrls: ['./dashboard.component.css']
+  styleUrls: ['./dashboard.component.css'],
 })
 export class DashboardComponent implements OnInit {
   // Lucide icons
@@ -81,8 +93,8 @@ export class DashboardComponent implements OnInit {
   sprintContentByTeam: TeamSprintContent[] = [];
 
   // Recent projects activity
-  addedProjects: Array<{ projet: Projet, dateSaisie: string }> = [];
-  modifiedProjects: Array<{ projet: Projet, dateModification: string }> = [];
+  addedProjects: Array<{ projet: Projet; dateSaisie: string }> = [];
+  modifiedProjects: Array<{ projet: Projet; dateModification: string }> = [];
 
   hoveredStatus: string | null = null;
   hoveredResource: string | null = null;
@@ -95,8 +107,8 @@ export class DashboardComponent implements OnInit {
     private teamService: TeamService,
     private jalonService: JalonService,
     private chargeService: ChargeService,
-    private router: Router
-  ) { }
+    private router: Router,
+  ) {}
 
   async ngOnInit() {
     await Promise.all([
@@ -104,7 +116,7 @@ export class DashboardComponent implements OnInit {
       this.loadJalons(),
       this.loadResources(),
       this.loadOrganization(),
-      this.loadCharges()
+      this.loadCharges(),
     ]);
     this.processData();
   }
@@ -158,7 +170,7 @@ export class DashboardComponent implements OnInit {
   processData() {
     // Process project status counts (kept for legacy/summary cards if needed)
     const statusMap = new Map<string, number>();
-    this.projets.forEach(projet => {
+    this.projets.forEach((projet) => {
       const count = statusMap.get(projet.statut) || 0;
       statusMap.set(projet.statut, count + 1);
     });
@@ -170,25 +182,25 @@ export class DashboardComponent implements OnInit {
     today.setHours(0, 0, 0, 0);
 
     // 1. Sort jalons chronologically
-    const sortedJalons = [...this.jalons].sort((a, b) => 
-      new Date(a.event_date).getTime() - new Date(b.event_date).getTime()
+    const sortedJalons = [...this.jalons].sort(
+      (a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime(),
     );
 
     // 2. Extract next milestones
     this.upcomingLivraisons = sortedJalons
-      .filter(j => (j.event_type === 'livraison' || j.event_type === 'LV') && new Date(j.event_date) >= today)
+      .filter((j) => (j.event_type === 'livraison' || j.event_type === 'LV') && new Date(j.event_date) >= today)
       .slice(0, 3);
 
     this.upcomingMeps = sortedJalons
-      .filter(j => (j.event_type === 'mep' || j.event_type === 'MEP') && new Date(j.event_date) >= today)
+      .filter((j) => (j.event_type === 'mep' || j.event_type === 'MEP') && new Date(j.event_date) >= today)
       .slice(0, 2);
 
     this.upcomingSprints = sortedJalons
-      .filter(j => (j.event_type === 'sprint' || j.event_type === 'SP') && new Date(j.event_date) >= today)
+      .filter((j) => (j.event_type === 'sprint' || j.event_type === 'SP') && new Date(j.event_date) >= today)
       .slice(0, 3);
 
     // 3. Sprint Content Grouped by Team
-    const allSprints = sortedJalons.filter(j => j.event_type === 'sprint' || j.event_type === 'SP');
+    const allSprints = sortedJalons.filter((j) => j.event_type === 'sprint' || j.event_type === 'SP');
     this.sprintContentByTeam = [];
 
     for (const equipe of this.equipes) {
@@ -196,7 +208,7 @@ export class DashboardComponent implements OnInit {
 
       for (const sprint of this.upcomingSprints) {
         // Find sprint boundaries to know starting and ending dates
-        const idx = allSprints.findIndex(s => s.id === sprint.id);
+        const idx = allSprints.findIndex((s) => s.id === sprint.id);
         let sStart: Date;
         if (idx > 0) {
           const prevDate = new Date(allSprints[idx - 1].event_date);
@@ -213,17 +225,21 @@ export class DashboardComponent implements OnInit {
         sEnd.setHours(23, 59, 59, 999);
 
         // Find charges for this team overlapping the sprint
-        const teamSprintCharges = this.charges.filter(c => 
-          c.equipe_id === equipe.id && 
-          c.semaine_debut && 
-          this.getOverlapWorkingDays(c.semaine_debut, sStart, sEnd) > 0
+        const teamSprintCharges = this.charges.filter(
+          (c) =>
+            c.equipe_id === equipe.id &&
+            c.semaine_debut &&
+            this.getOverlapWorkingDays(c.semaine_debut, sStart, sEnd) > 0,
         );
 
         // Group charges by project
-        const projectMap = new Map<string, { projet: Projet, joursEngages: number, ressourcesMap: Map<string, number> }>();
-        
+        const projectMap = new Map<
+          string,
+          { projet: Projet; joursEngages: number; ressourcesMap: Map<string, number> }
+        >();
+
         for (const charge of teamSprintCharges) {
-          const proj = this.projets.find(p => p.id === charge.projet_id);
+          const proj = this.projets.find((p) => p.id === charge.projet_id);
           if (!proj) continue;
 
           const joursParSem = this.getJoursParSemaine(charge);
@@ -235,10 +251,10 @@ export class DashboardComponent implements OnInit {
 
           let resName = 'Ressource';
           if (charge.personne_id) {
-            const p = this.personnes.find(pers => pers.id === charge.personne_id);
+            const p = this.personnes.find((pers) => pers.id === charge.personne_id);
             resName = p ? `${p.prenom} ${p.nom}` : 'Personne';
           } else if (charge.role_id) {
-            const r = this.roles.find(role => role.id === charge.role_id);
+            const r = this.roles.find((role) => role.id === charge.role_id);
             resName = r ? r.nom : 'Rôle';
           }
 
@@ -247,13 +263,13 @@ export class DashboardComponent implements OnInit {
             projectMap.set(projId, {
               projet: proj,
               joursEngages: 0,
-              ressourcesMap: new Map<string, number>()
+              ressourcesMap: new Map<string, number>(),
             });
           }
 
           const entry = projectMap.get(projId)!;
           entry.joursEngages += daysEngaged;
-          
+
           const currentResDays = entry.ressourcesMap.get(resName) || 0;
           entry.ressourcesMap.set(resName, currentResDays + daysEngaged);
         }
@@ -272,11 +288,9 @@ export class DashboardComponent implements OnInit {
           const month = (currentWeekMonday.getMonth() + 1).toString().padStart(2, '0');
           const day = currentWeekMonday.getDate().toString().padStart(2, '0');
           const currentWeekMondayStr = `${year}-${month}-${day}`;
-          
-          const projCharges = this.charges.filter(c => 
-            c.projet_id === entry.projet.id && 
-            c.semaine_debut && 
-            c.semaine_debut >= currentWeekMondayStr
+
+          const projCharges = this.charges.filter(
+            (c) => c.projet_id === entry.projet.id && c.semaine_debut && c.semaine_debut >= currentWeekMondayStr,
           );
           const raf = projCharges.reduce((sum, c) => sum + (c.unite_ressource || 0) * this.getJoursParSemaine(c), 0);
 
@@ -284,7 +298,7 @@ export class DashboardComponent implements OnInit {
             projet: entry.projet,
             raf: Math.round(raf * 10) / 10,
             joursEngages: Math.round(entry.joursEngages * 10) / 10,
-            ressources: resourcesList
+            ressources: resourcesList,
           });
         }
 
@@ -292,7 +306,7 @@ export class DashboardComponent implements OnInit {
           sprintInfos.push({
             sprint: sprint,
             dateFin: sprint.event_date,
-            projets: projetsInfo
+            projets: projetsInfo,
           });
         }
       }
@@ -301,7 +315,7 @@ export class DashboardComponent implements OnInit {
         this.sprintContentByTeam.push({
           equipe,
           sprints: sprintInfos,
-          expanded: true
+          expanded: true,
         });
       }
     }
@@ -321,7 +335,7 @@ export class DashboardComponent implements OnInit {
         if (createdDate >= thirtyDaysAgo) {
           this.addedProjects.push({
             projet: p,
-            dateSaisie: p.created_at
+            dateSaisie: p.created_at,
           });
           isAdded = true;
         }
@@ -331,7 +345,7 @@ export class DashboardComponent implements OnInit {
         if (updatedDate >= thirtyDaysAgo) {
           this.modifiedProjects.push({
             projet: p,
-            dateModification: p.updated_at
+            dateModification: p.updated_at,
           });
         }
       }
@@ -339,13 +353,16 @@ export class DashboardComponent implements OnInit {
 
     // Sort by date descending
     this.addedProjects.sort((a, b) => new Date(b.dateSaisie).getTime() - new Date(a.dateSaisie).getTime());
-    this.modifiedProjects.sort((a, b) => new Date(b.dateModification).getTime() - new Date(a.dateModification).getTime());
+    this.modifiedProjects.sort(
+      (a, b) => new Date(b.dateModification).getTime() - new Date(a.dateModification).getTime(),
+    );
   }
 
   getOverlapWorkingDays(weekStartStr: string, sStart: Date, sEnd: Date): number {
     const wStart = new Date(weekStartStr);
     let overlapCount = 0;
-    for (let i = 0; i < 5; i++) { // Mon to Fri
+    for (let i = 0; i < 5; i++) {
+      // Mon to Fri
       const day = new Date(wStart);
       day.setDate(day.getDate() + i);
       day.setHours(0, 0, 0, 0);
@@ -358,11 +375,11 @@ export class DashboardComponent implements OnInit {
 
   getJoursParSemaine(charge: Charge): number {
     if (charge.role_id) {
-      const role = this.roles.find(r => r.id === charge.role_id);
+      const role = this.roles.find((r) => r.id === charge.role_id);
       return role?.jours_par_semaine ?? 5;
     }
     if (charge.personne_id) {
-      const pers = this.personnes.find(p => p.id === charge.personne_id);
+      const pers = this.personnes.find((p) => p.id === charge.personne_id);
       return pers?.jours_par_semaine ?? 5;
     }
     return 5;
@@ -379,7 +396,7 @@ export class DashboardComponent implements OnInit {
 
   getProjectName(projetId?: string | null): string | null {
     if (!projetId) return null;
-    const projet = this.projets.find(p => p.id === projetId);
+    const projet = this.projets.find((p) => p.id === projetId);
     return projet?.nom_projet || null;
   }
 
@@ -412,4 +429,3 @@ export class DashboardComponent implements OnInit {
     teamContent.expanded = !teamContent.expanded;
   }
 }
-

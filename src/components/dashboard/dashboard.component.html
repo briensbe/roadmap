@@ -166,7 +166,7 @@
                               {{ projInfo.projet.statut }}
                             </span>
                           </div>
-                          
+
                           <!-- Resource breakdown list -->
                           @if (projInfo.ressources.length > 0) {
                             <div class="resource-breakdown">
@@ -226,7 +226,9 @@
           @for (item of addedProjects; track item.projet.id) {
             <div class="activity-item" [style.border-left-color]="item.projet.color || '#3b82f6'">
               <div class="activity-project-header">
-                <span class="project-code" [style.color]="item.projet.color || '#3b82f6'">{{ item.projet.code_projet }}</span>
+                <span class="project-code" [style.color]="item.projet.color || '#3b82f6'">{{
+                  item.projet.code_projet
+                }}</span>
                 <span class="status-badge small" [attr.data-status]="item.projet.statut">{{ item.projet.statut }}</span>
               </div>
               <div class="activity-project-name">{{ item.projet.nom_projet }}</div>
@@ -256,7 +258,9 @@
           @for (item of modifiedProjects; track item.projet.id) {
             <div class="activity-item" [style.border-left-color]="item.projet.color || '#3b82f6'">
               <div class="activity-project-header">
-                <span class="project-code" [style.color]="item.projet.color || '#3b82f6'">{{ item.projet.code_projet }}</span>
+                <span class="project-code" [style.color]="item.projet.color || '#3b82f6'">{{
+                  item.projet.code_projet
+                }}</span>
                 <span class="status-badge small" [attr.data-status]="item.projet.statut">{{ item.projet.statut }}</span>
               </div>
               <div class="activity-project-name">{{ item.projet.nom_projet }}</div>

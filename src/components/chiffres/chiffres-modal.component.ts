@@ -1,18 +1,18 @@
-import { Component, EventEmitter, Input, Output, OnInit, OnChanges, SimpleChanges } from "@angular/core";
-import { CommonModule } from "@angular/common";
-import { FormsModule } from "@angular/forms";
-import { Chiffre, ChiffresFormData } from "../../models/chiffres.type";
-import { ChiffresService } from "../../services/chiffres.service";
-import { Service } from "../../models/types";
-import { ResourceService } from "../../services/resource.service";
-import { LucideAngularModule, LucideCalculator, LucideHelpCircle } from "lucide-angular";
+import { Component, EventEmitter, Input, Output, OnInit, OnChanges, SimpleChanges } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Chiffre, ChiffresFormData } from '../../models/chiffres.type';
+import { ChiffresService } from '../../services/chiffres.service';
+import { Service } from '../../models/types';
+import { ResourceService } from '../../services/resource.service';
+import { LucideAngularModule, LucideCalculator, LucideHelpCircle } from 'lucide-angular';
 
 @Component({
-  selector: "app-chiffres-modal",
+  selector: 'app-chiffres-modal',
   standalone: true,
   imports: [CommonModule, FormsModule, LucideAngularModule],
-  templateUrl: "./chiffres-modal.component.html",
-  styleUrl: "./chiffres-modal.component.css",
+  templateUrl: './chiffres-modal.component.html',
+  styleUrl: './chiffres-modal.component.css',
 })
 export class ChiffresModalComponent implements OnInit, OnChanges {
   @Input() visible: boolean = false;
@@ -25,20 +25,23 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
 
   services: Service[] = [];
   chiffres: Map<number, ChiffresFormData> = new Map();
-  rafDate: string = new Date().toISOString().split("T")[0];
+  rafDate: string = new Date().toISOString().split('T')[0];
   isLoading: boolean = false;
   showHelp: boolean = false;
-  error: string = "";
+  error: string = '';
 
-  constructor(private chiffresService: ChiffresService, private resourceService: ResourceService) { }
+  constructor(
+    private chiffresService: ChiffresService,
+    private resourceService: ResourceService,
+  ) {}
 
   ngOnInit() {
     this.loadServices();
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes["visible"] && changes["visible"].currentValue && this.idProjet) {
-      console.log("Loading chiffres for project:", this.idProjet);
+    if (changes['visible'] && changes['visible'].currentValue && this.idProjet) {
+      console.log('Loading chiffres for project:', this.idProjet);
       this.loadChiffres();
     }
   }
@@ -47,8 +50,8 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
     try {
       this.services = await this.resourceService.getAllServices();
     } catch (err) {
-      console.error("Error loading services:", err);
-      this.error = "Erreur lors du chargement des services";
+      console.error('Error loading services:', err);
+      this.error = 'Erreur lors du chargement des services';
     }
   }
 
@@ -73,8 +76,8 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
           previsionnel: chiffre?.previsionnel || undefined,
           consomme: chiffre?.consomme || undefined,
           date_mise_a_jour: chiffre?.date_mise_a_jour
-            ? chiffre.date_mise_a_jour.split("T")[0]
-            : new Date().toISOString().split("T")[0],
+            ? chiffre.date_mise_a_jour.split('T')[0]
+            : new Date().toISOString().split('T')[0],
         };
 
         this.updateCalculatedFields(formData);
@@ -94,7 +97,7 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
 
       this.isLoading = false;
     } catch (err) {
-      this.error = "Erreur lors du chargement des chiffres";
+      this.error = 'Erreur lors du chargement des chiffres';
       this.isLoading = false;
       console.error(err);
     }
@@ -118,11 +121,11 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
       revise: 0,
       previsionnel: 0,
       consomme: 0,
-      date_mise_a_jour: new Date().toISOString().split("T")[0],
+      date_mise_a_jour: new Date().toISOString().split('T')[0],
       delta: 0,
       restant: 0,
       raf: 0,
-      raf_date: new Date().toISOString().split("T")[0],
+      raf_date: new Date().toISOString().split('T')[0],
     };
   }
 
@@ -132,7 +135,7 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
 
   getNumericId(service: Service): number {
     if (!service) {
-      console.error("Le service est undefined !");
+      console.error('Le service est undefined !');
       return 0; // ou lance une erreur
     }
     return service.id_service || 0;
@@ -142,7 +145,7 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
     let total = 0;
     for (const formData of this.chiffres.values()) {
       const value = formData[field];
-      if (typeof value === "number") {
+      if (typeof value === 'number') {
         total += value;
       }
     }
@@ -165,7 +168,7 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
     if (!this.idProjet) return;
 
     try {
-      const raf = await this.chiffresService.getRAFByDate(this.idProjet, idService, this.rafDate + "T00:00:00");
+      const raf = await this.chiffresService.getRAFByDate(this.idProjet, idService, this.rafDate + 'T00:00:00');
 
       const formData = this.chiffres.get(idService);
       if (formData) {
@@ -173,7 +176,7 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
         formData.raf_date = this.rafDate;
       }
     } catch (err) {
-      console.error("Error calculating RAF:", err);
+      console.error('Error calculating RAF:', err);
     }
   }
 
@@ -194,22 +197,22 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
   async handlePaste(event: ClipboardEvent, serviceId: number, fieldName?: string) {
     event.preventDefault();
 
-    const pastedText = event.clipboardData?.getData("text") || "";
-    const lines = pastedText.trim().split("\n");
+    const pastedText = event.clipboardData?.getData('text') || '';
+    const lines = pastedText.trim().split('\n');
 
     // Les champs disponibles dans l'ordre
-    const allFields = ["initial", "revise", "previsionnel", "consomme"];
+    const allFields = ['initial', 'revise', 'previsionnel', 'consomme'];
 
-    console.log("fieldName", fieldName);
+    console.log('fieldName', fieldName);
     // Trouvez l'index du champ où commence le paste
     const startFieldIndex = fieldName ? allFields.indexOf(fieldName) : 0;
 
-    console.log("startFieldIndex", startFieldIndex);
+    console.log('startFieldIndex', startFieldIndex);
     if (startFieldIndex === -1) return;
 
     // Si c'est une seule ligne avec plusieurs colonnes (tabulation)
     if (lines.length === 1) {
-      const values = lines[0].split("\t").map((v) => v.trim());
+      const values = lines[0].split('\t').map((v) => v.trim());
       this.fillRowWithValues(serviceId, values, startFieldIndex);
     }
 
@@ -223,7 +226,7 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
       let currentServiceIndex = this.services.findIndex((s) => this.getNumericId(s) === serviceId);
 
       lines.forEach((line, lineIndex) => {
-        const values = line.split("\t").map((v) => v.trim());
+        const values = line.split('\t').map((v) => v.trim());
 
         if (currentServiceIndex + lineIndex < this.services.length) {
           const id = this.getNumericId(this.services[currentServiceIndex + lineIndex]);
@@ -243,7 +246,7 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
     const chiffres = this.getChiffresData(serviceId);
     if (!chiffres) return;
 
-    const allFields: (keyof ChiffresFormData)[] = ["initial", "revise", "previsionnel", "consomme"];
+    const allFields: (keyof ChiffresFormData)[] = ['initial', 'revise', 'previsionnel', 'consomme'];
 
     values.forEach((value, index) => {
       const fieldIndex = startFieldIndex + index;
@@ -252,13 +255,13 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
       // Ne remplissez que les champs valides
       if (fieldIndex < allFields.length && value) {
         const fieldName = allFields[fieldIndex];
-        const numValue = parseFloat(value.replace(",", "."));
+        const numValue = parseFloat(value.replace(',', '.'));
 
         if (!isNaN(numValue)) {
           const field = allFields[fieldIndex];
           (chiffres as any)[field] = numValue; // Use any cast if direct assignment still complains, or satisfy TS better
           // Better way without any:
-          if (field === "initial" || field === "revise" || field === "previsionnel" || field === "consomme") {
+          if (field === 'initial' || field === 'revise' || field === 'previsionnel' || field === 'consomme') {
             chiffres[field] = numValue;
             // console.log('chiffres[field]', chiffres[field]);
           }
@@ -271,7 +274,7 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
   }
 
   private parseNumber(value: string): number {
-    const parsed = parseFloat(value.trim().replace(",", "."));
+    const parsed = parseFloat(value.trim().replace(',', '.'));
     return isNaN(parsed) ? 0 : parsed;
   }
 
@@ -308,14 +311,14 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
       this.saved.emit(savedChiffres);
       this.onClose();
     } catch (err) {
-      this.error = "Erreur lors de la sauvegarde des chiffres";
+      this.error = 'Erreur lors de la sauvegarde des chiffres';
       this.isLoading = false;
       console.error(err);
     }
   }
 
   onClose() {
-    this.error = "";
+    this.error = '';
     this.close.emit();
   }
 }

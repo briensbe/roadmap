@@ -4,7 +4,6 @@ import { SupabaseService } from '../services/supabase.service';
 import { environment } from '../environments/environment';
 
 export const AuthGuard: CanActivateFn = async (route, state) => {
-
   // --- désactivé en dev ---
   if (!environment.enableAuth) {
     return true;
@@ -17,7 +16,7 @@ export const AuthGuard: CanActivateFn = async (route, state) => {
   const user = supabaseService.user();
   if (user) return true;
 
-  // 2. Si le signal est null (ex: premier chargement), 
+  // 2. Si le signal est null (ex: premier chargement),
   // on utilise la méthode robuste qui va chercher plus loin
   const { data } = await supabaseService.getUser();
 

@@ -2,20 +2,20 @@ import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
 
 @Injectable({
-    providedIn: 'root'
+  providedIn: 'root',
 })
 export class ReleaseNotesService {
-    private showNotesSource = new Subject<boolean>();
+  private showNotesSource = new Subject<boolean>();
 
-    // Observable that the component will subscribe to
-    showNotes$ = this.showNotesSource.asObservable();
+  // Observable that the component will subscribe to
+  showNotes$ = this.showNotesSource.asObservable();
 
-    constructor() { }
+  constructor() {}
 
-    /**
-     * Triggers the release notes popup to open in history mode.
-     */
-    openNotes() {
-        this.showNotesSource.next(true);
-    }
+  /**
+   * Triggers the release notes popup to open in history mode.
+   */
+  openNotes() {
+    this.showNotesSource.next(true);
+  }
 }

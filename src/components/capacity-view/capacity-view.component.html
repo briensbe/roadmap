@@ -27,20 +27,28 @@
           margin-right: 12px;
           padding-right: 12px;
           border-right: 1px solid #e2e8f0;
-        "
-      >
+        ">
         <div class="filter-item">
           <div class="team-dropdown-container">
             <div
               class="form-control form-control-sm select-trigger"
               [class.active]="showTeamDropdown"
               (click)="toggleTeamDropdown($event)"
-              style="width: 180px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none;"
-            >
-              <span class="trigger-label" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              style="
+                width: 180px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                cursor: pointer;
+                user-select: none;
+              ">
+              <span class="trigger-label" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">
                 {{ getTeamFilterLabel() }}
               </span>
-              <lucide-icon name="chevron-down" [size]="14" style="color: #64748b; flex-shrink: 0; margin-left: 4px;"></lucide-icon>
+              <lucide-icon
+                name="chevron-down"
+                [size]="14"
+                style="color: #64748b; flex-shrink: 0; margin-left: 4px"></lucide-icon>
             </div>
 
             @if (showTeamDropdown) {
@@ -48,23 +56,17 @@
                 <div class="dropdown-header">
                   <span>{{ selectedTeamIds().length }} sélectionnée(s)</span>
                   @if (selectedTeamIds().length > 0) {
-                    <button
-                      class="btn-clear"
-                      (click)="clearSelectedTeams(); $event.stopPropagation()"
-                    >
-                      Effacer
-                    </button>
+                    <button class="btn-clear" (click)="clearSelectedTeams(); $event.stopPropagation()">Effacer</button>
                   }
                 </div>
                 <div class="dropdown-list">
                   @for (eq of allEquipes; track eq.id) {
-                    <div
-                      class="dropdown-item"
-                      (click)="toggleTeamSelection(eq.id!); $event.stopPropagation()"
-                    >
-                      <input type="checkbox" [checked]="isTeamSelected(eq.id!)" style="pointer-events: none;" />
-                      <div class="item-icon" [style.background-color]="eq.color || '#e2e8f0'" style="width: 12px; height: 12px; border-radius: 50%;">
-                      </div>
+                    <div class="dropdown-item" (click)="toggleTeamSelection(eq.id!); $event.stopPropagation()">
+                      <input type="checkbox" [checked]="isTeamSelected(eq.id!)" style="pointer-events: none" />
+                      <div
+                        class="item-icon"
+                        [style.background-color]="eq.color || '#e2e8f0'"
+                        style="width: 12px; height: 12px; border-radius: 50%"></div>
                       <span class="item-label">{{ eq.nom }}</span>
                     </div>
                   } @empty {
@@ -82,8 +84,7 @@
               [(ngModel)]="resourceSearch"
               placeholder="Filtrer ressources..."
               class="form-control form-control-sm search-input"
-              (click)="toggleResourceDropdown($event)"
-            />
+              (click)="toggleResourceDropdown($event)" />
 
             <div *ngIf="showResourceDropdown" class="resource-dropdown shadow-lg">
               <div class="dropdown-header">
@@ -91,8 +92,7 @@
                 <button
                   class="btn-clear"
                   *ngIf="selectedResourceNames.size > 0"
-                  (click)="selectedResourceNames.clear(); $event.stopPropagation()"
-                >
+                  (click)="selectedResourceNames.clear(); $event.stopPropagation()">
                   Effacer
                 </button>
               </div>
@@ -100,8 +100,7 @@
                 <div
                   *ngFor="let res of filteredResourceList"
                   class="dropdown-item"
-                  (click)="toggleResourceSelection(res.label); $event.stopPropagation()"
-                >
+                  (click)="toggleResourceSelection(res.label); $event.stopPropagation()">
                   <input type="checkbox" [checked]="isResourceSelected(res.label)" />
                   <div class="item-icon" [style.background-color]="res.color || '#e2e8f0'">
                     <lucide-icon [name]="res.type === 'role' ? 'contact' : 'user'" [size]="12"></lucide-icon>
@@ -115,7 +114,11 @@
         </div>
       </div>
       <div class="filter-item">
-        <select [ngModel]="zoomLevel()" (ngModelChange)="zoomLevel.set($event)" class="form-control form-control-sm" style="width: 100px">
+        <select
+          [ngModel]="zoomLevel()"
+          (ngModelChange)="zoomLevel.set($event)"
+          class="form-control form-control-sm"
+          style="width: 100px">
           <option value="normal">Normal</option>
           <option value="compact">Compact</option>
         </select>
@@ -161,8 +164,7 @@
             <div
               class="label-cell team-label-cell sticky-col"
               (click)="toggleTeam(teamRow)"
-              [style.cursor]="teamRow.resources.length > 0 ? 'pointer' : 'default'"
-            >
+              [style.cursor]="teamRow.resources.length > 0 ? 'pointer' : 'default'">
               <div class="color-bar-container">
                 <div class="color-bar-v" [style.background-color]="teamRow.equipe.color || '#94a3b8'"></div>
               </div>
@@ -170,8 +172,7 @@
                 [name]="teamRow.expanded ? 'chevron-down' : 'chevron-right'"
                 [size]="18"
                 class="expand-icon-l"
-                [style.visibility]="teamRow.resources.length > 0 ? 'visible' : 'hidden'"
-              ></lucide-icon>
+                [style.visibility]="teamRow.resources.length > 0 ? 'visible' : 'hidden'"></lucide-icon>
               <div class="row-info-stack-wrapper">
                 <div class="info-stack">
                   <span
@@ -191,10 +192,10 @@
               <div *ngFor="let week of displayedWeeks" class="week-cell team-cell">
                 <div class="team-summary" *ngIf="getTeamTotalCapacity(teamRow, week) > 0">
                   <div class="capacity-value">
-                    {{ getTeamTotalCapacity(teamRow, week) | number: "1.0-1" }}
+                    {{ getTeamTotalCapacity(teamRow, week) | number: '1.0-1' }}
                   </div>
                   <div class="days-value" *ngIf="showDaysInCells">
-                    {{ getTeamTotalDays(teamRow, week) | number: "1.1-1" }}j
+                    {{ getTeamTotalDays(teamRow, week) | number: '1.1-1' }}j
                   </div>
                 </div>
               </div>
@@ -210,15 +211,13 @@
               (mousedown)="onMouseDown($event, resource)"
               (mousemove)="onMouseMove($event, resource)"
               (mouseup)="onMouseUp()"
-              (mouseleave)="onMouseUp()"
-            >
+              (mouseleave)="onMouseUp()">
               <div class="label-cell resource-label-cell sticky-col">
                 <div class="resource-icon-wrapper" [style.background-color]="resource.color || '#e2e8f0'">
                   <lucide-icon
                     [name]="resource.type === 'role' ? 'contact' : 'user'"
                     [size]="14"
-                    class="resource-icon"
-                  ></lucide-icon>
+                    class="resource-icon"></lucide-icon>
                 </div>
                 <span
                   class="resource-name"
@@ -231,10 +230,9 @@
                   [class.anchor-active]="activeAnchorId === resource.uniqueId"
                   (click)="openYearPopover($event, resource.uniqueId)"
                   (mouseenter)="$event.stopPropagation(); showTooltip($event, 'Cliquer pour filtrer par année')"
-                  (mouseleave)="hideTooltip()"
-                >
+                  (mouseleave)="hideTooltip()">
                   <span class="badge-prefix">{{ getBadgePrefix() }}</span>
-                  <span class="badge-val">{{ getResourceTotalPlannedDays(resource) | number: "1.0-1" }}</span>
+                  <span class="badge-val">{{ getResourceTotalPlannedDays(resource) | number: '1.0-1' }}</span>
                   <span class="badge-unit">j</span>
                 </div>
                 <button class="btn-hover-delete" (click)="removeResource(resource, teamRow.equipe)">×</button>
@@ -245,12 +243,11 @@
                   class="week-cell resource-cell"
                   [class.selected]="isCellSelected(resource, week)"
                   [class.has-capacity]="getCapacite(resource, week) > 0"
-                  [attr.data-week-index]="i"
-                >
+                  [attr.data-week-index]="i">
                   <div class="cell-content" *ngIf="getCapacite(resource, week) > 0">
                     <div class="capacity-value">{{ getCapacite(resource, week) }}</div>
                     <div class="days-value" *ngIf="showDaysInCells">
-                      {{ getCapacite(resource, week) * resource.jours_par_semaine | number: "1.1-1" }}j
+                      {{ getCapacite(resource, week) * resource.jours_par_semaine | number: '1.1-1' }}j
                     </div>
                   </div>
                 </div>
@@ -279,26 +276,23 @@
         placeholder="Capacité (unités)"
         (apply)="applyBulkCapacite($event)"
         (project)="applyCapacityProjection($event)"
-        (cancel)="clearSelection()"
-      >
+        (cancel)="clearSelection()">
       </app-selection-toolbar>
     }
   </div>
 
   <!-- Year Selection Popover -->
-  <div 
-    *ngIf="showYearPopover" 
-    class="year-popover" 
+  <div
+    *ngIf="showYearPopover"
+    class="year-popover"
     (click)="$event.stopPropagation()"
     [style.left.px]="popoverPosition?.left"
     [style.top.px]="popoverPosition?.top"
-    [style.transform]="popoverPosition?.transform"
-  >
+    [style.transform]="popoverPosition?.transform">
     <div
       class="popover-arrow"
       [class.top]="popoverArrowSide === 'top'"
-      [class.bottom]="popoverArrowSide === 'bottom'"
-    ></div>
+      [class.bottom]="popoverArrowSide === 'bottom'"></div>
     <div class="popover-content">
       <button class="popover-item" [class.active]="selectedCapacityYear === 'today'" (click)="selectYear('today')">
         Semaine en cours
@@ -368,8 +362,7 @@
             !selectedResourceId ||
             (resourceTypeToAdd === 'role' && availableRoles.length === 0) ||
             (resourceTypeToAdd === 'personne' && availablePersonnes.length === 0)
-          "
-        >
+          ">
           Ajouter
         </button>
         <button class="btn btn-secondary" (click)="showAddResourceModal = false">Annuler</button>
@@ -384,6 +377,5 @@
   [message]="confirmMessage"
   confirmLabel="Retirer"
   (confirm)="onConfirmAction()"
-  (cancel)="showConfirmModal = false"
->
+  (cancel)="showConfirmModal = false">
 </app-confirm-modal>

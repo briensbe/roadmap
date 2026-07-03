@@ -30,7 +30,9 @@
 /* Sticky Parent Rows in Tree View */
 .project-draggable-group > .calendar-row:first-child {
   position: sticky;
-  top: calc(var(--calendar-header-height, 60px) + var(--milestones-header-height, 40px)); /* Dynamic offset using measured header and milestones heights */
+  top: calc(
+    var(--calendar-header-height, 60px) + var(--milestones-header-height, 40px)
+  ); /* Dynamic offset using measured header and milestones heights */
   z-index: 80;
   background: #f9fafb;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -92,7 +94,7 @@
   overflow: hidden;
 }
 
-.capacity-container[data-zoom="compact"] {
+.capacity-container[data-zoom='compact'] {
   --cell-width: 50px;
   --row-min-height: 32px;
   --cell-padding: 0 4px;
@@ -102,7 +104,7 @@
   --fs-10: 9px;
 }
 
-.capacity-container[data-zoom="normal"] {
+.capacity-container[data-zoom='normal'] {
   --cell-width: 80px;
   --row-min-height: 48px;
   --cell-padding: 8px;
@@ -530,7 +532,7 @@
   font-weight: 600;
 }
 
-.actions-radio-item input[type="radio"] {
+.actions-radio-item input[type='radio'] {
   display: none;
 }
 
@@ -946,7 +948,7 @@
 }
 
 .info-code {
-  font-family: "JetBrains Mono", "Cascadia Code", monospace;
+  font-family: 'JetBrains Mono', 'Cascadia Code', monospace;
   font-size: var(--fs-10, 10px);
   font-weight: 600;
   color: #94a3b8;
@@ -1681,7 +1683,7 @@
 
 /* Spinning ring overlay on committing cells */
 .resource-detail-cell.ghost-selection.committing::after {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
   display: flex;
@@ -1693,7 +1695,7 @@
 
 /* Small centered spinner on each committing cell */
 .resource-detail-cell.ghost-selection.committing .cell-content::after {
-  content: "";
+  content: '';
   display: block;
   width: 12px;
   height: 12px;
@@ -1832,7 +1834,7 @@
 
 .slider:before {
   position: absolute;
-  content: "";
+  content: '';
   height: 14px;
   width: 14px;
   left: 2px;
@@ -1853,7 +1855,7 @@
   border-radius: 999px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   color: #475569;
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   margin-left: 4px;
   flex-shrink: 0;
   cursor: pointer;
@@ -1907,7 +1909,7 @@
   border-radius: 999px;
   box-shadow: 0 1px 2px rgba(109, 40, 217, 0.06);
   color: #6d28d9;
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   flex-shrink: 0;
   transition: all 0.2s ease;
 }
@@ -2227,7 +2229,7 @@ input:checked + .slider:before {
 .lm-code-badge {
   font-size: 12px;
   font-weight: 700;
-  font-family: "Inter", system-ui, monospace;
+  font-family: 'Inter', system-ui, monospace;
   letter-spacing: 0.02em;
 }
 
@@ -2300,27 +2302,27 @@ input:checked + .slider:before {
   white-space: nowrap;
 }
 
-.status-badge[data-status="Actif"] {
+.status-badge[data-status='Actif'] {
   background: #d1fae5;
   color: #065f46;
 }
 
-.status-badge[data-status="En cours"] {
+.status-badge[data-status='En cours'] {
   background: #dbeafe;
   color: #1e40af;
 }
 
-.status-badge[data-status="Planifié"] {
+.status-badge[data-status='Planifié'] {
   background: #fef3c7;
   color: #92400e;
 }
 
-.status-badge[data-status="Terminé"] {
+.status-badge[data-status='Terminé'] {
   background: #f3f4f6;
   color: #374151;
 }
 
-.status-badge[data-status="En pause"] {
+.status-badge[data-status='En pause'] {
   background: #fee2e2;
   color: #991b1b;
 }
@@ -2451,7 +2453,9 @@ input:checked + .slider:before {
   background: #fff;
   outline: none;
   box-sizing: border-box;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
   cursor: pointer;
 }
 
@@ -2526,19 +2530,19 @@ input:checked + .slider:before {
   right: 0;
   bottom: 0;
   background-color: #cbd5e1;
-  transition: .25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 999px;
 }
 
 .premium-slider::before {
   position: absolute;
-  content: "";
+  content: '';
   height: 14px;
   width: 14px;
   left: 3px;
   bottom: 3px;
   background-color: white;
-  transition: .25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 50%;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
@@ -2561,7 +2565,9 @@ input:checked + .slider:before {
   display: flex;
   flex-direction: column;
   gap: 0;
-  transition: opacity 0.2s ease, filter 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    filter 0.2s ease;
 }
 
 .period-dropdown-content.disabled {
@@ -2610,7 +2616,9 @@ input:checked + .slider:before {
 .switch-btn.active {
   background: white;
   color: #065f46;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.1),
+    0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 /* Gantt Grid & Column styles */
@@ -2620,7 +2628,8 @@ input:checked + .slider:before {
   flex: 1;
 }
 
-.quarters-row, .months-row {
+.quarters-row,
+.months-row {
   display: flex;
   width: 100%;
 }
@@ -2701,7 +2710,9 @@ input:checked + .slider:before {
   align-items: center;
   justify-content: center;
   padding: 0 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.1),
+    0 1px 2px rgba(0, 0, 0, 0.06);
   color: white;
   font-size: 11px;
   font-weight: 600;
@@ -2709,13 +2720,17 @@ input:checked + .slider:before {
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
   user-select: none;
 }
 
 .gantt-bar:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
   filter: brightness(1.05);
 }
 
@@ -2734,7 +2749,9 @@ input:checked + .slider:before {
   transform: translate(-50%, -50%);
   z-index: 3;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2798,7 +2815,9 @@ input:checked + .slider:before {
   transform: translate(-50%, -50%) !important;
   margin-top: 0 !important;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.15s ease, z-index 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    z-index 0.15s ease;
 }
 
 .absolute-jalon:hover {
@@ -2864,17 +2883,17 @@ input:checked + .slider:before {
 }
 
 /* Zoom levels custom adjustments for Gantt (Visualisation Mode) */
-.capacity-container[data-zoom="normal"] .gantt-header-container,
-.capacity-container[data-zoom="normal"] .gantt-grid-bg,
-.capacity-container[data-zoom="normal"] .gantt-weeks-container,
-.capacity-container[data-zoom="normal"] .gantt-milestones-timeline {
+.capacity-container[data-zoom='normal'] .gantt-header-container,
+.capacity-container[data-zoom='normal'] .gantt-grid-bg,
+.capacity-container[data-zoom='normal'] .gantt-weeks-container,
+.capacity-container[data-zoom='normal'] .gantt-milestones-timeline {
   --cell-width: 37px; /* 1 month ≈ 2 weeks of Saisie normal (160px) */
 }
 
-.capacity-container[data-zoom="compact"] .gantt-header-container,
-.capacity-container[data-zoom="compact"] .gantt-grid-bg,
-.capacity-container[data-zoom="compact"] .gantt-weeks-container,
-.capacity-container[data-zoom="compact"] .gantt-milestones-timeline {
+.capacity-container[data-zoom='compact'] .gantt-header-container,
+.capacity-container[data-zoom='compact'] .gantt-grid-bg,
+.capacity-container[data-zoom='compact'] .gantt-weeks-container,
+.capacity-container[data-zoom='compact'] .gantt-milestones-timeline {
   --cell-width: 23px; /* 1 month ≈ 2 weeks of Saisie compact (100px) */
 }
 
@@ -2913,12 +2932,12 @@ input:checked + .slider:before {
 .btn-zoom.active {
   background: white !important;
   color: #065f46;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.1),
+    0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 /* Zoom level scaling for Visualisation mode only changes column widths, keeping heights and fonts standard */
-
-
 
 /* ===== Size Filter ===== */
 
@@ -2976,7 +2995,9 @@ input:checked + .slider:before {
   display: flex;
   flex-direction: column;
   gap: 0;
-  transition: opacity 0.2s ease, filter 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    filter 0.2s ease;
 }
 
 .size-dropdown-content.disabled {
@@ -3009,7 +3030,9 @@ input:checked + .slider:before {
   background: #fff;
   outline: none;
   box-sizing: border-box;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
   cursor: pointer;
 }
 
@@ -3061,7 +3084,9 @@ input:checked + .slider:before {
   background: #fff;
   outline: none;
   box-sizing: border-box;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .size-input:focus {
@@ -3069,26 +3094,26 @@ input:checked + .slider:before {
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
 }
 /* Specific compact zoom visual tuning for Gantt elements */
-.capacity-container[data-zoom="compact"] .gantt-bar-wrapper {
+.capacity-container[data-zoom='compact'] .gantt-bar-wrapper {
   height: 20px;
 }
 
-.capacity-container[data-zoom="compact"] .gantt-bar {
+.capacity-container[data-zoom='compact'] .gantt-bar {
   font-size: 9px;
   border-radius: 10px;
 }
 
-.capacity-container[data-zoom="compact"] .gantt-milestone.jalon-delivery {
+.capacity-container[data-zoom='compact'] .gantt-milestone.jalon-delivery {
   width: 14px;
   height: 14px;
 }
 
-.capacity-container[data-zoom="compact"] .gantt-milestone.jalon-diamond {
+.capacity-container[data-zoom='compact'] .gantt-milestone.jalon-diamond {
   width: 10px;
   height: 10px;
 }
 
-.capacity-container[data-zoom="compact"] .gantt-milestone-text {
+.capacity-container[data-zoom='compact'] .gantt-milestone-text {
   font-size: 8px;
 }
 
@@ -3225,4 +3250,3 @@ input:checked + .slider:before {
     transform: translateY(0);
   }
 }
-

@@ -10,17 +10,17 @@ import { MilestoneCalendarComponent } from './milestones/milestone-calendar.comp
 import { MilestoneCompactComponent } from './milestones/milestone-compact.component';
 import { MilestoneTimelineComponent } from './milestones/milestone-timeline.component';
 import { MilestoneModalComponent } from './milestones/milestone-modal.component';
-import { ConfirmModalComponent } from "./confirm-modal.component";
-import { storageSignal } from "../utils/storage-signal";
+import { ConfirmModalComponent } from './confirm-modal.component';
+import { storageSignal } from '../utils/storage-signal';
 
 @NgModule({
   imports: [LucideAngularModule.pick({ List, Calendar, GitCommit, Columns, Plus })],
-  exports: [LucideAngularModule]
+  exports: [LucideAngularModule],
 })
-export class LucideIconsModule { }
+export class LucideIconsModule {}
 
 @Component({
-  selector: "app-milestones-view",
+  selector: 'app-milestones-view',
   standalone: true,
   imports: [
     CommonModule,
@@ -47,8 +47,7 @@ export class LucideIconsModule { }
             <select
               class="project-select"
               [ngModel]="selectedProjetId()"
-              (ngModelChange)="selectedProjetId.set($event)"
-            >
+              (ngModelChange)="selectedProjetId.set($event)">
               <option [ngValue]="null">Tous les projets</option>
               @for (p of projets; track p.id) {
                 <option [value]="p.id">{{ p.nom_projet }}</option>
@@ -61,8 +60,7 @@ export class LucideIconsModule { }
               class="tab-btn"
               [class.active]="activeTab() === 'liste'"
               (click)="activeTab.set('liste')"
-              title="Vue Liste"
-            >
+              title="Vue Liste">
               <lucide-icon name="list" size="16"></lucide-icon>
               <span>Liste</span>
             </button>
@@ -70,8 +68,7 @@ export class LucideIconsModule { }
               class="tab-btn"
               [class.active]="activeTab() === 'calendrier'"
               (click)="activeTab.set('calendrier')"
-              title="Vue Calendrier"
-            >
+              title="Vue Calendrier">
               <lucide-icon name="calendar" size="16"></lucide-icon>
               <span>Calendrier</span>
             </button>
@@ -79,8 +76,7 @@ export class LucideIconsModule { }
               class="tab-btn"
               [class.active]="activeTab() === 'compact'"
               (click)="activeTab.set('compact')"
-              title="Vue Compacte"
-            >
+              title="Vue Compacte">
               <lucide-icon name="columns" size="16"></lucide-icon>
               <span>Compacte</span>
             </button>
@@ -88,8 +84,7 @@ export class LucideIconsModule { }
               class="tab-btn"
               [class.active]="activeTab() === 'timeline'"
               (click)="activeTab.set('timeline')"
-              title="Vue Timeline"
-            >
+              title="Vue Timeline">
               <lucide-icon name="git-commit" size="16"></lucide-icon>
               <span>Timeline</span>
             </button>
@@ -103,37 +98,33 @@ export class LucideIconsModule { }
       </div>
 
       <div class="view-content-wrapper">
-        @if (activeTab() === "liste") {
+        @if (activeTab() === 'liste') {
           <app-milestone-list
             [jalons]="filteredJalons"
             [projets]="projets"
             (edit)="openEditModal($event)"
-            (delete)="askDeleteJalon($event)"
-          ></app-milestone-list>
+            (delete)="askDeleteJalon($event)"></app-milestone-list>
         }
 
-        @if (activeTab() === "calendrier") {
+        @if (activeTab() === 'calendrier') {
           <app-milestone-calendar
             [jalons]="filteredJalons"
             (edit)="openEditModal($event)"
-            (add)="openCreateModalAtDate($event)"
-          ></app-milestone-calendar>
+            (add)="openCreateModalAtDate($event)"></app-milestone-calendar>
         }
 
-        @if (activeTab() === "timeline") {
+        @if (activeTab() === 'timeline') {
           <app-milestone-timeline
             [jalons]="filteredJalons"
             [projets]="projets"
-            (edit)="openEditModal($event)"
-          ></app-milestone-timeline>
+            (edit)="openEditModal($event)"></app-milestone-timeline>
         }
 
-        @if (activeTab() === "compact") {
+        @if (activeTab() === 'compact') {
           <app-milestone-compact
             [jalons]="filteredJalons"
             (edit)="openEditModal($event)"
-            (add)="openCreateModalAtDate($event)"
-          ></app-milestone-compact>
+            (add)="openCreateModalAtDate($event)"></app-milestone-compact>
         }
       </div>
     </div>
@@ -147,8 +138,7 @@ export class LucideIconsModule { }
       [message]="confirmMessage"
       confirmLabel="Supprimer"
       (confirm)="onConfirmAction()"
-      (cancel)="showConfirmModal = false"
-    >
+      (cancel)="showConfirmModal = false">
     </app-confirm-modal>
   `,
   styles: [
@@ -335,16 +325,16 @@ export class MilestonesViewComponent implements OnInit {
   jalons: Jalon[] = [];
   projets: Projet[] = [];
 
-  activeTab = storageSignal<"liste" | "calendrier" | "timeline" | "compact">("milestones-active-tab", "liste");
-  selectedProjetId = storageSignal<string | null>("milestones-selected-project-id", null);
+  activeTab = storageSignal<'liste' | 'calendrier' | 'timeline' | 'compact'>('milestones-active-tab', 'liste');
+  selectedProjetId = storageSignal<string | null>('milestones-selected-project-id', null);
 
   showModal = false;
   currentJalon: Partial<Jalon> | null = null;
 
   // Confirm Modal state
   showConfirmModal = false;
-  confirmTitle = "";
-  confirmMessage = "";
+  confirmTitle = '';
+  confirmMessage = '';
   private pendingConfirmAction: (() => void) | null = null;
 
   onConfirmAction() {
@@ -372,7 +362,7 @@ export class MilestonesViewComponent implements OnInit {
       this.jalons = jalonsData;
       this.projets = projetsData;
     } catch (error) {
-      console.error("Error loading data:", error);
+      console.error('Error loading data:', error);
     }
   }
 
@@ -388,7 +378,7 @@ export class MilestonesViewComponent implements OnInit {
 
   openCreateModalAtDate(dateStr: string | null) {
     this.currentJalon = {
-      event_date: dateStr || new Date().toISOString().split("T")[0],
+      event_date: dateStr || new Date().toISOString().split('T')[0],
       projet_id: this.selectedProjetId() || undefined, // Pre-populate with selected project if any
     };
     this.showModal = true;
@@ -406,7 +396,7 @@ export class MilestonesViewComponent implements OnInit {
   async askDeleteJalon(jalon: Jalon) {
     if (!jalon.id) return;
 
-    this.confirmTitle = "Supprimer le jalon";
+    this.confirmTitle = 'Supprimer le jalon';
     this.confirmMessage = `Êtes-vous sûr de vouloir supprimer le jalon "${jalon.title}" ?`;
 
     this.pendingConfirmAction = async () => {
@@ -414,7 +404,7 @@ export class MilestonesViewComponent implements OnInit {
         await this.jalonService.deleteJalon(jalon.id!);
         await this.loadData();
       } catch (error) {
-        console.error("Error deleting jalon:", error);
+        console.error('Error deleting jalon:', error);
       }
     };
     this.showConfirmModal = true;

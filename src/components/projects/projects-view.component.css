@@ -210,7 +210,7 @@
 }
 
 .project-code {
-  font-family: "Consolas", "Monaco", monospace;
+  font-family: 'Consolas', 'Monaco', monospace;
   font-weight: 700;
   font-size: 13px;
   letter-spacing: 0.5px;
@@ -225,27 +225,27 @@
   letter-spacing: 0.3px;
 }
 
-.status-badge[data-status="Actif"] {
+.status-badge[data-status='Actif'] {
   background: #d1fae5;
   color: #065f46;
 }
 
-.status-badge[data-status="En cours"] {
+.status-badge[data-status='En cours'] {
   background: #dbeafe;
   color: #1e40af;
 }
 
-.status-badge[data-status="Planifié"] {
+.status-badge[data-status='Planifié'] {
   background: #fef3c7;
   color: #92400e;
 }
 
-.status-badge[data-status="Terminé"] {
+.status-badge[data-status='Terminé'] {
   background: #f3f4f6;
   color: #374151;
 }
 
-.status-badge[data-status="En pause"] {
+.status-badge[data-status='En pause'] {
   background: #fee2e2;
   color: #991b1b;
 }
@@ -966,4 +966,3 @@
   border-color: #4f46e5 !important;
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1) !important;
 }
-

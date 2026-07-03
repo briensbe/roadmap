@@ -1,28 +1,28 @@
-import { ComponentFixture, TestBed } from "@angular/core/testing";
-import { ChiffresModalComponent } from "./chiffres-modal.component";
-import { ChiffresService } from "../../services/chiffres.service";
-import { ResourceService } from "../../services/resource.service";
-import { Chiffre } from "../../models/chiffres.type";
-import { Service } from "../../models/types";
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ChiffresModalComponent } from './chiffres-modal.component';
+import { ChiffresService } from '../../services/chiffres.service';
+import { ResourceService } from '../../services/resource.service';
+import { Chiffre } from '../../models/chiffres.type';
+import { Service } from '../../models/types';
 
-describe("ChiffresModalComponent", () => {
+describe('ChiffresModalComponent', () => {
   let component: ChiffresModalComponent;
   let fixture: ComponentFixture<ChiffresModalComponent>;
   let chiffresService: jasmine.SpyObj<ChiffresService>;
   let resourceService: jasmine.SpyObj<ResourceService>;
 
   beforeEach(async () => {
-    const chiffresServiceSpy = jasmine.createSpyObj("ChiffresService", [
-      "getAllChiffres",
-      "getChiffresByProject",
-      "getChiffre",
-      "createChiffre",
-      "updateChiffre",
-      "deleteChiffre",
-      "getRAFByDate",
+    const chiffresServiceSpy = jasmine.createSpyObj('ChiffresService', [
+      'getAllChiffres',
+      'getChiffresByProject',
+      'getChiffre',
+      'createChiffre',
+      'updateChiffre',
+      'deleteChiffre',
+      'getRAFByDate',
     ]);
 
-    const resourceServiceSpy = jasmine.createSpyObj("ResourceService", ["getAllServices"]);
+    const resourceServiceSpy = jasmine.createSpyObj('ResourceService', ['getAllServices']);
 
     await TestBed.configureTestingModule({
       imports: [ChiffresModalComponent],
@@ -39,15 +39,15 @@ describe("ChiffresModalComponent", () => {
     component = fixture.componentInstance;
   });
 
-  it("should create", () => {
+  it('should create', () => {
     expect(component).toBeTruthy();
   });
 
-  describe("loadServices", () => {
-    it("should load services on init", async () => {
+  describe('loadServices', () => {
+    it('should load services on init', async () => {
       const mockServices: Service[] = [
-        { id: "1", nom: "Service 1", departement_id: "dept1" },
-        { id: "2", nom: "Service 2", departement_id: "dept1" },
+        { id: '1', nom: 'Service 1', departement_id: 'dept1' },
+        { id: '2', nom: 'Service 2', departement_id: 'dept1' },
       ];
 
       resourceService.getAllServices.and.returnValue(Promise.resolve(mockServices));
@@ -58,8 +58,8 @@ describe("ChiffresModalComponent", () => {
       expect(component.services).toEqual(mockServices);
     });
 
-    it("should handle service loading error", async () => {
-      const error = new Error("Loading failed");
+    it('should handle service loading error', async () => {
+      const error = new Error('Loading failed');
       resourceService.getAllServices.and.returnValue(Promise.reject(error));
 
       await component.loadServices();
@@ -68,16 +68,16 @@ describe("ChiffresModalComponent", () => {
     });
   });
 
-  describe("loadChiffres", () => {
+  describe('loadChiffres', () => {
     beforeEach(() => {
       component.services = [
-        { id: "1", nom: "Service 1", departement_id: "dept1" },
-        { id: "2", nom: "Service 2", departement_id: "dept1" },
+        { id: '1', nom: 'Service 1', departement_id: 'dept1' },
+        { id: '2', nom: 'Service 2', departement_id: 'dept1' },
       ];
       component.idProjet = 1;
     });
 
-    it("should load chiffres for project", async () => {
+    it('should load chiffres for project', async () => {
       const mockChiffres: Chiffre[] = [
         {
           id_chiffres: 1,
@@ -87,7 +87,7 @@ describe("ChiffresModalComponent", () => {
           revise: 110,
           previsionnel: 120,
           consomme: 50,
-          date_mise_a_jour: "2024-01-15",
+          date_mise_a_jour: '2024-01-15',
         },
       ];
 
@@ -99,7 +99,7 @@ describe("ChiffresModalComponent", () => {
       expect(component.chiffres.size).toBeGreaterThan(0);
     });
 
-    it("should initialize empty form data for services without chiffres", async () => {
+    it('should initialize empty form data for services without chiffres', async () => {
       chiffresService.getChiffresByProject.and.returnValue(Promise.resolve([]));
 
       await component.loadChiffres();
@@ -111,8 +111,8 @@ describe("ChiffresModalComponent", () => {
     });
   });
 
-  describe("updateCalculatedFields", () => {
-    it("should calculate delta correctly", () => {
+  describe('updateCalculatedFields', () => {
+    it('should calculate delta correctly', () => {
       const formData = {
         previsionnel: 120,
         revise: 110,
@@ -124,7 +124,7 @@ describe("ChiffresModalComponent", () => {
       expect(formData.delta).toBe(10);
     });
 
-    it("should calculate restant correctly", () => {
+    it('should calculate restant correctly', () => {
       const formData = {
         previsionnel: 120,
         consomme: 50,
@@ -138,7 +138,7 @@ describe("ChiffresModalComponent", () => {
       expect(formData.restant).toBe(70);
     });
 
-    it("should calculate both delta and restant when all values present", () => {
+    it('should calculate both delta and restant when all values present', () => {
       const formData = {
         previsionnel: 120,
         revise: 110,
@@ -157,7 +157,7 @@ describe("ChiffresModalComponent", () => {
       expect(formData.restant).toBe(70);
     });
 
-    it("should handle negative delta", () => {
+    it('should handle negative delta', () => {
       const formData = {
         previsionnel: 100,
         revise: 120,
@@ -171,7 +171,7 @@ describe("ChiffresModalComponent", () => {
       expect(formData.delta).toBe(-20);
     });
 
-    it("should handle zero delta", () => {
+    it('should handle zero delta', () => {
       const formData = {
         previsionnel: 110,
         revise: 110,
@@ -185,7 +185,7 @@ describe("ChiffresModalComponent", () => {
       expect(formData.delta).toBe(0);
     });
 
-    it("should handle missing previsionnel for delta", () => {
+    it('should handle missing previsionnel for delta', () => {
       const formData = {
         revise: 110,
         delta: undefined,
@@ -196,7 +196,7 @@ describe("ChiffresModalComponent", () => {
       expect(formData.delta).toBeUndefined();
     });
 
-    it("should handle missing revise for delta", () => {
+    it('should handle missing revise for delta', () => {
       const formData = {
         previsionnel: 120,
         delta: undefined,
@@ -207,7 +207,7 @@ describe("ChiffresModalComponent", () => {
       expect(formData.delta).toBeUndefined();
     });
 
-    it("should handle missing consomme for restant", () => {
+    it('should handle missing consomme for restant', () => {
       const formData = {
         previsionnel: 120,
         restant: undefined,
@@ -218,7 +218,7 @@ describe("ChiffresModalComponent", () => {
       expect(formData.restant).toBeUndefined();
     });
 
-    it("should handle zero restant", () => {
+    it('should handle zero restant', () => {
       const formData = {
         previsionnel: 100,
         consomme: 100,
@@ -232,7 +232,7 @@ describe("ChiffresModalComponent", () => {
       expect(formData.restant).toBe(0);
     });
 
-    it("should handle negative restant (overconsumption)", () => {
+    it('should handle negative restant (overconsumption)', () => {
       const formData = {
         previsionnel: 100,
         consomme: 150,
@@ -246,7 +246,7 @@ describe("ChiffresModalComponent", () => {
       expect(formData.restant).toBe(-50);
     });
 
-    it("should handle decimal values", () => {
+    it('should handle decimal values', () => {
       const formData = {
         previsionnel: 120.5,
         revise: 110.3,
@@ -261,7 +261,7 @@ describe("ChiffresModalComponent", () => {
       expect(formData.restant).toBeCloseTo(69.8, 5);
     });
 
-    it("should not modify delta if revise is 0", () => {
+    it('should not modify delta if revise is 0', () => {
       const formData = {
         previsionnel: 120,
         revise: 0,
@@ -275,7 +275,7 @@ describe("ChiffresModalComponent", () => {
       expect(formData.delta).toBe(120);
     });
 
-    it("should handle missing values gracefully", () => {
+    it('should handle missing values gracefully', () => {
       const formData = { previsionnel: 120, delta: undefined, restant: undefined };
 
       component.updateCalculatedFields(formData as any);
@@ -285,11 +285,11 @@ describe("ChiffresModalComponent", () => {
     });
   });
 
-  describe("handlePaste", () => {
+  describe('handlePaste', () => {
     beforeEach(() => {
       component.services = [
-        { id: "1", nom: "Service 1", departement_id: "dept1" },
-        { id: "2", nom: "Service 2", departement_id: "dept1" },
+        { id: '1', nom: 'Service 1', departement_id: 'dept1' },
+        { id: '2', nom: 'Service 2', departement_id: 'dept1' },
       ];
       component.chiffres = new Map([
         [1, { initial: undefined, revise: undefined, previsionnel: undefined, consomme: undefined }],
@@ -297,14 +297,14 @@ describe("ChiffresModalComponent", () => {
       ]);
     });
 
-    it("should parse pasted values correctly", () => {
-      const event = new ClipboardEvent("paste", {
+    it('should parse pasted values correctly', () => {
+      const event = new ClipboardEvent('paste', {
         clipboardData: new DataTransfer(),
       });
 
       // Simulate Excel paste: 100\t110\t120\t50\n200\t210\t220\t100
-      event.clipboardData?.setData("text/plain", "100\t110\t120\t50\n200\t210\t220\t100");
-      spyOn(event, "preventDefault");
+      event.clipboardData?.setData('text/plain', '100\t110\t120\t50\n200\t210\t220\t100');
+      spyOn(event, 'preventDefault');
 
       component.handlePaste(event, 1);
 
@@ -323,13 +323,13 @@ describe("ChiffresModalComponent", () => {
       expect(formData2?.consomme).toBe(100);
     });
 
-    it("should handle comma as decimal separator", () => {
-      const event = new ClipboardEvent("paste", {
+    it('should handle comma as decimal separator', () => {
+      const event = new ClipboardEvent('paste', {
         clipboardData: new DataTransfer(),
       });
 
-      event.clipboardData?.setData("text/plain", "100,5\t110,5\t120,5\t50,5");
-      spyOn(event, "preventDefault");
+      event.clipboardData?.setData('text/plain', '100,5\t110,5\t120,5\t50,5');
+      spyOn(event, 'preventDefault');
 
       component.handlePaste(event, 1);
 
@@ -339,7 +339,7 @@ describe("ChiffresModalComponent", () => {
     });
   });
 
-  describe("save", () => {
+  describe('save', () => {
     beforeEach(() => {
       component.idProjet = 1;
       component.chiffres = new Map([
@@ -350,13 +350,13 @@ describe("ChiffresModalComponent", () => {
             revise: 110,
             previsionnel: 120,
             consomme: 50,
-            date_mise_a_jour: "2024-01-15",
+            date_mise_a_jour: '2024-01-15',
           },
         ],
       ]);
     });
 
-    it("should create new chiffres when id_chiffres is undefined", async () => {
+    it('should create new chiffres when id_chiffres is undefined', async () => {
       const newChiffre: Chiffre = {
         id_chiffres: 1,
         id_projet: 1,
@@ -365,11 +365,11 @@ describe("ChiffresModalComponent", () => {
         revise: 110,
         previsionnel: 120,
         consomme: 50,
-        date_mise_a_jour: "2024-01-15",
+        date_mise_a_jour: '2024-01-15',
       };
 
       chiffresService.createChiffre.and.returnValue(Promise.resolve(newChiffre));
-      spyOn(component.saved, "emit");
+      spyOn(component.saved, 'emit');
 
       await component.save();
 
@@ -377,7 +377,7 @@ describe("ChiffresModalComponent", () => {
       expect(component.saved.emit).toHaveBeenCalledWith([newChiffre]);
     });
 
-    it("should update existing chiffres when id_chiffres is defined", async () => {
+    it('should update existing chiffres when id_chiffres is defined', async () => {
       const formData = component.chiffres.get(1);
       if (formData) {
         formData.id_chiffres = 999;
@@ -391,11 +391,11 @@ describe("ChiffresModalComponent", () => {
         revise: 110,
         previsionnel: 120,
         consomme: 50,
-        date_mise_a_jour: "2024-01-15",
+        date_mise_a_jour: '2024-01-15',
       };
 
       chiffresService.updateChiffre.and.returnValue(Promise.resolve(updatedChiffre));
-      spyOn(component.saved, "emit");
+      spyOn(component.saved, 'emit');
 
       await component.save();
 
@@ -403,12 +403,12 @@ describe("ChiffresModalComponent", () => {
       expect(component.saved.emit).toHaveBeenCalledWith([updatedChiffre]);
     });
 
-    it("should skip chiffres with no data", async () => {
+    it('should skip chiffres with no data', async () => {
       component.chiffres = new Map([
         [1, { initial: undefined, revise: undefined, previsionnel: undefined, consomme: undefined }],
       ]);
 
-      spyOn(component.saved, "emit");
+      spyOn(component.saved, 'emit');
 
       await component.save();
 
@@ -417,27 +417,27 @@ describe("ChiffresModalComponent", () => {
     });
   });
 
-  describe("updateRAF", () => {
+  describe('updateRAF', () => {
     beforeEach(() => {
       component.idProjet = 1;
       component.chiffres = new Map([[1, { raf: undefined, raf_date: undefined }]]);
-      component.rafDate = "2024-01-15";
+      component.rafDate = '2024-01-15';
     });
 
-    it("should fetch and update RAF", async () => {
+    it('should fetch and update RAF', async () => {
       chiffresService.getRAFByDate.and.returnValue(Promise.resolve(250));
 
       await component.updateRAF(1);
 
-      expect(chiffresService.getRAFByDate).toHaveBeenCalledWith(1, 1, "2024-01-15T00:00:00");
+      expect(chiffresService.getRAFByDate).toHaveBeenCalledWith(1, 1, '2024-01-15T00:00:00');
 
       const formData = component.chiffres.get(1);
       expect(formData?.raf).toBe(250);
-      expect(formData?.raf_date).toBe("2024-01-15");
+      expect(formData?.raf_date).toBe('2024-01-15');
     });
 
-    it("should handle RAF calculation error", async () => {
-      chiffresService.getRAFByDate.and.returnValue(Promise.reject(new Error("RAF error")));
+    it('should handle RAF calculation error', async () => {
+      chiffresService.getRAFByDate.and.returnValue(Promise.reject(new Error('RAF error')));
 
       await component.updateRAF(1);
 
@@ -445,8 +445,8 @@ describe("ChiffresModalComponent", () => {
     });
   });
 
-  describe("onValueChange", () => {
-    it("should update calculated fields when value changes", () => {
+  describe('onValueChange', () => {
+    it('should update calculated fields when value changes', () => {
       component.chiffres = new Map([
         [
           1,
@@ -460,23 +460,23 @@ describe("ChiffresModalComponent", () => {
         ],
       ]);
 
-      component.onValueChange(1, "previsionnel");
+      component.onValueChange(1, 'previsionnel');
 
       const formData = component.chiffres.get(1);
       expect(formData?.delta).toBe(10);
       expect(formData?.restant).toBe(70);
     });
 
-    it("should handle non-existent service id", () => {
+    it('should handle non-existent service id', () => {
       component.chiffres = new Map([[1, { previsionnel: 120, revise: 110 }]]);
 
       expect(() => {
-        component.onValueChange(999, "previsionnel");
+        component.onValueChange(999, 'previsionnel');
       }).not.toThrow();
     });
   });
 
-  describe("calculateTotal", () => {
+  describe('calculateTotal', () => {
     beforeEach(() => {
       component.chiffres = new Map([
         [1, { initial: 100, revise: 110, previsionnel: 120, consomme: 50, delta: 10, restant: 70 }],
@@ -484,34 +484,34 @@ describe("ChiffresModalComponent", () => {
       ]);
     });
 
-    it("should calculate total initial correctly", () => {
-      const total = component.calculateTotal("initial");
+    it('should calculate total initial correctly', () => {
+      const total = component.calculateTotal('initial');
       expect(parseFloat(total)).toBe(300);
     });
 
-    it("should calculate total delta correctly", () => {
-      const total = component.calculateTotal("delta");
+    it('should calculate total delta correctly', () => {
+      const total = component.calculateTotal('delta');
       expect(parseFloat(total)).toBe(30);
     });
 
-    it("should calculate total restant correctly", () => {
-      const total = component.calculateTotal("restant");
+    it('should calculate total restant correctly', () => {
+      const total = component.calculateTotal('restant');
       expect(parseFloat(total)).toBe(210);
     });
 
-    it("should handle undefined values in total calculation", () => {
+    it('should handle undefined values in total calculation', () => {
       component.chiffres = new Map([
         [1, { initial: 100, revise: undefined, delta: undefined }],
         [2, { initial: 200, revise: 220, delta: 20 }],
       ]);
 
-      const total = component.calculateTotal("delta");
+      const total = component.calculateTotal('delta');
       expect(parseFloat(total)).toBe(20);
     });
 
-    it("should return zero for empty map", () => {
+    it('should return zero for empty map', () => {
       component.chiffres.clear();
-      const total = component.calculateTotal("initial");
+      const total = component.calculateTotal('initial');
       expect(parseFloat(total)).toBe(0);
     });
   });

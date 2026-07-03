@@ -1,24 +1,41 @@
-import { Component, OnInit, NgModule, HostListener, ChangeDetectorRef, NgZone, OnDestroy } from "@angular/core";
-import { CommonModule } from "@angular/common";
-import { FormsModule } from "@angular/forms";
-import { SelectionToolbarComponent } from "../selection-toolbar.component";
-import { ConfirmModalComponent } from "../confirm-modal.component";
-import { TeamService } from "../../services/team.service";
-import { CalendarService } from "../../services/calendar.service";
-import { Equipe, Role, Personne, Capacite, EquipeResource } from "../../models/types";
-import { LucideAngularModule, ChevronDown, ChevronRight, Plus, User, Users, Contact, SquarePlus, SquareMinus } from "lucide-angular";
-import { getISOWeekYear } from "date-fns";
-import { storageSignal } from "../../utils/storage-signal";
-import { calculateBestToolbarPosition, calculateBestPopoverPosition, ToolbarPosition, PopoverPosition } from "../../utils/selection-positioning";
+import { Component, OnInit, NgModule, HostListener, ChangeDetectorRef, NgZone, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { SelectionToolbarComponent } from '../selection-toolbar.component';
+import { ConfirmModalComponent } from '../confirm-modal.component';
+import { TeamService } from '../../services/team.service';
+import { CalendarService } from '../../services/calendar.service';
+import { Equipe, Role, Personne, Capacite, EquipeResource } from '../../models/types';
+import {
+  LucideAngularModule,
+  ChevronDown,
+  ChevronRight,
+  Plus,
+  User,
+  Users,
+  Contact,
+  SquarePlus,
+  SquareMinus,
+} from 'lucide-angular';
+import { getISOWeekYear } from 'date-fns';
+import { storageSignal } from '../../utils/storage-signal';
+import {
+  calculateBestToolbarPosition,
+  calculateBestPopoverPosition,
+  ToolbarPosition,
+  PopoverPosition,
+} from '../../utils/selection-positioning';
 
 @NgModule({
-  imports: [LucideAngularModule.pick({ ChevronDown, ChevronRight, Plus, User, Users, Contact, SquarePlus, SquareMinus })],
-  exports: [LucideAngularModule]
+  imports: [
+    LucideAngularModule.pick({ ChevronDown, ChevronRight, Plus, User, Users, Contact, SquarePlus, SquareMinus }),
+  ],
+  exports: [LucideAngularModule],
 })
-export class LucideIconsModule { }
+export class LucideIconsModule {}
 
 interface ResourceRow {
-  type: "role" | "personne";
+  type: 'role' | 'personne';
   id: string;
   uniqueId: string;
   label: string;
@@ -35,11 +52,11 @@ interface TeamRow {
 }
 
 @Component({
-  selector: "app-capacity-view",
+  selector: 'app-capacity-view',
   standalone: true,
   imports: [CommonModule, FormsModule, LucideIconsModule, SelectionToolbarComponent, ConfirmModalComponent],
-  templateUrl: "./capacity-view.component.html",
-  styleUrl: "./capacity-view.component.css"
+  templateUrl: './capacity-view.component.html',
+  styleUrl: './capacity-view.component.css',
 })
 export class CapacityViewComponent implements OnInit, OnDestroy {
   displayedWeeks: Date[] = [];
@@ -48,9 +65,9 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   teamRows: TeamRow[] = [];
   allEquipes: Equipe[] = [];
 
-  selectedTeamIds = storageSignal<string[]>("capacity-view-selected-teams", []);
+  selectedTeamIds = storageSignal<string[]>('capacity-view-selected-teams', []);
   showTeamDropdown: boolean = false;
-  resourceSearch: string = "";
+  resourceSearch: string = '';
   selectedResourceNames: Set<string> = new Set();
   showResourceDropdown: boolean = false;
 
@@ -81,8 +98,8 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
     this.showConfirmModal = false;
   }
   selectedEquipe: Equipe | null = null;
-  resourceTypeToAdd: "role" | "personne" = "role";
-  selectedResourceId: string = "";
+  resourceTypeToAdd: 'role' | 'personne' = 'role';
+  selectedResourceId: string = '';
 
   // Drag selection
   isDragging = false;
@@ -103,7 +120,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   }
 
   get selectionDaysPerWeek(): number {
-    return this.selectedCells.length > 0 ? (this.selectedCells[0].resource.jours_par_semaine || 5) : 5;
+    return this.selectedCells.length > 0 ? this.selectedCells[0].resource.jours_par_semaine || 5 : 5;
   }
 
   Contact = Contact;
@@ -111,7 +128,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
 
   // Toggle to show/hide the computed days inside cells. Default: hidden (user activates toggle to show)
   showDaysInCells: boolean = false;
-  zoomLevel = storageSignal<"compact" | "normal">("capacity-view-zoom-level", "normal");
+  zoomLevel = storageSignal<'compact' | 'normal'>('capacity-view-zoom-level', 'normal');
   private isDefaultExpanded = true;
   private manualStates = new Map<string, boolean>();
 
@@ -126,19 +143,19 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
     private teamService: TeamService,
     private calendarService: CalendarService,
     private cdr: ChangeDetectorRef,
-    private ngZone: NgZone
-  ) { }
+    private ngZone: NgZone,
+  ) {}
 
   expandAll() {
     this.isDefaultExpanded = true;
     this.manualStates.clear();
-    this.filteredTeamRows.forEach(r => r.expanded = true);
+    this.filteredTeamRows.forEach((r) => (r.expanded = true));
   }
 
   collapseAll() {
     this.isDefaultExpanded = false;
     this.manualStates.clear();
-    this.filteredTeamRows.forEach(r => r.expanded = false);
+    this.filteredTeamRows.forEach((r) => (r.expanded = false));
   }
 
   async ngOnInit() {
@@ -190,7 +207,6 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
 
   async loadData() {
     try {
-
       // 1️⃣ Load ALL data in parallel (no nested loops with await!)
       const [equipes, allCapacities, roles, personnes] = await Promise.all([
         this.teamService.getAllEquipes(),
@@ -205,13 +221,12 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
 
       // Load all resources for all teams in parallel
       const allResourcesArrays = await Promise.all(
-        equipes.map(equipe => this.teamService.getEquipeResources(equipe.id!))
+        equipes.map((equipe) => this.teamService.getEquipeResources(equipe.id!)),
       );
-
 
       // 2️⃣ Index capacities by resource for O(1) lookup
       const capacitiesByResource = new Map<string, Capacite[]>();
-      allCapacities.forEach(cap => {
+      allCapacities.forEach((cap) => {
         // Build key based on whether it's a role or personne capacity
         const resourceId = cap.role_id || cap.personne_id;
         const type = cap.role_id ? 'role' : 'personne';
@@ -226,12 +241,12 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
       this.teamRows = equipes.map((equipe, index) => {
         const resources = allResourcesArrays[index];
 
-        const resourceRows: ResourceRow[] = resources.map(resource => {
+        const resourceRows: ResourceRow[] = resources.map((resource) => {
           const key = `${resource.id}_${resource.type}_${equipe.id}`;
           const capacites = capacitiesByResource.get(key) || [];
           const weeks = new Map<string, number>();
 
-          capacites.forEach(cap => {
+          capacites.forEach((cap) => {
             const weekStr = this.calendarService.formatWeekStart(new Date(cap.semaine_debut));
             weeks.set(weekStr, cap.capacite);
           });
@@ -240,7 +255,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
             type: resource.type,
             id: resource.id,
             uniqueId: resource.uniqueId,
-            label: resource.type === "role" ? resource.nom : `${resource.prenom} ${resource.nom}`,
+            label: resource.type === 'role' ? resource.nom : `${resource.prenom} ${resource.nom}`,
             equipeId: equipe.id!,
             weeks,
             jours_par_semaine: resource.jours_par_semaine,
@@ -254,9 +269,8 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
           expanded: this.manualStates.has(equipe.id!) ? this.manualStates.get(equipe.id!)! : this.isDefaultExpanded,
         };
       });
-
     } catch (error) {
-      console.error("Error loading data:", error);
+      console.error('Error loading data:', error);
     }
   }
 
@@ -265,21 +279,25 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
 
     // Filter by team
     if (this.selectedTeamIds().length > 0) {
-      rows = rows.filter(tr => this.selectedTeamIds().includes(tr.equipe.id!));
+      rows = rows.filter((tr) => this.selectedTeamIds().includes(tr.equipe.id!));
     }
 
     // Filter by resource search OR multi-select (by name)
     if (this.selectedResourceNames.size > 0) {
-      rows = rows.map(tr => ({
-        ...tr,
-        resources: tr.resources.filter(r => this.selectedResourceNames.has(r.label))
-      })).filter(tr => tr.resources.length > 0);
+      rows = rows
+        .map((tr) => ({
+          ...tr,
+          resources: tr.resources.filter((r) => this.selectedResourceNames.has(r.label)),
+        }))
+        .filter((tr) => tr.resources.length > 0);
     } else if (this.resourceSearch.trim()) {
       const search = this.resourceSearch.toLowerCase().trim();
-      rows = rows.map(tr => ({
-        ...tr,
-        resources: tr.resources.filter(r => r.label.toLowerCase().includes(search))
-      })).filter(tr => tr.resources.length > 0);
+      rows = rows
+        .map((tr) => ({
+          ...tr,
+          resources: tr.resources.filter((r) => r.label.toLowerCase().includes(search)),
+        }))
+        .filter((tr) => tr.resources.length > 0);
     }
 
     return rows;
@@ -288,8 +306,8 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   get allResources(): ResourceRow[] {
     const all: ResourceRow[] = [];
     const seenLabels = new Set<string>();
-    this.teamRows.forEach(tr => {
-      tr.resources.forEach(r => {
+    this.teamRows.forEach((tr) => {
+      tr.resources.forEach((r) => {
         if (!seenLabels.has(r.label)) {
           seenLabels.add(r.label);
           all.push(r);
@@ -302,7 +320,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   get filteredResourceList(): ResourceRow[] {
     const search = this.resourceSearch.toLowerCase().trim();
     if (!search) return this.allResources;
-    return this.allResources.filter(r => r.label.toLowerCase().includes(search));
+    return this.allResources.filter((r) => r.label.toLowerCase().includes(search));
   }
 
   toggleResourceSelection(label: string) {
@@ -354,7 +372,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   toggleTeamSelection(id: string) {
     const current = this.selectedTeamIds();
     if (current.includes(id)) {
-      this.selectedTeamIds.set(current.filter(x => x !== id));
+      this.selectedTeamIds.set(current.filter((x) => x !== id));
     } else {
       this.selectedTeamIds.set([...current, id]);
     }
@@ -367,12 +385,12 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   getTeamFilterLabel(): string {
     const current = this.selectedTeamIds();
     if (current.length === 0) {
-      return "Toutes les équipes";
+      return 'Toutes les équipes';
     }
     if (current.length === 1) {
       const id = current[0];
-      const eq = this.allEquipes.find(e => e.id === id);
-      return eq ? eq.nom : "Toutes les équipes";
+      const eq = this.allEquipes.find((e) => e.id === id);
+      return eq ? eq.nom : 'Toutes les équipes';
     }
     return `${current.length} équipes`;
   }
@@ -382,8 +400,8 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   }
 
   formatWeekHeader(date: Date): string {
-    const day = date.getDate().toString().padStart(2, "0");
-    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
     return `${day}/${month}`;
   }
 
@@ -411,8 +429,8 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
 
   async openAddResourceModal(equipe: Equipe) {
     this.selectedEquipe = equipe;
-    this.resourceTypeToAdd = "role";
-    this.selectedResourceId = "";
+    this.resourceTypeToAdd = 'role';
+    this.selectedResourceId = '';
     this.showAddResourceModal = true;
 
     // Load only available roles (not already attached to this team)
@@ -426,7 +444,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
     if (!this.selectedEquipe || !this.selectedResourceId) return;
 
     try {
-      if (this.resourceTypeToAdd === "role") {
+      if (this.resourceTypeToAdd === 'role') {
         await this.teamService.addRoleToEquipe(this.selectedEquipe.id!, this.selectedResourceId);
       } else {
         await this.teamService.addPersonneToEquipe(this.selectedEquipe.id!, this.selectedResourceId);
@@ -435,9 +453,9 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
       this.showAddResourceModal = false;
       await this.loadData();
     } catch (error: any) {
-      console.error("Error adding resource:", error);
+      console.error('Error adding resource:', error);
       // Display user-friendly error message
-      if (error.message && error.message.includes("déjà attaché")) {
+      if (error.message && error.message.includes('déjà attaché')) {
         alert(error.message);
       } else {
         alert("Erreur lors de l'ajout de la ressource. Veuillez réessayer.");
@@ -446,19 +464,19 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   }
 
   async removeResource(resource: ResourceRow, equipe: Equipe) {
-    this.confirmTitle = "Supprimer la ressource";
+    this.confirmTitle = 'Supprimer la ressource';
     this.confirmMessage = `Retirer ${resource.label} de l'équipe ${equipe.nom} ?`;
 
     this.pendingConfirmAction = async () => {
       try {
-        if (resource.type === "role") {
+        if (resource.type === 'role') {
           await this.teamService.removeRoleFromEquipe(resource.id, equipe.id!);
         } else {
           await this.teamService.removePersonneFromEquipe(resource.id);
         }
         await this.loadData();
       } catch (error) {
-        console.error("Error removing resource:", error);
+        console.error('Error removing resource:', error);
       }
     };
     this.showConfirmModal = true;
@@ -503,7 +521,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
 
     // Simple boundary check to keep tooltip on screen
     const tooltipWidth = 200; // Estimated
-    const tooltipHeight = 40;  // Estimated
+    const tooltipHeight = 40; // Estimated
 
     if (x + tooltipWidth > window.innerWidth) {
       x = event.clientX - tooltipWidth - offsetX;
@@ -535,9 +553,9 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
     this.bulkCapaciteValue = null;
 
     const target = event.target as HTMLElement;
-    const cell = target.closest(".week-cell");
+    const cell = target.closest('.week-cell');
     if (cell) {
-      const indexStr = cell.getAttribute("data-week-index");
+      const indexStr = cell.getAttribute('data-week-index');
       if (indexStr) {
         this.dragStartWeekIndex = parseInt(indexStr, 10);
         this.dragEndWeekIndex = this.dragStartWeekIndex;
@@ -553,9 +571,9 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
     if (resource.uniqueId !== this.dragStartResource.uniqueId) return;
 
     const target = event.target as HTMLElement;
-    const cell = target.closest(".week-cell");
+    const cell = target.closest('.week-cell');
     if (cell) {
-      const indexStr = cell.getAttribute("data-week-index");
+      const indexStr = cell.getAttribute('data-week-index');
       if (indexStr) {
         const newIndex = parseInt(indexStr, 10);
         if (newIndex !== this.dragEndWeekIndex) {
@@ -571,7 +589,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
     this.isDragging = false;
     if (this.selectedCells.length > 0) {
       this.isSelectionFinished = true;
-      
+
       // If a single cell is selected, show its existing value
       if (this.selectedCells.length === 1) {
         const cell = this.selectedCells[0];
@@ -580,7 +598,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
       } else {
         this.bulkCapaciteValue = null;
       }
-      
+
       this.updateToolbarPosition();
     }
   }
@@ -617,11 +635,11 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
             const visibleLeft = labelRect.right;
             const visibleRight = wrapperRect.right;
 
-            const cellIsHidden = 
+            const cellIsHidden =
               rect.bottom <= visibleTop || // Scrolled under header
               rect.top >= visibleBottom || // Scrolled below viewport
               rect.right <= visibleLeft || // Scrolled left under label column
-              rect.left >= visibleRight;   // Scrolled right off screen
+              rect.left >= visibleRight; // Scrolled right off screen
 
             if (cellIsHidden) {
               this.toolbarVisible = false;
@@ -640,7 +658,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
             dragStartWeekIndex: this.dragStartWeekIndex,
             dragEndWeekIndex: this.dragEndWeekIndex,
             bottomSafetyMargin: 150,
-            rightSafetyMargin: 320
+            rightSafetyMargin: 320,
           });
 
           // Convert viewport coordinates to calendar-wrapper relative absolute coordinates
@@ -649,7 +667,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
             this.toolbarPosition = {
               top: pos.top - wrapperRect.top + wrapperEl.scrollTop,
               left: pos.left - wrapperRect.left + wrapperEl.scrollLeft,
-              transform: pos.transform
+              transform: pos.transform,
             };
           } else {
             this.toolbarPosition = pos;
@@ -690,11 +708,11 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
           const visibleRight = wrapperRect.right;
 
           // Check if cell is completely outside the visible scroll bounds
-          const cellIsHidden = 
+          const cellIsHidden =
             rect.bottom <= visibleTop || // Scrolled under header
             rect.top >= visibleBottom || // Scrolled below viewport
             rect.right <= visibleLeft || // Scrolled left under label column
-            rect.left >= visibleRight;   // Scrolled right off screen
+            rect.left >= visibleRight; // Scrolled right off screen
 
           const shouldBeVisible = !cellIsHidden;
           if (this.toolbarVisible !== shouldBeVisible) {
@@ -723,7 +741,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
 
   isCellSelected(resource: ResourceRow, week: Date): boolean {
     return this.selectedCells.some(
-      (s) => s.resource.uniqueId === resource.uniqueId && s.week.getTime() === week.getTime()
+      (s) => s.resource.uniqueId === resource.uniqueId && s.week.getTime() === week.getTime(),
     );
   }
 
@@ -741,7 +759,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   async applyBulkCapacite(value: number | null) {
     // Autorise 0, bloque seulement null et undefined
     if (this.selectedCells.length === 0 || value == null) return;
-    
+
     this.bulkCapaciteValue = value;
 
     try {
@@ -752,7 +770,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
           cell.resource.type,
           cell.resource.equipeId,
           weekStr,
-          this.bulkCapaciteValue
+          this.bulkCapaciteValue,
         );
 
         // Update local data
@@ -761,7 +779,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
 
       this.clearSelection();
     } catch (error) {
-      console.error("Error saving capacities:", error);
+      console.error('Error saving capacities:', error);
     }
   }
 
@@ -794,7 +812,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
           resourceRow.type,
           resourceRow.equipeId,
           weekStr,
-          data.resources
+          data.resources,
         );
 
         // Update local data for immediate UI feedback
@@ -803,7 +821,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
 
       this.clearSelection();
     } catch (error) {
-      console.error("Error applying generic capacity projection:", error);
+      console.error('Error applying generic capacity projection:', error);
       alert("Erreur lors de l'application de la projection.");
     }
   }
@@ -813,7 +831,8 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
     let total = 0;
     for (const cell of this.selectedCells) {
       // Prioritize the bulk input value if it has been set by the user
-      const cap = (this.bulkCapaciteValue !== null) ? this.bulkCapaciteValue : (this.getCapacite(cell.resource, cell.week) || 0);
+      const cap =
+        this.bulkCapaciteValue !== null ? this.bulkCapaciteValue : this.getCapacite(cell.resource, cell.week) || 0;
       const jours = cell.resource.jours_par_semaine || 0;
       total += cap * jours;
     }
@@ -842,7 +861,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   getTeamTotalDays(teamRow: TeamRow, week: Date): number {
     return teamRow.resources.reduce(
       (sum, resource) => sum + this.getCapacite(resource, week) * resource.jours_par_semaine,
-      0
+      0,
     );
   }
 
@@ -916,7 +935,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
       viewportHeight: window.innerHeight,
       viewportWidth: window.innerWidth,
       popoverHeight: 200, // Estimated height of the popover
-      popoverWidth: 160
+      popoverWidth: 160,
     });
     this.popoverPosition = pos;
     this.popoverArrowSide = pos.arrowSide;

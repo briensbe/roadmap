@@ -174,7 +174,7 @@
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 13px;
-  font-family: "Courier New", monospace;
+  font-family: 'Courier New', monospace;
   text-align: right;
   min-width: 100px;
 }
@@ -194,7 +194,7 @@
 .calculated-field {
   text-align: right;
   background-color: #f9f9f9;
-  font-family: "Courier New", monospace;
+  font-family: 'Courier New', monospace;
   color: #666;
   font-weight: 500;
   min-width: 100px;
@@ -237,7 +237,7 @@
 .total-value {
   text-align: right;
   background-color: #e8e8e8;
-  font-family: "Courier New", monospace;
+  font-family: 'Courier New', monospace;
   color: #000;
 }
 

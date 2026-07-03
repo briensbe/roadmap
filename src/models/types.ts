@@ -125,7 +125,7 @@ export interface Charge {
   semaine_debut: string;
   semaine_fin: string;
   unite_ressource: number;
-  jours_par_semaine: number; // !!  à récupérer du role ou de la personne et pas de la table !! 
+  jours_par_semaine: number; // !!  à récupérer du role ou de la personne et pas de la table !!
   role_id?: string;
   personne_id?: string;
   societe_id?: string;
@@ -163,7 +163,7 @@ export interface CustomFieldValue {
   created_at?: string;
 }
 
-export type ResourceType = "societe" | "departement" | "service" | "equipe" | "role" | "personne";
+export type ResourceType = 'societe' | 'departement' | 'service' | 'equipe' | 'role' | 'personne';
 
 export interface WeekData {
   weekStart: Date;

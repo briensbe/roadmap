@@ -1,17 +1,28 @@
-import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges, NgModule } from "@angular/core";
-import { CommonModule } from "@angular/common";
-import { FormsModule } from "@angular/forms";
-import { LucideAngularModule, Search, History, PenLine, Trash2, Package, Rocket, Layers, Flag, Wrench } from "lucide-angular";
-import { Jalon, Projet } from "../../models/types";
+import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges, NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import {
+  LucideAngularModule,
+  Search,
+  History,
+  PenLine,
+  Trash2,
+  Package,
+  Rocket,
+  Layers,
+  Flag,
+  Wrench,
+} from 'lucide-angular';
+import { Jalon, Projet } from '../../models/types';
 
 @NgModule({
   imports: [LucideAngularModule.pick({ Search, History, PenLine, Trash2, Package, Rocket, Layers, Flag, Wrench })],
-  exports: [LucideAngularModule]
+  exports: [LucideAngularModule],
 })
-export class LucideIconsModule { }
+export class LucideIconsModule {}
 
 @Component({
-  selector: "app-milestone-list",
+  selector: 'app-milestone-list',
   standalone: true,
   imports: [CommonModule, FormsModule, LucideIconsModule],
   template: `
@@ -23,8 +34,7 @@ export class LucideIconsModule { }
             type="text"
             [(ngModel)]="searchText"
             (ngModelChange)="filterJalons()"
-            placeholder="Rechercher par titre, description, version..."
-          />
+            placeholder="Rechercher par titre, description, version..." />
         </div>
 
         <label class="toggle-row">
@@ -44,12 +54,11 @@ export class LucideIconsModule { }
 
       <div class="cards-list">
         @for (jalon of filteredJalons; track jalon.id) {
-          <div 
-            class="milestone-card" 
+          <div
+            class="milestone-card"
             [class.past-event]="isPastEvent(jalon.event_date)"
             [class.clickable]="!readonly"
-            (click)="!readonly && edit.emit(jalon)"
-          >
+            (click)="!readonly && edit.emit(jalon)">
             <div class="left">
               <div
                 class="type-badge"
@@ -57,8 +66,7 @@ export class LucideIconsModule { }
                 [class.badge-maintenance]="jalon.event_type === 'maintenance'"
                 [class.badge-mep]="jalon.event_type === 'mep'"
                 [class.badge-sprint]="jalon.event_type === 'sprint'"
-                [class.badge-autre]="jalon.event_type === 'autre' || !jalon.event_type"
-              >
+                [class.badge-autre]="jalon.event_type === 'autre' || !jalon.event_type">
                 <lucide-icon [name]="getIconName(jalon.event_type)" size="22"></lucide-icon>
               </div>
 
@@ -69,12 +77,11 @@ export class LucideIconsModule { }
                     <span class="badge past">Passé</span>
                   }
                   @if (jalon.projet_id) {
-                    <span 
-                      class="badge project" 
-                      [style.background-color]="getProjectColor(jalon.projet_id) + '15'" 
+                    <span
+                      class="badge project"
+                      [style.background-color]="getProjectColor(jalon.projet_id) + '15'"
                       [style.color]="getProjectColor(jalon.projet_id)"
-                      [style.border]="'1px solid ' + getProjectColor(jalon.projet_id) + '30'"
-                    >
+                      [style.border]="'1px solid ' + getProjectColor(jalon.projet_id) + '30'">
                       {{ getProjectName(jalon.projet_id) }}
                     </span>
                   }
@@ -99,7 +106,10 @@ export class LucideIconsModule { }
                 <button class="icon-btn edit-btn" (click)="$event.stopPropagation(); edit.emit(jalon)" title="Modifier">
                   <lucide-icon name="pen-line" size="20"></lucide-icon>
                 </button>
-                <button class="icon-btn delete-btn" (click)="$event.stopPropagation(); delete.emit(jalon)" title="Supprimer">
+                <button
+                  class="icon-btn delete-btn"
+                  (click)="$event.stopPropagation(); delete.emit(jalon)"
+                  title="Supprimer">
                   <lucide-icon name="trash-2" size="20"></lucide-icon>
                 </button>
               </div>
@@ -153,7 +163,9 @@ export class LucideIconsModule { }
         border: 1px solid #dee2e6;
         border-radius: 6px;
         font-size: 0.875rem;
-        transition: border-color 0.2s, box-shadow 0.2s;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
       }
 
       .search-box input:focus {
@@ -204,7 +216,7 @@ export class LucideIconsModule { }
       }
 
       .toggle-material .slider:before {
-        content: "";
+        content: '';
         position: absolute;
         width: 18px;
         height: 18px;
@@ -255,7 +267,10 @@ export class LucideIconsModule { }
         border: 1px solid #e5e7eb;
         border-radius: 10px;
         background: white;
-        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease,
+          border-color 0.2s ease;
       }
 
       .milestone-card:hover {
@@ -493,7 +508,7 @@ export class MilestoneListComponent implements OnInit, OnChanges {
   @Output() delete = new EventEmitter<Jalon>();
 
   filteredJalons: Jalon[] = [];
-  searchText = "";
+  searchText = '';
   showPastEvents = false;
 
   ngOnInit(): void {
@@ -524,7 +539,7 @@ export class MilestoneListComponent implements OnInit, OnChanges {
         (j) =>
           j.title?.toLowerCase().includes(searchLower) ||
           j.version?.toLowerCase().includes(searchLower) ||
-          j.description?.toLowerCase().includes(searchLower)
+          j.description?.toLowerCase().includes(searchLower),
       );
     }
 
@@ -540,24 +555,24 @@ export class MilestoneListComponent implements OnInit, OnChanges {
   }
 
   getProjectName(projetId?: string | null): string {
-    if (!projetId) return "Global";
+    if (!projetId) return 'Global';
     const project = this.projets.find((p) => p.id === projetId);
-    return project ? project.nom_projet : "Global";
+    return project ? project.nom_projet : 'Global';
   }
 
   getProjectColor(projetId?: string | null): string {
-    if (!projetId) return "#6b7280"; // Gray default
+    if (!projetId) return '#6b7280'; // Gray default
     const project = this.projets.find((p) => p.id === projetId);
-    return project?.color || "#4f46e5";
+    return project?.color || '#4f46e5';
   }
 
   formatDate(dateStr: string): string {
     const date = new Date(dateStr);
-    return date.toLocaleDateString("fr-FR", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
+    return date.toLocaleDateString('fr-FR', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
     });
   }
 

@@ -8,7 +8,7 @@
   overflow: hidden; /* Prevent horizontal scroll of entire container */
 }
 
-.capacity-container[data-zoom="compact"] {
+.capacity-container[data-zoom='compact'] {
   --cell-width: 50px;
   --row-min-height: 32px;
   --cell-padding: 0 4px;
@@ -19,7 +19,7 @@
   --fs-10: 9px;
 }
 
-.capacity-container[data-zoom="normal"] {
+.capacity-container[data-zoom='normal'] {
   --cell-width: 80px;
   --row-min-height: 48px;
   --cell-padding: 8px;
@@ -524,7 +524,7 @@
   border-radius: 999px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   color: #475569;
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   margin-left: 4px;
   flex-shrink: 0;
   cursor: pointer;
@@ -656,7 +656,7 @@
 }
 
 .ios-slider:before {
-  content: "";
+  content: '';
   position: absolute;
   height: 14px; /* 🔧 MODIFIER ICI - était 22px */
   width: 14px; /* 🔧 MODIFIER ICI aussi pour garder un cercle */
@@ -751,7 +751,7 @@
   background: #f1f5f9;
 }
 
-.dropdown-item input[type="checkbox"] {
+.dropdown-item input[type='checkbox'] {
   width: 14px;
   height: 14px;
   cursor: pointer;

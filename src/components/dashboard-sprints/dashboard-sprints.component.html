@@ -61,7 +61,7 @@
       <thead>
         <tr>
           <th class="col-projet">
-            {{ groupMode === "equipe" ? "PROJET" : groupMode === "sprint" ? "PROJET" : "LIVRAISON / PROJET" }}
+            {{ groupMode === 'equipe' ? 'PROJET' : groupMode === 'sprint' ? 'PROJET' : 'LIVRAISON / PROJET' }}
           </th>
           @for (col of columns; track col.id) {
             <th class="col-sprint">
@@ -86,7 +86,7 @@
                 </div>
                 <button class="btn-collapse" (click)="toggleGroup(group)">
                   <lucide-icon [img]="group.expanded ? ChevronDown : ChevronRight" [size]="16"></lucide-icon>
-                  {{ group.expanded ? "RÉDUIRE" : "DÉVELOPPER" }}
+                  {{ group.expanded ? 'RÉDUIRE' : 'DÉVELOPPER' }}
                 </button>
               </div>
             </td>
@@ -130,7 +130,7 @@
                         <!-- Progress Gauge -->
                         <div class="charge-gauge" [class]="cell.colorClass">
                           <div class="gauge-fill" [style.width.%]="getGaugeWidth(cell.jours)"></div>
-                          <span class="gauge-label">{{ cell.jours | number: "1.0-1" }}j</span>
+                          <span class="gauge-label">{{ cell.jours | number: '1.0-1' }}j</span>
                         </div>
 
                         <!-- Milestone Badges inside cell -->
@@ -138,8 +138,10 @@
                           <div class="cell-milestones">
                             @for (ms of cell.milestones; track ms.id) {
                               <span class="ms-badge" [class]="(ms.event_type || '').toLowerCase()" [title]="ms.title">
-                                <lucide-icon [img]="(ms.event_type === 'LV' || ms.event_type === 'livraison') ? Flag : Rocket" [size]="10"></lucide-icon>
-                                {{ (ms.event_type === 'LV' || ms.event_type === 'livraison') ? "Livraison" : "MEP" }}
+                                <lucide-icon
+                                  [img]="ms.event_type === 'LV' || ms.event_type === 'livraison' ? Flag : Rocket"
+                                  [size]="10"></lucide-icon>
+                                {{ ms.event_type === 'LV' || ms.event_type === 'livraison' ? 'Livraison' : 'MEP' }}
                               </span>
                             }
                           </div>
@@ -173,9 +175,13 @@
         @for (ms of footerMilestones; track ms.id) {
           <div class="footer-ms-item" [class]="(ms.event_type || '').toLowerCase()">
             <span class="footer-ms-icon">
-              <lucide-icon [img]="(ms.event_type === 'LV' || ms.event_type === 'livraison') ? Flag : Rocket" [size]="12"></lucide-icon>
+              <lucide-icon
+                [img]="ms.event_type === 'LV' || ms.event_type === 'livraison' ? Flag : Rocket"
+                [size]="12"></lucide-icon>
             </span>
-            <span class="footer-ms-type">{{ (ms.event_type === 'LV' || ms.event_type === 'livraison') ? "Livraison" : "MEP" }}</span>
+            <span class="footer-ms-type">{{
+              ms.event_type === 'LV' || ms.event_type === 'livraison' ? 'Livraison' : 'MEP'
+            }}</span>
             <span class="footer-ms-name">{{ ms.title }}</span>
             <span class="footer-ms-date">{{ formatDateYear(ms.event_date) }}</span>
           </div>

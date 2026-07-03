@@ -29,8 +29,14 @@ h2 {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 form {
@@ -48,7 +54,7 @@ input {
   box-sizing: border-box;
 }
 
-button[type="submit"] {
+button[type='submit'] {
   padding: 0.75rem;
   background: #2563eb;
   color: white;
@@ -60,11 +66,11 @@ button[type="submit"] {
   transition: background 0.2s;
 }
 
-button[type="submit"]:hover {
+button[type='submit']:hover {
   background: #1d4ed8;
 }
 
-button[type="submit"]:disabled {
+button[type='submit']:disabled {
   background: #94a3b8;
   cursor: not-allowed;
 }
@@ -97,7 +103,7 @@ a:hover {
 
 .divider::before,
 .divider::after {
-  content: "";
+  content: '';
   flex: 1;
   border-bottom: 1px solid #e2e8f0;
 }

@@ -1,18 +1,18 @@
-import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges, NgModule } from "@angular/core";
-import { CommonModule } from "@angular/common";
-import { FormsModule } from "@angular/forms";
-import { LucideAngularModule, Package, Rocket, Layers, Flag, Wrench } from "lucide-angular";
-import { Jalon } from "../../models/types";
-import { DayEventsModalComponent } from "./day-events-modal.component";
+import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges, NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { LucideAngularModule, Package, Rocket, Layers, Flag, Wrench } from 'lucide-angular';
+import { Jalon } from '../../models/types';
+import { DayEventsModalComponent } from './day-events-modal.component';
 
 @NgModule({
   imports: [LucideAngularModule.pick({ Package, Rocket, Layers, Flag, Wrench })],
-  exports: [LucideAngularModule]
+  exports: [LucideAngularModule],
 })
-export class LucideIconsModule { }
+export class LucideIconsModule {}
 
 @Component({
-  selector: "app-milestone-calendar",
+  selector: 'app-milestone-calendar',
   standalone: true,
   imports: [CommonModule, FormsModule, LucideIconsModule, DayEventsModalComponent],
   template: `
@@ -36,8 +36,7 @@ export class LucideIconsModule { }
             class="calendar-day"
             (click)="onDayClick(day)"
             [class.other-month]="!day.isCurrentMonth"
-            [class.today]="day.isToday"
-          >
+            [class.today]="day.isToday">
             <div class="day-number">{{ day.dayNumber }}</div>
 
             <div class="day-events">
@@ -49,16 +48,13 @@ export class LucideIconsModule { }
                   [class.event-mep]="jalon.event_type === 'mep'"
                   [class.event-sprint]="jalon.event_type === 'sprint'"
                   [class.event-autre]="jalon.event_type === 'autre' || !jalon.event_type"
-                  (click)="$event.stopPropagation(); edit.emit(jalon)"
-                >
+                  (click)="$event.stopPropagation(); edit.emit(jalon)">
                   <lucide-icon [name]="getIconName(jalon.event_type)" size="11"></lucide-icon>
                   <span class="event-title">{{ jalon.title }}</span>
                 </div>
               }
               @if (day.events.length > 3) {
-                <div class="more-events">
-                  + {{ day.events.length - 3 }} de plus...
-                </div>
+                <div class="more-events">+ {{ day.events.length - 3 }} de plus...</div>
               }
 
               @if (!readonly) {
@@ -76,8 +72,7 @@ export class LucideIconsModule { }
           [readonly]="readonly"
           (close)="showDayEventsModal = false"
           (openEvent)="onDayModalEdit($event)"
-          (add)="onDayModalAdd($event)"
-        ></app-day-events-modal>
+          (add)="onDayModalAdd($event)"></app-day-events-modal>
       }
     </div>
   `,
@@ -280,7 +275,10 @@ export class LucideIconsModule { }
         cursor: pointer;
         margin-top: auto;
         opacity: 0;
-        transition: opacity 0.2s, border-color 0.2s, background-color 0.2s;
+        transition:
+          opacity 0.2s,
+          border-color 0.2s,
+          background-color 0.2s;
       }
 
       .calendar-day:hover .add-event-btn {
@@ -399,7 +397,7 @@ export class MilestoneCalendarComponent implements OnInit, OnChanges {
 
   currentDate = new Date();
   calendarDays: any[] = [];
-  weekDays = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+  weekDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
   // Day list modal state
   showDayEventsModal = false;
@@ -483,8 +481,8 @@ export class MilestoneCalendarComponent implements OnInit, OnChanges {
 
   formatDateToString(date: Date): string {
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   }
 
@@ -498,9 +496,9 @@ export class MilestoneCalendarComponent implements OnInit, OnChanges {
   }
 
   getMonthYear(): string {
-    return this.currentDate.toLocaleDateString("fr-FR", {
-      month: "long",
-      year: "numeric",
+    return this.currentDate.toLocaleDateString('fr-FR', {
+      month: 'long',
+      year: 'numeric',
     });
   }
 

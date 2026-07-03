@@ -28,12 +28,7 @@ export class RoadmapTransformer {
       for (const [serviceName, metrics] of Object.entries(row.serviceMetrics)) {
         // Skip service row if all JH metrics are null or undefined
         const { initialJh, revisedJh, previsionnelJh, consommeJh } = metrics;
-        if (
-          initialJh === null &&
-          revisedJh === null &&
-          previsionnelJh === null &&
-          consommeJh === null
-        ) {
+        if (initialJh === null && revisedJh === null && previsionnelJh === null && consommeJh === null) {
           continue;
         }
 

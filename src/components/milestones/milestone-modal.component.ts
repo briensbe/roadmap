@@ -21,7 +21,11 @@ import { ConfirmModalComponent } from '../confirm-modal.component';
             <div class="form-group-row">
               <div class="form-group flex-1">
                 <label>Type *</label>
-                <select [(ngModel)]="currentJalon.event_type" name="event_type" required (ngModelChange)="updateAutoTitle()">
+                <select
+                  [(ngModel)]="currentJalon.event_type"
+                  name="event_type"
+                  required
+                  (ngModelChange)="updateAutoTitle()">
                   <option value="autre">Autre</option>
                   <option value="livraison">Livraison (LV)</option>
                   <option value="maintenance">Livraison Maintenance (LVM)</option>
@@ -32,25 +36,38 @@ import { ConfirmModalComponent } from '../confirm-modal.component';
 
               <div class="form-group flex-1">
                 <label>Version</label>
-                <input [(ngModel)]="currentJalon.version" name="version" placeholder="Ex: 1.4.0" (ngModelChange)="updateAutoTitle()">
+                <input
+                  [(ngModel)]="currentJalon.version"
+                  name="version"
+                  placeholder="Ex: 1.4.0"
+                  (ngModelChange)="updateAutoTitle()" />
               </div>
             </div>
 
             <div class="form-group-row">
               <div class="form-group flex-1">
                 <label>Date *</label>
-                <input type="date" [(ngModel)]="currentJalon.event_date" name="event_date" required>
+                <input type="date" [(ngModel)]="currentJalon.event_date" name="event_date" required />
               </div>
 
               <div class="form-group flex-1">
                 <label>Titre du jalon *</label>
-                <input [(ngModel)]="currentJalon.title" name="title" required placeholder="Ex: Livraison V1.4" (input)="onTitleInput()">
+                <input
+                  [(ngModel)]="currentJalon.title"
+                  name="title"
+                  required
+                  placeholder="Ex: Livraison V1.4"
+                  (input)="onTitleInput()" />
               </div>
             </div>
 
             <div class="form-group">
               <label>Description</label>
-              <textarea [(ngModel)]="currentJalon.description" name="description" placeholder="Description du jalon..." rows="3"></textarea>
+              <textarea
+                [(ngModel)]="currentJalon.description"
+                name="description"
+                placeholder="Description du jalon..."
+                rows="3"></textarea>
             </div>
 
             <div class="form-group">
@@ -84,186 +101,189 @@ import { ConfirmModalComponent } from '../confirm-modal.component';
         [message]="deleteConfirmMessage"
         confirmLabel="Supprimer"
         (confirm)="onConfirmDelete()"
-        (cancel)="showConfirmModal = false"
-      ></app-confirm-modal>
+        (cancel)="showConfirmModal = false"></app-confirm-modal>
     }
   `,
-  styles: [`
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
+  styles: [
+    `
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
 
-    .modal {
-      background: white;
-      border-radius: 12px;
-      width: 100%;
-      max-width: 550px;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-      padding: 24px;
-    }
+      .modal {
+        background: white;
+        border-radius: 12px;
+        width: 100%;
+        max-width: 550px;
+        box-shadow:
+          0 20px 25px -5px rgba(0, 0, 0, 0.1),
+          0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        padding: 24px;
+      }
 
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-    }
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+      }
 
-    .modal-header h2 {
-      margin: 0;
-      font-size: 20px;
-      font-weight: 600;
-      color: #111827;
-    }
+      .modal-header h2 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 600;
+        color: #111827;
+      }
 
-    .modal-close {
-      background: transparent;
-      border: none;
-      font-size: 24px;
-      color: #9ca3af;
-      cursor: pointer;
-    }
+      .modal-close {
+        background: transparent;
+        border: none;
+        font-size: 24px;
+        color: #9ca3af;
+        cursor: pointer;
+      }
 
-    .form {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
+      .form {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
 
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
 
-    .form-group-row {
-      display: flex;
-      gap: 16px;
-    }
+      .form-group-row {
+        display: flex;
+        gap: 16px;
+      }
 
-    .flex-1 {
-      flex: 1;
-    }
+      .flex-1 {
+        flex: 1;
+      }
 
-    .form-group label {
-      font-size: 14px;
-      font-weight: 500;
-      color: #374151;
-    }
+      .form-group label {
+        font-size: 14px;
+        font-weight: 500;
+        color: #374151;
+      }
 
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid #d1d5db;
-      border-radius: 6px;
-      font-size: 14px;
-      color: #111827;
-      transition: all 0.2s;
-      font-family: inherit;
-      box-sizing: border-box;
-    }
+      .form-group input,
+      .form-group select,
+      .form-group textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+        color: #111827;
+        transition: all 0.2s;
+        font-family: inherit;
+        box-sizing: border-box;
+      }
 
-    .form-group input:focus,
-    .form-group select:focus,
-    .form-group textarea:focus {
-      outline: none;
-      border-color: #4f46e5;
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-    }
+      .form-group input:focus,
+      .form-group select:focus,
+      .form-group textarea:focus {
+        outline: none;
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+      }
 
-    .modal-actions {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 16px;
-    }
+      .modal-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 16px;
+      }
 
-    .right-actions {
-      display: flex;
-      gap: 12px;
-    }
+      .right-actions {
+        display: flex;
+        gap: 12px;
+      }
 
-    .btn {
-      padding: 10px 20px;
-      border-radius: 8px;
-      font-weight: 500;
-      cursor: pointer;
-      border: none;
-      transition: all 0.2s;
-    }
+      .btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+      }
 
-    .btn-primary {
-      background: #4f46e5;
-      color: white;
-    }
+      .btn-primary {
+        background: #4f46e5;
+        color: white;
+      }
 
-    .btn-primary:hover {
-      background: #4338ca;
-    }
+      .btn-primary:hover {
+        background: #4338ca;
+      }
 
-    .btn-secondary {
-      background: #e5e7eb;
-      color: #374151;
-    }
+      .btn-secondary {
+        background: #e5e7eb;
+        color: #374151;
+      }
 
-    .btn-secondary:hover {
-      background: #d1d5db;
-    }
+      .btn-secondary:hover {
+        background: #d1d5db;
+      }
 
-    .btn-danger {
-      background: #dc2626;
-      color: white;
-    }
+      .btn-danger {
+        background: #dc2626;
+        color: white;
+      }
 
-    .btn-danger:hover {
-      background: #b91c1c;
-    }
+      .btn-danger:hover {
+        background: #b91c1c;
+      }
 
-    /* Dark Mode */
-    :host-context(body.dark-mode) .modal {
-      background: #1f2937;
-    }
-    :host-context(body.dark-mode) .modal-header h2 {
-      color: #f9fafb;
-    }
-    :host-context(body.dark-mode) .form-group label {
-      color: #d1d5db;
-    }
-    :host-context(body.dark-mode) .form-group input,
-    :host-context(body.dark-mode) .form-group select,
-    :host-context(body.dark-mode) .form-group textarea {
-      background: #111827;
-      border-color: #374151;
-      color: #f9fafb;
-    }
-    :host-context(body.dark-mode) .btn-secondary {
-      background: #374151;
-      color: #cbd5e1;
-    }
-    :host-context(body.dark-mode) .btn-secondary:hover {
-      background: #4b5563;
-    }
-    :host-context(body.dark-mode) .btn-danger {
-      background: #b91c1c;
-    }
-    :host-context(body.dark-mode) .btn-danger:hover {
-      background: #991b1b;
-    }
-    :host-context(body.dark-mode) input[type="date"]::-webkit-calendar-picker-indicator {
-      filter: invert(1);
-    }
-  `]
+      /* Dark Mode */
+      :host-context(body.dark-mode) .modal {
+        background: #1f2937;
+      }
+      :host-context(body.dark-mode) .modal-header h2 {
+        color: #f9fafb;
+      }
+      :host-context(body.dark-mode) .form-group label {
+        color: #d1d5db;
+      }
+      :host-context(body.dark-mode) .form-group input,
+      :host-context(body.dark-mode) .form-group select,
+      :host-context(body.dark-mode) .form-group textarea {
+        background: #111827;
+        border-color: #374151;
+        color: #f9fafb;
+      }
+      :host-context(body.dark-mode) .btn-secondary {
+        background: #374151;
+        color: #cbd5e1;
+      }
+      :host-context(body.dark-mode) .btn-secondary:hover {
+        background: #4b5563;
+      }
+      :host-context(body.dark-mode) .btn-danger {
+        background: #b91c1c;
+      }
+      :host-context(body.dark-mode) .btn-danger:hover {
+        background: #991b1b;
+      }
+      :host-context(body.dark-mode) input[type='date']::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+      }
+    `,
+  ],
 })
 export class MilestoneModalComponent implements OnChanges {
   @Input() visible = false;
@@ -278,12 +298,12 @@ export class MilestoneModalComponent implements OnChanges {
     description: '',
     version: '',
     event_date: '',
-    event_type: 'autre'
+    event_type: 'autre',
   };
 
   isTitleManuallyEdited = false;
 
-  constructor(private jalonService: JalonService) { }
+  constructor(private jalonService: JalonService) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['jalon'] && this.jalon) {
@@ -296,7 +316,7 @@ export class MilestoneModalComponent implements OnChanges {
         description: '',
         version: '',
         event_date: new Date().toISOString().split('T')[0],
-        event_type: 'autre'
+        event_type: 'autre',
       };
       this.isTitleManuallyEdited = false;
     }
@@ -376,7 +396,7 @@ export class MilestoneModalComponent implements OnChanges {
       event_type: this.currentJalon.event_type || 'autre',
       description: this.currentJalon.description || '',
       version: this.currentJalon.version || '',
-      projet_id: this.currentJalon.projet_id || null
+      projet_id: this.currentJalon.projet_id || null,
     };
 
     try {

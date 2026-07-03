@@ -1,6 +1,6 @@
 <div class="container">
   <h2>Login</h2>
-  
+
   @if (sessionExpired()) {
     <div class="session-expired-alert">
       <lucide-icon [img]="Info" size="18"></lucide-icon>
@@ -16,14 +16,13 @@
         name="password"
         placeholder="Password"
         required
-        autocomplete="current-password"
-      />
+        autocomplete="current-password" />
       <button type="button" class="toggle-password" tabindex="-1" (click)="togglePasswordVisibility()">
         <lucide-icon [img]="showPassword() ? EyeOff : Eye" size="20"></lucide-icon>
       </button>
     </div>
     <button type="submit" [disabled]="loading">
-      {{ loading ? "Loading..." : "Sign In" }}
+      {{ loading ? 'Loading...' : 'Sign In' }}
     </button>
   </form>
 

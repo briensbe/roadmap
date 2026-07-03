@@ -25,8 +25,7 @@
         id="excel-import-input"
         style="display: none"
         (change)="importFromExcel($event)"
-        accept=".xlsx, .xls"
-      />
+        accept=".xlsx, .xls" />
     </div>
   </div>
 
@@ -37,47 +36,102 @@
         [ngModel]="searchQuery()"
         (ngModelChange)="searchQuery.set($event)"
         placeholder="Rechercher un projet..."
-        class="search-input"
-      />
+        class="search-input" />
     </div>
 
     <div class="controls-right">
-      <div class="status-dropdown-container" style="position: relative;">
+      <div class="status-dropdown-container" style="position: relative">
         <div
           class="filter-select select-trigger"
           [class.active]="showStatusDropdown()"
           (click)="toggleStatusDropdown($event)"
-          style="width: 170px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none;"
-        >
-          <span class="trigger-label" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+          style="
+            width: 170px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+          ">
+          <span class="trigger-label" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">
             {{ getStatusFilterLabel() }}
           </span>
-          <lucide-icon [img]="ChevronDown" [size]="14" style="color: #64748b; flex-shrink: 0; margin-left: 4px;"></lucide-icon>
+          <lucide-icon
+            [img]="ChevronDown"
+            [size]="14"
+            style="color: #64748b; flex-shrink: 0; margin-left: 4px"></lucide-icon>
         </div>
 
         @if (showStatusDropdown()) {
-          <div class="dropdown-menu shadow-lg" (click)="$event.stopPropagation()" style="position: absolute; top: 100%; right: 0; width: 220px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 8px; z-index: 2000; display: flex; flex-direction: column; max-height: 400px; padding: 0; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);">
-            <div class="dropdown-header" style="padding: 8px 12px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border-radius: 8px 8px 0 0; font-size: 11px; font-weight: 600; color: #64748b; user-select: none;">
+          <div
+            class="dropdown-menu shadow-lg"
+            (click)="$event.stopPropagation()"
+            style="
+              position: absolute;
+              top: 100%;
+              right: 0;
+              width: 220px;
+              background: white;
+              border: 1px solid #e2e8f0;
+              border-radius: 8px;
+              margin-top: 8px;
+              z-index: 2000;
+              display: flex;
+              flex-direction: column;
+              max-height: 400px;
+              padding: 0;
+              box-shadow:
+                0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            ">
+            <div
+              class="dropdown-header"
+              style="
+                padding: 8px 12px;
+                border-bottom: 1px solid #f1f5f9;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background: #f8fafc;
+                border-radius: 8px 8px 0 0;
+                font-size: 11px;
+                font-weight: 600;
+                color: #64748b;
+                user-select: none;
+              ">
               <span>{{ statusFilter().length }} sélectionné(s)</span>
               @if (statusFilter().length > 0) {
                 <button
                   class="btn-clear"
                   (click)="clearStatusFilter(); $event.stopPropagation()"
-                  style="background: transparent; border: none; color: #3b82f6; cursor: pointer; font-size: 11px; padding: 0; font-family: inherit;"
-                >
+                  style="
+                    background: transparent;
+                    border: none;
+                    color: #3b82f6;
+                    cursor: pointer;
+                    font-size: 11px;
+                    padding: 0;
+                    font-family: inherit;
+                  ">
                   Effacer
                 </button>
               }
             </div>
-            <div class="dropdown-list" style="overflow-y: auto; padding: 4px 0;">
+            <div class="dropdown-list" style="overflow-y: auto; padding: 4px 0">
               @for (s of ['Actif', 'En cours', 'Planifié', 'Terminé', 'En pause']; track s) {
                 <div
                   class="dropdown-item"
                   (click)="toggleStatusSelection(s); $event.stopPropagation()"
-                  style="padding: 8px 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: background 0.15s ease;"
-                >
-                  <input type="checkbox" [checked]="isStatusSelected(s)" style="pointer-events: none;" />
-                  <span class="status-badge" [attr.data-status]="s" style="margin: 0;">{{ s }}</span>
+                  style="
+                    padding: 8px 12px;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    cursor: pointer;
+                    transition: background 0.15s ease;
+                  ">
+                  <input type="checkbox" [checked]="isStatusSelected(s)" style="pointer-events: none" />
+                  <span class="status-badge" [attr.data-status]="s" style="margin: 0">{{ s }}</span>
                 </div>
               }
             </div>
@@ -90,8 +144,7 @@
           class="toggle-btn"
           [class.active]="viewMode() === 'card'"
           (click)="setViewMode('card')"
-          title="Vue en cartes"
-        >
+          title="Vue en cartes">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
             <rect x="2" y="2" width="7" height="7" rx="1" />
             <rect x="11" y="2" width="7" height="7" rx="1" />
@@ -103,8 +156,7 @@
           class="toggle-btn"
           [class.active]="viewMode() === 'list'"
           (click)="setViewMode('list')"
-          title="Vue en liste"
-        >
+          title="Vue en liste">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
             <rect x="2" y="3" width="16" height="2" rx="1" />
             <rect x="2" y="8" width="16" height="2" rx="1" />
@@ -115,8 +167,7 @@
           class="toggle-btn"
           [class.active]="viewMode() === 'table'"
           (click)="setViewMode('table')"
-          title="Vue tableau"
-        >
+          title="Vue tableau">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
             <rect x="2" y="2" width="16" height="16" rx="1" fill="none" stroke="currentColor" stroke-width="2" />
             <line x1="2" y1="7" x2="18" y2="7" stroke="currentColor" stroke-width="2" />
@@ -143,7 +194,11 @@
         </tr>
       </thead>
       <tbody cdkDropList (cdkDropListDropped)="drop($event)">
-        <tr *ngFor="let projet of filteredProjects(); let i = index" cdkDrag class="project-table-row" (click)="openEditModal(projet)">
+        <tr
+          *ngFor="let projet of filteredProjects(); let i = index"
+          cdkDrag
+          class="project-table-row"
+          (click)="openEditModal(projet)">
           <td class="col-code">
             <span class="project-code" [style.color]="projet.color || '#3b82f6'">{{ projet.code_projet }}</span>
           </td>
@@ -167,8 +222,7 @@
                   [href]="externalReferenceUrl() + projet.reference_externe"
                   target="_blank"
                   class="ref-link"
-                  (click)="$event.stopPropagation()"
-                >
+                  (click)="$event.stopPropagation()">
                   #{{ projet.reference_externe }}
                   <lucide-icon [img]="ExternalLink" [size]="12"></lucide-icon>
                 </a>
@@ -182,7 +236,10 @@
               <button class="menu-btn" (click)="toggleMenu($event, projet.id!)">
                 <lucide-icon [img]="MoreVertical" [size]="18"></lucide-icon>
               </button>
-              <div class="dropdown-menu right" [class.up]="i >= filteredProjects().length - 2 && i > 0" *ngIf="activeMenuId === projet.id">
+              <div
+                class="dropdown-menu right"
+                [class.up]="i >= filteredProjects().length - 2 && i > 0"
+                *ngIf="activeMenuId === projet.id">
                 <button class="dropdown-item" (click)="openEditModal(projet)">
                   <lucide-icon [img]="Edit" [size]="14"></lucide-icon>
                   Modifier
@@ -219,8 +276,7 @@
       class="project-card"
       [style.border-left-color]="projet.color || '#3b82f6'"
       [class.menu-active]="activeMenuId === projet.id"
-      (click)="openEditModal(projet)"
-    >
+      (click)="openEditModal(projet)">
       <div class="card-header">
         <div class="card-header-top">
           <div class="project-identifiers">
@@ -231,8 +287,7 @@
                   [href]="externalReferenceUrl() + projet.reference_externe"
                   target="_blank"
                   class="ref-link"
-                  (click)="$event.stopPropagation()"
-                >
+                  (click)="$event.stopPropagation()">
                   #{{ projet.reference_externe }}
                   <lucide-icon [img]="ExternalLink" [size]="12"></lucide-icon>
                 </a>
@@ -286,8 +341,7 @@
               class="progress-fill"
               [style.width.%]="getProgressPercent(projet)"
               [class.warning]="getProgressPercent(projet) > 80 && getProgressPercent(projet) <= 100"
-              [class.danger]="getProgressPercent(projet) > 100"
-            ></div>
+              [class.danger]="getProgressPercent(projet) > 100"></div>
           </div>
         </div>
       </div>
@@ -306,8 +360,7 @@
       class="project-list-card"
       [style.border-left-color]="projet.color || '#3b82f6'"
       [class.menu-active]="activeMenuId === projet.id"
-      (click)="openEditModal(projet)"
-    >
+      (click)="openEditModal(projet)">
       <div class="card-left">
         <div class="project-info">
           <div class="project-name-row">
@@ -324,8 +377,7 @@
                     [href]="externalReferenceUrl() + projet.reference_externe"
                     target="_blank"
                     class="ref-link"
-                    (click)="$event.stopPropagation()"
-                  >
+                    (click)="$event.stopPropagation()">
                     #{{ projet.reference_externe }}
                     <lucide-icon [img]="ExternalLink" [size]="12"></lucide-icon>
                   </a>
@@ -379,8 +431,7 @@
   [projet]="newProjet"
   (saved)="onProjectSaved()"
   (closed)="closeModal()"
-  (openChiffres)="openChiffresModal($event)"
-></app-project-modal>
+  (openChiffres)="openChiffresModal($event)"></app-project-modal>
 
 <!-- chiffres modal -->
 <div>
@@ -388,8 +439,7 @@
     [visible]="showChiffresModal"
     [idProjet]="selectedProjetId"
     (close)="closeChiffresModal()"
-    (saved)="onChiffresModalSaved($event)"
-  ></app-chiffres-modal>
+    (saved)="onChiffresModalSaved($event)"></app-chiffres-modal>
 </div>
 
 <app-confirm-modal
@@ -401,6 +451,5 @@
   [variant]="confirmVariant"
   [showCancel]="showCancelButton"
   (confirm)="onConfirmAction()"
-  (cancel)="showConfirmModal = false"
->
+  (cancel)="showConfirmModal = false">
 </app-confirm-modal>

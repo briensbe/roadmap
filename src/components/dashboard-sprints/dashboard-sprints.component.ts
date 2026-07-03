@@ -1,6 +1,6 @@
-import { Component, OnInit } from "@angular/core";
-import { CommonModule } from "@angular/common";
-import { FormsModule } from "@angular/forms";
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import {
   LucideAngularModule,
   Calendar,
@@ -13,16 +13,16 @@ import {
   ChevronRight,
   ChevronDown,
   SlidersHorizontal,
-} from "lucide-angular";
-import { ProjetService } from "../../services/projet.service";
-import { RolesService } from "../../services/roles.service";
-import { PersonnesService } from "../../services/personnes.service";
-import { TeamService } from "../../services/team.service";
-import { JalonService } from "../../services/jalon.service";
-import { ChargeService } from "../../services/charge.service";
-import { Projet, Jalon, Charge, Equipe, Role, Personne } from "../../models/types";
+} from 'lucide-angular';
+import { ProjetService } from '../../services/projet.service';
+import { RolesService } from '../../services/roles.service';
+import { PersonnesService } from '../../services/personnes.service';
+import { TeamService } from '../../services/team.service';
+import { JalonService } from '../../services/jalon.service';
+import { ChargeService } from '../../services/charge.service';
+import { Projet, Jalon, Charge, Equipe, Role, Personne } from '../../models/types';
 
-export type GroupMode = "equipe" | "sprint" | "livraison" | "mep";
+export type GroupMode = 'equipe' | 'sprint' | 'livraison' | 'mep';
 
 interface SprintPeriod {
   sprint: Jalon;
@@ -54,11 +54,11 @@ interface GroupRow {
 }
 
 @Component({
-  selector: "app-dashboard-sprints",
+  selector: 'app-dashboard-sprints',
   standalone: true,
   imports: [CommonModule, FormsModule, LucideAngularModule],
-  templateUrl: "./dashboard-sprints.component.html",
-  styleUrls: ["./dashboard-sprints.component.css"],
+  templateUrl: './dashboard-sprints.component.html',
+  styleUrls: ['./dashboard-sprints.component.css'],
 })
 export class DashboardSprintsComponent implements OnInit {
   // Lucide Icons
@@ -82,12 +82,12 @@ export class DashboardSprintsComponent implements OnInit {
 
   // Sprint selectors
   allSprints: Jalon[] = [];
-  startSprintId: string = "";
-  endSprintId: string = "";
+  startSprintId: string = '';
+  endSprintId: string = '';
   selectedSprints: SprintPeriod[] = [];
 
   // Group Mode
-  groupMode: GroupMode = "equipe";
+  groupMode: GroupMode = 'equipe';
 
   // Grouped rows to render in the table
   groupedRows: GroupRow[] = [];
@@ -123,7 +123,7 @@ export class DashboardSprintsComponent implements OnInit {
     try {
       this.projets = await this.projetService.getAllProjets();
     } catch (error) {
-      console.error("Error loading projects:", error);
+      console.error('Error loading projects:', error);
     }
   }
 
@@ -131,7 +131,7 @@ export class DashboardSprintsComponent implements OnInit {
     try {
       this.jalons = await this.jalonService.getAllJalons();
     } catch (error) {
-      console.error("Error loading jalons:", error);
+      console.error('Error loading jalons:', error);
     }
   }
 
@@ -140,7 +140,7 @@ export class DashboardSprintsComponent implements OnInit {
       this.roles = await this.rolesService.getAllRoles();
       this.personnes = await this.personnesService.getAllPersonnes();
     } catch (error) {
-      console.error("Error loading resources:", error);
+      console.error('Error loading resources:', error);
     }
   }
 
@@ -148,7 +148,7 @@ export class DashboardSprintsComponent implements OnInit {
     try {
       this.equipes = await this.teamService.getAllEquipes();
     } catch (error) {
-      console.error("Error loading organization:", error);
+      console.error('Error loading organization:', error);
     }
   }
 
@@ -156,14 +156,14 @@ export class DashboardSprintsComponent implements OnInit {
     try {
       this.charges = await this.chargeService.getAllCharges();
     } catch (error) {
-      console.error("Error loading charges:", error);
+      console.error('Error loading charges:', error);
     }
   }
 
   initSprints() {
     // Sprints are jalons of type 'SP' sorted chronologically
     this.allSprints = this.jalons
-      .filter((j) => j.event_type === "sprint" || j.event_type === "SP")
+      .filter((j) => j.event_type === 'sprint' || j.event_type === 'SP')
       .sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
 
     if (this.allSprints.length === 0) return;
@@ -176,8 +176,8 @@ export class DashboardSprintsComponent implements OnInit {
     const startIdx = upcomingIdx !== -1 ? upcomingIdx : Math.max(0, this.allSprints.length - 5);
     const endIdx = Math.min(startIdx + 4, this.allSprints.length - 1);
 
-    this.startSprintId = this.allSprints[startIdx]?.id || "";
-    this.endSprintId = this.allSprints[endIdx]?.id || "";
+    this.startSprintId = this.allSprints[startIdx]?.id || '';
+    this.endSprintId = this.allSprints[endIdx]?.id || '';
   }
 
   // Called when sprint filters or group mode changes
@@ -220,12 +220,12 @@ export class DashboardSprintsComponent implements OnInit {
     });
 
     // 2. Generate columns
-    if (this.groupMode === "sprint") {
+    if (this.groupMode === 'sprint') {
       // Columns are Teams (Équipes)
       this.columns = this.equipes.map((eq) => ({
         id: eq.id!,
         label: eq.nom,
-        sublabel: eq.code || "",
+        sublabel: eq.code || '',
       }));
     } else {
       // Columns are Sprints
@@ -239,14 +239,14 @@ export class DashboardSprintsComponent implements OnInit {
     // 3. Generate grouped rows
     this.groupedRows = [];
 
-    if (this.groupMode === "equipe") {
+    if (this.groupMode === 'equipe') {
       this.generateGroupedByTeam();
-    } else if (this.groupMode === "sprint") {
+    } else if (this.groupMode === 'sprint') {
       this.generateGroupedBySprint();
-    } else if (this.groupMode === "livraison") {
-      this.generateGroupedByMilestone("LV");
-    } else if (this.groupMode === "mep") {
-      this.generateGroupedByMilestone("MEP");
+    } else if (this.groupMode === 'livraison') {
+      this.generateGroupedByMilestone('LV');
+    } else if (this.groupMode === 'mep') {
+      this.generateGroupedByMilestone('MEP');
     }
 
     // 4. Generate footer milestones
@@ -257,7 +257,10 @@ export class DashboardSprintsComponent implements OnInit {
       this.footerMilestones = this.jalons
         .filter(
           (j) =>
-            (j.event_type === "livraison" || j.event_type === "LV" || j.event_type === "mep" || j.event_type === "MEP") &&
+            (j.event_type === 'livraison' ||
+              j.event_type === 'LV' ||
+              j.event_type === 'mep' ||
+              j.event_type === 'MEP') &&
             new Date(j.event_date) >= rangeStart &&
             new Date(j.event_date) <= rangeEnd,
         )
@@ -269,7 +272,7 @@ export class DashboardSprintsComponent implements OnInit {
 
   generateGroupedByTeam() {
     for (const team of this.equipes) {
-      const subRows: GroupRow["subRows"] = [];
+      const subRows: GroupRow['subRows'] = [];
       let teamTotalCharge = 0;
 
       for (const project of this.projets) {
@@ -300,7 +303,7 @@ export class DashboardSprintsComponent implements OnInit {
           id: team.id!,
           name: team.nom,
           code: team.code,
-          color: team.color || "#3b82f6",
+          color: team.color || '#3b82f6',
           extraInfo: `${subRows.length} projets • ${Math.round(teamTotalCharge * 10) / 10}j de charge`,
           expanded: true,
           totalCharge: Math.round(teamTotalCharge * 10) / 10,
@@ -312,7 +315,7 @@ export class DashboardSprintsComponent implements OnInit {
 
   generateGroupedBySprint() {
     for (const sp of this.selectedSprints) {
-      const subRows: GroupRow["subRows"] = [];
+      const subRows: GroupRow['subRows'] = [];
       let sprintTotalCharge = 0;
 
       for (const project of this.projets) {
@@ -351,17 +354,24 @@ export class DashboardSprintsComponent implements OnInit {
     }
   }
 
-  generateGroupedByMilestone(type: "LV" | "MEP") {
+  generateGroupedByMilestone(type: 'LV' | 'MEP') {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const targetMilestones = this.jalons
-      .filter((j) => (j.event_type === 'livraison' || j.event_type === 'LV' || j.event_type === 'mep' || j.event_type === 'MEP') && (type === "LV" ? (j.event_type === "livraison" || j.event_type === "LV") : (j.event_type === "mep" || j.event_type === "MEP")) && new Date(j.event_date) >= today)
+      .filter(
+        (j) =>
+          (j.event_type === 'livraison' || j.event_type === 'LV' || j.event_type === 'mep' || j.event_type === 'MEP') &&
+          (type === 'LV'
+            ? j.event_type === 'livraison' || j.event_type === 'LV'
+            : j.event_type === 'mep' || j.event_type === 'MEP') &&
+          new Date(j.event_date) >= today,
+      )
       .sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
 
     for (let i = 0; i < targetMilestones.length; i++) {
       const ms = targetMilestones[i];
-      const subRows: GroupRow["subRows"] = [];
+      const subRows: GroupRow['subRows'] = [];
       let milestoneTotalCharge = 0;
 
       // Define delivery period
@@ -385,7 +395,7 @@ export class DashboardSprintsComponent implements OnInit {
 
       for (const project of this.projets) {
         const isMainMilestoneTarget = ms.projet_id === project.id;
-        
+
         let joursInPeriod = 0;
         if (checkStart <= checkEnd) {
           joursInPeriod = this.getChargeForSprint(project.id!, checkStart, checkEnd);
@@ -432,14 +442,14 @@ export class DashboardSprintsComponent implements OnInit {
         });
 
         const mainProj = this.projets.find((p) => p.id === ms.projet_id);
-        const color = type === "LV" ? "#3b82f6" : "#10b981"; // Blue for Livraison, Green for MEP
-        const groupName = `${type === "LV" ? "Livraison" : "MEP"} du ${this.formatSingleDate(ms.event_date)}`;
-        const extraInfo = `${ms.title}${mainProj ? " [" + mainProj.nom_projet + "]" : ""} • ${subRows.length} projets • ${Math.round(milestoneTotalCharge * 10) / 10}j total`;
+        const color = type === 'LV' ? '#3b82f6' : '#10b981'; // Blue for Livraison, Green for MEP
+        const groupName = `${type === 'LV' ? 'Livraison' : 'MEP'} du ${this.formatSingleDate(ms.event_date)}`;
+        const extraInfo = `${ms.title}${mainProj ? ' [' + mainProj.nom_projet + ']' : ''} • ${subRows.length} projets • ${Math.round(milestoneTotalCharge * 10) / 10}j total`;
 
         this.groupedRows.push({
           id: ms.id!,
           name: groupName,
-          code: "",
+          code: '',
           color: color,
           extraInfo: extraInfo,
           expanded: true,
@@ -510,7 +520,7 @@ export class DashboardSprintsComponent implements OnInit {
       .filter(
         (j) =>
           j.projet_id === projetId &&
-          (j.event_type === "livraison" || j.event_type === "LV" || j.event_type === "mep" || j.event_type === "MEP") &&
+          (j.event_type === 'livraison' || j.event_type === 'LV' || j.event_type === 'mep' || j.event_type === 'MEP') &&
           new Date(j.event_date) >= sStart &&
           new Date(j.event_date) <= sEnd,
       )
@@ -520,10 +530,10 @@ export class DashboardSprintsComponent implements OnInit {
   // --- UI Helpers ---
 
   getColorClass(jours: number): string {
-    if (jours <= 0) return "none";
-    if (jours < 10) return "green";
-    if (jours <= 15) return "yellow";
-    return "red";
+    if (jours <= 0) return 'none';
+    if (jours < 10) return 'green';
+    if (jours <= 15) return 'yellow';
+    return 'red';
   }
 
   getGaugeWidth(jours: number): number {
@@ -554,41 +564,41 @@ export class DashboardSprintsComponent implements OnInit {
 
   formatDateLabel(start: Date, end: Date): string {
     const startDay = start.getDate();
-    const startMonth = start.toLocaleDateString("fr-FR", { month: "short" });
+    const startMonth = start.toLocaleDateString('fr-FR', { month: 'short' });
     const endDay = end.getDate();
-    const endMonth = end.toLocaleDateString("fr-FR", { month: "short" });
+    const endMonth = end.toLocaleDateString('fr-FR', { month: 'short' });
     return `${startDay} ${startMonth} - ${endDay} ${endMonth}`;
   }
 
   formatSingleDate(dateStr: string): string {
     const date = new Date(dateStr);
     const day = date.getDate();
-    const month = date.toLocaleDateString("fr-FR", { month: "short" });
+    const month = date.toLocaleDateString('fr-FR', { month: 'short' });
     return `${day} ${month}`;
   }
 
   formatDateYear(dateStr: string): string {
     const date = new Date(dateStr);
     const day = date.getDate();
-    const month = date.toLocaleDateString("fr-FR", { month: "short" });
+    const month = date.toLocaleDateString('fr-FR', { month: 'short' });
     const year = date.getFullYear();
     return `${day} ${month} ${year}`;
   }
 
   formatDateDDMM(dateStr: string): string {
-    if (!dateStr) return "";
+    if (!dateStr) return '';
     const date = new Date(dateStr);
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
     return `${day}/${month}`;
   }
 
   getSprintOptionLabel(s: Jalon): string {
-    const name = s.title || "";
+    const name = s.title || '';
     const date = this.formatDateDDMM(s.event_date);
     const targetLength = 12;
     const paddingNeeded = Math.max(0, targetLength - name.length);
-    const paddedName = name + "\u00A0".repeat(paddingNeeded);
+    const paddedName = name + '\u00A0'.repeat(paddingNeeded);
     return `${paddedName} (${date})`;
   }
 

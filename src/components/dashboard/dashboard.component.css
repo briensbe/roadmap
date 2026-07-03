@@ -4,7 +4,7 @@
   background: #f8fafc;
   height: 100vh;
   overflow-y: auto;
-  font-family: "Outfit", "Inter", sans-serif;
+  font-family: 'Outfit', 'Inter', sans-serif;
   color: #1e293b;
 }
 
@@ -66,7 +66,9 @@
   background: white;
   border-radius: 20px;
   padding: 24px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -2px rgba(0, 0, 0, 0.05);
   border: 1px solid #f1f5f9;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
@@ -76,7 +78,9 @@
 
 .milestone-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 .milestone-card.livraisons {
@@ -261,7 +265,9 @@
 .team-card {
   background: white;
   border-radius: 20px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -2px rgba(0, 0, 0, 0.05);
   border: 1px solid #f1f5f9;
   overflow: visible;
   transition: box-shadow 0.3s;
@@ -400,7 +406,7 @@
 }
 
 .project-code {
-  font-family: "Consolas", "Monaco", monospace;
+  font-family: 'Consolas', 'Monaco', monospace;
   font-weight: 800;
   font-size: 13px;
   letter-spacing: 0.5px;
@@ -428,27 +434,27 @@
   font-size: 10px;
 }
 
-.status-badge[data-status="Actif"] {
+.status-badge[data-status='Actif'] {
   background: #d1fae5;
   color: #065f46;
 }
 
-.status-badge[data-status="En cours"] {
+.status-badge[data-status='En cours'] {
   background: #dbeafe;
   color: #1e40af;
 }
 
-.status-badge[data-status="Planifié"] {
+.status-badge[data-status='Planifié'] {
   background: #fef3c7;
   color: #92400e;
 }
 
-.status-badge[data-status="Terminé"] {
+.status-badge[data-status='Terminé'] {
   background: #f3f4f6;
   color: #374151;
 }
 
-.status-badge[data-status="En pause"] {
+.status-badge[data-status='En pause'] {
   background: #fee2e2;
   color: #991b1b;
 }
@@ -552,7 +558,9 @@
   background: white;
   border-radius: 20px;
   padding: 24px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -2px rgba(0, 0, 0, 0.05);
   border: 1px solid #f1f5f9;
 }
 
@@ -666,7 +674,7 @@
     align-items: flex-start;
     gap: 16px;
   }
-  
+
   .btn-planning {
     width: 100%;
     justify-content: center;
@@ -704,4 +712,3 @@
   color: #0f172a;
   border-color: #cbd5e1;
 }
-

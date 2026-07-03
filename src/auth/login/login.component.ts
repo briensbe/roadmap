@@ -31,7 +31,7 @@ export class LoginComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
 
   ngOnInit() {
-    this.route.queryParams.subscribe(params => {
+    this.route.queryParams.subscribe((params) => {
       if (params['reason'] === 'session_expired') {
         this.sessionExpired.set(true);
       }

@@ -1,12 +1,12 @@
-import { Injectable, signal } from "@angular/core";
-import { AuthTokenResponse, createClient, SupabaseClient, UserResponse, User } from "@supabase/supabase-js";
-import { BehaviorSubject } from "rxjs";
-import { LoginPayload, SignupPayload } from "../auth/types/user.type";
-import { environment } from "../environments/environment";
+import { Injectable, signal } from '@angular/core';
+import { AuthTokenResponse, createClient, SupabaseClient, UserResponse, User } from '@supabase/supabase-js';
+import { BehaviorSubject } from 'rxjs';
+import { LoginPayload, SignupPayload } from '../auth/types/user.type';
+import { environment } from '../environments/environment';
 
-const sessionStorageUserKey = "roadmapUser"; // A changer si on change d'application (car j'avais repris un ancien nom)
+const sessionStorageUserKey = 'roadmapUser'; // A changer si on change d'application (car j'avais repris un ancien nom)
 @Injectable({
-  providedIn: "root"
+  providedIn: 'root',
 })
 export class SupabaseService {
   private supabase: SupabaseClient;
@@ -16,7 +16,7 @@ export class SupabaseService {
   /**
    * Observable pour suivre l'état de l'authentification (compatibilité ascendante)
    */
-  readonly authState$ = new BehaviorSubject<{ event: string, session: any } | null>(null);
+  readonly authState$ = new BehaviorSubject<{ event: string; session: any } | null>(null);
 
   /**
    * Signal réactif pour l'utilisateur actuellement connecté
@@ -57,7 +57,7 @@ export class SupabaseService {
         // ignore l'erreur et réessaie
       }
       // Attendre un petit délai avant de réessayer
-      await new Promise(res => setTimeout(res, delayMs));
+      await new Promise((res) => setTimeout(res, delayMs));
     }
     // Dernière tentative bloquante pour garantir le lock
     return navigator.locks.request(name, acquireFn);
@@ -66,7 +66,7 @@ export class SupabaseService {
   get client(): SupabaseClient {
     return this.supabase;
   }
-  // je laisse cette deuxième méthode pour faciliter l'intégration de auth 
+  // je laisse cette deuxième méthode pour faciliter l'intégration de auth
   getClient(): SupabaseClient {
     return this.supabase;
   }
@@ -91,7 +91,7 @@ export class SupabaseService {
     // console.log("1- signup baseUrl = " + baseUrl);
 
     const authRedirectUrl = environment.authRedirectUrl;
-    console.log("2- signup authRedirectUrl = " + authRedirectUrl);
+    console.log('2- signup authRedirectUrl = ' + authRedirectUrl);
 
     return await this.supabase.auth.signUp({
       email: payload.email,
@@ -109,14 +109,17 @@ export class SupabaseService {
    * Récupère l'utilisateur actuellement connecté.
    * Optimisé pour utiliser le cache local et éviter les appels réseau inutiles.
    */
-  async getUser(): Promise<{ data: { user: User | null }, error: any }> {
-    const cachedUser = this._user(); // signal -> rapide 
+  async getUser(): Promise<{ data: { user: User | null }; error: any }> {
+    const cachedUser = this._user(); // signal -> rapide
     if (cachedUser) {
       return { data: { user: cachedUser }, error: null };
     }
 
     // Si pas de cache, on essaie getSession qui est rapide (Lit dans le stockage local (très rapide, pas d'appel réseau).)
-    const { data: { session }, error: sessionError } = await this.supabase.auth.getSession();
+    const {
+      data: { session },
+      error: sessionError,
+    } = await this.supabase.auth.getSession();
     if (session?.user) {
       this._user.set(session.user);
       return { data: { user: session.user }, error: null };
@@ -136,7 +139,7 @@ export class SupabaseService {
   async signOut() {
     // On marque la déconnexion comme locale
     this._isLocalLogout = true;
-    
+
     // On vide immédiatement le cache local avant même l'appel réseau
     this._user.set(null);
     this.authState$.next(null);
@@ -146,7 +149,7 @@ export class SupabaseService {
     } finally {
       sessionStorage.removeItem(sessionStorageUserKey);
       // On réinitialise le flag après un court délai pour laisser l'effect réagir
-      setTimeout(() => this._isLocalLogout = false, 1000);
+      setTimeout(() => (this._isLocalLogout = false), 1000);
     }
   }
 
@@ -165,11 +168,11 @@ export class SupabaseService {
       // console.log("baseUrl ... = )" + baseUrl + "update-password");
 
       const authRedirectUrl = environment.authRedirectUrl;
-      console.log("authRedirectUrl = " + authRedirectUrl);
+      console.log('authRedirectUrl = ' + authRedirectUrl);
 
       const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
         // redirectTo: `${baseUrl}update-password`,
-        redirectTo: authRedirectUrl + "/update-password",
+        redirectTo: authRedirectUrl + '/update-password',
       });
 
       // const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
@@ -179,7 +182,7 @@ export class SupabaseService {
       if (error) throw error;
     } catch (err: any) {
       // on renvoie l'erreur pour que le composant l'affiche proprement
-      throw new Error(err.message || "Erreur lors de l’envoi du mail de réinitialisation.");
+      throw new Error(err.message || 'Erreur lors de l’envoi du mail de réinitialisation.');
     }
   }
 
@@ -188,7 +191,7 @@ export class SupabaseService {
    * (lorsque Supabase redirige sur /reset-password avec access_token)
    */
   async exchangeCodeForSession(hash: string): Promise<AuthTokenResponse> {
-    if (!hash.includes("access_token")) throw new Error("Token manquant");
+    if (!hash.includes('access_token')) throw new Error('Token manquant');
     const response = await this.supabase.auth.exchangeCodeForSession(hash);
     if (response.error) throw new Error(response.error.message);
     return response;
@@ -209,7 +212,6 @@ export class SupabaseService {
     return this.supabase.auth.getSession();
   }
 
-
   private initializeAuthListener() {
     this.supabase.auth.onAuthStateChange((event, session) => {
       this.authState$.next({ event, session });
@@ -228,12 +230,12 @@ export class SupabaseService {
    */
   async signInWithGoogle() {
     return await this.supabase.auth.signInWithOAuth({
-      provider: "google",
+      provider: 'google',
       options: {
         redirectTo: environment.authRedirectUrl,
         queryParams: {
-          access_type: "offline",
-          prompt: "consent",
+          access_type: 'offline',
+          prompt: 'consent',
         },
       },
     });
