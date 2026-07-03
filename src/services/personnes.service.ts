@@ -3,6 +3,8 @@ import { SupabaseService } from "./supabase.service";
 import { DataSyncService } from "./data-sync.service";
 import { Personne } from "../models/types";
 import { DB_TABLES } from "../constants/db-tables";
+import { paginateQuery } from "../utils/supabase-pagination";
+
 
 @Injectable({
     providedIn: "root"
@@ -34,12 +36,13 @@ export class PersonnesService {
             return this._personnesCache;
         }
 
-        const { data, error } = await this.supabase.client
-            .from(DB_TABLES.PERSONNES)
-            .select("*")
-            .order("nom", { ascending: true });
+        const data = await paginateQuery<Personne>(() =>
+            this.supabase.client
+                .from(DB_TABLES.PERSONNES)
+                .select("*")
+                .order("nom", { ascending: true })
+        );
 
-        if (error) throw error;
         this._personnesCache = data || [];
         return this._personnesCache;
     }

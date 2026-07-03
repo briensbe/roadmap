@@ -3,6 +3,8 @@ import { SupabaseService } from "./supabase.service";
 import { DataSyncService } from "./data-sync.service";
 import { Societe, Departement, Service, Equipe, Role, Personne } from "../models/types";
 import { DB_TABLES } from "../constants/db-tables";
+import { paginateQuery } from "../utils/supabase-pagination";
+
 
 @Injectable({
   providedIn: "root",
@@ -39,8 +41,9 @@ export class ResourceService {
 
   async getAllSocietes(): Promise<Societe[]> {
     if (this._societesCache) return this._societesCache;
-    const { data, error } = await this.supabase.client.from(DB_TABLES.SOCIETES).select("*").order("nom");
-    if (error) throw error;
+    const data = await paginateQuery<Societe>(() =>
+      this.supabase.client.from(DB_TABLES.SOCIETES).select("*").order("nom")
+    );
 
     this._societesCache = data || [];
     return this._societesCache;
@@ -55,8 +58,9 @@ export class ResourceService {
 
   async getAllDepartements(): Promise<Departement[]> {
     if (this._departementsCache) return this._departementsCache;
-    const { data, error } = await this.supabase.client.from(DB_TABLES.DEPARTEMENTS).select("*").order("nom");
-    if (error) throw error;
+    const data = await paginateQuery<Departement>(() =>
+      this.supabase.client.from(DB_TABLES.DEPARTEMENTS).select("*").order("nom")
+    );
 
     this._departementsCache = data || [];
     return this._departementsCache;
@@ -71,8 +75,9 @@ export class ResourceService {
 
   async getAllServices(): Promise<Service[]> {
     if (this._servicesCache) return this._servicesCache;
-    const { data, error } = await this.supabase.client.from(DB_TABLES.SERVICES).select("*").order("nom");
-    if (error) throw error;
+    const data = await paginateQuery<Service>(() =>
+      this.supabase.client.from(DB_TABLES.SERVICES).select("*").order("nom")
+    );
 
     this._servicesCache = data || [];
     return this._servicesCache;
@@ -87,8 +92,9 @@ export class ResourceService {
 
   async getAllEquipes(): Promise<Equipe[]> {
     if (this._equipesCache) return this._equipesCache;
-    const { data, error } = await this.supabase.client.from(DB_TABLES.EQUIPES).select("*").order("nom");
-    if (error) throw error;
+    const data = await paginateQuery<Equipe>(() =>
+      this.supabase.client.from(DB_TABLES.EQUIPES).select("*").order("nom")
+    );
 
     this._equipesCache = data || [];
     return this._equipesCache;
@@ -103,8 +109,9 @@ export class ResourceService {
 
   async getAllRoles(): Promise<Role[]> {
     if (this._rolesCache) return this._rolesCache;
-    const { data, error } = await this.supabase.client.from(DB_TABLES.ROLES).select("*").order("nom");
-    if (error) throw error;
+    const data = await paginateQuery<Role>(() =>
+      this.supabase.client.from(DB_TABLES.ROLES).select("*").order("nom")
+    );
 
     this._rolesCache = data || [];
     return this._rolesCache;
@@ -137,8 +144,9 @@ export class ResourceService {
 
   async getAllPersonnes(): Promise<Personne[]> {
     if (this._personnesCache) return this._personnesCache;
-    const { data, error } = await this.supabase.client.from(DB_TABLES.PERSONNES).select("*").order("nom");
-    if (error) throw error;
+    const data = await paginateQuery<Personne>(() =>
+      this.supabase.client.from(DB_TABLES.PERSONNES).select("*").order("nom")
+    );
 
     this._personnesCache = data || [];
     return this._personnesCache;

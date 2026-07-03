@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { Jalon } from "../models/types";
 import { DB_TABLES } from "../constants/db-tables";
+import { paginateQuery } from "../utils/supabase-pagination";
+
 
 @Injectable({
     providedIn: 'root'
@@ -20,24 +22,26 @@ export class JalonService {
             return this._jalonsCache;
         }
 
-        const { data, error } = await this.supabase.client
-            .from(DB_TABLES.JALONS)
-            .select('*')
-            .order('event_date', { ascending: true });
+        const data = await paginateQuery<Jalon>(() =>
+            this.supabase.client
+                .from(DB_TABLES.JALONS)
+                .select('*')
+                .order('event_date', { ascending: true })
+        );
 
-        if (error) throw error;
         this._jalonsCache = data || [];
         return this._jalonsCache;
     }
 
     async getJalonsByProject(projetId: string): Promise<Jalon[]> {
-        const { data, error } = await this.supabase.client
-            .from(DB_TABLES.JALONS)
-            .select('*')
-            .eq('projet_id', projetId)
-            .order('event_date', { ascending: true });
+        const data = await paginateQuery<Jalon>(() =>
+            this.supabase.client
+                .from(DB_TABLES.JALONS)
+                .select('*')
+                .eq('projet_id', projetId)
+                .order('event_date', { ascending: true })
+        );
 
-        if (error) throw error;
         return data || [];
     }
 

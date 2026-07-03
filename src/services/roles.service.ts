@@ -3,6 +3,8 @@ import { SupabaseService } from "./supabase.service";
 import { DataSyncService } from "./data-sync.service";
 import { Role, RoleAttachment } from "../models/types";
 import { DB_TABLES } from "../constants/db-tables";
+import { paginateQuery } from "../utils/supabase-pagination";
+
 
 @Injectable({
     providedIn: "root"
@@ -36,12 +38,13 @@ export class RolesService {
             return this._rolesCache;
         }
 
-        const { data, error } = await this.supabase.client
-            .from(DB_TABLES.ROLES)
-            .select("*")
-            .order("nom", { ascending: true });
+        const data = await paginateQuery<Role>(() =>
+            this.supabase.client
+                .from(DB_TABLES.ROLES)
+                .select("*")
+                .order("nom", { ascending: true })
+        );
 
-        if (error) throw error;
         this._rolesCache = data || [];
         return this._rolesCache;
     }
@@ -54,11 +57,12 @@ export class RolesService {
             return this._attachmentsCache;
         }
 
-        const { data, error } = await this.supabase.client
-            .from(DB_TABLES.ROLE_ATTACHMENTS)
-            .select("*");
+        const data = await paginateQuery<RoleAttachment>(() =>
+            this.supabase.client
+                .from(DB_TABLES.ROLE_ATTACHMENTS)
+                .select("*")
+        );
 
-        if (error) throw error;
         this._attachmentsCache = data || [];
         return this._attachmentsCache;
     }

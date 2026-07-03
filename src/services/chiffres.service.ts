@@ -7,6 +7,8 @@ import { PersonnesService } from "./personnes.service";
 import { ChargeService } from "./charge.service";
 import { ProjetService } from "./projet.service";
 import { DB_TABLES } from "../constants/db-tables";
+import { paginateQuery } from "../utils/supabase-pagination";
+
 
 @Injectable({
   providedIn: "root",
@@ -32,12 +34,13 @@ export class ChiffresService {
       return this._chiffresCache;
     }
 
-    const { data, error } = await this.supabase.client
-      .from(DB_TABLES.CHIFFRES)
-      .select("*")
-      .order("date_mise_a_jour", { ascending: false });
+    const data = await paginateQuery<Chiffre>(() =>
+      this.supabase.client
+        .from(DB_TABLES.CHIFFRES)
+        .select("*")
+        .order("date_mise_a_jour", { ascending: false })
+    );
 
-    if (error) throw error;
     this._chiffresCache = data || [];
     return this._chiffresCache;
   }
@@ -47,13 +50,14 @@ export class ChiffresService {
       return this._chiffresCache.filter((c) => c.id_projet === idProjet);
     }
 
-    const { data, error } = await this.supabase.client
-      .from(DB_TABLES.CHIFFRES)
-      .select("*")
-      .eq("id_projet", idProjet)
-      .order("id_service");
+    const data = await paginateQuery<Chiffre>(() =>
+      this.supabase.client
+        .from(DB_TABLES.CHIFFRES)
+        .select("*")
+        .eq("id_projet", idProjet)
+        .order("id_service")
+    );
 
-    if (error) throw error;
     return data || [];
   }
 

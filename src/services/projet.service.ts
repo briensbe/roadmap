@@ -6,6 +6,8 @@ import { QueryClient, injectQuery, injectMutation } from "@tanstack/angular-quer
 import { projetQueryKeys } from "./projet.query-keys";
 import { RealtimeChannel } from "@supabase/supabase-js";
 import { DB_TABLES } from "../constants/db-tables";
+import { paginateQuery } from "../utils/supabase-pagination";
+
 
 @Injectable({
   providedIn: "root"
@@ -132,13 +134,12 @@ export class ProjetService implements OnDestroy {
     return injectQuery(() => ({
       queryKey: projetQueryKeys.list(),
       queryFn: async () => {
-        const { data, error } = await this.supabase.client
-          .from(DB_TABLES.PROJETS)
-          .select("*")
-          .order("rank", { ascending: true });
-
-        if (error) throw error;
-        return data || [];
+        return paginateQuery<Projet>(() =>
+          this.supabase.client
+            .from(DB_TABLES.PROJETS)
+            .select("*")
+            .order("rank", { ascending: true })
+        );
       },
       // Ajoutez ces 3 lignes ⬇️
       staleTime: Infinity,
@@ -159,13 +160,12 @@ export class ProjetService implements OnDestroy {
     return this.queryClient.fetchQuery({
       queryKey: projetQueryKeys.list(),
       queryFn: async () => {
-        const { data, error } = await this.supabase.client
-          .from(DB_TABLES.PROJETS)
-          .select("*")
-          .order("rank", { ascending: true });
-
-        if (error) throw error;
-        return data || [];
+        return paginateQuery<Projet>(() =>
+          this.supabase.client
+            .from(DB_TABLES.PROJETS)
+            .select("*")
+            .order("rank", { ascending: true })
+        );
       }
     });
   }
@@ -229,12 +229,11 @@ export class ProjetService implements OnDestroy {
     return this.queryClient.fetchQuery({
       queryKey: projetQueryKeys.equipeLinks(),
       queryFn: async () => {
-        const { data, error } = await this.supabase.client
-          .from(DB_TABLES.EQUIPES_PROJETS)
-          .select("*");
-
-        if (error) throw error;
-        return data || [];
+        return paginateQuery<{ equipe_id: string; projet_id: string }>(() =>
+          this.supabase.client
+            .from(DB_TABLES.EQUIPES_PROJETS)
+            .select("*")
+        );
       }
     });
   }
