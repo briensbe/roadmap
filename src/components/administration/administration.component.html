@@ -8,17 +8,11 @@
 
   <!-- Tab Navigation -->
   <div class="tabs-container">
-    <button 
-      class="tab-btn" 
-      [class.active]="activeTab() === 'mapping'" 
-      (click)="setTab('mapping')">
+    <button class="tab-btn" [class.active]="activeTab() === 'mapping'" (click)="setTab('mapping')">
       <lucide-icon [img]="Building2" [size]="18"></lucide-icon>
       Mappages de Services
     </button>
-    <button 
-      class="tab-btn" 
-      [class.active]="activeTab() === 'batches'" 
-      (click)="setTab('batches')">
+    <button class="tab-btn" [class.active]="activeTab() === 'batches'" (click)="setTab('batches')">
       <lucide-icon [img]="FileSpreadsheet" [size]="18"></lucide-icon>
       Gestion des Lots (Batches)
     </button>
@@ -29,17 +23,20 @@
     <div class="card fade-in">
       <div class="card-header">
         <h2>Lier un Service local à un Service Triskell</h2>
-        <p class="card-subtitle">Configurez la correspondance pour que les budgets importés de Triskell soient correctement attribués aux services de l'application.</p>
+        <p class="card-subtitle">
+          Configurez la correspondance pour que les budgets importés de Triskell soient correctement attribués aux
+          services de l'application.
+        </p>
       </div>
 
       <!-- Add Mapping Form -->
       <form (submit)="handleAddMapping(); $event.preventDefault()" class="add-mapping-form">
         <div class="form-group">
           <label for="local-service">Service Local</label>
-          <select 
-            id="local-service" 
-            [(ngModel)]="newServiceId" 
-            name="newServiceId" 
+          <select
+            id="local-service"
+            [(ngModel)]="newServiceId"
+            name="newServiceId"
             class="form-control"
             [disabled]="isLoadingLocalServices()">
             <option value="">-- Sélectionner un service --</option>
@@ -51,15 +48,14 @@
 
         <div class="form-group">
           <label for="triskell-service">Nom de Service Triskell</label>
-          <input 
+          <input
             id="triskell-service"
-            type="text" 
-            [(ngModel)]="newServiceName" 
-            name="newServiceName" 
-            placeholder="Ex: TRISKELL_SERVICE_DEV" 
+            type="text"
+            [(ngModel)]="newServiceName"
+            name="newServiceName"
+            placeholder="Ex: TRISKELL_SERVICE_DEV"
             list="triskell-names-list"
-            class="form-control"
-          />
+            class="form-control" />
           <datalist id="triskell-names-list">
             @for (name of unmappedTriskellServiceNames(); track name) {
               <option [value]="name"></option>
@@ -67,7 +63,8 @@
           </datalist>
         </div>
 
-        <div class="form-actions">
+        <div class="form-group">
+          <label class="label-invisible">&nbsp;</label>
           <button type="submit" class="btn btn-primary" [disabled]="createMappingMutation.isPending()">
             <lucide-icon [img]="Plus" [size]="16" class="btn-icon"></lucide-icon>
             Ajouter le mappage
@@ -86,16 +83,14 @@
       <!-- Mappings Table -->
       <div class="table-container">
         <h3>Mappages Actuels</h3>
-        
+
         @if (serviceMappingsQuery.isPending()) {
           <div class="loading-state">
             <lucide-icon [img]="RefreshCw" [size]="24" class="spin"></lucide-icon>
             Chargement des mappages...
           </div>
         } @else if (serviceMappingsQuery.isError()) {
-          <div class="alert alert-danger">
-            Erreur lors du chargement des mappages.
-          </div>
+          <div class="alert alert-danger">Erreur lors du chargement des mappages.</div>
         } @else {
           @if (serviceMappingsQuery.data(); as mappings) {
             @if (mappings.length === 0) {
@@ -115,39 +110,32 @@
                       @if (editingId() === mapping.id) {
                         <!-- EDIT MODE -->
                         <td>
-                          <select 
-                            [(ngModel)]="editServiceId" 
-                            name="editServiceId" 
-                            class="form-control table-input">
+                          <select [(ngModel)]="editServiceId" name="editServiceId" class="form-control table-input">
                             @for (srv of localServices(); track srv.id) {
                               <option [value]="srv.id">{{ srv.nom }}</option>
                             }
                           </select>
                         </td>
                         <td>
-                          <input 
-                            type="text" 
-                            [(ngModel)]="editServiceName" 
-                            name="editServiceName" 
-                            class="form-control table-input" 
-                            placeholder="Saisir le nom"
-                          />
+                          <input
+                            type="text"
+                            [(ngModel)]="editServiceName"
+                            name="editServiceName"
+                            class="form-control table-input"
+                            placeholder="Saisir le nom" />
                           @if (editFormError()) {
                             <div class="error-text">{{ editFormError() }}</div>
                           }
                         </td>
                         <td class="actions-cell">
-                          <button 
-                            class="btn-icon-only success" 
+                          <button
+                            class="btn-icon-only success"
                             (click)="handleUpdateMapping(mapping.id)"
                             title="Valider"
                             [disabled]="updateMappingMutation.isPending()">
                             <lucide-icon [img]="Check" [size]="16"></lucide-icon>
                           </button>
-                          <button 
-                            class="btn-icon-only cancel" 
-                            (click)="cancelEdit()"
-                            title="Annuler">
+                          <button class="btn-icon-only cancel" (click)="cancelEdit()" title="Annuler">
                             <lucide-icon [img]="X" [size]="16"></lucide-icon>
                           </button>
                         </td>
@@ -160,14 +148,11 @@
                         </td>
                         <td class="code-font">{{ mapping.service_name }}</td>
                         <td class="actions-cell">
-                          <button 
-                            class="btn-icon-only edit" 
-                            (click)="startEdit(mapping)"
-                            title="Modifier">
+                          <button class="btn-icon-only edit" (click)="startEdit(mapping)" title="Modifier">
                             <lucide-icon [img]="Edit2" [size]="14"></lucide-icon>
                           </button>
-                          <button 
-                            class="btn-icon-only delete" 
+                          <button
+                            class="btn-icon-only delete"
                             (click)="handleDeleteMapping(mapping.id)"
                             title="Supprimer">
                             <lucide-icon [img]="Trash2" [size]="14"></lucide-icon>
@@ -190,7 +175,10 @@
     <div class="card fade-in">
       <div class="card-header">
         <h2>Gestion des Lots d'Importation</h2>
-        <p class="card-subtitle">Visualisez l'historique des importations Triskell et activez le lot contenant les données budgétaires à utiliser.</p>
+        <p class="card-subtitle">
+          Visualisez l'historique des importations Triskell et activez le lot contenant les données budgétaires à
+          utiliser.
+        </p>
       </div>
 
       <div class="table-container">
@@ -200,9 +188,7 @@
             Chargement des lots...
           </div>
         } @else if (batchesQuery.isError()) {
-          <div class="alert alert-danger">
-            Erreur lors du chargement des lots d'importation.
-          </div>
+          <div class="alert alert-danger">Erreur lors du chargement des lots d'importation.</div>
         } @else {
           @if (batchesQuery.data(); as batchResult) {
             @if (batchResult.length === 0) {
@@ -233,9 +219,15 @@
                       </td>
                       <td>
                         <span class="status-badge" [class]="batch.status">
-                          @if (batch.status === 'processed') { Conforme }
-                          @if (batch.status === 'pending') { En cours }
-                          @if (batch.status === 'failed') { Échec }
+                          @if (batch.status === 'processed') {
+                            Conforme
+                          }
+                          @if (batch.status === 'pending') {
+                            En cours
+                          }
+                          @if (batch.status === 'failed') {
+                            Échec
+                          }
                         </span>
                       </td>
                       <td>
@@ -250,8 +242,8 @@
                       </td>
                       <td class="actions-cell">
                         @if (batch.status === 'processed' && !batch.is_active) {
-                          <button 
-                            class="btn btn-sm btn-activate" 
+                          <button
+                            class="btn btn-sm btn-activate"
                             (click)="handleActivateBatch(batch.id)"
                             [disabled]="activateBatchMutation.isPending()">
                             <lucide-icon [img]="Check" [size]="14"></lucide-icon>
