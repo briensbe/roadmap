@@ -238,13 +238,14 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Chiffres Modal props
   showChiffresModal = false;
-  selectedProjetId: number | null = null;
+  selectedProjetId: string | null = null;
 
   async onMilestoneSaved() {
     await this.loadData();
   }
 
-  onOpenChiffresFromProject(idProjet: number) {
+  onOpenChiffresFromProject(idProjet: string | undefined) {
+    if (!idProjet) return;
     this.selectedProjetId = idProjet;
     this.showChiffresModal = true;
   }
@@ -3760,8 +3761,8 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   getProjectChiffresTotal(project: Projet, category: 'initial' | 'revise' | 'previsionnel' | 'consomme'): number {
-    const idProjet = project.id_projet;
-    if (idProjet === null || idProjet === undefined) return 0;
+    const idProjet = project.id;
+    if (!idProjet) return 0;
 
     let sum = 0;
     for (const c of this.allChiffres) {
@@ -4339,18 +4340,10 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // --- Chiffres Triskell badge helpers ---
 
-  /** Résout le id_service numérique Triskell depuis l'UUID d'une équipe. */
-  private getIdServiceForTeam(teamId: string): number | null {
+  /** Résout le service_id UUID depuis l'UUID d'une équipe. */
+  private getServiceIdForTeam(teamId: string): string | null {
     const team = this.allEquipes.find((e) => e.id === teamId);
-    if (!team?.service_id) return null;
-    const service = this.allServices.find((s) => s.id === team.service_id);
-    return service?.id_service ?? null;
-  }
-
-  /** Résout le id_projet numérique Triskell depuis l'UUID d'un projet. */
-  private getIdProjetNumeric(projectId: string): number | null {
-    const project = this.allProjects.find((p) => p.id === projectId);
-    return project?.id_projet ?? null;
+    return team?.service_id ?? null;
   }
 
   /**
@@ -4364,26 +4357,25 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     resourceId?: string,
     resourceType?: 'role' | 'personne',
   ): number | null {
-    let idService: number | null = null;
+    let idService: string | null = null;
 
     if (resourceType === 'personne' && resourceId) {
       const personne = this.availablePersonnes.find((p) => p.id === resourceId);
-      idService = personne?.id_service ?? null;
+      idService = personne?.service_id ?? null;
     } else if (resourceType === 'role' && resourceId) {
       // Pour un rôle, on cherche l'attachement qui lie ce rôle à cette équipe
       const attachment = this.allRoleAttachments.find((a) => a.role_id === resourceId && a.equipe_id === teamId);
-      idService = attachment?.id_service ?? null;
+      idService = attachment?.service_id ?? null;
     }
 
     // Fallback sur le service de l'équipe si non résolu par la ressource
     if (idService === null) {
-      idService = this.getIdServiceForTeam(teamId);
+      idService = this.getServiceIdForTeam(teamId);
     }
 
-    const idProjet = this.getIdProjetNumeric(projectId);
-    if (idService === null || idProjet === null) return null;
+    if (idService === null || !projectId) return null;
 
-    const chiffre = this.allChiffres.find((c) => c.id_projet === idProjet && c.id_service === idService);
+    const chiffre = this.allChiffres.find((c) => c.id_projet === projectId && c.id_service === idService);
     if (!chiffre) return null;
 
     const mode = this.chiffreMode();

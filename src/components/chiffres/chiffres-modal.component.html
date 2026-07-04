@@ -1,147 +1,149 @@
-<div *ngIf="visible" class="modal-overlay" (click)="onClose()">
-  <div class="modal" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h2>Chiffrage par service</h2>
-      <button class="modal-close" (click)="onClose()">×</button>
-    </div>
+@if (visible) {
+  <div class="modal-overlay" (click)="onClose()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Chiffrage par service</h2>
+        <button class="modal-close" (click)="onClose()">×</button>
+      </div>
 
-    <div *ngIf="error" class="error-message">
-      {{ error }}
-    </div>
-
-    <div class="modal-content">
-      <!-- RAF Date Selector -->
-      <div class="raf-date-section">
-        <div class="raf-date-group">
-          <label for="rafDate">RAF au</label>
-          <input type="date" id="rafDate" [(ngModel)]="rafDate" (change)="onRAFDateChange()" class="raf-date-input" />
+      @if (error) {
+        <div class="error-message">
+          {{ error }}
         </div>
-        <button type="button" class="help-toggle" (click)="showHelp = !showHelp" title="Besoin d'aide ?">
-          <lucide-icon [name]="LucideHelpCircle" size="20"></lucide-icon>
+      }
+
+      <div class="modal-content">
+        <!-- RAF Date Selector -->
+        <div class="raf-date-section">
+          <div class="raf-date-group">
+            <label for="rafDate">RAF au</label>
+            <input type="date" id="rafDate" [(ngModel)]="rafDate" (change)="onRAFDateChange()" class="raf-date-input" />
+          </div>
+          <button type="button" class="help-toggle" (click)="showHelp = !showHelp" title="Besoin d'aide ?">
+            <lucide-icon [name]="LucideHelpCircle" size="20"></lucide-icon>
+          </button>
+        </div>
+        <div class="help-container">
+          @if (showHelp) {
+            <div class="help-text">
+              <p><strong>Delta:</strong> Prévisionnel - Révisé</p>
+              <p><strong>Restant:</strong> Prévisionnel - Consommé</p>
+              <p><strong>RAF:</strong> Ressources affectées à partir de la date sélectionnée</p>
+              <p>
+                <strong>Copier-coller:</strong> Vous pouvez copier des cellules Excel (Initial, Révisé, Prévisionnel,
+                Consommé) et les coller pour remplir automatiquement.
+              </p>
+            </div>
+          }
+        </div>
+
+        <!-- Services Table -->
+        <div class="table-container">
+          <table class="chiffres-table">
+            <thead>
+              <tr>
+                <th>SERVICE</th>
+                <th>INITIAL</th>
+                <th>RÉVISÉ</th>
+                <th>PRÉVISIONNEL</th>
+                <th>CONSOMMÉ</th>
+                <th>DELTA</th>
+                <th>RESTANT</th>
+                <th>RAF</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (service of services; track service.id) {
+                @if (service.id) {
+                  <tr class="service-row">
+                    <td class="service-name">
+                      {{ service.nom }}
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        [(ngModel)]="getChiffresData(service.id).initial"
+                        (change)="onValueChange(service.id, 'initial')"
+                        (paste)="handlePaste($event, service.id, 'initial')"
+                        class="input-field"
+                        placeholder="0" />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        [(ngModel)]="getChiffresData(service.id).revise"
+                        (change)="onValueChange(service.id, 'revise')"
+                        (paste)="handlePaste($event, service.id, 'revise')"
+                        class="input-field"
+                        placeholder="0" />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        [(ngModel)]="getChiffresData(service.id).previsionnel"
+                        (change)="onValueChange(service.id, 'previsionnel')"
+                        (paste)="handlePaste($event, service.id, 'previsionnel')"
+                        class="input-field"
+                        placeholder="0" />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        [(ngModel)]="getChiffresData(service.id).consomme"
+                        (change)="onValueChange(service.id, 'consomme')"
+                        (paste)="handlePaste($event, service.id, 'consomme')"
+                        class="input-field"
+                        placeholder="0" />
+                    </td>
+                    <td class="calculated-field">
+                      {{ getChiffresData(service.id).delta?.toFixed(3) || '0.000' }}
+                    </td>
+                    <td class="calculated-field">
+                      {{ getChiffresData(service.id).restant?.toFixed(3) || '0.000' }}
+                    </td>
+                    <td class="calculated-field">
+                      {{ getChiffresData(service.id).raf?.toFixed(3) || '0.000' }}
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+            <tfoot>
+              <tr class="total-row">
+                <td class="total-label">TOTAL</td>
+                <td class="total-value">
+                  {{ calculateTotal('initial') }}
+                </td>
+                <td class="total-value">
+                  {{ calculateTotal('revise') }}
+                </td>
+                <td class="total-value">
+                  {{ calculateTotal('previsionnel') }}
+                </td>
+                <td class="total-value">
+                  {{ calculateTotal('consomme') }}
+                </td>
+                <td class="total-value">
+                  {{ calculateTotal('delta') }}
+                </td>
+                <td class="total-value">
+                  {{ calculateTotal('restant') }}
+                </td>
+                <td class="total-value">
+                  {{ calculateTotal('raf') }}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" (click)="onClose()" [disabled]="isLoading">Annuler</button>
+        <button type="button" class="btn btn-primary" (click)="save()" [disabled]="isLoading">
+          {{ isLoading ? 'Enregistrement...' : 'Enregistrer' }}
         </button>
       </div>
-      <div class="help-container">
-        <div *ngIf="showHelp" class="help-text">
-          <p><strong>Delta:</strong> Prévisionnel - Révisé</p>
-          <p><strong>Restant:</strong> Prévisionnel - Consommé</p>
-          <p><strong>RAF:</strong> Ressources affectées à partir de la date sélectionnée</p>
-          <p>
-            <strong>Copier-coller:</strong> Vous pouvez copier des cellules Excel (Initial, Révisé, Prévisionnel,
-            Consommé) et les coller pour remplir automatiquement.
-          </p>
-        </div>
-      </div>
-
-      <!-- Services Table -->
-      <div class="table-container">
-        <table class="chiffres-table">
-          <thead>
-            <tr>
-              <th>SERVICE</th>
-              <th>INITIAL</th>
-              <th>RÉVISÉ</th>
-              <th>PRÉVISIONNEL</th>
-              <th>CONSOMMÉ</th>
-              <th>DELTA</th>
-              <th>RESTANT</th>
-              <th>RAF</th>
-              <th>DATE MAJ</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let service of services" class="service-row">
-              <td class="service-name">
-                {{ service.nom }}
-              </td>
-              <td>
-                <input
-                  type="number"
-                  [(ngModel)]="getChiffresData(getNumericId(service))!.initial"
-                  (change)="onValueChange(getNumericId(service), 'initial')"
-                  (paste)="handlePaste($event, getNumericId(service), 'initial')"
-                  class="input-field"
-                  placeholder="0" />
-              </td>
-              <td>
-                <input
-                  type="number"
-                  [(ngModel)]="getChiffresData(getNumericId(service))!.revise"
-                  (change)="onValueChange(getNumericId(service), 'revise')"
-                  (paste)="handlePaste($event, getNumericId(service), 'revise')"
-                  class="input-field"
-                  placeholder="0" />
-              </td>
-              <td>
-                <input
-                  type="number"
-                  [(ngModel)]="getChiffresData(getNumericId(service))!.previsionnel"
-                  (change)="onValueChange(getNumericId(service), 'previsionnel')"
-                  (paste)="handlePaste($event, getNumericId(service), 'previsionnel')"
-                  class="input-field"
-                  placeholder="0" />
-              </td>
-              <td>
-                <input
-                  type="number"
-                  [(ngModel)]="getChiffresData(getNumericId(service))!.consomme"
-                  (change)="onValueChange(getNumericId(service), 'consomme')"
-                  (paste)="handlePaste($event, getNumericId(service), 'consomme')"
-                  class="input-field"
-                  placeholder="0" />
-              </td>
-              <td class="calculated-field">
-                {{ getChiffresData(getNumericId(service))!.delta?.toFixed(3) || '0.000' }}
-              </td>
-              <td class="calculated-field">
-                {{ getChiffresData(getNumericId(service))!.restant?.toFixed(3) || '0.000' }}
-              </td>
-              <td class="calculated-field">
-                {{ getChiffresData(getNumericId(service))!.raf?.toFixed(3) || '0.000' }}
-              </td>
-              <td>
-                <input
-                  type="date"
-                  [(ngModel)]="getChiffresData(getNumericId(service))!.date_mise_a_jour"
-                  class="input-field" />
-              </td>
-            </tr>
-          </tbody>
-          <tfoot>
-            <tr class="total-row">
-              <td class="total-label">TOTAL</td>
-              <td class="total-value">
-                {{ calculateTotal('initial') }}
-              </td>
-              <td class="total-value">
-                {{ calculateTotal('revise') }}
-              </td>
-              <td class="total-value">
-                {{ calculateTotal('previsionnel') }}
-              </td>
-              <td class="total-value">
-                {{ calculateTotal('consomme') }}
-              </td>
-              <td class="total-value">
-                {{ calculateTotal('delta') }}
-              </td>
-              <td class="total-value">
-                {{ calculateTotal('restant') }}
-              </td>
-              <td class="total-value">
-                {{ calculateTotal('raf') }}
-              </td>
-              <td></td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </div>
-
-    <div class="modal-actions">
-      <button type="button" class="btn btn-secondary" (click)="onClose()" [disabled]="isLoading">Annuler</button>
-      <button type="button" class="btn btn-primary" (click)="save()" [disabled]="isLoading">
-        {{ isLoading ? 'Enregistrement...' : 'Enregistrer' }}
-      </button>
     </div>
   </div>
-</div>
+}

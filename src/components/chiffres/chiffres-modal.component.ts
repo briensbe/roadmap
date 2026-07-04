@@ -16,7 +16,7 @@ import { LucideAngularModule, LucideCalculator, LucideHelpCircle } from 'lucide-
 })
 export class ChiffresModalComponent implements OnInit, OnChanges {
   @Input() visible: boolean = false;
-  @Input() idProjet: number | null = null;
+  @Input() idProjet: string | null = null;
   @Output() close = new EventEmitter<void>();
   @Output() saved = new EventEmitter<Chiffre[]>();
 
@@ -24,7 +24,7 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
   LucideHelpCircle = LucideHelpCircle;
 
   services: Service[] = [];
-  chiffres: Map<number, ChiffresFormData> = new Map();
+  chiffres: Map<string, ChiffresFormData> = new Map();
   rafDate: string = new Date().toISOString().split('T')[0];
   isLoading: boolean = false;
   showHelp: boolean = false;
@@ -67,27 +67,20 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
 
       // Create entries for all services
       for (const service of this.services) {
-        const chiffre = chiffresData.find((c) => c.id_service === service.id_service);
+        if (!service.id) continue;
+        const chiffre = chiffresData.find((c) => c.id_service === service.id);
         const formData: ChiffresFormData = {
           id_chiffres: chiffre?.id_chiffres,
-          id_service: chiffre?.id_service,
+          id_service: service.id,
           initial: chiffre?.initial || undefined,
           revise: chiffre?.revise || undefined,
           previsionnel: chiffre?.previsionnel || undefined,
           consomme: chiffre?.consomme || undefined,
-          date_mise_a_jour: chiffre?.date_mise_a_jour
-            ? chiffre.date_mise_a_jour.split('T')[0]
-            : new Date().toISOString().split('T')[0],
         };
 
         this.updateCalculatedFields(formData);
 
-        // Vérifier que id_service existe avant de l'utiliser comme clé
-        if (service.id_service !== undefined && service.id_service !== null) {
-          this.chiffres.set(service.id_service, formData);
-        } else {
-          console.error("Le service n'a pas d'id_service !");
-        }
+        this.chiffres.set(service.id, formData);
       }
 
       // Update RAF for all services after loading
@@ -103,25 +96,20 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
     }
   }
 
-  // getChiffresData(idService: number): ChiffresFormData | undefined {
-  //   return this.chiffres.get(idService);
-  // }
-
-  getChiffresData(idService: number): ChiffresFormData {
+  getChiffresData(idService: string): ChiffresFormData {
     const data = this.chiffres.get(idService);
 
     if (data) {
       return data;
     }
 
-    // Retourner une structure par défaut avec des 0 et la date du jour
+    // Retourner une structure par défaut avec des 0
     return {
       id_service: idService,
       initial: 0,
       revise: 0,
       previsionnel: 0,
       consomme: 0,
-      date_mise_a_jour: new Date().toISOString().split('T')[0],
       delta: 0,
       restant: 0,
       raf: 0,
@@ -129,16 +117,8 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
     };
   }
 
-  getServiceName(idService: number): string {
-    return this.services.find((s) => s.id === idService.toString())?.nom || `Service ${idService}`;
-  }
-
-  getNumericId(service: Service): number {
-    if (!service) {
-      console.error('Le service est undefined !');
-      return 0; // ou lance une erreur
-    }
-    return service.id_service || 0;
+  getServiceName(idService: string): string {
+    return this.services.find((s) => s.id === idService)?.nom || `Service ${idService}`;
   }
 
   calculateTotal(field: keyof ChiffresFormData): string {
@@ -164,7 +144,7 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
     }
   }
 
-  async updateRAF(idService: number) {
+  async updateRAF(idService: string) {
     if (!this.idProjet) return;
 
     try {
@@ -180,7 +160,7 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
     }
   }
 
-  onValueChange(idService: number, field: string) {
+  onValueChange(idService: string, field: string) {
     const formData = this.chiffres.get(idService);
     if (formData) {
       this.updateCalculatedFields(formData);
@@ -194,7 +174,7 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
     }
   }
 
-  async handlePaste(event: ClipboardEvent, serviceId: number, fieldName?: string) {
+  async handlePaste(event: ClipboardEvent, serviceId: string, fieldName?: string) {
     event.preventDefault();
 
     const pastedText = event.clipboardData?.getData('text') || '';
@@ -218,22 +198,17 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
 
     // Si c'est plusieurs lignes
     else if (lines.length > 1) {
-      // console.log("multiline paste not yet implemented -just first line");
-      // const values = lines[0].split("\t").map((v) => v.trim());
-      // this.fillRowWithValues(serviceId, values, startFieldIndex);
-
       //indice de début de collage
-      let currentServiceIndex = this.services.findIndex((s) => this.getNumericId(s) === serviceId);
+      let currentServiceIndex = this.services.findIndex((s) => s.id === serviceId);
 
       lines.forEach((line, lineIndex) => {
         const values = line.split('\t').map((v) => v.trim());
 
         if (currentServiceIndex + lineIndex < this.services.length) {
-          const id = this.getNumericId(this.services[currentServiceIndex + lineIndex]);
+          const id = this.services[currentServiceIndex + lineIndex].id || '';
 
           // Pour la première ligne, on démarre au champ cliqué
           // Pour les lignes suivantes, on redémarre toujours depuis 'initial'
-          // const fieldIndex = lineIndex === 0 ? startFieldIndex : 0;
           // non finalement je veux commencer au même index pour chaque ligne : on démarre au champ cliqué
           const fieldIndex = startFieldIndex;
           this.fillRowWithValues(id, values, fieldIndex);
@@ -242,7 +217,7 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
     }
   }
 
-  private fillRowWithValues(serviceId: number, values: string[], startFieldIndex: number) {
+  private fillRowWithValues(serviceId: string, values: string[], startFieldIndex: number) {
     const chiffres = this.getChiffresData(serviceId);
     if (!chiffres) return;
 
@@ -250,8 +225,6 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
 
     values.forEach((value, index) => {
       const fieldIndex = startFieldIndex + index;
-      // console.log('fieldIndex', fieldIndex);
-      // console.log('startFieldIndex', startFieldIndex);
       // Ne remplissez que les champs valides
       if (fieldIndex < allFields.length && value) {
         const fieldName = allFields[fieldIndex];
@@ -259,11 +232,8 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
 
         if (!isNaN(numValue)) {
           const field = allFields[fieldIndex];
-          (chiffres as any)[field] = numValue; // Use any cast if direct assignment still complains, or satisfy TS better
-          // Better way without any:
           if (field === 'initial' || field === 'revise' || field === 'previsionnel' || field === 'consomme') {
             chiffres[field] = numValue;
-            // console.log('chiffres[field]', chiffres[field]);
           }
         }
       }
@@ -293,7 +263,6 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
           revise: formData.revise || 0,
           previsionnel: formData.previsionnel || 0,
           consomme: formData.consomme || 0,
-          date_mise_a_jour: formData.date_mise_a_jour,
         };
 
         if (formData.id_chiffres) {

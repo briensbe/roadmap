@@ -74,20 +74,19 @@ describe('ChiffresModalComponent', () => {
         { id: '1', nom: 'Service 1', departement_id: 'dept1' },
         { id: '2', nom: 'Service 2', departement_id: 'dept1' },
       ];
-      component.idProjet = 1;
+      component.idProjet = 'proj-1';
     });
 
     it('should load chiffres for project', async () => {
       const mockChiffres: Chiffre[] = [
         {
           id_chiffres: 1,
-          id_projet: 1,
-          id_service: 1,
+          id_projet: 'proj-1',
+          id_service: '1',
           initial: 100,
           revise: 110,
           previsionnel: 120,
           consomme: 50,
-          date_mise_a_jour: '2024-01-15',
         },
       ];
 
@@ -95,7 +94,7 @@ describe('ChiffresModalComponent', () => {
 
       await component.loadChiffres();
 
-      expect(chiffresService.getChiffresByProject).toHaveBeenCalledWith(1);
+      expect(chiffresService.getChiffresByProject).toHaveBeenCalledWith('proj-1');
       expect(component.chiffres.size).toBeGreaterThan(0);
     });
 
@@ -341,16 +340,15 @@ describe('ChiffresModalComponent', () => {
 
   describe('save', () => {
     beforeEach(() => {
-      component.idProjet = 1;
+      component.idProjet = 'proj-1';
       component.chiffres = new Map([
         [
-          1,
+          '1',
           {
             initial: 100,
             revise: 110,
             previsionnel: 120,
             consomme: 50,
-            date_mise_a_jour: '2024-01-15',
           },
         ],
       ]);
@@ -359,13 +357,12 @@ describe('ChiffresModalComponent', () => {
     it('should create new chiffres when id_chiffres is undefined', async () => {
       const newChiffre: Chiffre = {
         id_chiffres: 1,
-        id_projet: 1,
-        id_service: 1,
+        id_projet: 'proj-1',
+        id_service: '1',
         initial: 100,
         revise: 110,
         previsionnel: 120,
         consomme: 50,
-        date_mise_a_jour: '2024-01-15',
       };
 
       chiffresService.createChiffre.and.returnValue(Promise.resolve(newChiffre));
@@ -378,20 +375,19 @@ describe('ChiffresModalComponent', () => {
     });
 
     it('should update existing chiffres when id_chiffres is defined', async () => {
-      const formData = component.chiffres.get(1);
+      const formData = component.chiffres.get('1');
       if (formData) {
         formData.id_chiffres = 999;
       }
 
       const updatedChiffre: Chiffre = {
         id_chiffres: 999,
-        id_projet: 1,
-        id_service: 1,
+        id_projet: 'proj-1',
+        id_service: '1',
         initial: 100,
         revise: 110,
         previsionnel: 120,
         consomme: 50,
-        date_mise_a_jour: '2024-01-15',
       };
 
       chiffresService.updateChiffre.and.returnValue(Promise.resolve(updatedChiffre));
@@ -405,7 +401,7 @@ describe('ChiffresModalComponent', () => {
 
     it('should skip chiffres with no data', async () => {
       component.chiffres = new Map([
-        [1, { initial: undefined, revise: undefined, previsionnel: undefined, consomme: undefined }],
+        ['1', { initial: undefined, revise: undefined, previsionnel: undefined, consomme: undefined }],
       ]);
 
       spyOn(component.saved, 'emit');
@@ -419,19 +415,19 @@ describe('ChiffresModalComponent', () => {
 
   describe('updateRAF', () => {
     beforeEach(() => {
-      component.idProjet = 1;
-      component.chiffres = new Map([[1, { raf: undefined, raf_date: undefined }]]);
+      component.idProjet = 'proj-1';
+      component.chiffres = new Map([['1', { raf: undefined, raf_date: undefined }]]);
       component.rafDate = '2024-01-15';
     });
 
     it('should fetch and update RAF', async () => {
       chiffresService.getRAFByDate.and.returnValue(Promise.resolve(250));
 
-      await component.updateRAF(1);
+      await component.updateRAF('1');
 
-      expect(chiffresService.getRAFByDate).toHaveBeenCalledWith(1, 1, '2024-01-15T00:00:00');
+      expect(chiffresService.getRAFByDate).toHaveBeenCalledWith('proj-1', '1', '2024-01-15T00:00:00');
 
-      const formData = component.chiffres.get(1);
+      const formData = component.chiffres.get('1');
       expect(formData?.raf).toBe(250);
       expect(formData?.raf_date).toBe('2024-01-15');
     });
@@ -439,9 +435,9 @@ describe('ChiffresModalComponent', () => {
     it('should handle RAF calculation error', async () => {
       chiffresService.getRAFByDate.and.returnValue(Promise.reject(new Error('RAF error')));
 
-      await component.updateRAF(1);
+      await component.updateRAF('1');
 
-      expect(component.chiffres.get(1)?.raf).toBeUndefined();
+      expect(component.chiffres.get('1')?.raf).toBeUndefined();
     });
   });
 
@@ -449,7 +445,7 @@ describe('ChiffresModalComponent', () => {
     it('should update calculated fields when value changes', () => {
       component.chiffres = new Map([
         [
-          1,
+          '1',
           {
             previsionnel: 120,
             revise: 110,
@@ -460,18 +456,18 @@ describe('ChiffresModalComponent', () => {
         ],
       ]);
 
-      component.onValueChange(1, 'previsionnel');
+      component.onValueChange('1', 'previsionnel');
 
-      const formData = component.chiffres.get(1);
+      const formData = component.chiffres.get('1');
       expect(formData?.delta).toBe(10);
       expect(formData?.restant).toBe(70);
     });
 
     it('should handle non-existent service id', () => {
-      component.chiffres = new Map([[1, { previsionnel: 120, revise: 110 }]]);
+      component.chiffres = new Map([['1', { previsionnel: 120, revise: 110 }]]);
 
       expect(() => {
-        component.onValueChange(999, 'previsionnel');
+        component.onValueChange('999', 'previsionnel');
       }).not.toThrow();
     });
   });
@@ -479,8 +475,8 @@ describe('ChiffresModalComponent', () => {
   describe('calculateTotal', () => {
     beforeEach(() => {
       component.chiffres = new Map([
-        [1, { initial: 100, revise: 110, previsionnel: 120, consomme: 50, delta: 10, restant: 70 }],
-        [2, { initial: 200, revise: 220, previsionnel: 240, consomme: 100, delta: 20, restant: 140 }],
+        ['1', { initial: 100, revise: 110, previsionnel: 120, consomme: 50, delta: 10, restant: 70 }],
+        ['2', { initial: 200, revise: 220, previsionnel: 240, consomme: 100, delta: 20, restant: 140 }],
       ]);
     });
 
@@ -501,8 +497,8 @@ describe('ChiffresModalComponent', () => {
 
     it('should handle undefined values in total calculation', () => {
       component.chiffres = new Map([
-        [1, { initial: 100, revise: undefined, delta: undefined }],
-        [2, { initial: 200, revise: 220, delta: 20 }],
+        ['1', { initial: 100, revise: undefined, delta: undefined }],
+        ['2', { initial: 200, revise: 220, delta: 20 }],
       ]);
 
       const total = component.calculateTotal('delta');

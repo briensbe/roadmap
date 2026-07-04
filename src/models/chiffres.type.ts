@@ -1,24 +1,22 @@
 export interface Chiffre {
   id_chiffres?: number;
-  id_projet: number;
-  id_service: number;
+  id_projet: string;
+  id_service: string;
   initial?: number;
   revise?: number;
   previsionnel?: number;
   consomme?: number;
-  date_mise_a_jour?: string;
   created_at?: string;
   updated_at?: string;
 }
 
 export interface ChiffresFormData {
   id_chiffres?: number;
-  id_service?: number;
+  id_service?: string;
   initial?: number;
   revise?: number;
   previsionnel?: number;
   consomme?: number;
-  date_mise_a_jour?: string;
   delta?: number;
   restant?: number;
   raf?: number;

@@ -343,7 +343,7 @@ export class ProjectModalComponent implements OnInit {
   @Input() projet: Partial<Projet> | null = null;
   @Output() saved = new EventEmitter<void>();
   @Output() closed = new EventEmitter<void>();
-  @Output() openChiffres = new EventEmitter<number>();
+  @Output() openChiffres = new EventEmitter<string>();
 
   editableProjet: Partial<Projet> = {};
   isSaving = false;
@@ -446,8 +446,8 @@ export class ProjectModalComponent implements OnInit {
   onOpenChiffres(event: MouseEvent) {
     event.preventDefault();
     event.stopPropagation();
-    if (this.editableProjet.id_projet) {
-      this.openChiffres.emit(this.editableProjet.id_projet);
+    if (this.editableProjet.id) {
+      this.openChiffres.emit(this.editableProjet.id);
     }
   }
 

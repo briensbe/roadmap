@@ -100,7 +100,7 @@ export class ProjectsViewComponent implements OnInit {
   showProjectModal = false;
   activeMenuId: string | null = null;
   showChiffresModal: boolean = false;
-  selectedProjetId: number | null = null;
+  selectedProjetId: string | null = null;
 
   newProjet: Partial<Projet> = {
     code_projet: '',
@@ -313,7 +313,8 @@ export class ProjectsViewComponent implements OnInit {
 
   // méthodes pour la gestion des chiffres d'un projet
 
-  openChiffresModal(idProjet: number) {
+  openChiffresModal(idProjet: string | undefined) {
+    if (!idProjet) return;
     this.selectedProjetId = idProjet;
     this.showChiffresModal = true;
     this.activeMenuId = null;
