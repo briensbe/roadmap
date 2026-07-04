@@ -3,7 +3,7 @@ const DB_PREFIX = 'roadmap_';
 export const DB_TABLES = {
   CAPACITES: `${DB_PREFIX}capacites`,
   CHARGES: `${DB_PREFIX}charges`,
-  CHIFFRES: `${DB_PREFIX}chiffres_v2`,
+  CHIFFRES: `${DB_PREFIX}chiffres`,
   DEPARTEMENTS: `${DB_PREFIX}departements`,
   EQUIPES: `${DB_PREFIX}equipes`,
   EQUIPES_PROJETS: `${DB_PREFIX}equipes_projets`,
