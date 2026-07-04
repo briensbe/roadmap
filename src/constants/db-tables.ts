@@ -15,6 +15,7 @@ export const DB_TABLES = {
   ROLE_ATTACHMENTS: `${DB_PREFIX}role_attachments`,
   ROLES: `${DB_PREFIX}roles`,
   SERVICES: `${DB_PREFIX}services`,
+  SERVICE_MAPPINGS: `${DB_PREFIX}service_mapping`,
   SETTINGS: `${DB_PREFIX}settings`,
   SOCIETES: `${DB_PREFIX}societes`,
 } as const;

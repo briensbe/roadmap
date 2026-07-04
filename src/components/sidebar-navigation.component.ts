@@ -17,6 +17,7 @@ import {
   User,
   BookOpen,
   FileSpreadsheet,
+  Shield,
 } from 'lucide-angular';
 import { SidebarService } from '../services/sidebar.service';
 import { ReleaseNotesService } from '../services/release-notes.service';
@@ -292,6 +293,7 @@ export class SidebarNavigationComponent {
   User = User;
   BookOpen = BookOpen;
   FileSpreadsheet = FileSpreadsheet;
+  Shield = Shield;
 
   navigationItems: NavigationItem[] = [
     { label: 'Tableau de bord', icon: this.LayoutDashboard, route: '/dashboard' },
@@ -303,6 +305,7 @@ export class SidebarNavigationComponent {
     { label: 'Jalons', icon: this.Flag, route: '/jalons' },
     { label: 'Ressources', icon: this.Users, route: '/ressources' },
     { label: 'Organisation', icon: this.Building2, route: '/organisation' },
+    { label: 'Administration', icon: this.Shield, route: '/administration' },
     { label: 'Guide', icon: this.BookOpen, route: '/guide' },
     { label: 'Paramètres', icon: this.Settings, route: '/settings' },
     { label: 'Profil', icon: this.User, route: '/profile' },

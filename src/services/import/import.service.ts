@@ -35,6 +35,16 @@ export interface ImportBudgetRow {
   project_ids: string[] | null;
 }
 
+export interface ServiceMapping {
+  id: number;
+  service_id: string;
+  service_name: string;
+  created_at: string;
+  roadmap_services?: {
+    nom: string;
+  };
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -107,6 +117,138 @@ export class ImportService {
       onSuccess: (data) => {
         // Invalidate the budget rows query to refetch updated staging rows
         this.queryClient.invalidateQueries({ queryKey: ['import-budget-rows', data.batch_id] });
+      },
+    }));
+  }
+
+  /**
+   * Get all service mappings (local service <-> Triskell service name)
+   */
+  getServiceMappingsQuery() {
+    return injectQuery(() => ({
+      queryKey: ['service-mappings'],
+      queryFn: async () => {
+        const { data, error } = await this.supabase.client
+          .from('roadmap_service_mapping')
+          .select('*, roadmap_services(nom)')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        return data as ServiceMapping[];
+      },
+    }));
+  }
+
+  /**
+   * Create a service mapping
+   */
+  createServiceMappingMutation() {
+    return injectMutation(() => ({
+      mutationFn: async (mapping: Omit<ServiceMapping, 'id' | 'created_at'>) => {
+        const { data, error } = await this.supabase.client
+          .from('roadmap_service_mapping')
+          .insert(mapping)
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      },
+      onSuccess: () => {
+        this.queryClient.invalidateQueries({ queryKey: ['service-mappings'] });
+      },
+    }));
+  }
+
+  /**
+   * Update a service mapping
+   */
+  updateServiceMappingMutation() {
+    return injectMutation(() => ({
+      mutationFn: async ({ id, ...updates }: Partial<ServiceMapping> & { id: number }) => {
+        const { data, error } = await this.supabase.client
+          .from('roadmap_service_mapping')
+          .update(updates)
+          .eq('id', id)
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      },
+      onSuccess: () => {
+        this.queryClient.invalidateQueries({ queryKey: ['service-mappings'] });
+      },
+    }));
+  }
+
+  /**
+   * Delete a service mapping
+   */
+  deleteServiceMappingMutation() {
+    return injectMutation(() => ({
+      mutationFn: async (id: number) => {
+        const { error } = await this.supabase.client
+          .from('roadmap_service_mapping')
+          .delete()
+          .eq('id', id);
+        if (error) throw error;
+      },
+      onSuccess: () => {
+        this.queryClient.invalidateQueries({ queryKey: ['service-mappings'] });
+      },
+    }));
+  }
+
+  /**
+   * Activate an import batch (invokes activate_import_batch Postgres RPC)
+   */
+  activateBatchMutation() {
+    return injectMutation(() => ({
+      mutationFn: async (batchId: number) => {
+        const { error } = await this.supabase.client.rpc('activate_import_batch', {
+          target_batch_id: batchId,
+        });
+        if (error) throw error;
+      },
+      onSuccess: () => {
+        this.queryClient.invalidateQueries({ queryKey: ['import-batches'] });
+      },
+    }));
+  }
+
+  /**
+   * Get unique Triskell service names from the budget staging table
+   * Implements pagination to handle > 1000 limit of PostgREST
+   */
+  getTriskellServiceNamesQuery() {
+    return injectQuery(() => ({
+      queryKey: ['triskell-service-names'],
+      queryFn: async () => {
+        let allRows: { service_name: string }[] = [];
+        let from = 0;
+        const pageSize = 1000;
+        let hasMore = true;
+
+        while (hasMore) {
+          const { data, error } = await this.supabase.client
+            .from('roadmap_import_budget')
+            .select('service_name')
+            .range(from, from + pageSize - 1);
+
+          if (error) throw error;
+
+          if (data && data.length > 0) {
+            allRows = allRows.concat(data);
+            from += pageSize;
+            hasMore = data.length === pageSize;
+          } else {
+            hasMore = false;
+          }
+        }
+
+        const names = allRows
+          .map((r) => r.service_name)
+          .filter((v, i, self) => v && self.indexOf(v) === i);
+        names.sort();
+        return names;
       },
     }));
   }
