@@ -53,6 +53,7 @@ export class TriskellImportProcessor {
           excel_export_date: excelExportDate!.toISOString(),
           filename: filename,
           status: 'pending',
+          is_active: false,
         })
         .select('id')
         .single();

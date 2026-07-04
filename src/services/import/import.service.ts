@@ -10,6 +10,7 @@ export interface ImportBatch {
   filename: string;
   status: 'pending' | 'processed' | 'failed';
   imported_at?: string;
+  is_active: boolean;
 }
 
 export interface ImportBudgetRow {
