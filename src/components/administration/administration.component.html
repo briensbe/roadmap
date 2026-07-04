@@ -43,7 +43,7 @@
             class="form-control"
             [disabled]="isLoadingLocalServices()">
             <option value="">-- Sélectionner un service --</option>
-            @for (srv of localServices(); track srv.id) {
+            @for (srv of unmappedLocalServices(); track srv.id) {
               <option [value]="srv.id">{{ srv.nom }}</option>
             }
           </select>
@@ -61,10 +61,8 @@
             class="form-control"
           />
           <datalist id="triskell-names-list">
-            @if (triskellServiceNamesQuery.data(); as names) {
-              @for (name of names; track name) {
-                <option [value]="name"></option>
-              }
+            @for (name of unmappedTriskellServiceNames(); track name) {
+              <option [value]="name"></option>
             }
           </datalist>
         </div>

@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -71,6 +71,22 @@ export class AdministrationComponent implements OnInit {
   batchesQuery = this.importService.getBatchesQuery();
   triskellServiceNamesQuery = this.importService.getTriskellServiceNamesQuery();
 
+  // Computed list of available (unmapped) Triskell service names
+  unmappedTriskellServiceNames = computed(() => {
+    const allNames = this.triskellServiceNamesQuery.data() || [];
+    const mappings = this.serviceMappingsQuery.data() || [];
+    const mappedNames = new Set(mappings.map((m) => m.service_name.toLowerCase()));
+    return allNames.filter((name) => !mappedNames.has(name.toLowerCase()));
+  });
+
+  // Computed list of available (unmapped) local services
+  unmappedLocalServices = computed(() => {
+    const allServices = this.localServices() || [];
+    const mappings = this.serviceMappingsQuery.data() || [];
+    const mappedServiceIds = new Set(mappings.map((m) => m.service_id));
+    return allServices.filter((srv) => srv.id && !mappedServiceIds.has(srv.id));
+  });
+
   createMappingMutation = this.importService.createServiceMappingMutation();
   updateMappingMutation = this.importService.updateServiceMappingMutation();
   deleteMappingMutation = this.importService.deleteServiceMappingMutation();
@@ -109,6 +125,25 @@ export class AdministrationComponent implements OnInit {
     }
     if (!serviceName) {
       this.formError.set('Veuillez saisir ou sélectionner un service Triskell.');
+      return;
+    }
+
+    // Frontend validation to prevent duplicate service_name mapping
+    const currentMappings = this.serviceMappingsQuery.data() || [];
+    const nameExists = currentMappings.some(
+      (m) => m.service_name.toLowerCase() === serviceName.toLowerCase()
+    );
+    if (nameExists) {
+      this.formError.set('Ce nom de service Triskell est déjà associé.');
+      return;
+    }
+
+    // Frontend validation to prevent duplicate service_id mapping (1-1 check)
+    const serviceExists = currentMappings.some(
+      (m) => m.service_id === serviceId
+    );
+    if (serviceExists) {
+      this.formError.set('Ce service local est déjà associé à un autre service Triskell.');
       return;
     }
 
@@ -156,6 +191,25 @@ export class AdministrationComponent implements OnInit {
     }
     if (!serviceName) {
       this.editFormError.set('Veuillez saisir un service Triskell.');
+      return;
+    }
+
+    // Frontend validation to prevent duplicate service_name mapping on update
+    const currentMappings = this.serviceMappingsQuery.data() || [];
+    const nameExists = currentMappings.some(
+      (m) => m.id !== id && m.service_name.toLowerCase() === serviceName.toLowerCase()
+    );
+    if (nameExists) {
+      this.editFormError.set('Ce nom de service Triskell est déjà associé.');
+      return;
+    }
+
+    // Frontend validation to prevent duplicate service_id mapping on update (1-1 check)
+    const serviceExists = currentMappings.some(
+      (m) => m.id !== id && m.service_id === serviceId
+    );
+    if (serviceExists) {
+      this.editFormError.set('Ce service local est déjà associé à un autre service Triskell.');
       return;
     }
 
