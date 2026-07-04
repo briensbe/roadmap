@@ -231,7 +231,7 @@ export class AdministrationComponent implements OnInit {
   }
 
   async handleDeleteMapping(id: number) {
-    if (confirm('Êtes-vous sûr de vouloir supprimer ce mappage ?')) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce mapping ?')) {
       this.deleteMappingMutation.mutate(id, {
         onError: (err: any) => {
           alert('Erreur lors de la suppression : ' + (err.message || err));

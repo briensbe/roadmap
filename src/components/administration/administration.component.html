@@ -2,7 +2,7 @@
   <div class="admin-header">
     <div>
       <h1>Administration</h1>
-      <p class="subtitle">Gérez les mappages de services et l'activation des données importées</p>
+      <p class="subtitle">Gérez les mappings de services et l'activation des données importées</p>
     </div>
   </div>
 
@@ -10,7 +10,7 @@
   <div class="tabs-container">
     <button class="tab-btn" [class.active]="activeTab() === 'mapping'" (click)="setTab('mapping')">
       <lucide-icon [img]="Building2" [size]="18"></lucide-icon>
-      Mappages de Services
+      Mappings de Services
     </button>
     <button class="tab-btn" [class.active]="activeTab() === 'batches'" (click)="setTab('batches')">
       <lucide-icon [img]="FileSpreadsheet" [size]="18"></lucide-icon>
@@ -67,7 +67,7 @@
           <label class="label-invisible">&nbsp;</label>
           <button type="submit" class="btn btn-primary" [disabled]="createMappingMutation.isPending()">
             <lucide-icon [img]="Plus" [size]="16" class="btn-icon"></lucide-icon>
-            Ajouter le mappage
+            Ajouter le mapping
           </button>
         </div>
       </form>
@@ -82,19 +82,19 @@
 
       <!-- Mappings Table -->
       <div class="table-container">
-        <h3>Mappages Actuels</h3>
+        <h3>Mappings Actuels</h3>
 
         @if (serviceMappingsQuery.isPending()) {
           <div class="loading-state">
             <lucide-icon [img]="RefreshCw" [size]="24" class="spin"></lucide-icon>
-            Chargement des mappages...
+            Chargement des mappings...
           </div>
         } @else if (serviceMappingsQuery.isError()) {
-          <div class="alert alert-danger">Erreur lors du chargement des mappages.</div>
+          <div class="alert alert-danger">Erreur lors du chargement des mappings.</div>
         } @else {
           @if (serviceMappingsQuery.data(); as mappings) {
             @if (mappings.length === 0) {
-              <p class="empty-state">Aucun mappage défini pour le moment.</p>
+              <p class="empty-state">Aucun mapping défini pour le moment.</p>
             } @else {
               <table class="admin-table">
                 <thead>
