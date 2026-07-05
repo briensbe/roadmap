@@ -24,7 +24,7 @@ export class ChiffresService {
     private projetService: ProjetService,
   ) {}
 
-  private clearCache() {
+  public clearCache() {
     this._chiffresCache = null;
   }
 

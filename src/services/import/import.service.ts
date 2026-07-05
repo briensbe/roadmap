@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from '../supabase.service';
 import { QueryClient, injectQuery, injectMutation } from '@tanstack/angular-query-experimental';
 import { paginateQuery } from '../../utils/supabase-pagination';
+import { ChiffresService } from '../chiffres.service';
 
 export interface ImportBatch {
   id: number;
@@ -51,6 +52,7 @@ export interface ServiceMapping {
 export class ImportService {
   private supabase = inject(SupabaseService);
   private queryClient = inject(QueryClient);
+  private chiffresService = inject(ChiffresService);
 
   /**
    * Get all import batches
@@ -210,6 +212,7 @@ export class ImportService {
       },
       onSuccess: () => {
         this.queryClient.invalidateQueries({ queryKey: ['import-batches'] });
+        this.chiffresService.clearCache();
       },
     }));
   }
