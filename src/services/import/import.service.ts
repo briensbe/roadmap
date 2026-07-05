@@ -63,7 +63,7 @@ export class ImportService {
           this.supabase.client
             .from('roadmap_import_batches')
             .select('*')
-            .order('excel_export_date', { ascending: false }),
+            .order('id', { ascending: false }),
         );
       },
     }));

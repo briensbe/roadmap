@@ -197,16 +197,19 @@
               <table class="admin-table">
                 <thead>
                   <tr>
+                    <th style="width: 80px;">ID</th>
                     <th>Fichier</th>
-                    <th>Date d'export</th>
+                    <th>Date d'import</th>
                     <th>Statut</th>
-                    <th>État</th>
-                    <th class="actions-col">Action</th>
+                    <th class="actions-col" style="width: 200px;">État / Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   @for (batch of batchResult; track batch.id) {
                     <tr [class.row-active]="batch.is_active">
+                      <td class="id-cell font-mono" style="font-weight: 600; color: #666;">
+                        #{{ batch.id }}
+                      </td>
                       <td>
                         <div class="filename-cell">
                           <lucide-icon [img]="Database" [size]="16" class="file-icon"></lucide-icon>
@@ -230,30 +233,26 @@
                           }
                         </span>
                       </td>
-                      <td>
-                        @if (batch.is_active) {
-                          <span class="active-badge">
-                            <lucide-icon [img]="CheckCircle" [size]="12"></lucide-icon>
-                            Actif
-                          </span>
-                        } @else {
-                          <span class="inactive-badge">Inactif</span>
-                        }
-                      </td>
                       <td class="actions-cell">
-                        @if (batch.status === 'processed' && !batch.is_active) {
-                          <button
-                            class="btn btn-sm btn-activate"
-                            (click)="handleActivateBatch(batch.id)"
-                            [disabled]="activateBatchMutation.isPending()">
-                            <lucide-icon [img]="Check" [size]="14"></lucide-icon>
-                            Activer
-                          </button>
-                        } @else if (batch.is_active) {
-                          <span class="current-text">Lot courant</span>
-                        } @else {
-                          <span class="text-muted">-</span>
-                        }
+                        <div class="status-action-container" style="display: flex; align-items: center; gap: 12px;">
+                          @if (batch.is_active) {
+                            <span class="active-badge">
+                              <lucide-icon [img]="CheckCircle" [size]="12"></lucide-icon>
+                              Actif
+                            </span>
+                          } @else {
+                            <span class="inactive-badge">Inactif</span>
+                            @if (batch.status === 'processed') {
+                              <button
+                                class="btn btn-sm btn-activate"
+                                (click)="handleActivateBatch(batch.id)"
+                                [disabled]="activateBatchMutation.isPending()">
+                                <lucide-icon [img]="Check" [size]="14"></lucide-icon>
+                                Activer
+                              </button>
+                            }
+                          }
+                        </div>
                       </td>
                     </tr>
                   }
