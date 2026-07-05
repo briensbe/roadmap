@@ -19,3 +19,7 @@ export const DB_TABLES = {
   SETTINGS: `${DB_PREFIX}settings`,
   SOCIETES: `${DB_PREFIX}societes`,
 } as const;
+
+export const DB_VIEWS = {
+  VIEW_BUDGET_UNIFIE: 'v_roadmap_projet_budget_unifie',
+} as const;

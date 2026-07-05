@@ -291,8 +291,8 @@ describe('ChiffresModalComponent', () => {
         { id: '2', nom: 'Service 2', departement_id: 'dept1' },
       ];
       component.chiffres = new Map([
-        [1, { initial: undefined, revise: undefined, previsionnel: undefined, consomme: undefined }],
-        [2, { initial: undefined, revise: undefined, previsionnel: undefined, consomme: undefined }],
+        ['1', { initial: undefined, revise: undefined, previsionnel: undefined, consomme: undefined, source_donnee: 'VIERGE' as const }],
+        ['2', { initial: undefined, revise: undefined, previsionnel: undefined, consomme: undefined, source_donnee: 'VIERGE' as const }],
       ]);
     });
 
@@ -305,17 +305,17 @@ describe('ChiffresModalComponent', () => {
       event.clipboardData?.setData('text/plain', '100\t110\t120\t50\n200\t210\t220\t100');
       spyOn(event, 'preventDefault');
 
-      component.handlePaste(event, 1);
+      component.handlePaste(event, '1');
 
       expect(event.preventDefault).toHaveBeenCalled();
 
-      const formData1 = component.chiffres.get(1);
+      const formData1 = component.chiffres.get('1');
       expect(formData1?.initial).toBe(100);
       expect(formData1?.revise).toBe(110);
       expect(formData1?.previsionnel).toBe(120);
       expect(formData1?.consomme).toBe(50);
 
-      const formData2 = component.chiffres.get(2);
+      const formData2 = component.chiffres.get('2');
       expect(formData2?.initial).toBe(200);
       expect(formData2?.revise).toBe(210);
       expect(formData2?.previsionnel).toBe(220);
@@ -330,9 +330,9 @@ describe('ChiffresModalComponent', () => {
       event.clipboardData?.setData('text/plain', '100,5\t110,5\t120,5\t50,5');
       spyOn(event, 'preventDefault');
 
-      component.handlePaste(event, 1);
+      component.handlePaste(event, '1');
 
-      const formData = component.chiffres.get(1);
+      const formData = component.chiffres.get('1');
       expect(formData?.initial).toBe(100.5);
       expect(formData?.revise).toBe(110.5);
     });

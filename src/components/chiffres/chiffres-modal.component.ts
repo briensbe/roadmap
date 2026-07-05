@@ -1,11 +1,12 @@
 import { Component, EventEmitter, Input, Output, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Chiffre, ChiffresFormData } from '../../models/chiffres.type';
+import { ChiffresFormData, SourceDonnee } from '../../models/chiffres.type';
+import { Chiffre } from '../../models/chiffres.type';
 import { ChiffresService } from '../../services/chiffres.service';
 import { Service } from '../../models/types';
 import { ResourceService } from '../../services/resource.service';
-import { LucideAngularModule, LucideCalculator, LucideHelpCircle } from 'lucide-angular';
+import { LucideAngularModule, LucideCalculator, LucideHelpCircle, LucideLock } from 'lucide-angular';
 
 @Component({
   selector: 'app-chiffres-modal',
@@ -22,6 +23,7 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
 
   LucideCalculator = LucideCalculator; // Expose l'icône au template
   LucideHelpCircle = LucideHelpCircle;
+  LucideLock = LucideLock;
 
   services: Service[] = [];
   chiffres: Map<string, ChiffresFormData> = new Map();
@@ -60,30 +62,35 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
 
     try {
       this.isLoading = true;
-      const chiffresData = await this.chiffresService.getChiffresByProject(this.idProjet);
+      // Lecture via la vue unifiée (Triskell > Local > rien)
+      const viewData = await this.chiffresService.getChiffresByProjectFromView(this.idProjet);
 
-      // Initialize form data for each service
+      // Initialiser la map pour tous les services (comportement inchangé)
       this.chiffres.clear();
 
-      // Create entries for all services
       for (const service of this.services) {
         if (!service.id) continue;
-        const chiffre = chiffresData.find((c) => c.id_service === service.id);
+
+        // Chercher la ligne correspondante dans la vue
+        const entry = viewData.find((e) => e.id_service === service.id);
+
         const formData: ChiffresFormData = {
-          id_chiffres: chiffre?.id_chiffres,
+          // id_chiffres local pour les mises à jour sur roadmap_chiffres
+          id_chiffres: entry?.id_chiffres_local ?? undefined,
           id_service: service.id,
-          initial: chiffre?.initial || undefined,
-          revise: chiffre?.revise || undefined,
-          previsionnel: chiffre?.previsionnel || undefined,
-          consomme: chiffre?.consomme || undefined,
+          initial: entry?.initial ?? undefined,
+          revise: entry?.revise ?? undefined,
+          previsionnel: entry?.previsionnel ?? undefined,
+          consomme: entry?.consomme ?? undefined,
+          // Source issue de la vue (LOCAL, TRISKELL ou VIERGE pour les lignes absentes de la vue)
+          source_donnee: entry?.source_donnee ?? 'VIERGE',
         };
 
         this.updateCalculatedFields(formData);
-
         this.chiffres.set(service.id, formData);
       }
 
-      // Update RAF for all services after loading
+      // Calcul du RAF pour tous les services
       for (const idService of this.chiffres.keys()) {
         this.updateRAF(idService);
       }
@@ -114,11 +121,37 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
       restant: 0,
       raf: 0,
       raf_date: new Date().toISOString().split('T')[0],
+      source_donnee: 'VIERGE',
     };
   }
 
   getServiceName(idService: string): string {
     return this.services.find((s) => s.id === idService)?.nom || `Service ${idService}`;
+  }
+
+  /**
+   * Retourne true si les chiffres de ce service proviennent de Triskell
+   * et ne doivent pas être modifiés manuellement.
+   */
+  isReadonly(idService: string): boolean {
+    return this.getChiffresData(idService).source_donnee === 'TRISKELL';
+  }
+
+  getSourceDonnee(idService: string): SourceDonnee {
+    return this.getChiffresData(idService).source_donnee ?? 'VIERGE';
+  }
+
+  /**
+   * Retourne true si au moins une ligne est éditable (LOCAL ou VIERGE).
+   * Utilisé pour désactiver le bouton Enregistrer quand tout est TRISKELL.
+   */
+  hasEditableRows(): boolean {
+    for (const formData of this.chiffres.values()) {
+      if (formData.source_donnee !== 'TRISKELL') {
+        return true;
+      }
+    }
+    return false;
   }
 
   calculateTotal(field: keyof ChiffresFormData): string {
@@ -177,6 +210,9 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
   async handlePaste(event: ClipboardEvent, serviceId: string, fieldName?: string) {
     event.preventDefault();
 
+    // Ignorer le paste sur les lignes en lecture seule
+    if (this.isReadonly(serviceId)) return;
+
     const pastedText = event.clipboardData?.getData('text') || '';
     const lines = pastedText.trim().split('\n');
 
@@ -218,6 +254,9 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
   }
 
   private fillRowWithValues(serviceId: string, values: string[], startFieldIndex: number) {
+    // Ne pas remplir les lignes Triskell
+    if (this.isReadonly(serviceId)) return;
+
     const chiffres = this.getChiffresData(serviceId);
     if (!chiffres) return;
 
@@ -243,11 +282,6 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
     this.onValueChange(serviceId, allFields[startFieldIndex]);
   }
 
-  private parseNumber(value: string): number {
-    const parsed = parseFloat(value.trim().replace(',', '.'));
-    return isNaN(parsed) ? 0 : parsed;
-  }
-
   async save() {
     if (!this.idProjet) return;
 
@@ -256,6 +290,9 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
       const savedChiffres: Chiffre[] = [];
 
       for (const [idService, formData] of this.chiffres.entries()) {
+        // Ne jamais écrire les lignes dont la source est TRISKELL
+        if (formData.source_donnee === 'TRISKELL') continue;
+
         const chiffre: Chiffre = {
           id_projet: this.idProjet,
           id_service: idService,
@@ -266,11 +303,11 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
         };
 
         if (formData.id_chiffres) {
-          // Update existing
+          // Update existing (toujours sur roadmap_chiffres)
           const updated = await this.chiffresService.updateChiffre(formData.id_chiffres, chiffre);
           savedChiffres.push(updated);
         } else if (formData.initial || formData.revise || formData.previsionnel || formData.consomme) {
-          // Create new only if there's data
+          // Create new only if there's data (toujours sur roadmap_chiffres)
           const created = await this.chiffresService.createChiffre(chiffre);
           savedChiffres.push(created);
         }

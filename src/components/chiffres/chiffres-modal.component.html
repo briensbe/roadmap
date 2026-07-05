@@ -33,6 +33,10 @@
                 <strong>Copier-coller:</strong> Vous pouvez copier des cellules Excel (Initial, Révisé, Prévisionnel,
                 Consommé) et les coller pour remplir automatiquement.
               </p>
+              <p>
+                <strong><lucide-icon [name]="LucideLock" size="13" class="help-lock-icon"></lucide-icon> Triskell:</strong>
+                Ces lignes sont en lecture seule. Les données proviennent du dernier import PPM actif.
+              </p>
             </div>
           }
         </div>
@@ -43,6 +47,7 @@
             <thead>
               <tr>
                 <th>SERVICE</th>
+                <th>SOURCE</th>
                 <th>INITIAL</th>
                 <th>RÉVISÉ</th>
                 <th>PRÉVISIONNEL</th>
@@ -55,9 +60,26 @@
             <tbody>
               @for (service of services; track service.id) {
                 @if (service.id) {
-                  <tr class="service-row">
-                    <td class="service-name">
-                      {{ service.nom }}
+                  <tr
+                    class="service-row"
+                    [class.row-triskell]="getSourceDonnee(service.id) === 'TRISKELL'"
+                  >
+                    <td class="service-name">{{ service.nom }}</td>
+                    <td class="source-cell">
+                      @if (getSourceDonnee(service.id) === 'TRISKELL') {
+                        <span class="source-badge badge-triskell" title="Données en lecture seule synchronisées depuis Triskell PPM">
+                          <lucide-icon [name]="LucideLock" size="13"></lucide-icon>
+                          Triskell
+                        </span>
+                      } @else if (getSourceDonnee(service.id) === 'LOCAL') {
+                        <span class="source-badge badge-local" title="Données saisies manuellement">
+                          Local
+                        </span>
+                      } @else {
+                        <span class="source-badge badge-vierge" title="Aucune donnée saisie">
+                          —
+                        </span>
+                      }
                     </td>
                     <td>
                       <input
@@ -66,7 +88,8 @@
                         (change)="onValueChange(service.id, 'initial')"
                         (paste)="handlePaste($event, service.id, 'initial')"
                         class="input-field"
-                        placeholder="0" />
+                        placeholder="0"
+                        [disabled]="isReadonly(service.id)" />
                     </td>
                     <td>
                       <input
@@ -75,7 +98,8 @@
                         (change)="onValueChange(service.id, 'revise')"
                         (paste)="handlePaste($event, service.id, 'revise')"
                         class="input-field"
-                        placeholder="0" />
+                        placeholder="0"
+                        [disabled]="isReadonly(service.id)" />
                     </td>
                     <td>
                       <input
@@ -84,7 +108,8 @@
                         (change)="onValueChange(service.id, 'previsionnel')"
                         (paste)="handlePaste($event, service.id, 'previsionnel')"
                         class="input-field"
-                        placeholder="0" />
+                        placeholder="0"
+                        [disabled]="isReadonly(service.id)" />
                     </td>
                     <td>
                       <input
@@ -93,7 +118,8 @@
                         (change)="onValueChange(service.id, 'consomme')"
                         (paste)="handlePaste($event, service.id, 'consomme')"
                         class="input-field"
-                        placeholder="0" />
+                        placeholder="0"
+                        [disabled]="isReadonly(service.id)" />
                     </td>
                     <td class="calculated-field">
                       {{ getChiffresData(service.id).delta?.toFixed(3) || '0.000' }}
@@ -111,6 +137,7 @@
             <tfoot>
               <tr class="total-row">
                 <td class="total-label">TOTAL</td>
+                <td></td>
                 <td class="total-value">
                   {{ calculateTotal('initial') }}
                 </td>
@@ -140,7 +167,13 @@
 
       <div class="modal-actions">
         <button type="button" class="btn btn-secondary" (click)="onClose()" [disabled]="isLoading">Annuler</button>
-        <button type="button" class="btn btn-primary" (click)="save()" [disabled]="isLoading">
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="save()"
+          [disabled]="isLoading || !hasEditableRows()"
+          [title]="!hasEditableRows() ? 'Toutes les données sont synchronisées depuis Triskell' : ''"
+        >
           {{ isLoading ? 'Enregistrement...' : 'Enregistrer' }}
         </button>
       </div>

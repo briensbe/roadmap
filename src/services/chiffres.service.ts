@@ -1,12 +1,12 @@
 import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
-import { Chiffre } from '../models/chiffres.type';
+import { BudgetUnifieEntry, Chiffre } from '../models/chiffres.type';
 import { ServicesService } from './services.service';
 import { RolesService } from './roles.service';
 import { PersonnesService } from './personnes.service';
 import { ChargeService } from './charge.service';
 import { ProjetService } from './projet.service';
-import { DB_TABLES } from '../constants/db-tables';
+import { DB_TABLES, DB_VIEWS } from '../constants/db-tables';
 import { paginateQuery } from '../utils/supabase-pagination';
 
 @Injectable({
@@ -28,17 +28,18 @@ export class ChiffresService {
     this._chiffresCache = null;
   }
 
-  async getAllChiffres(): Promise<Chiffre[]> {
+  async getAllChiffres(): Promise<BudgetUnifieEntry[]> {
     if (this._chiffresCache) {
-      return this._chiffresCache;
+      return this._chiffresCache as unknown as BudgetUnifieEntry[];
     }
 
-    const data = await paginateQuery<Chiffre>(() =>
-      this.supabase.client.from(DB_TABLES.CHIFFRES).select('*').order('created_at', { ascending: false }),
+    // Récupération de tous les chiffres depuis la vue unifiée avec gestion de la limite de 1000 lignes de PostgREST
+    const data = await paginateQuery<BudgetUnifieEntry>(() =>
+      this.supabase.client.from(DB_VIEWS.VIEW_BUDGET_UNIFIE).select('*'),
     );
 
-    this._chiffresCache = data || [];
-    return this._chiffresCache;
+    this._chiffresCache = data as any || [];
+    return this._chiffresCache as unknown as BudgetUnifieEntry[];
   }
 
   async getChiffresByProject(idProjet: string): Promise<Chiffre[]> {
@@ -53,16 +54,38 @@ export class ChiffresService {
     return data || [];
   }
 
-  async getChiffre(idProjet: string, idService: string): Promise<Chiffre | null> {
+  /**
+   * Lecture via la vue unifiée v_roadmap_projet_budget_unifie.
+   * Retourne uniquement les lignes existantes (LOCAL ou TRISKELL).
+   * Les lignes VIERGE (tous les services sans données) sont gérées
+   * côté composant pour conserver l'affichage complet.
+   *
+   * ⚠️ Pagination obligatoire : PostgREST plafonne silencieusement à 1000 lignes.
+   */
+  async getChiffresByProjectFromView(idProjet: string): Promise<BudgetUnifieEntry[]> {
+    return paginateQuery<BudgetUnifieEntry>(() =>
+      this.supabase.client
+        .from(DB_VIEWS.VIEW_BUDGET_UNIFIE)
+        .select('*')
+        .eq('id_projet', idProjet),
+    );
+  }
+
+  /**
+   * Récupère les chiffres d'un projet/service via la vue unifiée.
+   * L'arbitrage Triskell > Local est géré par la vue.
+   * Le filtre projet + service garantit au plus 1 ligne : pas de risque pagination.
+   */
+  async getChiffre(idProjet: string, idService: string): Promise<BudgetUnifieEntry | null> {
     const { data, error } = await this.supabase.client
-      .from(DB_TABLES.CHIFFRES)
+      .from(DB_VIEWS.VIEW_BUDGET_UNIFIE)
       .select('*')
       .eq('id_projet', idProjet)
       .eq('id_service', idService)
       .maybeSingle();
 
     if (error) throw error;
-    return data;
+    return data as BudgetUnifieEntry | null;
   }
 
   async createChiffre(chiffre: Chiffre): Promise<Chiffre> {
