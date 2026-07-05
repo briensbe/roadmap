@@ -29,6 +29,11 @@ export class LucideIconsModule {}
 
         <div class="confirm-body">
           <p class="confirm-message">{{ message }}</p>
+          
+          <div *ngIf="warningText" class="confirm-warning-box">
+            <lucide-icon name="alert-triangle" [size]="18" class="warning-icon"></lucide-icon>
+            <p class="warning-text">{{ warningText }}</p>
+          </div>
         </div>
 
         <div class="confirm-footer">
@@ -62,7 +67,7 @@ export class LucideIconsModule {}
       .confirm-card {
         background: white;
         width: 100%;
-        max-width: 420px;
+        max-width: 440px;
         border-radius: 20px;
         box-shadow:
           0 20px 25px -5px rgba(0, 0, 0, 0.1),
@@ -159,10 +164,37 @@ export class LucideIconsModule {}
 
       .confirm-message {
         font-size: 15px;
-        color: #7d8a9e;
+        color: #475569;
         line-height: 1.5;
         margin: 0;
         white-space: pre-wrap;
+      }
+
+      .confirm-warning-box {
+        margin-top: 16px;
+        padding: 14px 16px;
+        background: #fffbeb;
+        border: 1px solid #fef3c7;
+        border-left: 4px solid #f59e0b;
+        border-radius: 12px;
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+      }
+
+      .warning-icon {
+        color: #d97706;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+
+      .warning-text {
+        font-size: 13px;
+        color: #92400e;
+        line-height: 1.5;
+        margin: 0;
+        font-weight: 500;
       }
 
       .confirm-footer {
@@ -229,6 +261,7 @@ export class ConfirmModalComponent {
   @Input() visible = false;
   @Input() title = 'Confirmation';
   @Input() message = 'Êtes-vous sûr de vouloir effectuer cette action ?';
+  @Input() warningText = '';
   @Input() icon = 'alert-triangle';
   @Input() confirmLabel = 'Confirmer';
   @Input() cancelLabel = 'Annuler';

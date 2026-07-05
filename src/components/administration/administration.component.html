@@ -265,3 +265,16 @@
     </div>
   }
 </div>
+
+<app-confirm-modal
+  [visible]="showConfirmActivate()"
+  title="Activer ce lot d'import ?"
+  message="Vous êtes sur le point d'activer ce lot d'import. Le lot actuellement actif sera désactivé."
+  warningText="⚠️ ATTENTION : L'activation de ce lot modifie les données PPM Triskell pour TOUT LE MONDE ! Cette action est immédiate et impacte l'ensemble des utilisateurs de l'application."
+  confirmLabel="Activer le lot"
+  cancelLabel="Annuler"
+  variant="danger"
+  (confirm)="confirmActivateBatch()"
+  (cancel)="showConfirmActivate.set(false)">
+</app-confirm-modal>
+

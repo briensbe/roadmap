@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { ImportService, ServiceMapping } from '../../services/import/import.service';
 import { ServicesService } from '../../services/services.service';
 import { Service } from '../../models/types';
+import { ConfirmModalComponent } from '../confirm-modal.component';
 import {
   LucideAngularModule,
   Shield,
@@ -25,7 +26,7 @@ import {
 @Component({
   selector: 'app-administration',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule, ConfirmModalComponent],
   templateUrl: './administration.component.html',
   styleUrl: './administration.component.css',
 })
@@ -240,12 +241,27 @@ export class AdministrationComponent implements OnInit {
     }
   }
 
+  showConfirmActivate = signal<boolean>(false);
+  batchIdToActivate = signal<number | null>(null);
+
   // Batch Activator Action
-  async handleActivateBatch(batchId: number) {
-    if (confirm('Voulez-vous activer ce lot d\'import ? Le lot actuellement actif sera désactivé.')) {
+  handleActivateBatch(batchId: number) {
+    this.batchIdToActivate.set(batchId);
+    this.showConfirmActivate.set(true);
+  }
+
+  confirmActivateBatch() {
+    const batchId = this.batchIdToActivate();
+    if (batchId !== null) {
       this.activateBatchMutation.mutate(batchId, {
+        onSuccess: () => {
+          this.showConfirmActivate.set(false);
+          this.batchIdToActivate.set(null);
+        },
         onError: (err: any) => {
           alert('Erreur lors de l\'activation : ' + (err.message || err));
+          this.showConfirmActivate.set(false);
+          this.batchIdToActivate.set(null);
         },
       });
     }
