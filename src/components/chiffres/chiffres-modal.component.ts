@@ -4,8 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { ChiffresFormData, SourceDonnee } from '../../models/chiffres.type';
 import { Chiffre } from '../../models/chiffres.type';
 import { ChiffresService } from '../../services/chiffres.service';
-import { Service } from '../../models/types';
+import { Service, Projet } from '../../models/types';
 import { ResourceService } from '../../services/resource.service';
+import { ProjetService } from '../../services/projet.service';
 import { LucideAngularModule, LucideCalculator, LucideHelpCircle, LucideLock } from 'lucide-angular';
 
 @Component({
@@ -26,6 +27,7 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
   LucideLock = LucideLock;
 
   services: Service[] = [];
+  projet: Projet | null = null;
   chiffres: Map<string, ChiffresFormData> = new Map();
   rafDate: string = new Date().toISOString().split('T')[0];
   isLoading: boolean = false;
@@ -35,6 +37,7 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
   constructor(
     private chiffresService: ChiffresService,
     private resourceService: ResourceService,
+    private projetService: ProjetService,
   ) {}
 
   ngOnInit() {
@@ -62,6 +65,7 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
 
     try {
       this.isLoading = true;
+      this.projet = await this.projetService.getProjet(this.idProjet);
       // Lecture via la vue unifiée (Triskell > Local > rien)
       const viewData = await this.chiffresService.getChiffresByProjectFromView(this.idProjet);
 
@@ -325,6 +329,7 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
 
   onClose() {
     this.error = '';
+    this.projet = null;
     this.close.emit();
   }
 }

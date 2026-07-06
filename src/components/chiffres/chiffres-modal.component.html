@@ -2,7 +2,15 @@
   <div class="modal-overlay" (click)="onClose()">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2>Chiffrage par service</h2>
+        <div class="modal-header-titles">
+          <h2>Chiffrage par service</h2>
+          @if (projet) {
+            <div class="project-subtitle">
+              <span class="project-code-badge">{{ projet.code_projet }}</span>
+              <span class="project-name">{{ projet.nom_projet }}</span>
+            </div>
+          }
+        </div>
         <button class="modal-close" (click)="onClose()">×</button>
       </div>
 
