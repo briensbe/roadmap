@@ -270,7 +270,19 @@
       <table class="import-table">
         <thead>
           <tr class="sticky-thead-row">
-            <th>Projet Triskell (Excel)</th>
+            <th>
+              <div class="th-content-expandable">
+                <span>Projet Triskell (Excel)</span>
+                <div class="header-expand-collapse-actions">
+                  <button (click)="expandAll()" class="btn-header-action" title="Tout déplier">
+                    <lucide-icon [img]="SquarePlus" [size]="14"></lucide-icon>
+                  </button>
+                  <button (click)="collapseAll()" class="btn-header-action" title="Tout replier">
+                    <lucide-icon [img]="SquareMinus" [size]="14"></lucide-icon>
+                  </button>
+                </div>
+              </div>
+            </th>
             <th>Lien Projet Roadmap</th>
             <th>Service</th>
             <th class="text-right">Initial</th>

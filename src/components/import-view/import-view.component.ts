@@ -18,6 +18,8 @@ import {
   XCircle,
   ExternalLink,
   ChevronDown,
+  ChevronsDown,
+  ChevronsUp,
   Link,
   Unlink,
   Check,
@@ -25,6 +27,8 @@ import {
   EyeOff,
   Upload,
   FileUp,
+  SquarePlus,
+  SquareMinus,
 } from 'lucide-angular';
 import { TriskellImportProcessor, ImportResult } from '../../services/import/TriskellImportProcessor';
 
@@ -52,6 +56,8 @@ export class ImportViewComponent {
   XCircle = XCircle;
   ExternalLink = ExternalLink;
   ChevronDown = ChevronDown;
+  ChevronsDown = ChevronsDown;
+  ChevronsUp = ChevronsUp;
   Link = Link;
   Unlink = Unlink;
   Check = Check;
@@ -59,6 +65,8 @@ export class ImportViewComponent {
   EyeOff = EyeOff;
   Upload = Upload;
   FileUp = FileUp;
+  SquarePlus = SquarePlus;
+  SquareMinus = SquareMinus;
 
   // Selected Batch ID state
   selectedBatchId = signal<number | null>(null);
@@ -193,6 +201,15 @@ export class ImportViewComponent {
       expanded.add(projectCode);
     }
     this.expandedProjects.set(expanded);
+  }
+
+  expandAll() {
+    const codes = this.groupedProjects().map(p => p.project_code);
+    this.expandedProjects.set(new Set(codes));
+  }
+
+  collapseAll() {
+    this.expandedProjects.set(new Set());
   }
 
   isProjectExpanded(projectCode: string): boolean {

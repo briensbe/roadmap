@@ -1205,6 +1205,12 @@
   background-color: #fafbfc;
 }
 
+.expanded-row td:nth-child(3),
+.service-row td:first-child,
+.subtable-total-row td:first-child {
+  border-left: 3px solid #3b82f6;
+}
+
 /* Service Row & Subtable Total formatting */
 .service-row td {
   background-color: #fafbfc;
@@ -1222,4 +1228,35 @@
   color: #475569;
   font-size: 12px;
   letter-spacing: 0.5px;
+}
+
+/* Expand/Collapse All Header Buttons styling */
+.th-content-expandable {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-expand-collapse-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-header-action {
+  background: transparent;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  color: #64748b;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  border-radius: 4px;
+}
+
+.btn-header-action:hover {
+  color: #3b82f6;
+  background: #f1f5f9;
 }
