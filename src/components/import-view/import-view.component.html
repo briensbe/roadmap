@@ -36,7 +36,7 @@
             @for (batch of batchesQuery.data(); track batch.id; let idx = $index; let total = $count) {
               <option [value]="batch.id">
                 N° {{ total - idx }} (Importé le {{ formatDate(batch.imported_at || batch.excel_export_date) }}) -
-                {{ batch.filename }}
+                {{ batch.filename }}@if (batch.is_active) { - (Actif)}
               </option>
             }
           </select>

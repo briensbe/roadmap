@@ -199,8 +199,9 @@
                   <tr>
                     <th style="width: 80px;">ID</th>
                     <th>Fichier</th>
-                    <th>Date d'import</th>
-                    <th>Statut</th>
+                    <th style="width: 240px;">Date d'export PPM Triskell</th>
+                    <th style="width: 180px;">Date d'import</th>
+                    <th style="width: 120px;">Statut</th>
                     <th class="actions-col" style="width: 200px;">État / Action</th>
                   </tr>
                 </thead>
@@ -216,9 +217,17 @@
                           <span>{{ batch.filename }}</span>
                         </div>
                       </td>
-                      <td class="date-cell">
-                        <lucide-icon [img]="Calendar" [size]="14" class="meta-icon"></lucide-icon>
-                        <span>{{ batch.excel_export_date | date: 'dd/MM/yyyy HH:mm' }}</span>
+                      <td>
+                        <div class="date-cell">
+                          <lucide-icon [img]="Calendar" [size]="14" class="meta-icon"></lucide-icon>
+                          <span>{{ batch.excel_export_date | date: 'dd/MM/yyyy HH:mm' }}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div class="date-cell">
+                          <lucide-icon [img]="Calendar" [size]="14" class="meta-icon"></lucide-icon>
+                          <span>{{ batch.imported_at | date: 'dd/MM/yyyy HH:mm' }}</span>
+                        </div>
                       </td>
                       <td>
                         <span class="status-badge" [class]="batch.status">
