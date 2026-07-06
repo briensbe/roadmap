@@ -718,6 +718,7 @@
   font-size: 12px;
   font-weight: 600;
   display: inline-block;
+  white-space: nowrap;
 }
 
 /* Numeric Values formatting */
@@ -1195,6 +1196,10 @@
   background-color: #ffffff;
 }
 
+.expanded-row td {
+  background-color: #fafbfc;
+}
+
 .expanded-row .rowspan-cell {
   border-left-color: #3b82f6;
   background-color: #fafbfc;
@@ -1202,7 +1207,7 @@
 
 /* Service Row & Subtable Total formatting */
 .service-row td {
-  background-color: #ffffff;
+  background-color: #fafbfc;
 }
 
 .subtable-total-row td {
