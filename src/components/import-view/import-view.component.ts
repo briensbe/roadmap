@@ -182,21 +182,21 @@ export class ImportViewComponent {
     return { total, matched, multiMatched, ambiguous, unmapped, percent };
   });
 
-  // Collapsed project codes state
-  collapsedProjects = signal<Set<string>>(new Set());
+  // Expanded project codes state (collapsed by default)
+  expandedProjects = signal<Set<string>>(new Set());
 
   toggleProjectExpansion(projectCode: string) {
-    const collapsed = new Set(this.collapsedProjects());
-    if (collapsed.has(projectCode)) {
-      collapsed.delete(projectCode);
+    const expanded = new Set(this.expandedProjects());
+    if (expanded.has(projectCode)) {
+      expanded.delete(projectCode);
     } else {
-      collapsed.add(projectCode);
+      expanded.add(projectCode);
     }
-    this.collapsedProjects.set(collapsed);
+    this.expandedProjects.set(expanded);
   }
 
-  isProjectCollapsed(projectCode: string): boolean {
-    return this.collapsedProjects().has(projectCode);
+  isProjectExpanded(projectCode: string): boolean {
+    return this.expandedProjects().has(projectCode);
   }
 
   // Regrouped projects computed for template display

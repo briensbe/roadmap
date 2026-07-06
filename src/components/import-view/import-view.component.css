@@ -1156,23 +1156,10 @@
 /* Grouped Project Rows styling */
 .project-row {
   cursor: pointer;
-  background-color: #ffffff;
-  border-left: 3px solid transparent;
-  transition: all 0.2s ease;
 }
 
-.project-row:hover {
+.project-row:hover td {
   background-color: #f8fafc;
-}
-
-.project-row.expanded {
-  border-left-color: #3b82f6;
-}
-
-.project-row .project-code {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
 }
 
 .project-row-toggle {
@@ -1182,9 +1169,10 @@
   justify-content: center;
   transition: transform 0.2s ease;
   transform: rotate(-90deg);
+  cursor: pointer;
 }
 
-.project-row.expanded .project-row-toggle {
+.project-row.expanded-row .project-row-toggle {
   transform: rotate(0deg);
 }
 
@@ -1198,27 +1186,35 @@
   border: 1px solid #e2e8f0;
 }
 
-.service-row td {
-  padding: 10px 16px;
+/* Rowspan cell formatting */
+.rowspan-cell {
+  border-left: 3px solid transparent;
+  transition: all 0.2s ease;
+  vertical-align: top !important;
+  padding-top: 14px !important;
+  background-color: #ffffff;
+}
+
+.expanded-row .rowspan-cell {
+  border-left-color: #3b82f6;
   background-color: #fafbfc;
-  border-bottom: 1px solid #f1f5f9;
-  font-size: 13px;
 }
 
-.service-row:hover td {
-  background-color: #f1f5f9;
+/* Service Row & Subtable Total formatting */
+.service-row td {
+  background-color: #ffffff;
 }
 
-.service-indent-col {
-  text-align: right;
-  vertical-align: middle;
-  padding-right: 8px !important;
+.subtable-total-row td {
+  font-weight: 700 !important;
+  color: #0f172a;
+  border-top: 2px solid #e2e8f0;
+  background-color: #fafbfc !important;
 }
 
-.sub-arrow {
-  color: #94a3b8;
-  font-weight: bold;
-  font-size: 14px;
-  user-select: none;
-  margin-right: 8px;
+.total-label {
+  font-weight: 700;
+  color: #475569;
+  font-size: 12px;
+  letter-spacing: 0.5px;
 }
