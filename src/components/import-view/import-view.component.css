@@ -1185,6 +1185,7 @@
   padding: 2px 8px;
   border-radius: 9999px;
   border: 1px solid #e2e8f0;
+  white-space: nowrap;
 }
 
 /* Rowspan cell formatting */

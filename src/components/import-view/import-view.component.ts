@@ -303,6 +303,11 @@ export class ImportViewComponent {
       });
     }
 
+    // Sort services alphabetically for each project group
+    for (const group of Object.values(groups)) {
+      group.services.sort((a, b) => a.service_name.localeCompare(b.service_name));
+    }
+
     const result = Object.values(groups);
 
     // 3. Sort by Nomenclature -> Objet -> Type activité -> Project Code
