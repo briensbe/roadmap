@@ -8,6 +8,9 @@
             <div class="project-subtitle">
               <span class="project-code-badge">{{ projet.code_projet }}</span>
               <span class="project-name">{{ projet.nom_projet }}</span>
+              @if (projet.reference_externe) {
+                <span class="project-ref-badge">{{ projet.reference_externe }}</span>
+              }
             </div>
           }
         </div>
