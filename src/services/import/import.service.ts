@@ -99,23 +99,38 @@ export class ImportService {
   reconcileRowMutation() {
     return injectMutation(() => ({
       mutationFn: async ({ rowId, projectId }: { rowId: number; projectId: string | null }) => {
-        // If projectId is null, we unmap the row (set status to unmapped)
-        const updateData: Partial<ImportBudgetRow> = {
+        // 1. Fetch the target row to get its project_code and batch_id
+        const { data: targetRow, error: fetchError } = await this.supabase.client
+          .from('roadmap_import_budget')
+          .select('project_code, batch_id')
+          .eq('id', rowId)
+          .single();
+
+        if (fetchError || !targetRow) {
+          throw fetchError || new Error('Row not found');
+        }
+
+        const { project_code, batch_id } = targetRow;
+
+        const updateData = {
           project_id: projectId,
           reconciliation_status: projectId ? 'matched' : 'unmapped',
           // Clear multi matched list if manually resolved
           project_ids: null,
         };
 
+        // 2. Update all staging rows for this project_code in this batch
         const { data, error } = await this.supabase.client
           .from('roadmap_import_budget')
           .update(updateData)
-          .eq('id', rowId)
-          .select()
-          .single();
+          .eq('batch_id', batch_id)
+          .eq('project_code', project_code)
+          .select();
 
         if (error) throw error;
-        return data as ImportBudgetRow;
+        if (!data || data.length === 0) throw new Error('No rows updated');
+
+        return data[0] as ImportBudgetRow;
       },
       onSuccess: (data) => {
         // Invalidate the budget rows query to refetch updated staging rows

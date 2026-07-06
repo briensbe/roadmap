@@ -182,8 +182,25 @@ export class ImportViewComponent {
     return { total, matched, multiMatched, ambiguous, unmapped, percent };
   });
 
-  // Regrouped rows computed for template display
-  filteredRows = computed(() => {
+  // Collapsed project codes state
+  collapsedProjects = signal<Set<string>>(new Set());
+
+  toggleProjectExpansion(projectCode: string) {
+    const collapsed = new Set(this.collapsedProjects());
+    if (collapsed.has(projectCode)) {
+      collapsed.delete(projectCode);
+    } else {
+      collapsed.add(projectCode);
+    }
+    this.collapsedProjects.set(collapsed);
+  }
+
+  isProjectCollapsed(projectCode: string): boolean {
+    return this.collapsedProjects().has(projectCode);
+  }
+
+  // Regrouped projects computed for template display
+  groupedProjects = computed(() => {
     const rows = this.budgetRowsQuery.data() || [];
     const search = this.searchQuery().toLowerCase().trim();
     const status = this.statusFilter();
@@ -204,8 +221,75 @@ export class ImportViewComponent {
       return matchesSearch && matchesStatus && matchesService;
     });
 
-    // 2. Sort by Nomenclature -> Objet -> Type activité -> Project Code
-    return filtered.sort((a, b) => {
+    // 2. Group by project_code under the same breadcrumb key
+    const groups: { [key: string]: {
+      project_code: string;
+      project_name: string | null;
+      project_manager: string | null;
+      jira_references: string[] | null;
+      reconciliation_status: 'matched' | 'multi_matched' | 'ambiguous' | 'unmapped';
+      project_id: string | null;
+      project_ids: string[] | null;
+      initial_jh: number;
+      revised_jh: number;
+      previsionnel_jh: number;
+      consomme_jh: number;
+      budget_nomenclature: string | null;
+      budget_object: string | null;
+      activity_type: string | null;
+      services: {
+        id: number;
+        service_name: string;
+        initial_jh: number | null;
+        revised_jh: number | null;
+        previsionnel_jh: number | null;
+        consomme_jh: number | null;
+      }[];
+    } } = {};
+
+    for (const row of filtered) {
+      const breadcrumbKey = `${row.budget_nomenclature || ''}_${row.budget_object || ''}_${row.activity_type || ''}_${row.project_code}`;
+
+      if (!groups[breadcrumbKey]) {
+        groups[breadcrumbKey] = {
+          project_code: row.project_code,
+          project_name: row.project_name,
+          project_manager: row.project_manager,
+          jira_references: row.jira_references,
+          reconciliation_status: row.reconciliation_status,
+          project_id: row.project_id,
+          project_ids: row.project_ids,
+          initial_jh: 0,
+          revised_jh: 0,
+          previsionnel_jh: 0,
+          consomme_jh: 0,
+          budget_nomenclature: row.budget_nomenclature,
+          budget_object: row.budget_object,
+          activity_type: row.activity_type,
+          services: [],
+        };
+      }
+
+      const grp = groups[breadcrumbKey];
+      grp.initial_jh += row.initial_jh || 0;
+      grp.revised_jh += row.revised_jh || 0;
+      grp.previsionnel_jh += row.previsionnel_jh || 0;
+      grp.consomme_jh += row.consomme_jh || 0;
+
+      grp.services.push({
+        id: row.id,
+        service_name: row.service_name,
+        initial_jh: row.initial_jh,
+        revised_jh: row.revised_jh,
+        previsionnel_jh: row.previsionnel_jh,
+        consomme_jh: row.consomme_jh,
+      });
+    }
+
+    const result = Object.values(groups);
+
+    // 3. Sort by Nomenclature -> Objet -> Type activité -> Project Code
+    return result.sort((a, b) => {
       const nomA = a.budget_nomenclature || '';
       const nomB = b.budget_nomenclature || '';
       if (nomA !== nomB) return nomA.localeCompare(nomB);
