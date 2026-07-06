@@ -100,6 +100,9 @@ export class ImportViewComponent {
 
   // Mutations
   reconcileMutation = this.importService.reconcileRowMutation();
+  reconcileBatchMutation = this.importService.reconcileBatchMutation();
+
+  isReconciling = signal<boolean>(false);
 
   // Selected Batch Detail
   selectedBatch = computed(() => {
@@ -390,5 +393,21 @@ export class ImportViewComponent {
 
   closeError() {
     this.excelError.set(null);
+  }
+
+  async runAutoReconciliation() {
+    const batchId = this.selectedBatchId();
+    if (!batchId) return;
+
+    this.isReconciling.set(true);
+    this.reconcileBatchMutation.mutate(batchId, {
+      onSuccess: () => {
+        this.isReconciling.set(false);
+      },
+      onError: (err: any) => {
+        this.isReconciling.set(false);
+        alert("Erreur lors de la réconciliation : " + (err.message || err));
+      }
+    });
   }
 }

@@ -83,6 +83,33 @@
   border-color: #3b82f6;
 }
 
+.btn-reconcile {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  padding: 10px 16px;
+  border-radius: 8px;
+  color: #166534;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  height: 42px;
+}
+
+.btn-reconcile:hover:not(:disabled) {
+  background: #dcfce7;
+  color: #14532d;
+  border-color: #86efac;
+}
+
+.btn-reconcile:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Transitions animation area */
 .transition-area {
   animation: slideDownFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);

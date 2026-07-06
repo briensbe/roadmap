@@ -3,6 +3,7 @@ import { SupabaseService } from '../supabase.service';
 import { QueryClient, injectQuery, injectMutation } from '@tanstack/angular-query-experimental';
 import { paginateQuery } from '../../utils/supabase-pagination';
 import { ChiffresService } from '../chiffres.service';
+import { RoadmapReconciliator } from './RoadmapReconciliator';
 
 export interface ImportBatch {
   id: number;
@@ -119,6 +120,22 @@ export class ImportService {
       onSuccess: (data) => {
         // Invalidate the budget rows query to refetch updated staging rows
         this.queryClient.invalidateQueries({ queryKey: ['import-budget-rows', data.batch_id] });
+      },
+    }));
+  }
+
+  /**
+   * Run auto-reconciliation on-demand for a specific batch ID
+   */
+  reconcileBatchMutation() {
+    return injectMutation(() => ({
+      mutationFn: async (batchId: number) => {
+        const reconciliator = new RoadmapReconciliator(this.supabase.client);
+        return await reconciliator.reconcile(batchId);
+      },
+      onSuccess: (_, batchId) => {
+        // Invalidate the budget rows query to refetch updated staging rows
+        this.queryClient.invalidateQueries({ queryKey: ['import-budget-rows', batchId] });
       },
     }));
   }
