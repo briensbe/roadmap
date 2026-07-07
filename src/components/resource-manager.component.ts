@@ -875,8 +875,8 @@ export class ResourceManagerComponent implements OnInit {
           savedRole = await this.rolesService.createRole(payload);
         }
 
-        // Handle attachment
-        const existingAttachment = this.roleAttachments.find((a) => a.role_id === savedRole.id);
+        // Handle attachments (update all attachments for this role)
+        const existingAttachments = this.roleAttachments.filter((a) => a.role_id === savedRole.id);
         if (serviceId) {
           const attachmentPayload: Partial<RoleAttachment> = {
             role_id: savedRole.id!,
@@ -886,21 +886,26 @@ export class ResourceManagerComponent implements OnInit {
             departement_id: selectedService?.departement_id || null,
           };
 
-          if (existingAttachment) {
-            await this.rolesService.updateRoleAttachment(existingAttachment.id!, attachmentPayload);
+          if (existingAttachments.length > 0) {
+            for (const att of existingAttachments) {
+              await this.rolesService.updateRoleAttachment(att.id!, attachmentPayload);
+            }
           } else {
             await this.rolesService.createRoleAttachment(attachmentPayload);
           }
-        } else if (existingAttachment) {
-          // Explicitly nullify or delete based on previous behavior, but here nullifying is requested
-          // However for attachments, if no service/team/etc remains, we usually delete.
-          // The user specifically asked to "remettre à null les champs"
-          await this.rolesService.updateRoleAttachment(existingAttachment.id!, {
-            service_id: null,
-            id_service: null,
-            societe_id: null,
-            departement_id: null,
-          });
+        } else {
+          for (const att of existingAttachments) {
+            if (!att.equipe_id) {
+              await this.rolesService.deleteRoleAttachment(att.id!);
+            } else {
+              await this.rolesService.updateRoleAttachment(att.id!, {
+                service_id: null,
+                id_service: null,
+                societe_id: null,
+                departement_id: null,
+              });
+            }
+          }
         }
       } else {
         const payload: Partial<Personne> = {

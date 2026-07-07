@@ -4368,8 +4368,8 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       idService = attachment?.service_id ?? null;
     }
 
-    // Fallback sur le service de l'équipe si non résolu par la ressource
-    if (idService === null) {
+    // Fallback sur le service de l'équipe si non résolu par la ressource (uniquement si ce n'est pas pour une ressource spécifique)
+    if (idService === null && !resourceId) {
       idService = this.getServiceIdForTeam(teamId);
     }
 
