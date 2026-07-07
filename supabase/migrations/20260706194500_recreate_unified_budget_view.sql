@@ -32,8 +32,8 @@ triskell_chiffres AS (
 ),
 local_chiffres AS (
   SELECT 
-    c.id_projet,
-    c.id_service,
+    p.id AS id_projet,
+    s.id AS id_service,
     c.id_chiffres AS id_chiffres_local,
     p.nom_projet,
     s.nom AS nom_service,
