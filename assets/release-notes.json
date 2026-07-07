@@ -1,5 +1,37 @@
 [
   {
+    "version": "2026.07.07",
+    "date": "2026-07-07",
+    "news": [
+      {
+        "title": "Administration & Mapping des Services PPM",
+        "items": [
+          "Nouvel écran d'administration : permet de gérer le mapping entre les services locaux et les services PPM (Triskell).",
+          "Sécurisation des mappings : contrôle strict d'unicité lors de la configuration pour éviter les doublons.",
+          "Gestion des lots d'import (batches) : possibilité d'activer/désactiver des batches d'import avec modale de confirmation et nettoyage automatique du cache."
+        ]
+      },
+      {
+        "title": "Refonte de la vue d'Importation & Réconciliation",
+        "items": [
+          "Regroupement par projet : refonte de l'interface d'importation pour une meilleure visibilité des écarts de budget.",
+          "Contrôles interactifs : ajout des fonctionnalités d'expand/collapse pour masquer/déplier les détails et tri alphabétique.",
+          "Réconciliation à la demande : bouton permettant de relancer la réconciliation automatique.",
+          "Référence externe : intégration de la référence externe dans la modale d'édition des chiffres."
+        ]
+      },
+      {
+        "title": "Améliorations des Budgets & Correctifs",
+        "items": [
+          "Vue budget unifiée : passage sur la nouvelle vue SQL `v_roadmap_projet_budget_unifie` pour fiabiliser la provenance des chiffres.",
+          "Correction du rattachement : résolution d'un problème qui affectait le lien entre les chiffres Triskell et les rôles/services associés.",
+          "Avertissement de service manquant : message d'alerte explicite si l'absence de service sur une ressource bloque l'affichage de ses chiffres en vue Planification.",
+          "Suivi et traçabilité : ajout d'une colonne `updated_at` sur les tables clés (équipes, rôles, personnes, services, etc.) et sécurisation des identifiants (UUID)."
+        ]
+      }
+    ]
+  },
+  {
     "version": "2026.07.03",
     "date": "2026-07-03",
     "news": [
