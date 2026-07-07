@@ -233,6 +233,12 @@ interface ResourceFormData {
                       <option [value]="s.id">{{ s.nom }}</option>
                     }
                   </select>
+                  @if (!formData.service_id) {
+                    <div class="service-warning">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                      <span>L'absence de service empêchera l'affichage des chiffres sur cette ressource dans la planification.</span>
+                    </div>
+                  }
                 </div>
 
                 <div class="form-group">
@@ -681,6 +687,23 @@ interface ResourceFormData {
       }
       .btn-confirm:hover {
         background: #2563eb;
+      }
+      .service-warning {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        color: #d97706;
+        font-size: 12px;
+        background: #fffbeb;
+        border: 1px solid #fef3c7;
+        padding: 8px 12px;
+        border-radius: 8px;
+        margin-top: 4px;
+        line-height: 1.4;
+      }
+      .service-warning svg {
+        flex-shrink: 0;
+        margin-top: 2px;
       }
     `,
   ],
