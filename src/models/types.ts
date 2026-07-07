@@ -11,6 +11,7 @@ export interface Departement {
   nom: string;
   societe_id: string;
   created_at?: string;
+  updated_at?: string;
   code?: string;
   color?: string;
 }
@@ -32,6 +33,7 @@ export interface Equipe {
   service_id: string;
   departement_id: string;
   created_at?: string;
+  updated_at?: string;
   code?: string;
   color?: string;
 }
@@ -52,6 +54,7 @@ export interface Role {
   nom: string;
   jours_par_semaine: number;
   created_at?: string;
+  updated_at?: string;
   code?: string;
   color?: string;
   service_id?: string | null;
@@ -65,6 +68,7 @@ export interface RoleAttachment {
   service_id?: string | null;
   equipe_id?: string | null;
   created_at?: string;
+  updated_at?: string;
   id_service?: number | null;
 }
 
@@ -80,6 +84,7 @@ export interface Personne {
   equipe_id?: string | null;
   id_service?: number | null;
   created_at?: string;
+  updated_at?: string;
   code?: string;
   color?: string;
 }

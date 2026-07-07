@@ -42,6 +42,7 @@ export interface ServiceMapping {
   service_id: string;
   service_name: string;
   created_at: string;
+  updated_at?: string;
   roadmap_services?: {
     nom: string;
   };
