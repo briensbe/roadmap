@@ -1,5 +1,18 @@
 [
   {
+    "version": "2026.07.09",
+    "date": "2026-07-09",
+    "news": [
+      {
+        "title": "Navigation par ancres (HashLocationStrategy)",
+        "items": [
+          "Activation de la stratégie de localisation par hash (`#`) pour la gestion des routes.",
+          "Résout les problèmes de rechargement de page (erreurs 404) ou de partage de liens directs sur les hébergements statiques."
+        ]
+      }
+    ]
+  },
+  {
     "version": "2026.07.07",
     "date": "2026-07-07",
     "news": [
