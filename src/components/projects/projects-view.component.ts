@@ -27,6 +27,7 @@ import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-
 import { calculateNewRank, sortByRank } from '../../utils/lexorank.utils';
 import { storageSignal } from '../../utils/storage-signal';
 import * as XLSX from 'xlsx';
+import { textContains } from '../../utils/text.utils';
 
 @Component({
   selector: 'app-projects-view',
@@ -82,11 +83,11 @@ export class ProjectsViewComponent implements OnInit {
     return sorted.filter((projet) => {
       const matchesSearch =
         !search ||
-        projet.nom_projet.toLowerCase().includes(search.toLowerCase()) ||
-        projet.code_projet.toLowerCase().includes(search.toLowerCase()) ||
-        (projet.reference_externe && projet.reference_externe.toLowerCase().includes(search.toLowerCase())) ||
-        (projet.description && projet.description.toLowerCase().includes(search.toLowerCase())) ||
-        (projet.chef_projet && projet.chef_projet.toLowerCase().includes(search.toLowerCase()));
+        textContains(projet.nom_projet, search) ||
+        textContains(projet.code_projet, search) ||
+        textContains(projet.reference_externe, search) ||
+        textContains(projet.description, search) ||
+        textContains(projet.chef_projet, search);
 
       const matchesStatus = status.length === 0 || status.includes(projet.statut);
 

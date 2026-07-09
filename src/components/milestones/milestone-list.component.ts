@@ -14,6 +14,7 @@ import {
   Wrench,
 } from 'lucide-angular';
 import { Jalon, Projet } from '../../models/types';
+import { textContains } from '../../utils/text.utils';
 
 @NgModule({
   imports: [LucideAngularModule.pick({ Search, History, PenLine, Trash2, Package, Rocket, Layers, Flag, Wrench })],
@@ -534,12 +535,11 @@ export class MilestoneListComponent implements OnInit, OnChanges {
     }
 
     if (this.searchText) {
-      const searchLower = this.searchText.toLowerCase();
       filtered = filtered.filter(
         (j) =>
-          j.title?.toLowerCase().includes(searchLower) ||
-          j.version?.toLowerCase().includes(searchLower) ||
-          j.description?.toLowerCase().includes(searchLower),
+          textContains(j.title, this.searchText) ||
+          textContains(j.version, this.searchText) ||
+          textContains(j.description, this.searchText),
       );
     }
 

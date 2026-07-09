@@ -76,6 +76,7 @@ import {
 } from 'lucide-angular';
 import * as XLSX from 'xlsx';
 import { getISOWeekYear } from 'date-fns';
+import { textContains } from '../../utils/text.utils';
 import {
   calculateBestToolbarPosition,
   calculateBestPopoverPosition,
@@ -523,15 +524,15 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   linkModalIsSaving: boolean = false;
 
   get filteredLinkableItems(): { id: string; label: string; type?: 'role' | 'personne' }[] {
-    const q = this.linkModalSearchQuery.trim().toLowerCase();
+    const q = this.linkModalSearchQuery.trim();
     const s = this.linkModalStatusFilter;
     return this.linkableItems.filter((item) => {
       const proj = this.allProjects.find((p) => p.id === item.id);
       const matchSearch =
         !q ||
-        item.label.toLowerCase().includes(q) ||
-        (proj?.code_projet || '').toLowerCase().includes(q) ||
-        (proj?.reference_externe || '').toLowerCase().includes(q);
+        textContains(item.label, q) ||
+        textContains(proj?.code_projet, q) ||
+        textContains(proj?.reference_externe, q);
       const matchStatus = !s || (proj?.statut || '') === s;
       return matchSearch && matchStatus;
     });
@@ -3454,12 +3455,12 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   get filteredProjectsForDropdown(): Projet[] {
     if (!this.filterProjetSearch()) return this.allProjects;
-    const search = this.filterProjetSearch().toLowerCase();
+    const search = this.filterProjetSearch();
     return this.allProjects.filter(
       (p) =>
-        p.nom_projet.toLowerCase().includes(search) ||
-        (p.code_projet && p.code_projet.toLowerCase().includes(search)) ||
-        (p.reference_externe && p.reference_externe.toLowerCase().includes(search)),
+        textContains(p.nom_projet, search) ||
+        textContains(p.code_projet, search) ||
+        textContains(p.reference_externe, search),
     );
   }
 
@@ -3778,7 +3779,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   applyFilters() {
     this.calculateUsage();
 
-    const search = this.globalSearch().toLowerCase().trim();
+    const search = this.globalSearch().trim();
 
     // Period filter – computed once, O(n) pass on allCharges
     const periodStart = this.effectivePeriodStart;
@@ -3832,47 +3833,47 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     if (search) {
       for (const p of this.allProjects) {
         if (
-          p.nom_projet.toLowerCase().includes(search) ||
-          (p.code_projet && p.code_projet.toLowerCase().includes(search)) ||
-          (p.reference_externe && p.reference_externe.toLowerCase().includes(search))
+          textContains(p.nom_projet, search) ||
+          textContains(p.code_projet, search) ||
+          textContains(p.reference_externe, search)
         ) {
           matchingProjetIds.add(p.id!);
         }
       }
       for (const e of this.allEquipes) {
-        if (e.nom.toLowerCase().includes(search) || (e.code && e.code.toLowerCase().includes(search))) {
+        if (textContains(e.nom, search) || textContains(e.code, search)) {
           matchingEquipeIds.add(e.id!);
         }
       }
       for (const r of this.availableRoles) {
-        if (r.nom.toLowerCase().includes(search)) matchingRoleIds.add(r.id!);
+        if (textContains(r.nom, search)) matchingRoleIds.add(r.id!);
       }
       for (const p of this.availablePersonnes) {
-        if (`${p.prenom} ${p.nom}`.toLowerCase().includes(search)) matchingPersonneIds.add(p.id!);
+        if (textContains(`${p.prenom} ${p.nom}`, search)) matchingPersonneIds.add(p.id!);
       }
     }
 
     const resourceMatchesSearchSelf = (res: ResourceRow): boolean => {
       if (!search) return true;
-      if (res.label.toLowerCase().includes(search)) return true;
-      if (res.reference_externe && res.reference_externe.toLowerCase().includes(search)) return true;
+      if (textContains(res.label, search)) return true;
+      if (textContains(res.reference_externe, search)) return true;
       if (res.type === 'role') return matchingRoleIds.has(res.resourceId || res.id);
       return matchingPersonneIds.has(res.resourceId || res.id);
     };
 
     const parentMatchesSearch = (parent: ParentRow): boolean => {
       if (!search) return true;
-      if (parent.label.toLowerCase().includes(search)) return true;
-      if (parent.code && parent.code.toLowerCase().includes(search)) return true;
-      if (parent.reference_externe && parent.reference_externe.toLowerCase().includes(search)) return true;
+      if (textContains(parent.label, search)) return true;
+      if (textContains(parent.code, search)) return true;
+      if (textContains(parent.reference_externe, search)) return true;
       return false;
     };
 
     const childMatchesSearchSelf = (child: ChildRow): boolean => {
       if (!search) return true;
-      if (child.label.toLowerCase().includes(search)) return true;
-      if (child.code && child.code.toLowerCase().includes(search)) return true;
-      if (child.reference_externe && child.reference_externe.toLowerCase().includes(search)) return true;
+      if (textContains(child.label, search)) return true;
+      if (textContains(child.code, search)) return true;
+      if (textContains(child.reference_externe, search)) return true;
       return false;
     };
 

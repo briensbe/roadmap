@@ -22,6 +22,7 @@ import {
   User,
 } from 'lucide-angular';
 import { ConfirmModalComponent } from './confirm-modal.component';
+import { textContains } from '../utils/text.utils';
 
 @NgModule({
   imports: [
@@ -804,16 +805,16 @@ export class ResourceManagerComponent implements OnInit {
   filteredRoles() {
     return this.roles.filter(
       (r) =>
-        r.nom.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-        (r.code && r.code.toLowerCase().includes(this.searchQuery.toLowerCase())),
+        textContains(r.nom, this.searchQuery) ||
+        textContains(r.code, this.searchQuery),
     );
   }
 
   filteredPersonnes() {
     return this.personnes.filter(
       (p) =>
-        p.nom.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-        p.prenom.toLowerCase().includes(this.searchQuery.toLowerCase()),
+        textContains(p.nom, this.searchQuery) ||
+        textContains(p.prenom, this.searchQuery),
     );
   }
 

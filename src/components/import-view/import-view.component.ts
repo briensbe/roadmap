@@ -31,6 +31,7 @@ import {
   SquareMinus,
 } from 'lucide-angular';
 import { TriskellImportProcessor, ImportResult } from '../../services/import/TriskellImportProcessor';
+import { textContains } from '../../utils/text.utils';
 
 @Component({
   selector: 'app-import-view',
@@ -219,7 +220,7 @@ export class ImportViewComponent {
   // Regrouped projects computed for template display
   groupedProjects = computed(() => {
     const rows = this.budgetRowsQuery.data() || [];
-    const search = this.searchQuery().toLowerCase().trim();
+    const search = this.searchQuery().trim();
     const status = this.statusFilter();
     const service = this.serviceFilter();
 
@@ -227,10 +228,10 @@ export class ImportViewComponent {
     const filtered = rows.filter((r: ImportBudgetRow) => {
       const matchesSearch =
         !search ||
-        (r.project_code && r.project_code.toLowerCase().includes(search)) ||
-        (r.project_name && r.project_name.toLowerCase().includes(search)) ||
-        (r.project_manager && r.project_manager.toLowerCase().includes(search)) ||
-        (r.jira_references && r.jira_references.some((j: string) => j.toLowerCase().includes(search)));
+        textContains(r.project_code, search) ||
+        textContains(r.project_name, search) ||
+        textContains(r.project_manager, search) ||
+        (r.jira_references && r.jira_references.some((j: string) => textContains(j, search)));
 
       const matchesStatus = status === 'all' || r.reconciliation_status === status;
       const matchesService = service === 'all' || r.service_name === service;
@@ -334,15 +335,15 @@ export class ImportViewComponent {
 
   // Projets list available for manual mapping (filtered by query)
   availableProjetsForMapping = computed(() => {
-    const search = this.reconcileSearchQuery().toLowerCase().trim();
+    const search = this.reconcileSearchQuery().trim();
     const projets = this.projetsQuery.data() || [];
 
     return projets.filter(
       (p) =>
         !search ||
-        p.nom_projet.toLowerCase().includes(search) ||
-        p.code_projet.toLowerCase().includes(search) ||
-        (p.reference_externe && p.reference_externe.toLowerCase().includes(search)),
+        textContains(p.nom_projet, search) ||
+        textContains(p.code_projet, search) ||
+        textContains(p.reference_externe, search),
     );
   });
 

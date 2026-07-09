@@ -33,6 +33,7 @@ import hljs from 'highlight.js';
 import { SettingsService } from '../../services/settings.service';
 import { Setting, SettingType } from '../../models/settings.type';
 import { ConfirmModalComponent } from '../confirm-modal.component';
+import { textContains } from '../../utils/text.utils';
 
 @Component({
   selector: 'app-settings',
@@ -1131,15 +1132,15 @@ export class SettingsComponent implements OnInit {
 
   filteredSettings = computed(() => {
     const settings = this.settingsQuery.data() || [];
-    const query = this.searchQuery().toLowerCase();
+    const query = this.searchQuery();
 
     if (!query) return settings;
 
     return settings.filter(
       (s: Setting) =>
-        s.key.toLowerCase().includes(query) ||
-        s.scope.toLowerCase().includes(query) ||
-        (s.description && s.description.toLowerCase().includes(query)),
+        textContains(s.key, query) ||
+        textContains(s.scope, query) ||
+        textContains(s.description, query),
     );
   });
 

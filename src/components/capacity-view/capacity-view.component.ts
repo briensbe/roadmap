@@ -25,6 +25,7 @@ import {
   ToolbarPosition,
   PopoverPosition,
 } from '../../utils/selection-positioning';
+import { textContains } from '../../utils/text.utils';
 
 @NgModule({
   imports: [
@@ -291,11 +292,11 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
         }))
         .filter((tr) => tr.resources.length > 0);
     } else if (this.resourceSearch.trim()) {
-      const search = this.resourceSearch.toLowerCase().trim();
+      const search = this.resourceSearch.trim();
       rows = rows
         .map((tr) => ({
           ...tr,
-          resources: tr.resources.filter((r) => r.label.toLowerCase().includes(search)),
+          resources: tr.resources.filter((r) => textContains(r.label, search)),
         }))
         .filter((tr) => tr.resources.length > 0);
     }
@@ -318,9 +319,9 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   }
 
   get filteredResourceList(): ResourceRow[] {
-    const search = this.resourceSearch.toLowerCase().trim();
+    const search = this.resourceSearch.trim();
     if (!search) return this.allResources;
-    return this.allResources.filter((r) => r.label.toLowerCase().includes(search));
+    return this.allResources.filter((r) => textContains(r.label, search));
   }
 
   toggleResourceSelection(label: string) {
