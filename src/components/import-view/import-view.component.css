@@ -558,6 +558,7 @@
   background: #ffffff;
   border-radius: 0 0 12px 12px;
   border: 1px solid #e2e8f0;
+  border-top: none;
   overflow-x: auto;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
   max-height: 70vh;
@@ -1285,4 +1286,17 @@
 .btn-status-action:hover {
   color: #3b82f6;
   background: #f1f5f9;
+}
+
+.filter-info-bar {
+  background: #f8fafc;
+  padding: 10px 16px;
+  border-left: 1px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
 }

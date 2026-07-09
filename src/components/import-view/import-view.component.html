@@ -265,6 +265,16 @@
       </div>
     </div>
 
+    <div class="filter-info-bar">
+      <span>
+        @if (searchQuery() || statusFilter() !== 'all' || serviceFilter() !== 'all') {
+          <strong>{{ filteredCount() }}</strong> lignes budgétaires filtrées sur <strong>{{ stats().total }}</strong> au total ({{ groupedProjects().length }} projets affichés)
+        } @else {
+          <strong>{{ stats().total }}</strong> lignes budgétaires au total ({{ groupedProjects().length }} projets)
+        }
+      </span>
+    </div>
+
     <!-- Main Budget Table -->
     <div class="table-wrapper">
       <table class="import-table">

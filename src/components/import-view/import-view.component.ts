@@ -217,6 +217,27 @@ export class ImportViewComponent {
     return this.expandedProjects().has(projectCode);
   }
 
+  filteredCount = computed(() => {
+    const rows = this.budgetRowsQuery.data() || [];
+    const search = this.searchQuery().trim();
+    const status = this.statusFilter();
+    const service = this.serviceFilter();
+
+    return rows.filter((r: ImportBudgetRow) => {
+      const matchesSearch =
+        !search ||
+        textContains(r.project_code, search) ||
+        textContains(r.project_name, search) ||
+        textContains(r.project_manager, search) ||
+        (r.jira_references && r.jira_references.some((j: string) => textContains(j, search)));
+
+      const matchesStatus = status === 'all' || r.reconciliation_status === status;
+      const matchesService = service === 'all' || r.service_name === service;
+
+      return matchesSearch && matchesStatus && matchesService;
+    }).length;
+  });
+
   // Regrouped projects computed for template display
   groupedProjects = computed(() => {
     const rows = this.budgetRowsQuery.data() || [];
