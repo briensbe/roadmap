@@ -191,30 +191,30 @@ export class ImportViewComponent {
     return { total, matched, multiMatched, ambiguous, unmapped, percent };
   });
 
-  // Expanded project codes state (collapsed by default)
+  // Expanded project keys state (collapsed by default)
   expandedProjects = signal<Set<string>>(new Set());
 
-  toggleProjectExpansion(projectCode: string) {
+  toggleProjectExpansion(projectKey: string) {
     const expanded = new Set(this.expandedProjects());
-    if (expanded.has(projectCode)) {
-      expanded.delete(projectCode);
+    if (expanded.has(projectKey)) {
+      expanded.delete(projectKey);
     } else {
-      expanded.add(projectCode);
+      expanded.add(projectKey);
     }
     this.expandedProjects.set(expanded);
   }
 
   expandAll() {
-    const codes = this.groupedProjects().map(p => p.project_code);
-    this.expandedProjects.set(new Set(codes));
+    const keys = this.groupedProjects().map(p => p.key);
+    this.expandedProjects.set(new Set(keys));
   }
 
   collapseAll() {
     this.expandedProjects.set(new Set());
   }
 
-  isProjectExpanded(projectCode: string): boolean {
-    return this.expandedProjects().has(projectCode);
+  isProjectExpanded(projectKey: string): boolean {
+    return this.expandedProjects().has(projectKey);
   }
 
   filteredCount = computed(() => {
@@ -260,8 +260,9 @@ export class ImportViewComponent {
       return matchesSearch && matchesStatus && matchesService;
     });
 
-    // 2. Group by project_code under the same breadcrumb key
+    // 2. Group by project_code + project_name under the same breadcrumb key
     const groups: { [key: string]: {
+      key: string;
       project_code: string;
       project_name: string | null;
       project_manager: string | null;
@@ -287,10 +288,11 @@ export class ImportViewComponent {
     } } = {};
 
     for (const row of filtered) {
-      const breadcrumbKey = `${row.budget_nomenclature || ''}_${row.budget_object || ''}_${row.activity_type || ''}_${row.project_code}`;
+      const breadcrumbKey = `${row.budget_nomenclature || ''}_${row.budget_object || ''}_${row.activity_type || ''}_${row.project_code}_${row.project_name || ''}`;
 
       if (!groups[breadcrumbKey]) {
         groups[breadcrumbKey] = {
+          key: breadcrumbKey,
           project_code: row.project_code,
           project_name: row.project_name,
           project_manager: row.project_manager,

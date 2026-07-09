@@ -302,7 +302,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (project of groupedProjects(); track project.project_code; let idx = $index) {
+          @for (project of groupedProjects(); track project.key; let idx = $index) {
             <!-- Regroupement Fil d'ariane Sticky (s'affiche si le regroupement change d'une ligne à l'autre) -->
             @if (
               idx === 0 ||
@@ -327,10 +327,10 @@
               </tr>
             }
 
-            @if (isProjectExpanded(project.project_code)) {
+            @if (isProjectExpanded(project.key)) {
               <!-- EXPANDED STATE (rowspan layout) -->
               <!-- First Service Row -->
-              <tr class="table-row project-row expanded-row" (click)="toggleProjectExpansion(project.project_code)">
+              <tr class="table-row project-row expanded-row" (click)="toggleProjectExpansion(project.key)">
                 <!-- Project Info (Col 1) -->
                 <td [attr.rowspan]="project.services.length > 1 ? project.services.length + 1 : 1" class="rowspan-cell align-top">
                   <div class="project-info">
@@ -484,7 +484,7 @@
 
             } @else {
               <!-- COLLAPSED STATE (Single Row with Totals) -->
-              <tr class="table-row project-row collapsed-row" (click)="toggleProjectExpansion(project.project_code)">
+              <tr class="table-row project-row collapsed-row" (click)="toggleProjectExpansion(project.key)">
                 <!-- Project Info (Col 1) -->
                 <td>
                   <div class="project-info">
