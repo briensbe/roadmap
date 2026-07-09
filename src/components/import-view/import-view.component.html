@@ -653,7 +653,14 @@
                     <span class="proj-indicator" [style.background-color]="proj.color || '#3b82f6'"></span>
                     <div>
                       <span class="proj-code">{{ proj.code_projet }}</span>
-                      <span class="proj-name">{{ proj.nom_projet }}</span>
+                      <span class="proj-name">
+                        {{ proj.nom_projet }}
+                        @if (proj.reference_externe) {
+                          <span class="proj-ref-ext" style="font-size: 11px; color: #64748b; font-weight: normal; margin-left: 6px;">
+                            ({{ proj.reference_externe }})
+                          </span>
+                        }
+                      </span>
                     </div>
                   </div>
                   <button
@@ -691,7 +698,14 @@
                   <span class="proj-indicator" [style.background-color]="proj.color || '#3b82f6'"></span>
                   <div>
                     <span class="proj-code">{{ proj.code_projet }}</span>
-                    <span class="proj-name">{{ proj.nom_projet }}</span>
+                    <span class="proj-name">
+                      {{ proj.nom_projet }}
+                      @if (proj.reference_externe) {
+                        <span class="proj-ref-ext" style="font-size: 11px; color: #64748b; font-weight: normal; margin-left: 6px;">
+                          ({{ proj.reference_externe }})
+                        </span>
+                      }
+                    </span>
                   </div>
                 </div>
                 @if (activeReconcileRow()?.project_id === proj.id) {
