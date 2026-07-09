@@ -9,6 +9,20 @@
           "Activation de la stratégie de localisation par hash (`#`) pour la gestion des routes.",
           "Résout les problèmes de rechargement de page (erreurs 404) ou de partage de liens directs sur les hébergements statiques."
         ]
+      },
+      {
+        "title": "Recherche & Filtres intelligents",
+        "items": [
+          "Recherche insensible aux accents et à la casse : uniformisation de tous les filtres de recherche (projets, ressources, jalons, paramètres) pour ignorer les accents et les différences de casse (ex: 'Équipe' et 'equipe')."
+        ]
+      },
+      {
+        "title": "Améliorations de l'Import Triskell",
+        "items": [
+          "Indicateur de filtres : affichage dynamique du nombre de lignes budgétaires filtrées sur le total et du nombre de projets correspondants dans la vue d'importation.",
+          "Regroupement fiabilisé : le regroupement des lignes budgétaires dans la table d'importation s'effectue désormais sur le couple unique 'Code Projet' + 'Nom Projet' au lieu du code seul, permettant un suivi et une expansion indépendante des projets.",
+          "Bookmarklet Extract JIRA : extraction automatique du premier responsable d'études (customfield_13415) pour définir le chef de projet par défaut lors de l'import JSON."
+        ]
       }
     ]
   },

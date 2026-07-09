@@ -30,6 +30,13 @@ javascript: (function () {
         }
       }
 
+      /* Gestion du champ multi-utilisateurs 'Responsables Etudes' (customfield_13415) */
+      const responsablesEtudes = jiraJson.fields.customfield_13415;
+      let chefProjetValue = "";
+      if (responsablesEtudes && Array.isArray(responsablesEtudes) && responsablesEtudes.length > 0) {
+        chefProjetValue = responsablesEtudes[0].displayName || responsablesEtudes[0].name || "";
+      }
+
       /* 3. MAPPING DES DONNÉES */
       const monJsonSortie = {
         id: jiraJson.key,
@@ -38,6 +45,7 @@ javascript: (function () {
         statut: jiraJson.fields.status?.name || "",
         priorite: jiraJson.fields.priority?.name || "",
         reporter: jiraJson.fields.reporter?.displayName || "Non renseigné",
+        chef_projet: chefProjetValue || jiraJson.fields.reporter?.displayName || "Non renseigné",
         cree_le: jiraJson.fields.created,
         /* Intégration de votre clé personnalisée avec le label attendu */
         "Previa/Triskell": customFieldValue,
