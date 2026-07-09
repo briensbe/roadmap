@@ -1,7 +1,7 @@
 import { Component, HostListener, OnInit, inject, effect } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideAnimations } from '@angular/platform-browser/animations';
-import { provideRouter, RouterOutlet, Router } from '@angular/router';
+import { provideRouter, RouterOutlet, Router, withHashLocation } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { SidebarNavigationComponent } from './components/sidebar-navigation.component';
 import { SidebarService } from './services/sidebar.service';
@@ -96,7 +96,7 @@ bootstrapApplication(App, {
   providers: [
     provideAnimations(),
     provideHttpClient(),
-    provideRouter(routes),
+    provideRouter(routes, withHashLocation()),
     provideAngularQuery(
       new QueryClient({
         defaultOptions: {
