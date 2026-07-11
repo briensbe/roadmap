@@ -33,6 +33,8 @@ import {
 import { TriskellImportProcessor, ImportResult } from '../../services/import/TriskellImportProcessor';
 import { textContains } from '../../utils/text.utils';
 
+import { SettingsService } from '../../services/settings.service';
+
 @Component({
   selector: 'app-import-view',
   standalone: true,
@@ -43,6 +45,10 @@ import { textContains } from '../../utils/text.utils';
 export class ImportViewComponent {
   private importService = inject(ImportService);
   private projetService = inject(ProjetService);
+  private settingsService = inject(SettingsService);
+
+  private externalReferenceUrlQuery = this.settingsService.getSettingQuery('external_reference_url', 'global');
+  externalReferenceUrl = computed(() => this.externalReferenceUrlQuery.data()?.value || null);
 
   // Lucide Icons
   Database = Database;
@@ -416,6 +422,22 @@ export class ImportViewComponent {
     const projets = this.projetsQuery.data() || [];
     const p = projets.find((x) => x.id === projectId);
     return p ? p.code_projet : '';
+  }
+
+  getProjectExternalRef(projectId: string | null): string | null {
+    if (!projectId) return null;
+    const projets = this.projetsQuery.data() || [];
+    const p = projets.find((x) => x.id === projectId);
+    return p ? (p.reference_externe || null) : null;
+  }
+
+  cleanJiraRef(ref: string | null | undefined): string {
+    if (!ref) return '';
+    const match = ref.match(/(SUIVI-\d+)/i);
+    if (match) {
+      return match[1].toUpperCase();
+    }
+    return ref.trim();
   }
 
   async setReconciliation(rowId: number, projectId: string | null) {

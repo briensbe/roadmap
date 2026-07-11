@@ -347,7 +347,19 @@
                         <span class="divider">•</span>
                         <span class="jira-tags">
                           @for (jira of project.jira_references; track jira) {
-                            <span class="jira-tag">{{ jira }}</span>
+                            <span class="jira-tag">
+                              {{ jira }}
+                              @if (externalReferenceUrl(); as baseUrl) {
+                                <a
+                                  [href]="baseUrl + cleanJiraRef(jira)"
+                                  target="_blank"
+                                  (click)="$event.stopPropagation()"
+                                  class="jira-external-link"
+                                  title="Ouvrir dans le site externe">
+                                  <lucide-icon [img]="ExternalLink" [size]="10"></lucide-icon>
+                                </a>
+                              }
+                            </span>
                           }
                         </span>
                       }
@@ -377,6 +389,22 @@
                           {{ getProjectName(project.project_id) }}
                           <lucide-icon [img]="ExternalLink" [size]="12"></lucide-icon>
                         </a>
+                        @if (getProjectExternalRef(project.project_id); as ref) {
+                          <span class="proj-ref-ext" style="font-size: 11px; color: #64748b; margin-top: 4px; display: inline-flex; align-items: center; gap: 3px;">
+                            ({{ ref }})
+                            @if (externalReferenceUrl(); as baseUrl) {
+                              <a
+                                [href]="baseUrl + cleanJiraRef(ref)"
+                                target="_blank"
+                                (click)="$event.stopPropagation()"
+                                class="project-external-link"
+                                style="color: #3b82f6; display: inline-flex; align-items: center;"
+                                title="Ouvrir dans le site externe">
+                                <lucide-icon [img]="ExternalLink" [size]="11"></lucide-icon>
+                              </a>
+                            }
+                          </span>
+                        }
                       </div>
                     }
                     @case ('multi_matched') {
@@ -501,7 +529,19 @@
                         <span class="divider">•</span>
                         <span class="jira-tags">
                           @for (jira of project.jira_references; track jira) {
-                            <span class="jira-tag">{{ jira }}</span>
+                            <span class="jira-tag">
+                              {{ jira }}
+                              @if (externalReferenceUrl(); as baseUrl) {
+                                <a
+                                  [href]="baseUrl + cleanJiraRef(jira)"
+                                  target="_blank"
+                                  (click)="$event.stopPropagation()"
+                                  class="jira-external-link"
+                                  title="Ouvrir dans le site externe">
+                                  <lucide-icon [img]="ExternalLink" [size]="10"></lucide-icon>
+                                </a>
+                              }
+                            </span>
                           }
                         </span>
                       }
@@ -531,6 +571,22 @@
                           {{ getProjectName(project.project_id) }}
                           <lucide-icon [img]="ExternalLink" [size]="12"></lucide-icon>
                         </a>
+                        @if (getProjectExternalRef(project.project_id); as ref) {
+                          <span class="proj-ref-ext" style="font-size: 11px; color: #64748b; margin-top: 4px; display: inline-flex; align-items: center; gap: 3px;">
+                            ({{ ref }})
+                            @if (externalReferenceUrl(); as baseUrl) {
+                              <a
+                                [href]="baseUrl + cleanJiraRef(ref)"
+                                target="_blank"
+                                (click)="$event.stopPropagation()"
+                                class="project-external-link"
+                                style="color: #3b82f6; display: inline-flex; align-items: center;"
+                                title="Ouvrir dans le site externe">
+                                <lucide-icon [img]="ExternalLink" [size]="11"></lucide-icon>
+                              </a>
+                            }
+                          </span>
+                        }
                       </div>
                     }
                     @case ('multi_matched') {
@@ -655,9 +711,20 @@
                       <span class="proj-code">{{ proj.code_projet }}</span>
                       <span class="proj-name">
                         {{ proj.nom_projet }}
-                        @if (proj.reference_externe) {
-                          <span class="proj-ref-ext" style="font-size: 11px; color: #64748b; font-weight: normal; margin-left: 6px;">
-                            ({{ proj.reference_externe }})
+                        @if (proj.reference_externe; as ref) {
+                          <span class="proj-ref-ext" style="font-size: 11px; color: #64748b; font-weight: normal; margin-left: 6px; display: inline-flex; align-items: center; gap: 3px;">
+                            ({{ ref }})
+                            @if (externalReferenceUrl(); as baseUrl) {
+                              <a
+                                [href]="baseUrl + cleanJiraRef(ref)"
+                                target="_blank"
+                                (click)="$event.stopPropagation()"
+                                class="proj-ref-ext-link"
+                                style="color: #3b82f6; display: inline-flex; align-items: center;"
+                                title="Ouvrir dans le site externe">
+                                <lucide-icon [img]="ExternalLink" [size]="11"></lucide-icon>
+                              </a>
+                            }
                           </span>
                         }
                       </span>
@@ -700,9 +767,20 @@
                     <span class="proj-code">{{ proj.code_projet }}</span>
                     <span class="proj-name">
                       {{ proj.nom_projet }}
-                      @if (proj.reference_externe) {
-                        <span class="proj-ref-ext" style="font-size: 11px; color: #64748b; font-weight: normal; margin-left: 6px;">
-                          ({{ proj.reference_externe }})
+                      @if (proj.reference_externe; as ref) {
+                        <span class="proj-ref-ext" style="font-size: 11px; color: #64748b; font-weight: normal; margin-left: 6px; display: inline-flex; align-items: center; gap: 3px;">
+                          ({{ ref }})
+                          @if (externalReferenceUrl(); as baseUrl) {
+                            <a
+                              [href]="baseUrl + cleanJiraRef(ref)"
+                              target="_blank"
+                              (click)="$event.stopPropagation()"
+                              class="proj-ref-ext-link"
+                              style="color: #3b82f6; display: inline-flex; align-items: center;"
+                              title="Ouvrir dans le site externe">
+                              <lucide-icon [img]="ExternalLink" [size]="11"></lucide-icon>
+                            </a>
+                          }
                         </span>
                       }
                     </span>

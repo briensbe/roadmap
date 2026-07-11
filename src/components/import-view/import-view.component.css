@@ -687,6 +687,24 @@
   font-weight: 600;
 }
 
+.jira-tag.clickable {
+  background: #eff6ff;
+  color: #2563eb;
+  text-decoration: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid #bfdbfe;
+  transition: all 0.2s ease;
+}
+
+.jira-tag.clickable:hover {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-color: #93c5fd;
+}
+
 /* Budget Context Cell */
 .budget-context {
   display: flex;
