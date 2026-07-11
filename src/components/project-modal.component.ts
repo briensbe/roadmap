@@ -341,7 +341,7 @@ import { ProjectJsonImportComponent } from './project-json-import.component';
 })
 export class ProjectModalComponent implements OnInit {
   @Input() projet: Partial<Projet> | null = null;
-  @Output() saved = new EventEmitter<void>();
+  @Output() saved = new EventEmitter<Projet>();
   @Output() closed = new EventEmitter<void>();
   @Output() openChiffres = new EventEmitter<string>();
 
@@ -459,12 +459,13 @@ export class ProjectModalComponent implements OnInit {
 
     this.isSaving = true;
     try {
+      let savedProject: Projet;
       if (this.editableProjet.id) {
-        await this.projetService.updateProjet(this.editableProjet.id, this.editableProjet);
+        savedProject = await this.projetService.updateProjet(this.editableProjet.id, this.editableProjet);
       } else {
-        await this.projetService.createProjet(this.editableProjet);
+        savedProject = await this.projetService.createProjet(this.editableProjet);
       }
-      this.saved.emit();
+      this.saved.emit(savedProject);
     } catch (error) {
       console.error('Error saving project:', error);
     } finally {

@@ -2311,6 +2311,10 @@
             </div>
             <!-- Footer -->
             <div class="modal-actions lm-footer">
+              <button class="btn btn-primary" (click)="openNewProjectFromLink()" style="margin-right: auto; gap: 6px; display: flex; align-items: center;">
+                <lucide-icon [img]="Plus" [size]="14"></lucide-icon>
+                Nouveau Projet
+              </button>
               <button class="btn btn-secondary" (click)="closeLinkModal()">Fermer</button>
             </div>
           }
@@ -2529,7 +2533,7 @@
   @if (showProjectModal) {
     <app-project-modal
       [projet]="projectToEdit"
-      (saved)="onProjectSaved()"
+      (saved)="onProjectSaved($event)"
       (closed)="closeProjectModal()"
       (openChiffres)="onOpenChiffresFromProject($event)"></app-project-modal>
   }

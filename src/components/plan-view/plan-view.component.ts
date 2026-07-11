@@ -2419,6 +2419,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   // --- Project Modal Integration ---
   showProjectModal = false;
   projectToEdit: Partial<Projet> | null = null;
+  isCreatingProjectFromLink = false;
   ExternalLink = ExternalLink;
 
   getProjectForLinks(): Projet | undefined {
@@ -2448,13 +2449,59 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  async onProjectSaved() {
+  openNewProjectFromLink() {
+    this.projectToEdit = {};
+    this.isCreatingProjectFromLink = true;
+    this.showProjectModal = true;
+  }
+
+  async onProjectSaved(newProject?: Projet) {
     this.showProjectModal = false;
-    await this.loadData();
+
+    if (this.isCreatingProjectFromLink && newProject && newProject.id) {
+      this.isCreatingProjectFromLink = false;
+      try {
+        if (this.viewMode() === 'team' && this.selectedParentRow) {
+          const equipeId = this.selectedParentRow.id;
+          const projetId = newProject.id;
+          await this.projetService.linkProjectToTeam(projetId, equipeId);
+          await this.addAllTeamResourcesToProject(equipeId, projetId);
+        } else if (this.viewMode() === 'resource' && this.selectedParentRow) {
+          if (!this.selectedChildRowToLink) {
+            // Level 1: Add Project to Resource
+            const [equipeId, type, rawResId] = this.selectedParentRow.id.split('_');
+            const projetId = newProject.id;
+            const roleId = type === 'role' ? rawResId : undefined;
+            const personneId = type === 'personne' ? rawResId : undefined;
+            await this.chargeService.createChargeWithoutDates(projetId, equipeId, roleId, personneId);
+          } else {
+            // Level 2: Add Project to Resource
+            const equipeId = this.selectedParentRow.id.split('_')[0];
+            const [type, resId] = this.selectedChildRowToLink.id.split('_');
+            const projetId = newProject.id;
+            const roleId = type === 'role' ? resId : undefined;
+            await this.chargeService.createChargeWithoutDates(
+              projetId,
+              equipeId,
+              roleId,
+              type === 'personne' ? resId : undefined,
+            );
+          }
+        }
+        await this.loadData();
+        this.closeLinkModal();
+      } catch (error: any) {
+        console.error('Error linking newly created project:', error);
+        alert(`Le projet "${newProject.nom_projet}" a été créé, mais une erreur est survenue lors de son association : ${error.message || error}`);
+      }
+    } else {
+      await this.loadData();
+    }
   }
 
   closeProjectModal() {
     this.showProjectModal = false;
+    this.isCreatingProjectFromLink = false;
   }
 
   // Resource Addition Modal Methods
