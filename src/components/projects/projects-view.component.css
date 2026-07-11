@@ -967,3 +967,29 @@
   border-color: #4f46e5 !important;
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1) !important;
 }
+
+.btn-copy-code {
+  background: white;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  cursor: pointer;
+  padding: 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+  vertical-align: middle;
+}
+
+.btn-copy-code:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+  border-color: #cbd5e1;
+}
+
+.btn-copy-code.copied {
+  border-color: #22c55e !important;
+  color: #22c55e !important;
+  background: #f0fdf4 !important;
+}

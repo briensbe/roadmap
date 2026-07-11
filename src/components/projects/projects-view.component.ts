@@ -20,6 +20,7 @@ import {
   FileUp,
   AlertCircle,
   ChevronDown,
+  Check,
 } from 'lucide-angular';
 import { ConfirmModalComponent } from '../confirm-modal.component';
 import { ProjectModalComponent } from '../project-modal.component';
@@ -56,6 +57,7 @@ export class ProjectsViewComponent implements OnInit {
   Edit = Edit;
   Trash2 = Trash2;
   Copy = Copy;
+  Check = Check;
   ExternalLink = ExternalLink;
   Plus = Plus;
   FileDown = FileDown;
@@ -532,5 +534,24 @@ export class ProjectsViewComponent implements OnInit {
     this.showCancelButton = false;
     this.pendingConfirmAction = null;
     this.showConfirmModal = true;
+  }
+
+  copiedCodes = signal<Set<string>>(new Set());
+
+  copyToClipboard(event: MouseEvent, text: string) {
+    event.stopPropagation();
+    navigator.clipboard.writeText(text).then(() => {
+      const current = new Set(this.copiedCodes());
+      current.add(text);
+      this.copiedCodes.set(current);
+
+      setTimeout(() => {
+        const updated = new Set(this.copiedCodes());
+        updated.delete(text);
+        this.copiedCodes.set(updated);
+      }, 2000);
+    }).catch(err => {
+      console.error('Failed to copy code: ', err);
+    });
   }
 }

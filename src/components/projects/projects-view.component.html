@@ -200,7 +200,17 @@
           class="project-table-row"
           (click)="openEditModal(projet)">
           <td class="col-code">
-            <span class="project-code" [style.color]="projet.color || '#3b82f6'">{{ projet.code_projet }}</span>
+            <div style="display: inline-flex; align-items: center; gap: 6px;">
+              <span class="project-code" [style.color]="projet.color || '#3b82f6'">{{ projet.code_projet }}</span>
+              <button
+                *ngIf="projet.code_projet"
+                (click)="copyToClipboard($event, projet.code_projet)"
+                class="btn-copy-code"
+                [class.copied]="copiedCodes().has(projet.code_projet)"
+                [title]="copiedCodes().has(projet.code_projet) ? 'Code copié !' : 'Copier le code projet'">
+                <lucide-icon [img]="copiedCodes().has(projet.code_projet) ? Check : Copy" [size]="11"></lucide-icon>
+              </button>
+            </div>
           </td>
           <td class="col-name">
             <div class="name-with-color">
@@ -281,6 +291,14 @@
         <div class="card-header-top">
           <div class="project-identifiers">
             <span class="project-code" [style.color]="projet.color || '#3b82f6'">{{ projet.code_projet }}</span>
+            <button
+              *ngIf="projet.code_projet"
+              (click)="copyToClipboard($event, projet.code_projet)"
+              class="btn-copy-code"
+              [class.copied]="copiedCodes().has(projet.code_projet)"
+              [title]="copiedCodes().has(projet.code_projet) ? 'Code copié !' : 'Copier le code projet'">
+              <lucide-icon [img]="copiedCodes().has(projet.code_projet) ? Check : Copy" [size]="11"></lucide-icon>
+            </button>
             <span class="external-ref-tag" *ngIf="projet.reference_externe">
               <ng-container *ngIf="externalReferenceUrl(); else noLink">
                 <a
@@ -369,6 +387,14 @@
           </div>
           <div class="project-meta">
             <span class="project-code">{{ projet.code_projet }}</span>
+            <button
+              *ngIf="projet.code_projet"
+              (click)="copyToClipboard($event, projet.code_projet)"
+              class="btn-copy-code"
+              [class.copied]="copiedCodes().has(projet.code_projet)"
+              [title]="copiedCodes().has(projet.code_projet) ? 'Code copié !' : 'Copier le code projet'">
+              <lucide-icon [img]="copiedCodes().has(projet.code_projet) ? Check : Copy" [size]="11"></lucide-icon>
+            </button>
             <span *ngIf="projet.reference_externe">
               •
               <span class="external-ref-tag">
