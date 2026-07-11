@@ -1635,24 +1635,54 @@
                               class="label-cell row-label-resource"
                               [style.width.px]="labelColumnWidth()"
                               [style.minWidth.px]="labelColumnWidth()">
-                              <div class="row-label-content resource-row">
+                              <div
+                                class="row-label-content resource-row"
+                                [style.padding-left.px]="viewMode() === 'resource' ? 24 : 0">
+                                @if (viewMode() === 'resource') {
+                                  <div class="color-bar-container">
+                                    <div
+                                      class="color-bar-v small"
+                                      [style.background-color]="resource.color || '#cbd5e1'"></div>
+                                  </div>
+                                }
                                 <div
                                   class="resource-detail-label"
-                                  [style.padding-left.px]="viewMode() === 'resource' ? 24 : 40">
-                                  <div
-                                    class="resource-icon-wrapper"
-                                    [style.background-color]="resource.color || '#e2e8f0'">
-                                    <lucide-icon
-                                      [name]="resource.type === 'role' ? 'contact' : 'user'"
-                                      [size]="14"
-                                      class="resource-icon"></lucide-icon>
-                                  </div>
-                                  <span
-                                    class="resource-detail-name"
-                                    (mouseenter)="showTooltip($event, resource.label)"
-                                    (mouseleave)="hideTooltip()"
-                                    >{{ resource.label }}</span
-                                  >
+                                  [style.padding-left.px]="viewMode() === 'resource' ? 0 : 40">
+                                  @if (viewMode() === 'resource') {
+                                    <div class="info-stack">
+                                      @if (resource.code || resource.reference_externe) {
+                                        <div class="info-meta">
+                                          @if (resource.code) {
+                                            <span class="info-code">{{ resource.code }}</span>
+                                          }
+                                          @if (resource.reference_externe) {
+                                            <span class="info-code"> / {{ resource.reference_externe }}</span>
+                                          }
+                                        </div>
+                                      }
+                                      <span
+                                        class="resource-detail-name"
+                                        (mouseenter)="showTooltip($event, resource.label)"
+                                        (mouseleave)="hideTooltip()"
+                                        >{{ resource.label }}</span
+                                      >
+                                    </div>
+                                  } @else {
+                                    <div
+                                      class="resource-icon-wrapper"
+                                      [style.background-color]="resource.color || '#e2e8f0'">
+                                      <lucide-icon
+                                        [name]="resource.type === 'role' ? 'contact' : 'user'"
+                                        [size]="14"
+                                        class="resource-icon"></lucide-icon>
+                                    </div>
+                                    <span
+                                      class="resource-detail-name"
+                                      (mouseenter)="showTooltip($event, resource.label)"
+                                      (mouseleave)="hideTooltip()"
+                                      >{{ resource.label }}</span
+                                    >
+                                  }
                                   <div
                                     class="resource-total-badge"
                                     [class.anchor-active]="activeAnchorId === getResourceUniqueId(resource, child, row)"
