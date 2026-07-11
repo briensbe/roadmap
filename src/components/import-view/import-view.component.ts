@@ -195,6 +195,11 @@ export class ImportViewComponent {
   expandedProjects = signal<Set<string>>(new Set());
 
   toggleProjectExpansion(projectKey: string) {
+    const selection = window.getSelection();
+    if (selection && selection.toString().trim().length > 0) {
+      return;
+    }
+
     const expanded = new Set(this.expandedProjects());
     if (expanded.has(projectKey)) {
       expanded.delete(projectKey);
