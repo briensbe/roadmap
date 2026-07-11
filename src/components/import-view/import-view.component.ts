@@ -29,6 +29,7 @@ import {
   FileUp,
   SquarePlus,
   SquareMinus,
+  Copy,
 } from 'lucide-angular';
 import { TriskellImportProcessor, ImportResult } from '../../services/import/TriskellImportProcessor';
 import { textContains } from '../../utils/text.utils';
@@ -74,6 +75,7 @@ export class ImportViewComponent {
   FileUp = FileUp;
   SquarePlus = SquarePlus;
   SquareMinus = SquareMinus;
+  Copy = Copy;
 
   // Selected Batch ID state
   selectedBatchId = signal<number | null>(null);
@@ -438,6 +440,25 @@ export class ImportViewComponent {
       return match[1].toUpperCase();
     }
     return ref.trim();
+  }
+
+  copiedCodes = signal<Set<string>>(new Set());
+
+  copyToClipboard(event: MouseEvent, text: string) {
+    event.stopPropagation();
+    navigator.clipboard.writeText(text).then(() => {
+      const current = new Set(this.copiedCodes());
+      current.add(text);
+      this.copiedCodes.set(current);
+
+      setTimeout(() => {
+        const updated = new Set(this.copiedCodes());
+        updated.delete(text);
+        this.copiedCodes.set(updated);
+      }, 2000);
+    }).catch(err => {
+      console.error('Failed to copy code: ', err);
+    });
   }
 
   async setReconciliation(rowId: number, projectId: string | null) {

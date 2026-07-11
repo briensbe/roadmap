@@ -337,6 +337,13 @@
                     <div class="name-row">
                       <lucide-icon [img]="ChevronDown" [size]="14" class="project-row-toggle"></lucide-icon>
                       <span class="project-code">{{ project.project_code }}</span>
+                      <button
+                        (click)="copyToClipboard($event, project.project_code)"
+                        class="btn-copy-code"
+                        [class.copied]="copiedCodes().has(project.project_code)"
+                        [title]="copiedCodes().has(project.project_code) ? 'Code copié !' : 'Copier le code projet'">
+                        <lucide-icon [img]="copiedCodes().has(project.project_code) ? Check : Copy" [size]="11"></lucide-icon>
+                      </button>
                       <span class="project-name">{{ project.project_name }}</span>
                     </div>
                     <div class="sub-info">
@@ -519,6 +526,13 @@
                     <div class="name-row">
                       <lucide-icon [img]="ChevronDown" [size]="14" class="project-row-toggle"></lucide-icon>
                       <span class="project-code">{{ project.project_code }}</span>
+                      <button
+                        (click)="copyToClipboard($event, project.project_code)"
+                        class="btn-copy-code"
+                        [class.copied]="copiedCodes().has(project.project_code)"
+                        [title]="copiedCodes().has(project.project_code) ? 'Code copié !' : 'Copier le code projet'">
+                        <lucide-icon [img]="copiedCodes().has(project.project_code) ? Check : Copy" [size]="11"></lucide-icon>
+                      </button>
                       <span class="project-name">{{ project.project_name }}</span>
                     </div>
                     <div class="sub-info">
