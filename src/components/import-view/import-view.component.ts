@@ -30,6 +30,9 @@ import {
   SquarePlus,
   SquareMinus,
   Copy,
+  AlertOctagon,
+  TrendingUp,
+  TrendingDown,
 } from 'lucide-angular';
 import { TriskellImportProcessor, ImportResult } from '../../services/import/TriskellImportProcessor';
 import { textContains } from '../../utils/text.utils';
@@ -76,6 +79,9 @@ export class ImportViewComponent {
   SquarePlus = SquarePlus;
   SquareMinus = SquareMinus;
   Copy = Copy;
+  AlertOctagon = AlertOctagon;
+  TrendingUp = TrendingUp;
+  TrendingDown = TrendingDown;
 
   // Selected Batch ID state
   selectedBatchId = signal<number | null>(null);
@@ -84,6 +90,20 @@ export class ImportViewComponent {
   showImportButton = signal<boolean>(false); // Apparaît dès qu'on a scrollé
   hasScrolled = signal<boolean>(false); // Marqueur de premier scroll
   window = window;
+
+  // Active Tab & Anomaly Filters
+  activeTab = signal<'data' | 'anomalies'>('data');
+  anomalyFilters = signal<string[]>(['dépassement', 'écart_hausse', 'écart_baisse']);
+  showAnomalyDropdown = signal<boolean>(false);
+
+  toggleAnomalyFilter(filter: string) {
+    const current = this.anomalyFilters();
+    if (current.includes(filter)) {
+      this.anomalyFilters.set(current.filter(x => x !== filter));
+    } else {
+      this.anomalyFilters.set([...current, filter]);
+    }
+  }
 
   @HostListener('window:scroll', [])
   onWindowScroll() {
@@ -290,6 +310,9 @@ export class ImportViewComponent {
       budget_nomenclature: string | null;
       budget_object: string | null;
       activity_type: string | null;
+      hasConsumedAnomaly: boolean;
+      hasRevisionAnomaly: boolean;
+      hasAnyAnomaly: boolean;
       services: {
         id: number;
         service_name: string;
@@ -297,6 +320,10 @@ export class ImportViewComponent {
         revised_jh: number | null;
         previsionnel_jh: number | null;
         consomme_jh: number | null;
+        hasConsumedAnomaly: boolean;
+        hasRevisionAnomaly: boolean;
+        consumedGap: number;
+        revisionGap: number;
       }[];
     } } = {};
 
@@ -320,6 +347,9 @@ export class ImportViewComponent {
           budget_nomenclature: row.budget_nomenclature,
           budget_object: row.budget_object,
           activity_type: row.activity_type,
+          hasConsumedAnomaly: false,
+          hasRevisionAnomaly: false,
+          hasAnyAnomaly: false,
           services: [],
         };
       }
@@ -330,6 +360,9 @@ export class ImportViewComponent {
       grp.previsionnel_jh += row.previsionnel_jh || 0;
       grp.consomme_jh += row.consomme_jh || 0;
 
+      const hasConsumedAnomaly = (row.consomme_jh || 0) > (row.previsionnel_jh || 0);
+      const hasRevisionAnomaly = Math.abs((row.previsionnel_jh || 0) - (row.revised_jh || 0)) > 0.01;
+
       grp.services.push({
         id: row.id,
         service_name: row.service_name,
@@ -337,15 +370,52 @@ export class ImportViewComponent {
         revised_jh: row.revised_jh,
         previsionnel_jh: row.previsionnel_jh,
         consomme_jh: row.consomme_jh,
+        hasConsumedAnomaly,
+        hasRevisionAnomaly,
+        consumedGap: (row.consomme_jh || 0) - (row.previsionnel_jh || 0),
+        revisionGap: (row.revised_jh || 0) - (row.previsionnel_jh || 0),
       });
     }
 
-    // Sort services alphabetically for each project group
+    // Sort services alphabetically for each project group and compute project-level flags
     for (const group of Object.values(groups)) {
       group.services.sort((a, b) => a.service_name.localeCompare(b.service_name));
+      group.hasConsumedAnomaly = group.services.some(s => s.hasConsumedAnomaly);
+      group.hasRevisionAnomaly = group.services.some(s => s.hasRevisionAnomaly);
+      group.hasAnyAnomaly = group.hasConsumedAnomaly || group.hasRevisionAnomaly;
     }
 
-    const result = Object.values(groups);
+    let result = Object.values(groups);
+
+    // If anomalies tab is active, filter the services inside each group by selected multi-choice filters,
+    // and exclude groups that have no matching services left.
+    if (this.activeTab() === 'anomalies') {
+      const filters = this.anomalyFilters();
+      
+      result = result.map(grp => {
+        const filteredServices = grp.services.filter(s => {
+          const isConsumed = s.hasConsumedAnomaly;
+          const isRevisionHausse = s.hasRevisionAnomaly && s.revisionGap > 0.01;
+          const isRevisionBaisse = s.hasRevisionAnomaly && s.revisionGap < -0.01;
+          const isConforme = !s.hasConsumedAnomaly && !s.hasRevisionAnomaly;
+
+          if (isConsumed && filters.includes('dépassement')) return true;
+          if (isRevisionHausse && filters.includes('écart_hausse')) return true;
+          if (isRevisionBaisse && filters.includes('écart_baisse')) return true;
+          if (isConforme && filters.includes('conforme')) return true;
+          
+          return false;
+        });
+
+        return {
+          ...grp,
+          services: filteredServices,
+          hasConsumedAnomaly: filteredServices.some(s => s.hasConsumedAnomaly),
+          hasRevisionAnomaly: filteredServices.some(s => s.hasRevisionAnomaly),
+          hasAnyAnomaly: filteredServices.some(s => s.hasConsumedAnomaly || s.hasRevisionAnomaly)
+        };
+      }).filter(grp => grp.services.length > 0);
+    }
 
     // 3. Sort by Nomenclature -> Objet -> Type activité -> Project Code
     return result.sort((a, b) => {
@@ -363,6 +433,29 @@ export class ImportViewComponent {
 
       return a.project_code.localeCompare(b.project_code);
     });
+  });
+
+  // Anomalies Stats for the active batch (based on all raw rows in the batch)
+  anomaliesStats = computed(() => {
+    const rows = this.budgetRowsQuery.data() || [];
+    let totalServicesWithAnomalies = 0;
+    let consumedAnomaliesCount = 0;
+    let revisionAnomaliesCount = 0;
+
+    rows.forEach((r: ImportBudgetRow) => {
+      const hasConsumed = (r.consomme_jh || 0) > (r.previsionnel_jh || 0);
+      const hasRevision = Math.abs((r.previsionnel_jh || 0) - (r.revised_jh || 0)) > 0.01;
+
+      if (hasConsumed) consumedAnomaliesCount++;
+      if (hasRevision) revisionAnomaliesCount++;
+      if (hasConsumed || hasRevision) totalServicesWithAnomalies++;
+    });
+
+    return {
+      total: totalServicesWithAnomalies,
+      consumed: consumedAnomaliesCount,
+      revision: revisionAnomaliesCount,
+    };
   });
 
   // Modal / Dropdown State for manual reconciliation selection

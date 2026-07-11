@@ -169,8 +169,30 @@
   }
 
   @if (selectedBatch()) {
-    <!-- Dashboard Stats Grid (Masqué par défaut) -->
-    @if (showStats()) {
+    <!-- Tabs Navigation -->
+    <div class="import-tabs">
+      <button
+        class="tab-btn"
+        [class.active]="activeTab() === 'data'"
+        (click)="activeTab.set('data')">
+        <lucide-icon [img]="FileSpreadsheet" [size]="16"></lucide-icon>
+        <span>Réconciliation & Données</span>
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="activeTab() === 'anomalies'"
+        (click)="activeTab.set('anomalies')">
+        <lucide-icon [img]="AlertTriangle" [size]="16" class="anomaly-tab-icon"></lucide-icon>
+        <span>Vue des Anomalies</span>
+        @if (anomaliesStats().total > 0) {
+          <span class="anomaly-badge">{{ anomaliesStats().total }}</span>
+        }
+      </button>
+    </div>
+
+    @if (activeTab() === 'data') {
+      <!-- Dashboard Stats Grid (Masqué par défaut) -->
+      @if (showStats()) {
       <div class="stats-grid">
         <div class="stat-card total">
           <div class="stat-icon-wrapper">
@@ -690,6 +712,394 @@
         >💡 Toutes les charges budgétaires sont exprimées en <strong>Jours-Hommes (JH)</strong></span
       >
     </div>
+  } @else if (activeTab() === 'anomalies') {
+    <!-- Vue des Anomalies -->
+    <div class="anomalies-view-container transition-area">
+      <!-- Cards de synthèse des anomalies -->
+      @if (showStats()) {
+        <div class="anomalies-stats-grid">
+          <div class="stat-card total-anomalies">
+            <div class="stat-icon-wrapper">
+              <lucide-icon [img]="AlertTriangle" [size]="24"></lucide-icon>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value">{{ anomaliesStats().total }}</span>
+              <span class="stat-label">Services en alerte</span>
+            </div>
+          </div>
+
+          <div class="stat-card consumed-anomalies" [class.has-alerts]="anomaliesStats().consumed > 0">
+            <div class="stat-icon-wrapper">
+              <lucide-icon [img]="AlertOctagon" [size]="24"></lucide-icon>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value">{{ anomaliesStats().consumed }}</span>
+              <span class="stat-label">Dépassements Critiques</span>
+            </div>
+            <span class="stat-badge badge-danger">Consommé > Prév.</span>
+          </div>
+
+          <div class="stat-card revision-anomalies" [class.has-alerts]="anomaliesStats().revision > 0">
+            <div class="stat-icon-wrapper">
+              <lucide-icon [img]="RefreshCw" [size]="24"></lucide-icon>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value">{{ anomaliesStats().revision }}</span>
+              <span class="stat-label">Écarts de Révision</span>
+            </div>
+            <span class="stat-badge badge-warning">Prév. ≠ Révisé</span>
+          </div>
+        </div>
+      }
+
+      <!-- Barre d'outils dédiée aux anomalies -->
+      <div class="toolbar">
+        <div class="search-box">
+          <lucide-icon [img]="Search" [size]="18" class="search-icon"></lucide-icon>
+          <input
+            type="text"
+            [ngModel]="searchQuery()"
+            (ngModelChange)="searchQuery.set($event)"
+            placeholder="Rechercher par code, projet, manager, Jira..."
+            class="search-input" />
+        </div>
+
+        <div class="filters-group">
+          <!-- Custom Multi-select Dropdown for Anomalies -->
+          <div class="filter-wrapper custom-multiselect">
+            <button class="filter-select select-btn" (click)="showAnomalyDropdown.set(!showAnomalyDropdown())">
+              <span>Anomalies ({{ anomalyFilters().length }})</span>
+              <lucide-icon [img]="ChevronDown" [size]="14" class="filter-select-icon-inline"></lucide-icon>
+            </button>
+            
+            @if (showAnomalyDropdown()) {
+              <div class="multiselect-dropdown-overlay" (click)="showAnomalyDropdown.set(false)"></div>
+              <div class="multiselect-dropdown-menu">
+                <label class="dropdown-item">
+                  <input type="checkbox" [checked]="anomalyFilters().includes('dépassement')" (change)="toggleAnomalyFilter('dépassement')" />
+                  <span>Dépassement</span>
+                </label>
+                <label class="dropdown-item">
+                  <input type="checkbox" [checked]="anomalyFilters().includes('écart_hausse')" (change)="toggleAnomalyFilter('écart_hausse')" />
+                  <span>Écart à la hausse</span>
+                </label>
+                <label class="dropdown-item">
+                  <input type="checkbox" [checked]="anomalyFilters().includes('écart_baisse')" (change)="toggleAnomalyFilter('écart_baisse')" />
+                  <span>Écart à la baisse</span>
+                </label>
+                <label class="dropdown-item">
+                  <input type="checkbox" [checked]="anomalyFilters().includes('conforme')" (change)="toggleAnomalyFilter('conforme')" />
+                  <span>Conforme</span>
+                </label>
+              </div>
+            }
+          </div>
+
+          <!-- Service Filter -->
+          <div class="filter-wrapper">
+            <select [ngModel]="serviceFilter()" (ngModelChange)="serviceFilter.set($event)" class="filter-select">
+              <option value="all">Tous les services</option>
+              @for (srv of filterOptions().services; track srv) {
+                <option [value]="srv">{{ srv }}</option>
+              }
+            </select>
+            <lucide-icon [img]="ChevronDown" [size]="14" class="filter-select-icon"></lucide-icon>
+          </div>
+        </div>
+      </div>
+
+      <div class="filter-info-bar">
+        <span>
+          @if (searchQuery() || anomalyFilters().length < 4 || serviceFilter() !== 'all') {
+            <strong>{{ groupedProjects().length }}</strong> projet(s) filtré(s) avec anomalies
+          } @else {
+            <strong>{{ groupedProjects().length }}</strong> projet(s) avec anomalies au total
+          }
+        </span>
+      </div>
+
+      <!-- Table des Anomalies -->
+      <div class="table-wrapper">
+        <table class="import-table anomalies-table">
+          <thead>
+            <tr class="sticky-thead-row">
+              <th>
+                <div class="th-content-expandable">
+                  <span>Projet Triskell (Excel)</span>
+                  <div class="header-expand-collapse-actions">
+                    <button (click)="expandAll()" class="btn-header-action" title="Tout déplier">
+                      <lucide-icon [img]="SquarePlus" [size]="14"></lucide-icon>
+                    </button>
+                    <button (click)="collapseAll()" class="btn-header-action" title="Tout replier">
+                      <lucide-icon [img]="SquareMinus" [size]="14"></lucide-icon>
+                    </button>
+                  </div>
+                </div>
+              </th>
+              <th>Service</th>
+              <th class="text-right">Initial</th>
+              <th class="text-right">Révisé</th>
+              <th class="text-right">Prév.</th>
+              <th class="text-right">Consom.</th>
+              <th>Diagnostic / Écart</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (project of groupedProjects(); track project.key; let idx = $index) {
+              <!-- Group Breadcrumb (Nomenclature -> Objet -> Type) -->
+              @if (
+                idx === 0 ||
+                project.budget_nomenclature !== groupedProjects()[idx - 1].budget_nomenclature ||
+                project.budget_object !== groupedProjects()[idx - 1].budget_object ||
+                project.activity_type !== groupedProjects()[idx - 1].activity_type
+              ) {
+                <tr class="group-header-row">
+                  <td colspan="7">
+                    <div class="group-breadcrumb">
+                      <span class="breadcrumb-item nomenclature">{{
+                        project.budget_nomenclature || 'Sans Nomenclature'
+                      }}</span>
+                      <span class="breadcrumb-separator">›</span>
+                      <span class="breadcrumb-item object">{{ project.budget_object || 'Sans Objet' }}</span>
+                      @if (project.activity_type) {
+                        <span class="breadcrumb-separator">›</span>
+                        <span class="breadcrumb-item activity">{{ project.activity_type }}</span>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+
+              @if (isProjectExpanded(project.key)) {
+                <!-- EXPANDED STATE (rowspan layout) -->
+                <!-- First Service Row -->
+                <tr class="table-row project-row expanded-row" (click)="toggleProjectExpansion(project.key)">
+                  <!-- Project Info (Col 1) -->
+                  <td [attr.rowspan]="project.services.length > 1 ? project.services.length + 1 : 1" class="rowspan-cell align-top">
+                    <div class="project-info">
+                      <div class="name-row">
+                        <lucide-icon [img]="ChevronDown" [size]="14" class="project-row-toggle"></lucide-icon>
+                        <span class="project-code">{{ project.project_code }}</span>
+                        @if (project.project_code) {
+                          <button
+                            (click)="copyToClipboard($event, project.project_code)"
+                            class="btn-copy-code"
+                            [class.copied]="copiedCodes().has(project.project_code)"
+                            [title]="copiedCodes().has(project.project_code) ? 'Code copié !' : 'Copier le code projet'">
+                            <lucide-icon [img]="copiedCodes().has(project.project_code) ? Check : Copy" [size]="11"></lucide-icon>
+                          </button>
+                        }
+                        <span class="project-name">{{ project.project_name }}</span>
+                      </div>
+                      <div class="sub-info">
+                        @if (project.project_manager) {
+                          <span class="pm-name">Chef : {{ project.project_manager }}</span>
+                        }
+                        @if (project.jira_references && project.jira_references.length > 0) {
+                          <span class="divider">•</span>
+                          <span class="jira-tags">
+                            @for (jira of project.jira_references; track jira) {
+                              <span class="jira-tag">
+                                {{ jira }}
+                              </span>
+                            }
+                          </span>
+                        }
+                      </div>
+                    </div>
+                  </td>
+
+                  <!-- First Service (Col 2) -->
+                  <td>
+                    <span class="service-badge" [ngStyle]="getServiceColorStyle(project.services[0].service_name)">
+                      {{ project.services[0].service_name }}
+                    </span>
+                  </td>
+
+                  <!-- First Service Figures (Col 4-7) -->
+                  <td class="text-right num-val">
+                    {{ project.services[0].initial_jh !== null ? (project.services[0].initial_jh | number: '1.1-3') : '—' }}
+                  </td>
+                  <td class="text-right num-val" [class.cell-warning]="project.services[0].hasRevisionAnomaly">
+                    {{ project.services[0].revised_jh !== null ? (project.services[0].revised_jh | number: '1.1-3') : '—' }}
+                  </td>
+                  <td class="text-right num-val highlight-prev" [class.cell-warning]="project.services[0].hasRevisionAnomaly" [class.cell-danger]="project.services[0].hasConsumedAnomaly">
+                    {{ project.services[0].previsionnel_jh !== null ? (project.services[0].previsionnel_jh | number: '1.1-3') : '—' }}
+                  </td>
+                  <td class="text-right num-val" [class.cell-danger]="project.services[0].hasConsumedAnomaly">
+                    {{ project.services[0].consomme_jh !== null ? (project.services[0].consomme_jh | number: '1.1-3') : '—' }}
+                  </td>
+
+                  <!-- First Service Diagnostic (Col 8) -->
+                  <td class="diagnostic-cell">
+                    @if (project.services[0].hasConsumedAnomaly) {
+                      <div class="anomaly-diag diag-danger" [title]="'Consommé (' + project.services[0].consomme_jh + ' JH) dépasse le prévisionnel (' + project.services[0].previsionnel_jh + ' JH)'">
+                        <lucide-icon [img]="AlertOctagon" [size]="14"></lucide-icon>
+                        <span>Dépassement (+{{ project.services[0].consumedGap | number: '1.1-2' }} JH)</span>
+                      </div>
+                    }
+                    @if (project.services[0].hasRevisionAnomaly) {
+                      <div class="anomaly-diag diag-warning" [title]="'Prévisionnel (' + project.services[0].previsionnel_jh + ' JH) ≠ Révisé (' + project.services[0].revised_jh + ' JH)'">
+                        <lucide-icon [img]="project.services[0].revisionGap > 0 ? TrendingUp : TrendingDown" [size]="14"></lucide-icon>
+                        <span>Écart Révision ({{ project.services[0].revisionGap > 0 ? '+' : '' }}{{ project.services[0].revisionGap | number: '1.1-2' }} JH)</span>
+                      </div>
+                    }
+                    @if (!project.services[0].hasConsumedAnomaly && !project.services[0].hasRevisionAnomaly) {
+                      <span class="text-muted-compliance">✓ Conforme</span>
+                    }
+                  </td>
+                </tr>
+
+                <!-- Other Service Rows -->
+                @for (srv of project.services; track srv.id; let sIdx = $index) {
+                  @if (sIdx > 0) {
+                    <tr class="table-row service-row">
+                      <td>
+                        <span class="service-badge" [ngStyle]="getServiceColorStyle(srv.service_name)">
+                          {{ srv.service_name }}
+                        </span>
+                      </td>
+                      <td class="text-right num-val">
+                        {{ srv.initial_jh !== null ? (srv.initial_jh | number: '1.1-3') : '—' }}
+                      </td>
+                      <td class="text-right num-val" [class.cell-warning]="srv.hasRevisionAnomaly">
+                        {{ srv.revised_jh !== null ? (srv.revised_jh | number: '1.1-3') : '—' }}
+                      </td>
+                      <td class="text-right num-val highlight-prev" [class.cell-warning]="srv.hasRevisionAnomaly" [class.cell-danger]="srv.hasConsumedAnomaly">
+                        {{ srv.previsionnel_jh !== null ? (srv.previsionnel_jh | number: '1.1-3') : '—' }}
+                      </td>
+                      <td class="text-right num-val" [class.cell-danger]="srv.hasConsumedAnomaly">
+                        {{ srv.consomme_jh !== null ? (srv.consomme_jh | number: '1.1-3') : '—' }}
+                      </td>
+
+                      <!-- Service Diagnostic -->
+                      <td class="diagnostic-cell">
+                        @if (srv.hasConsumedAnomaly) {
+                          <div class="anomaly-diag diag-danger" [title]="'Consommé (' + srv.consomme_jh + ' JH) dépasse le prévisionnel (' + srv.previsionnel_jh + ' JH)'">
+                            <lucide-icon [img]="AlertOctagon" [size]="14"></lucide-icon>
+                            <span>Dépassement (+{{ srv.consumedGap | number: '1.1-2' }} JH)</span>
+                          </div>
+                        }
+                        @if (srv.hasRevisionAnomaly) {
+                          <div class="anomaly-diag diag-warning" [title]="'Prévisionnel (' + srv.previsionnel_jh + ' JH) ≠ Révisé (' + srv.revised_jh + ' JH)'">
+                            <lucide-icon [img]="srv.revisionGap > 0 ? TrendingUp : TrendingDown" [size]="14"></lucide-icon>
+                            <span>Écart Révision ({{ srv.revisionGap > 0 ? '+' : '' }}{{ srv.revisionGap | number: '1.1-2' }} JH)</span>
+                          </div>
+                        }
+                        @if (!srv.hasConsumedAnomaly && !srv.hasRevisionAnomaly) {
+                          <span class="text-muted-compliance">✓ Conforme</span>
+                        }
+                      </td>
+                    </tr>
+                  }
+                }
+
+                <!-- Total Row -->
+                @if (project.services.length > 1) {
+                  <tr class="table-row subtable-total-row">
+                    <td class="total-label">TOTAL</td>
+                    <td class="text-right num-val">{{ project.initial_jh | number: '1.1-3' }}</td>
+                    <td class="text-right num-val">{{ project.revised_jh | number: '1.1-3' }}</td>
+                    <td class="text-right num-val highlight-prev">{{ project.previsionnel_jh | number: '1.1-3' }}</td>
+                    <td class="text-right num-val">{{ project.consomme_jh | number: '1.1-3' }}</td>
+                    <td></td>
+                  </tr>
+                }
+
+              } @else {
+                <!-- COLLAPSED STATE (Single Row with Totals and Badges) -->
+                <tr class="table-row project-row collapsed-row" (click)="toggleProjectExpansion(project.key)">
+                  <!-- Project Info (Col 1) -->
+                  <td>
+                    <div class="project-info">
+                      <div class="name-row">
+                        <lucide-icon [img]="ChevronDown" [size]="14" class="project-row-toggle"></lucide-icon>
+                        <span class="project-code">{{ project.project_code }}</span>
+                        @if (project.project_code) {
+                          <button
+                            (click)="copyToClipboard($event, project.project_code)"
+                            class="btn-copy-code"
+                            [class.copied]="copiedCodes().has(project.project_code)"
+                            [title]="copiedCodes().has(project.project_code) ? 'Code copié !' : 'Copier le code projet'">
+                            <lucide-icon [img]="copiedCodes().has(project.project_code) ? Check : Copy" [size]="11"></lucide-icon>
+                          </button>
+                        }
+                        <span class="project-name">{{ project.project_name }}</span>
+                      </div>
+                      <div class="sub-info">
+                        @if (project.project_manager) {
+                          <span class="pm-name">Chef : {{ project.project_manager }}</span>
+                        }
+                        @if (project.jira_references && project.jira_references.length > 0) {
+                          <span class="divider">•</span>
+                          <span class="jira-tags">
+                            @for (jira of project.jira_references; track jira) {
+                              <span class="jira-tag">
+                                {{ jira }}
+                              </span>
+                            }
+                          </span>
+                        }
+                      </div>
+                    </div>
+                  </td>
+
+                  <!-- Service count (Col 2) -->
+                  <td>
+                    <span class="services-count-text">
+                      {{ project.services.length }} service(s)
+                    </span>
+                  </td>
+
+                  <!-- JH Figures Totals (Col 4-7) -->
+                  <td class="text-right num-val">
+                    {{ project.initial_jh | number: '1.1-3' }}
+                  </td>
+                  <td class="text-right num-val" [class.cell-warning]="project.hasRevisionAnomaly">
+                    {{ project.revised_jh | number: '1.1-3' }}
+                  </td>
+                  <td class="text-right num-val highlight-prev" [class.cell-warning]="project.hasRevisionAnomaly" [class.cell-danger]="project.hasConsumedAnomaly">
+                    {{ project.previsionnel_jh | number: '1.1-3' }}
+                  </td>
+                  <td class="text-right num-val" [class.cell-danger]="project.hasConsumedAnomaly">
+                    {{ project.consomme_jh | number: '1.1-3' }}
+                  </td>
+
+                  <!-- Diagnostic summary badge (Col 8) -->
+                  <td class="diagnostic-cell">
+                    <div class="project-diagnostics-summary">
+                      @if (project.hasConsumedAnomaly) {
+                        <span class="badge-diag badge-diag-danger" title="Au moins un service dépasse son prévisionnel">
+                          <lucide-icon [img]="AlertOctagon" [size]="12"></lucide-icon> Dépassement
+                        </span>
+                      }
+                      @if (project.hasRevisionAnomaly) {
+                        <span class="badge-diag badge-diag-warning" title="Au moins un service a un écart révision / prévisionnel">
+                          <lucide-icon [img]="AlertTriangle" [size]="12"></lucide-icon> Écart Rév.
+                        </span>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            } @empty {
+              <tr>
+                <td colspan="8" class="empty-table">Aucune anomalie identifiée ou correspondant aux filtres.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="legend-bar">
+        <span class="legend-text">
+          💡 <strong>Dépassement :</strong> le consommé réel du service dépasse la charge prévisionnelle.
+          <span style="margin: 0 10px;">|</span>
+          <strong>Écart Révision :</strong> la charge prévisionnelle diffère du budget révisé au niveau du service.
+        </span>
+      </div>
+    </div>
+  }
   } @else {
     <div class="loading-state">
       <lucide-icon [img]="RefreshCw" [size]="40" class="spinner"></lucide-icon>
