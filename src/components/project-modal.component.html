@@ -2,7 +2,7 @@
   <div class="modal" (click)="$event.stopPropagation()">
     
     <!-- Similar projects alert banner -->
-    @if (!projet?.id && similarProjects().length > 0) {
+    @if (similarProjects().length > 0) {
       <div class="similar-projects-alert">
         <div class="alert-title">Projet(s) similaire(s) déjà existant(s) :</div>
         <div class="similar-projects-list">

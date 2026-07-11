@@ -34,9 +34,19 @@ export class ProjectModalComponent implements OnInit {
   referenceExterneSignal = signal('');
 
   similarProjects = computed(() => {
-    // Si on édite un projet déjà existant, on n'affiche pas la section similaire
+    // Si on édite un projet déjà existant, on n'affiche la section similaire que si le code ou la ref externe a été modifié
     if (this.projet?.id) {
-      return [];
+      const initialCode = (this.projet.code_projet || '').trim().toLowerCase();
+      const currentCode = this.codeProjetSignal().trim().toLowerCase();
+      const initialRef = (this.projet.reference_externe || '').trim().toLowerCase();
+      const currentRef = this.referenceExterneSignal().trim().toLowerCase();
+
+      const isCodeModified = initialCode !== currentCode;
+      const isRefModified = initialRef !== currentRef;
+
+      if (!isCodeModified && !isRefModified) {
+        return [];
+      }
     }
 
     const codeInput = this.codeProjetSignal().trim().toLowerCase();
