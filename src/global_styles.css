@@ -461,6 +461,7 @@ textarea:focus {
   background: #4f46e5 !important;
   color: white !important;
   border-color: #4f46e5 !important;
+  text-shadow: none;
 }
 
 .premium-driver-popover .driver-popover-next-btn:hover {
