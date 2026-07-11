@@ -989,6 +989,11 @@
   text-overflow: ellipsis;
 }
 
+.resource-row .resource-detail-name {
+  font-weight: 600;
+  color: #1e293b;
+}
+
 .info-label {
   font-size: var(--fs-13, 13px);
   font-weight: 700;
