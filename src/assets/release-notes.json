@@ -1,5 +1,24 @@
 [
   {
+    "version": "2026.07.11",
+    "date": "2026-07-11",
+    "news": [
+      {
+        "title": "Suggestions & Feedbacks",
+        "items": [
+          "Intégration d'un nouvel espace Suggestions alimenté par Canny.io pour recueillir vos idées d'évolution.",
+          "Intégration du Jira Issue Collector pour recueillir du feeback."
+        ]
+      },
+      {
+        "title": "Liaisons de projets",
+        "items": [
+          "Rappel de la référence externe dans les propositions de liaisons automatiques de projets pour faciliter vos choix et correspondances."
+        ]
+      }
+    ]
+  },
+  {
     "version": "2026.07.09",
     "date": "2026-07-09",
     "news": [

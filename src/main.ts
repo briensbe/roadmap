@@ -14,6 +14,7 @@ import { MatrixEasterEggComponent } from './components/matrix-easter-egg.compone
 
 import { EasterEggService } from './services/easter-egg.service';
 import { SupabaseService } from './services/supabase.service';
+import { JiraCollectorService } from './services/jira-collector.service';
 
 @Component({
   selector: 'app-root',
@@ -59,6 +60,7 @@ export class App implements OnInit {
   private readonly supabaseService = inject(SupabaseService);
   private readonly router = inject(Router);
   private readonly queryClient = inject(QueryClient);
+  private readonly jiraCollectorService = inject(JiraCollectorService);
 
   constructor() {
     // Watch for authentication changes globally
@@ -77,6 +79,11 @@ export class App implements OnInit {
           const queryParams = this.supabaseService.isLocalLogout ? {} : { reason: 'session_expired' };
           this.router.navigate(['/login'], { queryParams });
         }
+      } else {
+        // Load Jira issue collector for authenticated users
+        this.jiraCollectorService.loadAndShow().catch((err) => {
+          console.warn('Jira Issue Collector load failed:', err);
+        });
       }
     });
   }

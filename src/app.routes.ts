@@ -43,6 +43,11 @@ export const routes: Routes = [
           import('./components/administration/administration.component').then((m) => m.AdministrationComponent),
       },
       {
+        path: 'suggestions',
+        loadComponent: () =>
+          import('./components/feedback/feedback.component').then((m) => m.FeedbackComponent),
+      },
+      {
         path: 'settings',
         loadComponent: () => import('./components/settings/settings.component').then((m) => m.SettingsComponent),
       },

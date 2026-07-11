@@ -1,0 +1,14 @@
+<div class="feedback-container">
+  <div class="feedback-card">
+    @if (sdkFailed()) {
+      <div class="sdk-error-container">
+        <span class="error-icon">⚠️</span>
+        <h3>Impossible de charger l'espace suggestions</h3>
+        <p>Le chargement de l'outil de suggestions Canny a été bloqué ou non configuré.</p>
+        <p class="error-tip">Si vous utilisez un <strong>bloqueur de publicités (Adblocker)</strong> ou de traqueurs, veuillez le désactiver ou autoriser le domaine <code>sdk.canny.io</code> pour afficher l'outil.</p>
+      </div>
+    } @else {
+      <div data-canny></div>
+    }
+  </div>
+</div>
