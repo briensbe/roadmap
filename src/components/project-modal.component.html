@@ -1,0 +1,146 @@
+<div class="modal-overlay" (mousedown)="onOverlayMouseDown($event)" (mouseup)="onOverlayMouseUp($event)">
+  <div class="modal" (click)="$event.stopPropagation()">
+    
+    <!-- Similar projects alert banner -->
+    @if (!projet?.id && similarProjects().length > 0) {
+      <div class="similar-projects-alert">
+        <div class="alert-title">Projet(s) similaire(s) déjà existant(s) :</div>
+        <div class="similar-projects-list">
+          @for (proj of similarProjects(); track proj.id) {
+            <div class="similar-project-item">
+              <span class="proj-indicator" [style.background-color]="proj.color || '#3b82f6'"></span>
+              <span class="proj-code">{{ proj.code_projet || '—' }}</span>
+              <span class="proj-name">
+                {{ proj.nom_projet }}
+                @if (proj.reference_externe) {
+                  <span class="proj-ref-ext">({{ proj.reference_externe }})</span>
+                }
+              </span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <div class="modal-header">
+      <div class="header-title-group">
+        <h2>{{ projet?.id ? 'Modifier le projet' : 'Nouveau Projet' }}</h2>
+        @if (!projet?.id) {
+          <app-project-json-import (imported)="onJsonImported($event)"></app-project-json-import>
+        }
+      </div>
+      <button class="modal-close" (click)="close()">×</button>
+    </div>
+    <form (ngSubmit)="save()" class="form">
+      <div class="grid grid-2">
+        <div class="form-group">
+          <div class="label-with-link">
+            <label>Code Projet</label>
+            @if (editableProjet.id_projet) {
+              <button
+                type="button"
+                (click)="onOpenChiffres($event)"
+                class="ref-link modal-ref-link"
+                title="Modifier les chiffres du projet">
+                Modifier chiffres
+                <lucide-icon [img]="LucideCalculator" [size]="12"></lucide-icon>
+              </button>
+            }
+          </div>
+          <input [(ngModel)]="editableProjet.code_projet" (ngModelChange)="codeProjetSignal.set($event)" name="code" />
+        </div>
+        <div class="form-group">
+          <div class="label-with-link">
+            <label>Référence Externe</label>
+            @if (editableProjet.reference_externe && externalReferenceUrl()) {
+              <a
+                [href]="externalReferenceUrl() + editableProjet.reference_externe"
+                target="_blank"
+                class="ref-link modal-ref-link">
+                Ouvrir
+                <lucide-icon [img]="ExternalLink" [size]="12"></lucide-icon>
+              </a>
+            }
+          </div>
+          <input [(ngModel)]="editableProjet.reference_externe" (ngModelChange)="referenceExterneSignal.set($event)" name="ref_ext" placeholder="ex: JIRA-123" />
+        </div>
+      </div>
+      <div class="form-group full-width" [class.has-error]="formErrors.nom_projet">
+        <label>Nom Projet *</label>
+        <input
+          [(ngModel)]="editableProjet.nom_projet"
+          name="nom"
+          required
+          (ngModelChange)="formErrors.nom_projet = false" />
+        @if (formErrors.nom_projet) {
+          <span class="error-message">Le nom du projet est obligatoire</span>
+        }
+      </div>
+
+      <div class="grid grid-2">
+        <div class="form-group">
+          <label>Statut</label>
+          <select [(ngModel)]="editableProjet.statut" name="statut">
+            @for (s of PROJECT_STATUTS; track s) {
+              <option [value]="s">{{ s }}</option>
+            }
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Chef de Projet</label>
+          <input [(ngModel)]="editableProjet.chef_projet" name="chef" />
+        </div>
+      </div>
+
+      <div class="form-group full-width">
+        <label>Description</label>
+        <textarea [(ngModel)]="editableProjet.description" name="desc" rows="3"></textarea>
+      </div>
+
+      <div class="form-group full-width">
+        <label>Couleur</label>
+        <div class="color-palette">
+          @for (color of predefinedColors; track color) {
+            <div
+              class="color-swatch"
+              [style.background-color]="color"
+              [class.active]="editableProjet.color === color"
+              (click)="selectColor(color)"></div>
+          }
+          <div class="color-swatch custom-trigger" [class.active]="isCustomColor" (click)="isCustomColor = true">
+            @if (isCustomColor) {
+              <div
+                class="custom-preview"
+                [style.background-color]="editableProjet.color"></div>
+            } @else {
+              <lucide-icon [img]="Plus" [size]="16"></lucide-icon>
+            }
+          </div>
+        </div>
+
+        @if (isCustomColor) {
+          <div class="custom-color-input-wrapper">
+            <input type="color" [(ngModel)]="editableProjet.color" name="customColor" class="color-input" />
+            <input
+              type="text"
+              [(ngModel)]="ngModelColor"
+              (ngModelChange)="onColorHexChange($event)"
+              name="customColorText"
+              class="color-hex-input"
+              placeholder="#HEXCODE" />
+          </div>
+        }
+      </div>
+
+      <div class="flex items-center gap-4 mt-4">
+        <div class="flex gap-2">
+          <button type="submit" class="btn btn-primary" [disabled]="isSaving">
+            {{ isSaving ? 'Sauvegarde...' : projet?.id ? 'Mettre à jour' : 'Créer' }}
+          </button>
+          <button type="button" class="btn btn-secondary" (click)="close()">Annuler</button>
+        </div>
+        <span class="shortcut-hint">Ctrl + Entrée pour valider</span>
+      </div>
+    </form>
+  </div>
+</div>
