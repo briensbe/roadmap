@@ -1190,46 +1190,46 @@
                           class="week-cell team-cell"
                           [class.team-cell-positive]="
                             viewMode() === 'resource' &&
-                            row.metrics?.get(week.toISOString().split('T')[0])?.status === 'positive'
+                            row.metrics?.get(formatWeekStart(week))?.status === 'positive'
                           "
                           [class.team-cell-zero]="
                             viewMode() === 'resource' &&
-                            row.metrics?.get(week.toISOString().split('T')[0])?.status === 'zero'
+                            row.metrics?.get(formatWeekStart(week))?.status === 'zero'
                           "
                           [class.team-cell-negative]="
                             viewMode() === 'resource' &&
-                            row.metrics?.get(week.toISOString().split('T')[0])?.status === 'negative'
+                            row.metrics?.get(formatWeekStart(week))?.status === 'negative'
                           ">
                           <!-- Resource View: Show cumulative data -->
                           @if (
                             viewMode() === 'resource' &&
-                            ((row.metrics?.get(week.toISOString().split('T')[0])?.total || 0) > 0 ||
-                              (row.metrics?.get(week.toISOString().split('T')[0])?.capacity || 0) > 0)
+                            ((row.metrics?.get(formatWeekStart(week))?.total || 0) > 0 ||
+                              (row.metrics?.get(formatWeekStart(week))?.capacity || 0) > 0)
                           ) {
                             <div class="team-summary">
                               <div class="summary-main">
                                 <span class="summary-charge">{{
-                                  row.metrics?.get(week.toISOString().split('T')[0])?.total || 0 | number: '1.0-1'
+                                  row.metrics?.get(formatWeekStart(week))?.total || 0 | number: '1.0-1'
                                 }}</span>
                                 <span class="summary-separator">/</span>
                                 <span class="summary-capacity">{{
-                                  row.metrics?.get(week.toISOString().split('T')[0])?.capacity || 0 | number: '1.0-1'
+                                  row.metrics?.get(formatWeekStart(week))?.capacity || 0 | number: '1.0-1'
                                 }}</span>
                               </div>
                               <div
                                 class="summary-availability"
                                 [class.availability-positive]="
-                                  row.metrics?.get(week.toISOString().split('T')[0])?.status === 'positive'
+                                  row.metrics?.get(formatWeekStart(week))?.status === 'positive'
                                 "
                                 [class.availability-zero]="
-                                  row.metrics?.get(week.toISOString().split('T')[0])?.status === 'zero'
+                                  row.metrics?.get(formatWeekStart(week))?.status === 'zero'
                                 "
                                 [class.availability-negative]="
-                                  row.metrics?.get(week.toISOString().split('T')[0])?.status === 'negative'
+                                  row.metrics?.get(formatWeekStart(week))?.status === 'negative'
                                 ">
-                                {{ row.metrics?.get(week.toISOString().split('T')[0])?.status === 'positive' ? '+' : ''
+                                {{ row.metrics?.get(formatWeekStart(week))?.status === 'positive' ? '+' : ''
                                 }}{{
-                                  row.metrics?.get(week.toISOString().split('T')[0])?.availability || 0
+                                  row.metrics?.get(formatWeekStart(week))?.availability || 0
                                     | number: '1.0-1'
                                 }}
                               </div>
@@ -1238,11 +1238,11 @@
                           <!-- Other views: Keep empty or simple display -->
                           @if (
                             viewMode() !== 'resource' &&
-                            (row.metrics?.get(week.toISOString().split('T')[0])?.total || 0) > 0
+                            (row.metrics?.get(formatWeekStart(week))?.total || 0) > 0
                           ) {
                             <div class="team-summary">
                               <div class="capacity-value">
-                                {{ row.metrics?.get(week.toISOString().split('T')[0])?.total || 0 | number: '1.0-1' }}
+                                {{ row.metrics?.get(formatWeekStart(week))?.total || 0 | number: '1.0-1' }}
                               </div>
                             </div>
                           }

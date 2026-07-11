@@ -857,6 +857,13 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     return ref.trim();
   }
 
+  formatWeekStart(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   ngOnInit() {
     this.loadData();
     this.generateWeeks();
@@ -1183,7 +1190,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     let lastIndex = -1;
 
     for (let i = 0; i < this.displayedWeeks.length; i++) {
-      const weekKey = this.displayedWeeks[i].toISOString().split('T')[0];
+      const weekKey = this.formatWeekStart(this.displayedWeeks[i]);
       const val = charges.get(weekKey) || 0;
       if (val > 0) {
         if (firstIndex === -1) {
@@ -1379,7 +1386,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
         child.resources.forEach((res) => {
           res.metrics = new Map();
           this.displayedWeeks.forEach((week) => {
-            const weekKey = week.toISOString().split('T')[0];
+            const weekKey = this.formatWeekStart(week);
             const charge = res.charges.get(weekKey) || 0;
             res.metrics!.set(weekKey, { total: charge });
           });
@@ -1387,7 +1394,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
         // Sum Child metrics
         this.displayedWeeks.forEach((week) => {
-          const weekKey = week.toISOString().split('T')[0];
+          const weekKey = this.formatWeekStart(week);
           let total = 0;
           child.resources.forEach((res) => {
             total += res.metrics?.get(weekKey)?.total || 0;
@@ -1399,7 +1406,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       // Sum Parent metrics
       const teamIdFromParent = this.viewMode() === 'resource' ? parent.id.split('_')[0] : parent.id;
       this.displayedWeeks.forEach((week) => {
-        const weekKey = week.toISOString().split('T')[0];
+        const weekKey = this.formatWeekStart(week);
         let total = 0;
         let totalCapacity = 0;
 
@@ -1458,7 +1465,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       const value = this.getResourceValue(resource, week);
       const availability = this.getAvailability(resource, week, teamId);
 
-      const weekKey = week.toISOString().split('T')[0];
+      const weekKey = this.formatWeekStart(week);
       const hasCapRecord = this.allCapacities.some(
         (c) =>
           c.equipe_id === teamId &&
@@ -1573,7 +1580,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   getAvailability(resource: ResourceRow, week: Date, teamId: string): number {
-    const weekKey = week.toISOString().split('T')[0];
+    const weekKey = this.formatWeekStart(week);
     const rId = resource.resourceId || resource.id;
     const resourceKey = `${resource.type}_${rId}`;
     const mapKey = `${teamId}_${resourceKey}_${weekKey}`;
@@ -1603,7 +1610,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     if (availability !== 0) return true;
 
     // Check if a capacity record actually exists for this resource/team/week
-    const weekKey = week.toISOString().split('T')[0];
+    const weekKey = this.formatWeekStart(week);
     return this.allCapacities.some(
       (c) =>
         c.equipe_id === teamId &&
@@ -2234,12 +2241,12 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   getChildValue(child: ChildRow, week: Date): number {
-    const weekKey = week.toISOString().split('T')[0];
+    const weekKey = this.formatWeekStart(week);
     return child.charges.get(weekKey) || 0;
   }
 
   getResourceValue(resource: ResourceRow, week: Date): number {
-    const weekKey = week.toISOString().split('T')[0];
+    const weekKey = this.formatWeekStart(week);
     return resource.charges.get(weekKey) || 0;
   }
 
@@ -2846,7 +2853,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     // Condition 3: Toutes les cellules à partir de la deuxième doivent être vides
     for (let i = 1; i < this.selectedCells.length; i++) {
       const cell = this.selectedCells[i];
-      const weekKey = cell.week.toISOString().split('T')[0];
+      const weekKey = this.formatWeekStart(cell.week);
       const value = cell.resource.charges.get(weekKey) || 0;
       if (value > 0) return false;
     }
@@ -2896,7 +2903,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
         // Detect value on the starting cell for pre-fill & live projection
         const startWeek = this.displayedWeeks[this.dragStartWeekIndex];
         if (startWeek) {
-          const weekKey = startWeek.toISOString().split('T')[0];
+          const weekKey = this.formatWeekStart(startWeek);
           const existingValue = resource.charges.get(weekKey) || 0;
           this.dragStartCellValue = existingValue > 0 ? existingValue : null;
         } else {
@@ -2988,11 +2995,11 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       // Build the move list in one pass
       const moves = this.selectedCells
         .map((cell) => {
-          const fromWeek = cell.week.toISOString().split('T')[0];
+          const fromWeek = this.formatWeekStart(cell.week);
           const value = cell.resource.charges.get(fromWeek) || 0;
           const srcIdx = this.displayedWeeks.findIndex((w) => w.getTime() === cell.week.getTime());
           const tgtWeek = this.displayedWeeks[srcIdx + this.moveGhostOffset];
-          return { fromWeek, toWeek: tgtWeek?.toISOString().split('T')[0] ?? '', value };
+          return { fromWeek, toWeek: tgtWeek ? this.formatWeekStart(tgtWeek) : '', value };
         })
         .filter((m) => m.toWeek); // discard out-of-range
 
@@ -3016,7 +3023,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private async updateChargeValue(cell: any, value: number, overrideWeek?: Date) {
     const week = overrideWeek || cell.week;
-    const weekKey = week.toISOString().split('T')[0];
+    const weekKey = this.formatWeekStart(week);
 
     let projetId, equipeId;
     if (this.viewMode() === 'project') {
@@ -3096,7 +3103,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const sourceWeek = this.displayedWeeks[sourceWeekIndex];
     if (this.isCellSelected(resource, sourceWeek)) {
-      const sourceWeekKey = sourceWeek.toISOString().split('T')[0];
+      const sourceWeekKey = this.formatWeekStart(sourceWeek);
       return resource.charges.get(sourceWeekKey) || 0;
     }
     return null;
@@ -3287,7 +3294,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.isSaving = true;
     try {
       for (const cell of this.selectedCells) {
-        const weekKey = cell.week.toISOString().split('T')[0];
+        const weekKey = this.formatWeekStart(cell.week);
 
         let projetId: string;
         let equipeId: string;
@@ -3359,7 +3366,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
         if (currentTargetIdx >= this.displayedWeeks.length) break;
 
         const targetWeek = this.displayedWeeks[currentTargetIdx];
-        const weekKey = targetWeek.toISOString().split('T')[0];
+        const weekKey = this.formatWeekStart(targetWeek);
 
         let projetId: string;
         let equipeId: string;
@@ -4218,7 +4225,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       // Re-calculate Parent metrics based on its current children (which are already filtered)
       const teamIdFromParent = this.viewMode() === 'resource' ? parent.id.split('_')[0] : parent.id;
       this.displayedWeeks.forEach((week) => {
-        const weekKey = week.toISOString().split('T')[0];
+        const weekKey = this.formatWeekStart(week);
         let total = 0;
         let totalCapacity = 0;
 
