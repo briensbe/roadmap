@@ -200,13 +200,18 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .project-identifiers {
   display: flex;
   align-items: center;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px 8px;
   margin-bottom: 4px;
+  flex: 1;
+  min-width: 0;
+  margin-right: 12px;
 }
 
 .project-code {
