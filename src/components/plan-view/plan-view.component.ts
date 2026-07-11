@@ -2293,6 +2293,25 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.showLinkModal = true;
   }
 
+  isMouseDownOnOverlay = false;
+
+  onOverlayMouseDown(event: MouseEvent) {
+    if (event.target === event.currentTarget) {
+      this.isMouseDownOnOverlay = true;
+    }
+  }
+
+  onOverlayMouseUp(event: MouseEvent, modalType: 'link' | 'resource') {
+    if (this.isMouseDownOnOverlay && event.target === event.currentTarget) {
+      if (modalType === 'link') {
+        this.closeLinkModal();
+      } else if (modalType === 'resource') {
+        this.closeAddResourceModal();
+      }
+    }
+    this.isMouseDownOnOverlay = false;
+  }
+
   closeLinkModal() {
     this.showLinkModal = false;
     this.selectedParentRow = null;

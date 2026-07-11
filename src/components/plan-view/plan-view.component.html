@@ -2135,7 +2135,7 @@
 
   <!-- Modal for linking -->
   @if (showLinkModal) {
-    <div class="modal-overlay" (click)="closeLinkModal()">
+    <div class="modal-overlay" (mousedown)="onOverlayMouseDown($event)" (mouseup)="onOverlayMouseUp($event, 'link')">
       <div class="modal" [class.modal-wide]="viewMode() !== 'project'" (click)="$event.stopPropagation()">
         <div class="modal-header">
           @if (viewMode() !== 'resource' || !selectedChildRowToLink) {
@@ -2321,7 +2321,7 @@
 
   <!-- Modal for adding resource -->
   @if (showAddResourceModal) {
-    <div class="modal-overlay" (click)="closeAddResourceModal()">
+    <div class="modal-overlay" (mousedown)="onOverlayMouseDown($event)" (mouseup)="onOverlayMouseUp($event, 'resource')">
       <div class="modal" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <h2>Ajouter une Ressource à {{ selectedChildRow?.label }}</h2>
