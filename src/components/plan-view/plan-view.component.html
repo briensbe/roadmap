@@ -1098,12 +1098,35 @@
                       <div class="row-info-stack-wrapper">
                         <div class="info-stack">
                           @if (row.code || row.reference_externe) {
-                            <div class="info-meta">
+                            <div class="info-meta" style="display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap;">
                               @if (row.code) {
                                 <span class="info-code">{{ row.code }}</span>
+                                @if (viewMode() === 'project') {
+                                  <button
+                                    (click)="copyToClipboard($event, row.code, 'parent-' + row.id)"
+                                    class="btn-copy-code"
+                                    [class.copied]="copiedCodes().has('parent-' + row.id)"
+                                    [title]="copiedCodes().has('parent-' + row.id) ? 'Code copié !' : 'Copier le code projet'"
+                                    style="padding: 2px; margin-left: 2px;">
+                                    <lucide-icon [img]="copiedCodes().has('parent-' + row.id) ? Check : Copy" [size]="10"></lucide-icon>
+                                  </button>
+                                }
                               }
                               @if (row.reference_externe) {
-                                <span class="info-code"> / {{ row.reference_externe }}</span>
+                                <span class="info-code" style="margin-left: 2px;">{{ row.code ? ' / ' : '' }}{{ row.reference_externe }}</span>
+                                @if (viewMode() === 'project') {
+                                  @if (externalReferenceUrl(); as baseUrl) {
+                                    <a
+                                      [href]="baseUrl + cleanJiraRef(row.reference_externe)"
+                                      target="_blank"
+                                      (click)="$event.stopPropagation()"
+                                      class="proj-ref-ext-link"
+                                      style="color: #3b82f6; display: inline-flex; align-items: center; margin-left: 2px;"
+                                      title="Ouvrir dans le site externe">
+                                      <lucide-icon [img]="ExternalLink" [size]="11"></lucide-icon>
+                                    </a>
+                                  }
+                                }
                               }
                             </div>
                           }
@@ -1508,12 +1531,35 @@
                               <div class="row-info-stack-wrapper">
                                 <div class="info-stack">
                                   @if (child.code || child.reference_externe) {
-                                    <div class="info-meta">
+                                    <div class="info-meta" style="display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap;">
                                       @if (child.code) {
                                         <span class="info-code">{{ child.code }}</span>
+                                        @if (viewMode() === 'team') {
+                                          <button
+                                            (click)="copyToClipboard($event, child.code, 'child-' + child.id + '-' + row.id)"
+                                            class="btn-copy-code"
+                                            [class.copied]="copiedCodes().has('child-' + child.id + '-' + row.id)"
+                                            [title]="copiedCodes().has('child-' + child.id + '-' + row.id) ? 'Code copié !' : 'Copier le code projet'"
+                                            style="padding: 2px; margin-left: 2px;">
+                                            <lucide-icon [img]="copiedCodes().has('child-' + child.id + '-' + row.id) ? Check : Copy" [size]="10"></lucide-icon>
+                                          </button>
+                                        }
                                       }
                                       @if (child.reference_externe) {
-                                        <span class="info-code"> / {{ child.reference_externe }}</span>
+                                        <span class="info-code" style="margin-left: 2px;">{{ child.code ? ' / ' : '' }}{{ child.reference_externe }}</span>
+                                        @if (viewMode() === 'team') {
+                                          @if (externalReferenceUrl(); as baseUrl) {
+                                            <a
+                                              [href]="baseUrl + cleanJiraRef(child.reference_externe)"
+                                              target="_blank"
+                                              (click)="$event.stopPropagation()"
+                                              class="proj-ref-ext-link"
+                                              style="color: #3b82f6; display: inline-flex; align-items: center; margin-left: 2px;"
+                                              title="Ouvrir dans le site externe">
+                                              <lucide-icon [img]="ExternalLink" [size]="11"></lucide-icon>
+                                            </a>
+                                          }
+                                        }
                                       }
                                     </div>
                                   }
@@ -1651,12 +1697,31 @@
                                   @if (viewMode() === 'resource') {
                                     <div class="info-stack">
                                       @if (resource.code || resource.reference_externe) {
-                                        <div class="info-meta">
+                                        <div class="info-meta" style="display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap;">
                                           @if (resource.code) {
                                             <span class="info-code">{{ resource.code }}</span>
+                                            <button
+                                              (click)="copyToClipboard($event, resource.code, resource.uniqueId)"
+                                              class="btn-copy-code"
+                                              [class.copied]="copiedCodes().has(resource.uniqueId)"
+                                              [title]="copiedCodes().has(resource.uniqueId) ? 'Code copié !' : 'Copier le code projet'"
+                                              style="padding: 2px; margin-left: 2px;">
+                                              <lucide-icon [img]="copiedCodes().has(resource.uniqueId) ? Check : Copy" [size]="10"></lucide-icon>
+                                            </button>
                                           }
                                           @if (resource.reference_externe) {
-                                            <span class="info-code"> / {{ resource.reference_externe }}</span>
+                                            <span class="info-code" style="margin-left: 2px;">{{ resource.code ? ' / ' : '' }}{{ resource.reference_externe }}</span>
+                                            @if (externalReferenceUrl(); as baseUrl) {
+                                              <a
+                                                [href]="baseUrl + cleanJiraRef(resource.reference_externe)"
+                                                target="_blank"
+                                                (click)="$event.stopPropagation()"
+                                                class="proj-ref-ext-link"
+                                                style="color: #3b82f6; display: inline-flex; align-items: center; margin-left: 2px;"
+                                                title="Ouvrir dans le site externe">
+                                                <lucide-icon [img]="ExternalLink" [size]="11"></lucide-icon>
+                                              </a>
+                                            }
                                           }
                                         </div>
                                       }

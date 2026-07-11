@@ -73,6 +73,8 @@ import {
   Filter,
   Info,
   Trash2,
+  Copy,
+  Check,
 } from 'lucide-angular';
 import * as XLSX from 'xlsx';
 import { getISOWeekYear } from 'date-fns';
@@ -128,6 +130,8 @@ import { driver } from 'driver.js';
       Filter,
       Info,
       Trash2,
+      Copy,
+      Check,
     }),
   ],
   exports: [LucideAngularModule],
@@ -677,6 +681,8 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   Play = Play;
   Filter = Filter;
   Trash2 = Trash2;
+  Copy = Copy;
+  Check = Check;
 
   AlertTriangle = AlertTriangle;
   Info = Info;
@@ -821,6 +827,35 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private externalReferenceUrlQuery = this.settingsService.getSettingQuery('external_reference_url', 'global');
   externalReferenceUrl = computed(() => this.externalReferenceUrlQuery.data()?.value || null);
+
+  copiedCodes = signal<Set<string>>(new Set());
+
+  copyToClipboard(event: MouseEvent, text: string, key?: string) {
+    event.stopPropagation();
+    const idToStore = key || text;
+    navigator.clipboard.writeText(text).then(() => {
+      const current = new Set(this.copiedCodes());
+      current.add(idToStore);
+      this.copiedCodes.set(current);
+
+      setTimeout(() => {
+        const updated = new Set(this.copiedCodes());
+        updated.delete(idToStore);
+        this.copiedCodes.set(updated);
+      }, 2000);
+    }).catch(err => {
+      console.error('Failed to copy code: ', err);
+    });
+  }
+
+  cleanJiraRef(ref: string | null | undefined): string {
+    if (!ref) return '';
+    const match = ref.match(/(SUIVI-\d+)/i);
+    if (match) {
+      return match[1].toUpperCase();
+    }
+    return ref.trim();
+  }
 
   ngOnInit() {
     this.loadData();
@@ -4011,6 +4046,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
         id: parent.id,
         label: parent.label,
         code: parent.code,
+        reference_externe: parent.reference_externe,
         color: parent.color,
         expanded: parent.expanded,
         children: [],
@@ -4136,10 +4172,12 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
             id: child.id,
             label: child.label,
             code: child.code,
+            reference_externe: child.reference_externe,
             color: child.color,
             expanded: child.expanded,
             resources: grandchildrenMatch,
             charges: child.charges,
+            originalProject: child.originalProject,
             metrics: new Map(),
           });
         }
