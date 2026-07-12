@@ -1,5 +1,58 @@
 [
   {
+    "version": "2026.07.12",
+    "date": "2026-07-12",
+    "news": [
+      {
+        "title": "Gestion des Anomalies & Intégrité des données",
+        "items": [
+          "Onglet permettant de voir les anomalies Triskell (dépassement ou écarts)",
+          "Correction du bug 'Cendrillon' date.toISOString() qui posait problème entre minuit et 2h du matin (heure de Paris)."
+        ],
+        "imageUrl": "assets/release-notes/2026-07-12-import-triskell-vue-anomalie.png",
+        "imageMaxHeight": 300
+      },
+      {
+        "title": "Affichage des codes & Références",
+        "items": [
+          "Affichage des codes projets et références externes dans tous les modes de la vue Planification.",
+          "Affichage des codes projets et références externes au-dessus des libellés projets en vue Planification 'Par Ressources'.",
+          "Amélioration de la graisse des libellés de projets pour une meilleure lisibilité."
+        ],
+        "imageUrl": "assets/release-notes/2026-07-11-affichage-codes-plan-view.png",
+        "imageMaxHeight": 250
+      },
+      {
+        "title": "Sécurisation & Contrôle de doublons",
+        "items": [
+          "Vérification de l'existence de codes projets (Triskell) ou de références externes (Jira) similaires (exacts ou au préfixe près) lors de la création d'un projet.",
+          "Contrôle de l'existence de codes similaires également actif lors de l'édition d'un projet existant."
+        ],
+        "imageUrl": "assets/release-notes/2026-07-12-controle-existence-projets-similaires.png",
+        "imageMaxHeight": 150
+      },
+      {
+        "title": "Boutons de copie rapide & Ergonomie",
+        "items": [
+          "Ajout d'un bouton de copie rapide pour le code projet (Triskell) dans la vue Projets et dans la table d'import Triskell.",
+          "Accès direct aux tickets Jira depuis les lignes d'import Triskell.",
+          "Sélection de texte facilitée sur les lignes de la table d'import Triskell.",
+          "Adaptations ergonomiques de la vue sous forme de cartes."
+        ],
+        "imageUrl": "assets/release-notes/2026-07-11-copy-button.gif",
+        "imageMaxHeight": 200
+      },
+      {
+        "title": "Création & Raccordement de projet",
+        "items": [
+          "Ajout d'un bouton de création d'un nouveau projet directement dans la modale de rattachement de projet.",
+          "Résolution d'un problème où le clic était involontairement relâché en dehors de la popup d'ajout de projet.",
+          "Correction ergonomique sur le tutoriel (ajustement du bouton 'Suivant' qui débordait)."
+        ]
+      }
+    ]
+  },
+  {
     "version": "2026.07.11",
     "date": "2026-07-11",
     "news": [
@@ -8,7 +61,9 @@
         "items": [
           "Intégration d'un nouvel espace Suggestions alimenté par Canny.io pour recueillir vos idées d'évolution.",
           "Intégration du Jira Issue Collector pour recueillir du feeback."
-        ]
+        ],
+        "imageUrl": "assets/release-notes/2026-07-11-feeback-JIC-Jira-issue-collector.png",
+        "imageMaxHeight": 300
       },
       {
         "title": "Liaisons de projets",
@@ -55,7 +110,9 @@
           "Nouvel écran d'administration : permet de gérer le mapping entre les services locaux et les services PPM (Triskell).",
           "Sécurisation des mappings : contrôle strict d'unicité lors de la configuration pour éviter les doublons.",
           "Gestion des lots d'import (batches) : possibilité d'activer/désactiver des batches d'import avec modale de confirmation et nettoyage automatique du cache."
-        ]
+        ],
+        "imageUrl": "assets/release-notes/2026-07-12-administration-triskell-mapping-services.png",
+        "imageMaxHeight": 150
       },
       {
         "title": "Refonte de la vue d'Importation & Réconciliation",
@@ -64,7 +121,9 @@
           "Contrôles interactifs : ajout des fonctionnalités d'expand/collapse pour masquer/déplier les détails et tri alphabétique.",
           "Réconciliation à la demande : bouton permettant de relancer la réconciliation automatique.",
           "Référence externe : intégration de la référence externe dans la modale d'édition des chiffres."
-        ]
+        ],
+        "imageUrl": "assets/release-notes/2026-07-12-import-triskell-vue-data.png",
+        "imageMaxHeight": 150
       },
       {
         "title": "Améliorations des Budgets & Correctifs",
@@ -73,7 +132,9 @@
           "Correction du rattachement : résolution d'un problème qui affectait le lien entre les chiffres Triskell et les rôles/services associés.",
           "Avertissement de service manquant : message d'alerte explicite si l'absence de service sur une ressource bloque l'affichage de ses chiffres en vue Planification.",
           "Suivi et traçabilité : ajout d'une colonne `updated_at` sur les tables clés (équipes, rôles, personnes, services, etc.) et sécurisation des identifiants (UUID)."
-        ]
+        ],
+        "imageUrl": "assets/release-notes/2026-07-12-chiffres-source-sql-view.png",
+        "imageMaxHeight": 150
       }
     ]
   },
