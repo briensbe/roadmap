@@ -1,5 +1,34 @@
 [
   {
+    "version": "2026.07.14",
+    "date": "2026-07-14",
+    "news": [
+      {
+        "title": "Refonte complète de la vue Imports Triskell et fusion avec la vue Administration",
+        "items": [
+          "La vue Administration disparait et devient un onglet de la vue Imports Triskell.",
+          "Et dans cet onglet, une seule vue pour importer et gérer les imports Triskell."
+        ]
+      },
+      {
+        "title": "Optimisation de l'Association Automatique",
+        "items": [
+          "Association par lots de 500 : Accélération majeure du traitement (500x plus rapide) en regroupant les requêtes en un seul upsert global.",
+          "Indicateur de progression : Ajout d'une barre de progression dynamique en temps réel.",
+          "Panneau de synthèse final : Affichage d'un tableau récapitulatif à la fin de l'association (lignes traitées, succès, conflits/multi-liens, ambigus, orphelins)."
+        ]
+      },
+      {
+        "title": "Amélioration de l'Import Excel Triskell",
+        "items": [
+          "Affichage dynamique de l'état d'avancement pour toutes les étapes de l'import Excel.",
+          "Contrôle de Doublons par Checksum SHA-256",
+          "Détection intelligente : Avertissement interactif si vous tentez d'importer un fichier strictement identique (pour éviter les doublons inutiles) ou modifié (avec conseils d'activation/désactivation)."
+        ]
+      }
+    ]
+  },
+  {
     "version": "2026.07.12",
     "date": "2026-07-12",
     "news": [
