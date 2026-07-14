@@ -3,62 +3,70 @@
   <div class="import-header">
     <div>
       <h1>Importations Triskell</h1>
-      <p class="subtitle">Visualisez et réconciliez les lignes budgétaires importées du PPM</p>
+      <p class="subtitle">
+        @if (activeTab() === 'administration') {
+          Gérez les mappings de services et l'activation des données importées
+        } @else {
+          Visualisez et réconciliez les lignes budgétaires importées du PPM
+        }
+      </p>
     </div>
 
     <!-- Batch Selector Dropdown & Toggle Stats & Import Toggle -->
-    <div class="batch-selector-container">
-      <div class="header-actions-group">
-        @if (showImportButton()) {
+    @if (activeTab() !== 'administration') {
+      <div class="batch-selector-container">
+        <div class="header-actions-group">
+          @if (showImportButton()) {
+            <button
+              (click)="toggleUploadArea()"
+              class="btn-toggle-upload"
+              [class.active]="showUploadArea()"
+              title="Afficher ou masquer la zone d'importation Excel">
+              <lucide-icon [img]="FileUp" [size]="16"></lucide-icon>
+              <span>Nouvel Import</span>
+            </button>
+          }
+
           <button
-            (click)="toggleUploadArea()"
-            class="btn-toggle-upload"
-            [class.active]="showUploadArea()"
-            title="Afficher ou masquer la zone d'importation Excel">
-            <lucide-icon [img]="FileUp" [size]="16"></lucide-icon>
-            <span>Nouvel Import</span>
+            (click)="showStats.set(!showStats())"
+            class="btn-toggle-stats"
+            [title]="showStats() ? 'Masquer les statistiques' : 'Afficher les statistiques'">
+            <lucide-icon [img]="showStats() ? EyeOff : Eye" [size]="16"></lucide-icon>
+            <span>{{ showStats() ? 'Masquer Stats' : 'Stats' }}</span>
           </button>
-        }
 
-        <button
-          (click)="showStats.set(!showStats())"
-          class="btn-toggle-stats"
-          [title]="showStats() ? 'Masquer les statistiques' : 'Afficher les statistiques'">
-          <lucide-icon [img]="showStats() ? EyeOff : Eye" [size]="16"></lucide-icon>
-          <span>{{ showStats() ? 'Masquer Stats' : 'Stats' }}</span>
-        </button>
+          @if (selectedBatchId()) {
+            <button
+              (click)="runAutoReconciliation()"
+              class="btn-reconcile"
+              [disabled]="isReconciling() || reconcileBatchMutation.isPending()"
+              title="Relancer le processus d'association automatique pour ce lot">
+              <lucide-icon [img]="RefreshCw" [size]="16" [class.spinner]="isReconciling()"></lucide-icon>
+              <span>Associer Auto</span>
+            </button>
+          }
 
-        @if (selectedBatchId()) {
-          <button
-            (click)="runAutoReconciliation()"
-            class="btn-reconcile"
-            [disabled]="isReconciling() || reconcileBatchMutation.isPending()"
-            title="Relancer le processus d'association automatique pour ce lot">
-            <lucide-icon [img]="RefreshCw" [size]="16" [class.spinner]="isReconciling()"></lucide-icon>
-            <span>Associer Auto</span>
-          </button>
-        }
-
-        <div class="select-wrapper">
-          <select
-            [ngModel]="selectedBatchId()"
-            (ngModelChange)="selectedBatchId.set(toNumber($event))"
-            class="batch-select">
-            @for (batch of batchesQuery.data(); track batch.id; let idx = $index; let total = $count) {
-              <option [value]="batch.id">
-                N° {{ total - idx }} (Importé le {{ formatDate(batch.imported_at || batch.excel_export_date) }}) -
-                {{ batch.filename }}@if (batch.is_active) { - (Actif)}
-              </option>
-            }
-          </select>
-          <lucide-icon [img]="ChevronDown" [size]="16" class="select-icon"></lucide-icon>
+          <div class="select-wrapper">
+            <select
+              [ngModel]="selectedBatchId()"
+              (ngModelChange)="selectedBatchId.set(toNumber($event))"
+              class="batch-select">
+              @for (batch of batchesQuery.data(); track batch.id; let idx = $index; let total = $count) {
+                <option [value]="batch.id">
+                  N° {{ total - idx }} (Importé le {{ formatDate(batch.imported_at || batch.excel_export_date) }}) -
+                  {{ batch.filename }}@if (batch.is_active) { - (Actif)}
+                </option>
+              }
+            </select>
+            <lucide-icon [img]="ChevronDown" [size]="16" class="select-icon"></lucide-icon>
+          </div>
         </div>
       </div>
-    </div>
+    }
   </div>
 
   <!-- Drag & Drop Zone (Absorbée / Masquée si un lot est sélectionné et l'upload non actif) -->
-  @if (showUploadArea() || !selectedBatchId()) {
+  @if (activeTab() !== 'administration' && (showUploadArea() || !selectedBatchId())) {
     <div
       class="excel-drop-zone transition-area"
       [class.dragging]="isDragging()"
@@ -168,28 +176,37 @@
     </div>
   }
 
-  @if (selectedBatch()) {
-    <!-- Tabs Navigation -->
-    <div class="import-tabs">
-      <button
-        class="tab-btn"
-        [class.active]="activeTab() === 'data'"
-        (click)="activeTab.set('data')">
-        <lucide-icon [img]="FileSpreadsheet" [size]="16"></lucide-icon>
-        <span>Réconciliation & Données</span>
-      </button>
-      <button
-        class="tab-btn"
-        [class.active]="activeTab() === 'anomalies'"
-        (click)="activeTab.set('anomalies')">
-        <lucide-icon [img]="AlertTriangle" [size]="16" class="anomaly-tab-icon"></lucide-icon>
-        <span>Vue des Anomalies</span>
-        @if (anomaliesStats().total > 0) {
-          <span class="anomaly-badge">{{ anomaliesStats().total }}</span>
-        }
-      </button>
-    </div>
+  <!-- Tabs Navigation -->
+  <div class="import-tabs">
+    <button
+      class="tab-btn"
+      [class.active]="activeTab() === 'data'"
+      (click)="activeTab.set('data')">
+      <lucide-icon [img]="FileSpreadsheet" [size]="16"></lucide-icon>
+      <span>Réconciliation & Données</span>
+    </button>
+    <button
+      class="tab-btn"
+      [class.active]="activeTab() === 'anomalies'"
+      (click)="activeTab.set('anomalies')">
+      <lucide-icon [img]="AlertTriangle" [size]="16" class="anomaly-tab-icon"></lucide-icon>
+      <span>Vue des Anomalies</span>
+      @if (anomaliesStats().total > 0) {
+        <span class="anomaly-badge">{{ anomaliesStats().total }}</span>
+      }
+    </button>
+    <button
+      class="tab-btn"
+      [class.active]="activeTab() === 'administration'"
+      (click)="activeTab.set('administration')">
+      <lucide-icon [img]="Shield" [size]="16"></lucide-icon>
+      <span>Administration & Mappings</span>
+    </button>
+  </div>
 
+  @if (activeTab() === 'administration') {
+    <app-administration></app-administration>
+  } @else if (selectedBatch()) {
     @if (activeTab() === 'data') {
       <!-- Dashboard Stats Grid (Masqué par défaut) -->
       @if (showStats()) {

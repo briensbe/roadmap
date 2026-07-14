@@ -1,7 +1,7 @@
-import { Component, inject, signal, computed, HostListener } from '@angular/core';
+import { Component, inject, signal, computed, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { ImportService, ImportBatch, ImportBudgetRow } from '../../services/import/import.service';
 import { ProjetService } from '../../services/projet.service';
 import {
@@ -33,23 +33,25 @@ import {
   AlertOctagon,
   TrendingUp,
   TrendingDown,
+  Shield,
 } from 'lucide-angular';
 import { TriskellImportProcessor, ImportResult } from '../../services/import/TriskellImportProcessor';
 import { textContains } from '../../utils/text.utils';
-
 import { SettingsService } from '../../services/settings.service';
+import { AdministrationComponent } from '../administration/administration.component';
 
 @Component({
   selector: 'app-import-view',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, LucideAngularModule],
+  imports: [CommonModule, FormsModule, RouterLink, LucideAngularModule, AdministrationComponent],
   templateUrl: './import-view.component.html',
   styleUrl: './import-view.component.css',
 })
-export class ImportViewComponent {
+export class ImportViewComponent implements OnInit {
   private importService = inject(ImportService);
   private projetService = inject(ProjetService);
   private settingsService = inject(SettingsService);
+  private route = inject(ActivatedRoute);
 
   private externalReferenceUrlQuery = this.settingsService.getSettingQuery('external_reference_url', 'global');
   externalReferenceUrl = computed(() => this.externalReferenceUrlQuery.data()?.value || null);
@@ -82,6 +84,7 @@ export class ImportViewComponent {
   AlertOctagon = AlertOctagon;
   TrendingUp = TrendingUp;
   TrendingDown = TrendingDown;
+  Shield = Shield;
 
   // Selected Batch ID state
   selectedBatchId = signal<number | null>(null);
@@ -92,7 +95,7 @@ export class ImportViewComponent {
   window = window;
 
   // Active Tab & Anomaly Filters
-  activeTab = signal<'data' | 'anomalies'>('data');
+  activeTab = signal<'data' | 'anomalies' | 'administration'>('data');
   anomalyFilters = signal<string[]>(['dépassement', 'écart_hausse', 'écart_baisse']);
   showAnomalyDropdown = signal<boolean>(false);
 
@@ -495,6 +498,17 @@ export class ImportViewComponent {
     // fallback: find projects matching the code
     return projets.filter((p) => p.code_projet === row.project_code);
   });
+
+  ngOnInit() {
+    this.route.queryParams.subscribe(params => {
+      if (params['tab']) {
+        const tab = params['tab'];
+        if (tab === 'data' || tab === 'anomalies' || tab === 'administration') {
+          this.activeTab.set(tab);
+        }
+      }
+    });
+  }
 
   openReconcileModal(rowId: number) {
     this.reconcileActiveRowId.set(rowId);

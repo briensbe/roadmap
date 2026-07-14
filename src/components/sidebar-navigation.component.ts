@@ -28,6 +28,8 @@ interface NavigationItem {
   label: string;
   icon: any;
   route?: string;
+  queryParams?: any;
+  routerLinkActiveOptions?: any;
   href?: string;
 }
 
@@ -61,8 +63,9 @@ interface NavigationItem {
             *ngIf="item.route"
             class="nav-item"
             [routerLink]="item.route"
+            [queryParams]="item.queryParams || null"
             routerLinkActive="active"
-            [routerLinkActiveOptions]="{ exact: false }"
+            [routerLinkActiveOptions]="item.routerLinkActiveOptions || { exact: false }"
             [title]="isCollapsed ? item.label : ''">
             <div class="nav-item-icon">
               <lucide-icon [img]="item.icon" [size]="20"></lucide-icon>
@@ -111,67 +114,51 @@ interface NavigationItem {
       }
 
       .sidebar-header {
-        padding: 20px 16px;
-        border-bottom: 1px solid #e5e7eb;
+        height: 64px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        min-height: 72px;
+        padding: 0 16px;
+        border-bottom: 1px solid #e5e7eb;
       }
 
       .logo-container {
         display: flex;
         align-items: center;
         gap: 12px;
-        flex: 1;
-        min-width: 0;
-      }
-
-      .logo-icon {
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
       }
 
       .logo-text {
         font-size: 18px;
-        font-weight: 600;
+        font-weight: 700;
         color: #111827;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        letter-spacing: -0.025em;
       }
 
       .toggle-btn {
-        width: 28px;
-        height: 28px;
+        background: none;
         border: none;
-        background: #f3f4f6;
-        border-radius: 6px;
+        color: #6b7280;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
         display: flex;
         align-items: center;
         justify-content: center;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        flex-shrink: 0;
-        color: #6b7280;
+        transition: background-color 0.2s, color 0.2s;
       }
 
       .toggle-btn:hover {
-        background: #e5e7eb;
-        color: #374151;
-      }
-
-      .sidebar.collapsed .toggle-btn {
-        margin-left: auto;
+        background-color: #f3f4f6;
+        color: #111827;
       }
 
       .nav-items {
-        padding: 16px 12px;
         flex: 1;
+        padding: 16px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
         overflow-y: auto;
       }
 
@@ -179,84 +166,54 @@ interface NavigationItem {
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: 12px;
-        margin-bottom: 4px;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        text-decoration: none;
+        padding: 10px 12px;
         color: #4b5563;
-        position: relative;
-      }
-
-      .sidebar.collapsed .nav-item {
-        justify-content: center;
-        padding: 12px;
+        text-decoration: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        transition: background-color 0.2s, color 0.2s;
+        cursor: pointer;
       }
 
       .nav-item:hover {
-        background: #f3f4f6;
+        background-color: #f3f4f6;
         color: #111827;
       }
 
       .nav-item.active {
-        background: #4f46e5;
-        color: white;
+        background-color: #eff6ff;
+        color: #2563eb;
       }
 
-      .nav-item.active:hover {
-        background: #4338ca;
+      .nav-item.active .nav-item-icon {
+        color: #2563eb;
       }
 
       .nav-item-icon {
         display: flex;
         align-items: center;
         justify-content: center;
-        flex-shrink: 0;
+        color: #6b7280;
+        transition: color 0.2s;
       }
 
       .nav-item-label {
-        font-size: 14px;
-        font-weight: 500;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
       }
 
-      .sidebar.collapsed .nav-item-label {
-        display: none;
-      }
-
-      /* Scrollbar styling */
-      .nav-items::-webkit-scrollbar {
-        width: 6px;
-      }
-
-      .nav-items::-webkit-scrollbar-track {
-        background: transparent;
-      }
-
-      .nav-items::-webkit-scrollbar-thumb {
-        background: #d1d5db;
-        border-radius: 3px;
-      }
-
-      .nav-items::-webkit-scrollbar-thumb:hover {
-        background: #9ca3af;
-      }
-
       .sidebar-footer {
-        padding: 12px 16px;
-        /* border-top: 1px solid #e5e7eb; */
+        padding: 16px;
+        border-top: 1px solid #e5e7eb;
         display: flex;
-        justify-content: left;
-        align-items: center;
+        justify-content: center;
       }
 
       .version-text {
-        font-size: 10px;
+        font-size: 12px;
         color: #9ca3af;
-        font-family: monospace;
       }
 
       .version-text.clickable {
@@ -265,12 +222,8 @@ interface NavigationItem {
       }
 
       .version-text.clickable:hover {
-        color: #4f46e5;
+        color: #4b5563;
         text-decoration: underline;
-      }
-
-      .sidebar.collapsed .version-text {
-        font-size: 8px;
       }
     `,
   ],
@@ -279,7 +232,7 @@ export class SidebarNavigationComponent {
   isCollapsed = false;
   version = environment.version;
 
-  // Lucide icons
+  // Lucide Icons
   LayoutDashboard = LayoutDashboard;
   Calendar = Calendar;
   FolderKanban = FolderKanban;
@@ -303,11 +256,11 @@ export class SidebarNavigationComponent {
     { label: 'Capacité', icon: this.Gauge, route: '/capacite' },
     { label: 'Planification', icon: this.Calendar, route: '/planification' },
     { label: 'Projets', icon: this.FolderKanban, route: '/projets' },
-    { label: 'Imports Triskell', icon: this.FileSpreadsheet, route: '/imports' },
+    { label: 'Imports Triskell', icon: this.FileSpreadsheet, route: '/imports', routerLinkActiveOptions: { exact: true } },
     { label: 'Jalons', icon: this.Flag, route: '/jalons' },
     { label: 'Ressources', icon: this.Users, route: '/ressources' },
     { label: 'Organisation', icon: this.Building2, route: '/organisation' },
-    { label: 'Administration', icon: this.Shield, route: '/administration' },
+    { label: 'Administration', icon: this.Shield, route: '/imports', queryParams: { tab: 'administration' }, routerLinkActiveOptions: { exact: false } },
     { label: 'Guide', icon: this.BookOpen, route: '/guide' },
     { label: 'Suggestions', icon: this.MessageSquare, route: '/suggestions' },
     { label: 'Paramètres', icon: this.Settings, route: '/settings' },
