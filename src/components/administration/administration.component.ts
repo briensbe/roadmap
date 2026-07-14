@@ -6,6 +6,7 @@ import { ImportService, ServiceMapping } from '../../services/import/import.serv
 import { ServicesService } from '../../services/services.service';
 import { ProjetService } from '../../services/projet.service';
 import { TriskellImportProcessor, ImportResult } from '../../services/import/TriskellImportProcessor';
+import { ReconciliationResult } from '../../services/import/RoadmapReconciliator';
 import { Service } from '../../models/types';
 import { ConfirmModalComponent } from '../confirm-modal.component';
 import {
@@ -368,6 +369,9 @@ export class AdministrationComponent implements OnInit {
   // Reconcile Modal Signals & Handlers
   showConfirmReconcile = signal<boolean>(false);
   batchIdToReconcile = signal<number | null>(null);
+  showReconcileOverlay = signal<boolean>(false);
+  reconciliationProgress = signal<{ current: number; total: number; percent: number } | null>(null);
+  reconciliationResult = signal<ReconciliationResult | null>(null);
 
   handleReconcileBatch(batchId: number) {
     this.batchIdToReconcile.set(batchId);
@@ -378,16 +382,34 @@ export class AdministrationComponent implements OnInit {
     const batchId = this.batchIdToReconcile();
     if (batchId !== null) {
       this.showConfirmReconcile.set(false);
-      this.reconcileBatchMutation.mutate(batchId, {
-        onSuccess: () => {
-          this.batchIdToReconcile.set(null);
+      this.showReconcileOverlay.set(true);
+      this.reconciliationProgress.set({ current: 0, total: 100, percent: 0 });
+      this.reconciliationResult.set(null);
+      this.reconcileBatchMutation.mutate(
+        {
+          batchId,
+          onProgress: (progress) => {
+            this.reconciliationProgress.set(progress);
+          },
         },
-        onError: (err: any) => {
-          alert('Erreur lors de la réconciliation : ' + (err.message || err));
-          this.batchIdToReconcile.set(null);
-        },
-      });
+        {
+          onSuccess: (result) => {
+            this.reconciliationResult.set(result);
+          },
+          onError: (err: any) => {
+            alert('Erreur lors de la réconciliation : ' + (err.message || err));
+            this.closeReconcileOverlay();
+          },
+        }
+      );
     }
+  }
+
+  closeReconcileOverlay() {
+    this.showReconcileOverlay.set(false);
+    this.batchIdToReconcile.set(null);
+    this.reconciliationProgress.set(null);
+    this.reconciliationResult.set(null);
   }
 
   formatDate(dateStr: string | undefined): string {

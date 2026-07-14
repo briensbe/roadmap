@@ -1,5 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { paginateQuery } from '../../utils/supabase-pagination';
+import { DB_TABLES } from '../../constants/db-tables';
 
 export interface ReconciliationResult {
   totalProcessed: number;
@@ -15,12 +16,15 @@ export class RoadmapReconciliator {
   /**
    * Reconciles staging rows for the given batch with production projects.
    */
-  public async reconcile(batchId: number): Promise<ReconciliationResult> {
+  public async reconcile(
+    batchId: number,
+    onProgress?: (progress: { current: number; total: number; percent: number }) => void
+  ): Promise<ReconciliationResult> {
     // 1. Fetch all staging rows for this batch
     const stagingRows = await paginateQuery<any>(() =>
       this.supabase
-        .from('roadmap_import_budget')
-        .select('id, project_code, project_name, jira_references')
+        .from(DB_TABLES.IMPORT_BUDGET)
+        .select('id, project_code, project_name, jira_references, service_name')
         .eq('batch_id', batchId),
     );
 
@@ -34,7 +38,7 @@ export class RoadmapReconciliator {
     // 2. Fetch all matching projects from roadmap_projets
     const dbProjects = await paginateQuery<any>(() =>
       this.supabase
-        .from('roadmap_projets')
+        .from(DB_TABLES.PROJETS)
         .select('id, code_projet, reference_externe')
         .in('code_projet', uniqueProjectCodes),
     );
@@ -63,6 +67,8 @@ export class RoadmapReconciliator {
     let multiMatchedCount = 0;
     let ambiguousCount = 0;
     let unmappedCount = 0;
+
+    const updates: any[] = [];
 
     for (const row of stagingRows) {
       const code = row.project_code;
@@ -146,18 +152,36 @@ export class RoadmapReconciliator {
         }
       }
 
-      // Update the row in the staging table
-      const { error: updateError } = await this.supabase
-        .from('roadmap_import_budget')
-        .update({
-          project_id: projectId,
-          project_ids: projectIds,
-          reconciliation_status: status,
-        })
-        .eq('id', row.id);
+      updates.push({
+        id: row.id,
+        batch_id: batchId,
+        project_code: row.project_code,
+        service_name: row.service_name,
+        project_id: projectId,
+        project_ids: projectIds,
+        reconciliation_status: status,
+      });
+    }
 
-      if (updateError) {
-        throw new Error(`Failed to update staging row ID ${row.id}: ${updateError.message}`);
+    // Perform chunked upserts (size 500)
+    const batchSize = 500;
+    for (let i = 0; i < updates.length; i += batchSize) {
+      const chunk = updates.slice(i, i + batchSize);
+      const { error: upsertError } = await this.supabase
+        .from(DB_TABLES.IMPORT_BUDGET)
+        .upsert(chunk);
+
+      if (upsertError) {
+        throw new Error(`Failed to upsert staging rows batch: ${upsertError.message}`);
+      }
+
+      if (onProgress) {
+        const current = Math.min(i + batchSize, updates.length);
+        onProgress({
+          current,
+          total: updates.length,
+          percent: Math.round((current / updates.length) * 100),
+        });
       }
     }
 

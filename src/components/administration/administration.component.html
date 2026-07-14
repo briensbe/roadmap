@@ -40,12 +40,60 @@
   }
 
   <!-- Processing / Loader State overlay for batch reconciliation -->
-  @if (reconcileBatchMutation.isPending()) {
+  @if (showReconcileOverlay()) {
     <div class="processing-overlay">
-      <div class="processing-card">
-        <lucide-icon [img]="RefreshCw" [size]="36" class="spinner"></lucide-icon>
-        <h4>Association automatique en cours...</h4>
-        <p>Recherche des correspondances et association automatique des lignes budgétaires pour le lot #{{ batchIdToReconcile() }}...</p>
+      <div class="processing-card progress-card-layout">
+        @if (reconcileBatchMutation.isPending()) {
+          <lucide-icon [img]="RefreshCw" [size]="36" class="spinner"></lucide-icon>
+          <h4>Association automatique en cours...</h4>
+          <p class="progress-sub">Traitement des lignes budgétaires pour le lot #{{ batchIdToReconcile() }}</p>
+          
+          @if (reconciliationProgress(); as progress) {
+            <div class="progress-bar-container">
+              <div class="progress-bar-fill" [style.width.%]="progress.percent"></div>
+            </div>
+            <span class="progress-text">{{ progress.current }} / {{ progress.total }} lignes ({{ progress.percent }}%)</span>
+          } @else {
+            <div class="progress-bar-container indeterminate">
+              <div class="progress-bar-fill"></div>
+            </div>
+            <span class="progress-text">Initialisation...</span>
+          }
+        } @else if (reconciliationResult(); as result) {
+          <div class="success-icon-wrapper" style="color: #10b981; margin-bottom: 8px;">
+            <lucide-icon [img]="CheckCircle2" [size]="48"></lucide-icon>
+          </div>
+          <h4 style="margin: 4px 0 8px 0;">Association terminée !</h4>
+          <p class="progress-sub" style="margin-bottom: 16px;">Le lot #{{ batchIdToReconcile() }} a été traité avec succès.</p>
+          
+          <div class="import-metrics-summary" style="width: 100%; text-align: left; margin-bottom: 20px; box-sizing: border-box;">
+            <div class="metric-row">
+              <span>Total lignes traitées :</span>
+              <strong>{{ result.totalProcessed }}</strong>
+            </div>
+            <div class="metric-divider"></div>
+            <div class="metric-row matched">
+              <span>Réconciliations réussies :</span>
+              <strong>{{ result.matched }}</strong>
+            </div>
+            <div class="metric-row warning">
+              <span>Conflits détectés (multi-liens) :</span>
+              <strong>{{ result.multiMatched }}</strong>
+            </div>
+            <div class="metric-row warning">
+              <span>Projets ambigus :</span>
+              <strong>{{ result.ambiguous }}</strong>
+            </div>
+            <div class="metric-row danger">
+              <span>Nouveaux / Non cartographiés :</span>
+              <strong>{{ result.unmapped }}</strong>
+            </div>
+          </div>
+          
+          <button (click)="closeReconcileOverlay()" class="btn btn-primary" style="width: 100%; justify-content: center;">
+            Fermer
+          </button>
+        }
       </div>
     </div>
   }

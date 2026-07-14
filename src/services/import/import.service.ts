@@ -146,13 +146,13 @@ export class ImportService {
    */
   reconcileBatchMutation() {
     return injectMutation(() => ({
-      mutationFn: async (batchId: number) => {
+      mutationFn: async ({ batchId, onProgress }: { batchId: number; onProgress?: (progress: { current: number; total: number; percent: number }) => void }) => {
         const reconciliator = new RoadmapReconciliator(this.supabase.client);
-        return await reconciliator.reconcile(batchId);
+        return await reconciliator.reconcile(batchId, onProgress);
       },
-      onSuccess: (_, batchId) => {
+      onSuccess: (_, variables) => {
         // Invalidate the budget rows query to refetch updated staging rows
-        this.queryClient.invalidateQueries({ queryKey: ['import-budget-rows', batchId] });
+        this.queryClient.invalidateQueries({ queryKey: ['import-budget-rows', variables.batchId] });
       },
     }));
   }
