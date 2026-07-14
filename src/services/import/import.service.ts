@@ -65,9 +65,9 @@ export class ImportService {
       queryFn: async () => {
         return paginateQuery<ImportBatch>(() =>
           this.supabase.client
-            .from('roadmap_import_batches')
-            .select('*')
-            .order('id', { ascending: false }),
+             .from('roadmap_import_batches')
+             .select('*')
+             .order('id', { ascending: false }),
         );
       },
     }));
@@ -241,6 +241,44 @@ export class ImportService {
         const { error } = await this.supabase.client.rpc('activate_import_batch', {
           target_batch_id: batchId,
         });
+        if (error) throw error;
+      },
+      onSuccess: () => {
+        this.queryClient.invalidateQueries({ queryKey: ['import-batches'] });
+        this.chiffresService.clearCache();
+      },
+    }));
+  }
+
+  /**
+   * Deactivate an import batch
+   */
+  deactivateBatchMutation() {
+    return injectMutation(() => ({
+      mutationFn: async (batchId: number) => {
+        const { error } = await this.supabase.client
+          .from('roadmap_import_batches')
+          .update({ is_active: false })
+          .eq('id', batchId);
+        if (error) throw error;
+      },
+      onSuccess: () => {
+        this.queryClient.invalidateQueries({ queryKey: ['import-batches'] });
+        this.chiffresService.clearCache();
+      },
+    }));
+  }
+
+  /**
+   * Delete an import batch
+   */
+  deleteBatchMutation() {
+    return injectMutation(() => ({
+      mutationFn: async (batchId: number) => {
+        const { error } = await this.supabase.client
+          .from('roadmap_import_batches')
+          .delete()
+          .eq('id', batchId);
         if (error) throw error;
       },
       onSuccess: () => {

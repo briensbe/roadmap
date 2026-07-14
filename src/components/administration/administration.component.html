@@ -37,7 +37,7 @@
                   <th style="width: 240px;">Date d'export PPM Triskell</th>
                   <th style="width: 180px;">Date d'import</th>
                   <th style="width: 120px;">Statut</th>
-                  <th class="actions-col" style="width: 200px;">État / Action</th>
+                  <th class="actions-col" style="width: 220px;">État / Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -77,23 +77,32 @@
                         }
                       </span>
                     </td>
-                    <td class="actions-cell">
+                    <td class="actions-cell" style="display: table-cell;">
                       <div class="status-action-container" style="display: inline-flex; align-items: center; gap: 12px; justify-content: flex-end; width: 100%;">
                         @if (batch.status === 'processed') {
-                          <label class="switch" [title]="batch.is_active ? 'Lot actuellement actif' : 'Activer ce lot'">
+                          <label class="switch" [title]="batch.is_active ? 'Désactiver ce lot' : 'Activer ce lot'">
                             <input
                               type="checkbox"
                               [checked]="batch.is_active"
-                              [disabled]="batch.is_active || activateBatchMutation.isPending()"
-                              (change)="handleActivateBatch(batch.id)" />
+                              [disabled]="activateBatchMutation.isPending() || deactivateBatchMutation.isPending()"
+                              (click)="toggleBatchActive(batch, $event)" />
                             <span class="slider"></span>
                           </label>
                           <span style="font-size: 13px; font-weight: 600; min-width: 48px; text-align: left;" [style.color]="batch.is_active ? '#10b981' : '#64748b'">
                             {{ batch.is_active ? 'Actif' : 'Inactif' }}
                           </span>
                         } @else {
-                          <span class="text-muted" style="font-size: 12.5px;">-</span>
+                          <span class="text-muted" style="font-size: 12.5px; margin-right: 60px;">-</span>
                         }
+                        
+                        <button
+                          class="btn-icon-only delete"
+                          (click)="handleDeleteBatch(batch.id)"
+                          [disabled]="deleteBatchMutation.isPending()"
+                          title="Supprimer ce lot d'importation"
+                          style="margin-left: 8px;">
+                          <lucide-icon [img]="Trash2" [size]="14"></lucide-icon>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -284,11 +293,35 @@
 <app-confirm-modal
   [visible]="showConfirmActivate()"
   title="Activer ce lot d'import ?"
-  message="Vous êtes sur le point d'activer ce lot d'import. Le lot actuellement actif sera désactivé."
+  message="Vous êtes sur le point d'activer ce lot d'import PPM Triskell. Le lot actuellement actif sera désactivé."
   warningText="⚠️ ATTENTION : L'activation de ce lot modifie les données PPM Triskell pour TOUT LE MONDE ! Cette action est immédiate et impacte l'ensemble des utilisateurs de l'application."
   confirmLabel="Activer le lot"
   cancelLabel="Annuler"
   variant="danger"
   (confirm)="confirmActivateBatch()"
   (cancel)="showConfirmActivate.set(false)">
+</app-confirm-modal>
+
+<app-confirm-modal
+  [visible]="showConfirmDeactivate()"
+  title="Désactiver ce lot d'import ?"
+  message="Vous êtes sur le point de désactiver ce lot d'import PPM Triskell. Aucun lot ne sera alors actif."
+  warningText="⚠️ ATTENTION : Les budgets importés de Triskell ne seront plus pris en compte dans l'application pour l'ensemble des utilisateurs."
+  confirmLabel="Désactiver le lot"
+  cancelLabel="Annuler"
+  variant="danger"
+  (confirm)="confirmDeactivateBatch()"
+  (cancel)="showConfirmDeactivate.set(false)">
+</app-confirm-modal>
+
+<app-confirm-modal
+  [visible]="showConfirmDelete()"
+  title="Supprimer ce lot d'import ?"
+  message="Vous êtes sur le point de supprimer définitivement ce lot d'import PPM Triskell."
+  warningText="⚠️ ATTENTION : Cette action est irréversible et supprimera également toutes les données budgétaires associées à ce lot."
+  confirmLabel="Supprimer le lot"
+  cancelLabel="Annuler"
+  variant="danger"
+  (confirm)="confirmDeleteBatch()"
+  (cancel)="showConfirmDelete.set(false)">
 </app-confirm-modal>

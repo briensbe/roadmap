@@ -53,8 +53,6 @@ export class AdministrationComponent implements OnInit {
   Calendar = Calendar;
   ArrowRight = ArrowRight;
 
-
-
   // Local Services Cache
   localServices = signal<Service[]>([]);
   isLoadingLocalServices = signal<boolean>(false);
@@ -98,6 +96,8 @@ export class AdministrationComponent implements OnInit {
   updateMappingMutation = this.importService.updateServiceMappingMutation();
   deleteMappingMutation = this.importService.deleteServiceMappingMutation();
   activateBatchMutation = this.importService.activateBatchMutation();
+  deactivateBatchMutation = this.importService.deactivateBatchMutation();
+  deleteBatchMutation = this.importService.deleteBatchMutation();
 
   ngOnInit() {
     this.loadLocalServices();
@@ -114,8 +114,6 @@ export class AdministrationComponent implements OnInit {
       this.isLoadingLocalServices.set(false);
     }
   }
-
-
 
   // CRUD Actions
   async handleAddMapping() {
@@ -252,10 +250,10 @@ export class AdministrationComponent implements OnInit {
     }
   }
 
+  // Activate Modal Signals & Handlers
   showConfirmActivate = signal<boolean>(false);
   batchIdToActivate = signal<number | null>(null);
 
-  // Batch Activator Action
   handleActivateBatch(batchId: number) {
     this.batchIdToActivate.set(batchId);
     this.showConfirmActivate.set(true);
@@ -273,6 +271,63 @@ export class AdministrationComponent implements OnInit {
           alert('Erreur lors de l\'activation : ' + (err.message || err));
           this.showConfirmActivate.set(false);
           this.batchIdToActivate.set(null);
+        },
+      });
+    }
+  }
+
+  // Deactivate Modal Signals & Handlers
+  showConfirmDeactivate = signal<boolean>(false);
+  batchIdToDeactivate = signal<number | null>(null);
+
+  toggleBatchActive(batch: any, event: Event) {
+    event.preventDefault();
+    if (batch.is_active) {
+      this.batchIdToDeactivate.set(batch.id);
+      this.showConfirmDeactivate.set(true);
+    } else {
+      this.handleActivateBatch(batch.id);
+    }
+  }
+
+  confirmDeactivateBatch() {
+    const batchId = this.batchIdToDeactivate();
+    if (batchId !== null) {
+      this.deactivateBatchMutation.mutate(batchId, {
+        onSuccess: () => {
+          this.showConfirmDeactivate.set(false);
+          this.batchIdToDeactivate.set(null);
+        },
+        onError: (err: any) => {
+          alert('Erreur lors de la désactivation : ' + (err.message || err));
+          this.showConfirmDeactivate.set(false);
+          this.batchIdToDeactivate.set(null);
+        },
+      });
+    }
+  }
+
+  // Delete Modal Signals & Handlers
+  showConfirmDelete = signal<boolean>(false);
+  batchIdToDelete = signal<number | null>(null);
+
+  handleDeleteBatch(batchId: number) {
+    this.batchIdToDelete.set(batchId);
+    this.showConfirmDelete.set(true);
+  }
+
+  confirmDeleteBatch() {
+    const batchId = this.batchIdToDelete();
+    if (batchId !== null) {
+      this.deleteBatchMutation.mutate(batchId, {
+        onSuccess: () => {
+          this.showConfirmDelete.set(false);
+          this.batchIdToDelete.set(null);
+        },
+        onError: (err: any) => {
+          alert('Erreur lors de la suppression : ' + (err.message || err));
+          this.showConfirmDelete.set(false);
+          this.batchIdToDelete.set(null);
         },
       });
     }
