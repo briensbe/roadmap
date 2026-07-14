@@ -18,6 +18,8 @@ export const DB_TABLES = {
   SERVICE_MAPPINGS: `${DB_PREFIX}service_mapping`,
   SETTINGS: `${DB_PREFIX}settings`,
   SOCIETES: `${DB_PREFIX}societes`,
+  IMPORT_BATCHES: `${DB_PREFIX}import_batches`,
+  IMPORT_BUDGET: `${DB_PREFIX}import_budget`,
 } as const;
 
 export const DB_VIEWS = {

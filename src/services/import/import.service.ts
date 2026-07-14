@@ -4,6 +4,7 @@ import { QueryClient, injectQuery, injectMutation } from '@tanstack/angular-quer
 import { paginateQuery } from '../../utils/supabase-pagination';
 import { ChiffresService } from '../chiffres.service';
 import { RoadmapReconciliator } from './RoadmapReconciliator';
+import { DB_TABLES } from '../../constants/db-tables';
 
 export interface ImportBatch {
   id: number;
@@ -65,9 +66,9 @@ export class ImportService {
       queryFn: async () => {
         return paginateQuery<ImportBatch>(() =>
           this.supabase.client
-             .from('roadmap_import_batches')
-             .select('*')
-             .order('id', { ascending: false }),
+            .from(DB_TABLES.IMPORT_BATCHES)
+            .select('*')
+            .order('id', { ascending: false }),
         );
       },
     }));
@@ -84,7 +85,7 @@ export class ImportService {
         if (id === null || id === undefined) return [];
         return paginateQuery<ImportBudgetRow>(() =>
           this.supabase.client
-            .from('roadmap_import_budget')
+            .from(DB_TABLES.IMPORT_BUDGET)
             .select('*')
             .eq('batch_id', id)
             .order('project_code', { ascending: true }),
@@ -102,7 +103,7 @@ export class ImportService {
       mutationFn: async ({ rowId, projectId }: { rowId: number; projectId: string | null }) => {
         // 1. Fetch the target row to get its project_code and batch_id
         const { data: targetRow, error: fetchError } = await this.supabase.client
-          .from('roadmap_import_budget')
+          .from(DB_TABLES.IMPORT_BUDGET)
           .select('project_code, batch_id')
           .eq('id', rowId)
           .single();
@@ -122,7 +123,7 @@ export class ImportService {
 
         // 2. Update all staging rows for this project_code in this batch
         const { data, error } = await this.supabase.client
-          .from('roadmap_import_budget')
+          .from(DB_TABLES.IMPORT_BUDGET)
           .update(updateData)
           .eq('batch_id', batch_id)
           .eq('project_code', project_code)
@@ -164,7 +165,7 @@ export class ImportService {
       queryKey: ['service-mappings'],
       queryFn: async () => {
         const { data, error } = await this.supabase.client
-          .from('roadmap_service_mapping')
+          .from(DB_TABLES.SERVICE_MAPPINGS)
           .select('*, roadmap_services(nom)')
           .order('created_at', { ascending: false });
         if (error) throw error;
@@ -180,7 +181,7 @@ export class ImportService {
     return injectMutation(() => ({
       mutationFn: async (mapping: Omit<ServiceMapping, 'id' | 'created_at'>) => {
         const { data, error } = await this.supabase.client
-          .from('roadmap_service_mapping')
+          .from(DB_TABLES.SERVICE_MAPPINGS)
           .insert(mapping)
           .select()
           .single();
@@ -200,7 +201,7 @@ export class ImportService {
     return injectMutation(() => ({
       mutationFn: async ({ id, ...updates }: Partial<ServiceMapping> & { id: number }) => {
         const { data, error } = await this.supabase.client
-          .from('roadmap_service_mapping')
+          .from(DB_TABLES.SERVICE_MAPPINGS)
           .update(updates)
           .eq('id', id)
           .select()
@@ -221,7 +222,7 @@ export class ImportService {
     return injectMutation(() => ({
       mutationFn: async (id: number) => {
         const { error } = await this.supabase.client
-          .from('roadmap_service_mapping')
+          .from(DB_TABLES.SERVICE_MAPPINGS)
           .delete()
           .eq('id', id);
         if (error) throw error;
@@ -257,7 +258,7 @@ export class ImportService {
     return injectMutation(() => ({
       mutationFn: async (batchId: number) => {
         const { error } = await this.supabase.client
-          .from('roadmap_import_batches')
+          .from(DB_TABLES.IMPORT_BATCHES)
           .update({ is_active: false })
           .eq('id', batchId);
         if (error) throw error;
@@ -276,7 +277,7 @@ export class ImportService {
     return injectMutation(() => ({
       mutationFn: async (batchId: number) => {
         const { error } = await this.supabase.client
-          .from('roadmap_import_batches')
+          .from(DB_TABLES.IMPORT_BATCHES)
           .delete()
           .eq('id', batchId);
         if (error) throw error;
@@ -303,7 +304,7 @@ export class ImportService {
 
         while (hasMore) {
           const { data, error } = await this.supabase.client
-            .from('roadmap_import_budget')
+            .from(DB_TABLES.IMPORT_BUDGET)
             .select('service_name')
             .range(from, from + pageSize - 1);
 

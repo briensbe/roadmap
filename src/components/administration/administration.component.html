@@ -33,8 +33,8 @@
               <thead>
                 <tr>
                   <th style="width: 80px;">ID</th>
-                  <th>Fichier</th>
                   <th style="width: 240px;">Date d'export PPM Triskell</th>
+                  <th>Fichier</th>
                   <th style="width: 180px;">Date d'import</th>
                   <th style="width: 120px;">Statut</th>
                   <th class="actions-col" style="width: 220px;">État / Action</th>
@@ -47,15 +47,15 @@
                       #{{ batch.id }}
                     </td>
                     <td>
-                      <div class="filename-cell">
-                        <lucide-icon [img]="Database" [size]="16" class="file-icon"></lucide-icon>
-                        <span>{{ batch.filename }}</span>
-                      </div>
-                    </td>
-                    <td>
                       <div class="date-cell">
                         <lucide-icon [img]="Calendar" [size]="14" class="meta-icon"></lucide-icon>
                         <span>{{ batch.excel_export_date | date: 'dd/MM/yyyy HH:mm' }}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="filename-cell">
+                        <lucide-icon [img]="Database" [size]="16" class="file-icon"></lucide-icon>
+                        <span>{{ batch.filename }}</span>
                       </div>
                     </td>
                     <td>
