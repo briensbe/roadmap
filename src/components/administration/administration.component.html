@@ -78,23 +78,21 @@
                       </span>
                     </td>
                     <td class="actions-cell">
-                      <div class="status-action-container" style="display: flex; align-items: center; gap: 12px;">
-                        @if (batch.is_active) {
-                          <span class="active-badge">
-                            <lucide-icon [img]="CheckCircle" [size]="12"></lucide-icon>
-                            Actif
+                      <div class="status-action-container" style="display: inline-flex; align-items: center; gap: 12px; justify-content: flex-end; width: 100%;">
+                        @if (batch.status === 'processed') {
+                          <label class="switch" [title]="batch.is_active ? 'Lot actuellement actif' : 'Activer ce lot'">
+                            <input
+                              type="checkbox"
+                              [checked]="batch.is_active"
+                              [disabled]="batch.is_active || activateBatchMutation.isPending()"
+                              (change)="handleActivateBatch(batch.id)" />
+                            <span class="slider"></span>
+                          </label>
+                          <span style="font-size: 13px; font-weight: 600; min-width: 48px; text-align: left;" [style.color]="batch.is_active ? '#10b981' : '#64748b'">
+                            {{ batch.is_active ? 'Actif' : 'Inactif' }}
                           </span>
                         } @else {
-                          <span class="inactive-badge">Inactif</span>
-                          @if (batch.status === 'processed') {
-                            <button
-                              class="btn btn-sm btn-activate"
-                              (click)="handleActivateBatch(batch.id)"
-                              [disabled]="activateBatchMutation.isPending()">
-                              <lucide-icon [img]="Check" [size]="14"></lucide-icon>
-                              Activer
-                            </button>
-                          }
+                          <span class="text-muted" style="font-size: 12.5px;">-</span>
                         }
                       </div>
                     </td>
@@ -155,7 +153,7 @@
                           name="editServiceName"
                           class="form-control table-input"
                           placeholder="Saisir le nom" />
-                        @if (editFormError()) {
+                        @if (editFormError() && !editFormError()?.includes('local') && !editFormError()?.includes('sélectionner')) {
                           <div class="error-text">{{ editFormError() }}</div>
                         }
                       </td>
@@ -168,6 +166,9 @@
                             <option [value]="srv.id">{{ srv.nom }}</option>
                           }
                         </select>
+                        @if (editFormError() && (editFormError()?.includes('local') || editFormError()?.includes('sélectionner'))) {
+                          <div class="error-text">{{ editFormError() }}</div>
+                        }
                       </td>
                       <td class="actions-cell">
                         <button
