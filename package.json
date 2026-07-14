@@ -5,6 +5,9 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:github": "ng build --base-href \"/roadmap/\" --configuration production",
+    "deploy:github": "angular-cli-ghpages --dir=dist/roadmap/browser",
+    "deploy": "pnpm run build:github && pnpm run deploy:github",
     "lint": "ng lint"
   },
   "dependencies": {
