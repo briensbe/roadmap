@@ -113,6 +113,7 @@ export class AdministrationComponent implements OnInit {
   activateBatchMutation = this.importService.activateBatchMutation();
   deactivateBatchMutation = this.importService.deactivateBatchMutation();
   deleteBatchMutation = this.importService.deleteBatchMutation();
+  reconcileBatchMutation = this.importService.reconcileBatchMutation();
 
   ngOnInit() {
     this.loadLocalServices();
@@ -359,6 +360,32 @@ export class AdministrationComponent implements OnInit {
           alert('Erreur lors de la suppression : ' + (err.message || err));
           this.showConfirmDelete.set(false);
           this.batchIdToDelete.set(null);
+        },
+      });
+    }
+  }
+
+  // Reconcile Modal Signals & Handlers
+  showConfirmReconcile = signal<boolean>(false);
+  batchIdToReconcile = signal<number | null>(null);
+
+  handleReconcileBatch(batchId: number) {
+    this.batchIdToReconcile.set(batchId);
+    this.showConfirmReconcile.set(true);
+  }
+
+  confirmReconcileBatch() {
+    const batchId = this.batchIdToReconcile();
+    if (batchId !== null) {
+      this.reconcileBatchMutation.mutate(batchId, {
+        onSuccess: () => {
+          this.showConfirmReconcile.set(false);
+          this.batchIdToReconcile.set(null);
+        },
+        onError: (err: any) => {
+          alert('Erreur lors de la réconciliation : ' + (err.message || err));
+          this.showConfirmReconcile.set(false);
+          this.batchIdToReconcile.set(null);
         },
       });
     }

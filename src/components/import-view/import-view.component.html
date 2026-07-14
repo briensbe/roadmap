@@ -24,16 +24,7 @@
             <span>{{ showStats() ? 'Masquer Stats' : 'Stats' }}</span>
           </button>
 
-          @if (selectedBatchId()) {
-            <button
-              (click)="runAutoReconciliation()"
-              class="btn-reconcile"
-              [disabled]="isReconciling() || reconcileBatchMutation.isPending()"
-              title="Relancer le processus d'association automatique pour ce lot">
-              <lucide-icon [img]="RefreshCw" [size]="16" [class.spinner]="isReconciling()"></lucide-icon>
-              <span>Associer Auto</span>
-            </button>
-          }
+
 
           <div class="select-wrapper">
             <select

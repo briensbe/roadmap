@@ -885,3 +885,30 @@
   to { transform: scale(1); opacity: 1; }
 }
 
+.btn-reconcile-row {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  padding: 6px 12px;
+  border-radius: 6px;
+  color: #166534;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  height: 32px;
+}
+
+.btn-reconcile-row:hover:not(:disabled) {
+  background: #dcfce7;
+  color: #14532d;
+  border-color: #86efac;
+}
+
+.btn-reconcile-row:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+

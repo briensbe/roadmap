@@ -189,6 +189,15 @@
                     <td class="actions-cell" style="display: table-cell;">
                       <div class="status-action-container" style="display: inline-flex; align-items: center; gap: 12px; justify-content: flex-end; width: 100%;">
                         @if (batch.status === 'processed') {
+                          <button
+                            class="btn-reconcile-row"
+                            [disabled]="reconcileBatchMutation.isPending() || activateBatchMutation.isPending() || deactivateBatchMutation.isPending()"
+                            (click)="handleReconcileBatch(batch.id)"
+                            title="Associer automatiquement les lignes de ce lot">
+                            <lucide-icon [img]="RefreshCw" [size]="14" [class.spinner]="reconcileBatchMutation.isPending() && batchIdToReconcile() === batch.id"></lucide-icon>
+                            <span>Associer Auto</span>
+                          </button>
+
                           <label class="switch" [title]="batch.is_active ? 'Désactiver ce lot' : 'Activer ce lot'">
                             <input
                               type="checkbox"
@@ -445,4 +454,16 @@
   variant="danger"
   (confirm)="confirmDeleteMapping()"
   (cancel)="showConfirmDeleteMapping.set(false)">
+</app-confirm-modal>
+
+<app-confirm-modal
+  [visible]="showConfirmReconcile()"
+  title="Associer automatiquement le lot ?"
+  message="Vous êtes sur le point de lancer l'association automatique des projets pour ce lot d'importation.&#10;&#10;À lancer si vous avez modifié des projets en local avec des changements de nature à permettre l'association automatique (code projet ou référence externe Jira)."
+  warningText="Cette action va tenter de réconcilier automatiquement toutes les lignes budgétaires de ce lot avec vos projets locaux en se basant sur les codes projets et les clés Jira. Les associations existantes ne seront pas écrasées."
+  confirmLabel="Lancer l'association"
+  cancelLabel="Annuler"
+  variant="primary"
+  (confirm)="confirmReconcileBatch()"
+  (cancel)="showConfirmReconcile.set(false)">
 </app-confirm-modal>
