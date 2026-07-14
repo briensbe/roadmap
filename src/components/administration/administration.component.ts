@@ -27,7 +27,7 @@ import {
   Building2,
   Calendar,
   ArrowRight,
-  Upload,
+  Download,
   XCircle,
   CheckCircle2,
 } from 'lucide-angular';
@@ -60,7 +60,7 @@ export class AdministrationComponent implements OnInit {
   Building2 = Building2;
   Calendar = Calendar;
   ArrowRight = ArrowRight;
-  Upload = Upload;
+  Download = Download;
   XCircle = XCircle;
   CheckCircle2 = CheckCircle2;
 

@@ -31,7 +31,7 @@ import {
   AlertOctagon,
   TrendingUp,
   TrendingDown,
-  Shield,
+  Import,
 } from 'lucide-angular';
 import { textContains } from '../../utils/text.utils';
 import { SettingsService } from '../../services/settings.service';
@@ -79,7 +79,7 @@ export class ImportViewComponent implements OnInit {
   AlertOctagon = AlertOctagon;
   TrendingUp = TrendingUp;
   TrendingDown = TrendingDown;
-  Shield = Shield;
+  Import = Import;
 
   // Selected Batch ID state
   selectedBatchId = signal<number | null>(
