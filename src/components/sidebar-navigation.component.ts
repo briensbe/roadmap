@@ -260,7 +260,7 @@ export class SidebarNavigationComponent {
     { label: 'Jalons', icon: this.Flag, route: '/jalons' },
     { label: 'Ressources', icon: this.Users, route: '/ressources' },
     { label: 'Organisation', icon: this.Building2, route: '/organisation' },
-    { label: 'Administration', icon: this.Shield, route: '/imports', queryParams: { tab: 'administration' }, routerLinkActiveOptions: { exact: false } },
+    { label: 'Imports & Administration', icon: this.Shield, route: '/imports', queryParams: { tab: 'administration' }, routerLinkActiveOptions: { exact: false } },
     { label: 'Guide', icon: this.BookOpen, route: '/guide' },
     { label: 'Suggestions', icon: this.MessageSquare, route: '/suggestions' },
     { label: 'Paramètres', icon: this.Settings, route: '/settings' },

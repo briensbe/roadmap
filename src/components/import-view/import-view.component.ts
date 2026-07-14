@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, HostListener, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute } from '@angular/router';
@@ -25,8 +25,6 @@ import {
   Check,
   Eye,
   EyeOff,
-  Upload,
-  FileUp,
   SquarePlus,
   SquareMinus,
   Copy,
@@ -35,7 +33,6 @@ import {
   TrendingDown,
   Shield,
 } from 'lucide-angular';
-import { TriskellImportProcessor, ImportResult } from '../../services/import/TriskellImportProcessor';
 import { textContains } from '../../utils/text.utils';
 import { SettingsService } from '../../services/settings.service';
 import { AdministrationComponent } from '../administration/administration.component';
@@ -76,8 +73,6 @@ export class ImportViewComponent implements OnInit {
   Check = Check;
   Eye = Eye;
   EyeOff = EyeOff;
-  Upload = Upload;
-  FileUp = FileUp;
   SquarePlus = SquarePlus;
   SquareMinus = SquareMinus;
   Copy = Copy;
@@ -89,11 +84,6 @@ export class ImportViewComponent implements OnInit {
   // Selected Batch ID state
   selectedBatchId = signal<number | null>(null);
   showStats = signal<boolean>(false);
-  showUploadArea = signal<boolean>(true); // Visible par défaut à l'arrivée
-  showImportButton = signal<boolean>(false); // Apparaît dès qu'on a scrollé
-  hasScrolled = signal<boolean>(false); // Marqueur de premier scroll
-  window = window;
-
   // Active Tab & Anomaly Filters
   activeTab = signal<'data' | 'anomalies' | 'administration'>('data');
   anomalyFilters = signal<string[]>(['dépassement', 'écart_hausse', 'écart_baisse']);
@@ -107,31 +97,6 @@ export class ImportViewComponent implements OnInit {
       this.anomalyFilters.set([...current, filter]);
     }
   }
-
-  @HostListener('window:scroll', [])
-  onWindowScroll() {
-    const scrollOffset = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-
-    // Si on a scrollé de plus de 40px et qu'on ne l'a pas encore fait
-    if (scrollOffset > 40 && !this.hasScrolled()) {
-      this.hasScrolled.set(true);
-      this.showUploadArea.set(false);
-      this.showImportButton.set(true);
-    }
-  }
-
-  toggleUploadArea() {
-    this.showUploadArea.set(!this.showUploadArea());
-    if (this.showUploadArea()) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }
-
-  // Excel Upload States
-  isDragging = signal<boolean>(false);
-  isProcessing = signal<boolean>(false);
-  excelError = signal<string | null>(null);
-  excelSuccessSummary = signal<ImportResult | null>(null);
 
   // Queries
   batchesQuery = this.importService.getBatchesQuery();
@@ -595,89 +560,6 @@ export class ImportViewComponent implements OnInit {
       hour: '2-digit',
       minute: '2-digit',
     });
-  }
-
-  // Drag & Drop Handlers
-  onDragOver(event: DragEvent) {
-    event.preventDefault();
-    event.stopPropagation();
-    this.isDragging.set(true);
-  }
-
-  onDragLeave(event: DragEvent) {
-    event.preventDefault();
-    event.stopPropagation();
-    this.isDragging.set(false);
-  }
-
-  onDrop(event: DragEvent) {
-    event.preventDefault();
-    event.stopPropagation();
-    this.isDragging.set(false);
-
-    const files = event.dataTransfer?.files;
-    if (files && files.length > 0) {
-      this.processExcelFile(files[0]);
-    }
-  }
-
-  onFileSelected(event: Event) {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files.length > 0) {
-      this.processExcelFile(input.files[0]);
-    }
-  }
-
-  private async processExcelFile(file: File) {
-    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
-      this.excelError.set('Type de fichier invalide. Veuillez déposer un fichier Excel (.xlsx).');
-      return;
-    }
-
-    this.isProcessing.set(true);
-    this.excelError.set(null);
-    this.excelSuccessSummary.set(null);
-
-    try {
-      const reader = new FileReader();
-
-      // Promisify FileReader load event
-      const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
-        reader.onload = (e) => resolve(e.target?.result as ArrayBuffer);
-        reader.onerror = (err) => reject(err);
-        reader.readAsArrayBuffer(file);
-      });
-
-      // Initialize processor and invoke client-side pipeline
-      const processor = new TriskellImportProcessor(this.projetService['supabase'].client);
-      const result = await processor.processImportBuffer(arrayBuffer, file.name);
-
-      this.excelSuccessSummary.set(result);
-
-      // Invalidate query caches to trigger UI reload
-      const queryClient = this.importService['queryClient'];
-      await queryClient.invalidateQueries({ queryKey: ['import-batches'] });
-
-      // Auto select the newly created batch
-      this.selectedBatchId.set(result.batchId);
-      await queryClient.invalidateQueries({ queryKey: ['import-budget-rows', result.batchId] });
-
-      // Auto collapse drag & drop area on success
-      this.showUploadArea.set(false);
-    } catch (err: any) {
-      console.error('Error processing Excel import:', err);
-      this.excelError.set(err.message || 'Une erreur est survenue lors de la lecture du fichier Excel.');
-    } finally {
-      this.isProcessing.set(false);
-    }
-  }
-
-  closeSummary() {
-    this.excelSuccessSummary.set(null);
-  }
-
-  closeError() {
-    this.excelError.set(null);
   }
 
   async runAutoReconciliation() {
