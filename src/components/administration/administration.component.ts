@@ -5,7 +5,8 @@ import { RouterLink } from '@angular/router';
 import { ImportService, ServiceMapping } from '../../services/import/import.service';
 import { ServicesService } from '../../services/services.service';
 import { ProjetService } from '../../services/projet.service';
-import { TriskellImportProcessor, ImportResult } from '../../services/import/TriskellImportProcessor';
+import { TriskellImportProcessor, ImportResult, ImportProgress } from '../../services/import/TriskellImportProcessor';
+import { ExcelReader } from '../../services/import/ExcelReader';
 import { ReconciliationResult } from '../../services/import/RoadmapReconciliator';
 import { Service } from '../../models/types';
 import { ConfirmModalComponent } from '../confirm-modal.component';
@@ -66,8 +67,21 @@ export class AdministrationComponent implements OnInit {
   // Excel Upload States
   isDragging = signal<boolean>(false);
   isProcessing = signal<boolean>(false);
+  excelImportProgress = signal<ImportProgress | null>(null);
   excelError = signal<string | null>(null);
   excelSuccessSummary = signal<ImportResult | null>(null);
+
+  // Duplicate Check States
+  showConfirmDuplicate = signal<boolean>(false);
+  duplicateConfirmData = signal<{
+    batchId: number;
+    filename: string;
+    excelExportDate: Date;
+    contentsIdentical: boolean;
+    file: File;
+    arrayBuffer: ArrayBuffer;
+    fileHash: string;
+  } | null>(null);
 
   // Local Services Cache
   localServices = signal<Service[]>([]);
@@ -455,6 +469,12 @@ export class AdministrationComponent implements OnInit {
     }
   }
 
+  private async calculateHash(buffer: ArrayBuffer): Promise<string> {
+    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
   private async processExcelFile(file: File) {
     if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
       this.excelError.set('Type de fichier invalide. Veuillez déposer un fichier Excel (.xlsx).');
@@ -466,18 +486,75 @@ export class AdministrationComponent implements OnInit {
     this.excelSuccessSummary.set(null);
 
     try {
-      const reader = new FileReader();
-
-      // Promisify FileReader load event
+      // 1. Read file to ArrayBuffer
       const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+        const reader = new FileReader();
         reader.onload = (e) => resolve(e.target?.result as ArrayBuffer);
         reader.onerror = (err) => reject(err);
         reader.readAsArrayBuffer(file);
       });
 
+      // 2. Compute SHA-256 hash of the file
+      const fileHash = await this.calculateHash(arrayBuffer);
+
+      // 3. Read excel metadata
+      const reader = new ExcelReader();
+      const parsedData = await reader.readArrayBuffer(arrayBuffer);
+      const excelExportDate = parsedData.excelExportDate;
+
+      // 4. Check for duplicate filename, export date, or checksum
+      const existingBatches = this.batchesQuery.data() || [];
+      
+      // Look for a duplicate by exact hash first
+      const duplicateByHash = existingBatches.find(b => b.file_hash === fileHash);
+      
+      // Look for duplicate by name or export date
+      const duplicateByNameOrDate = existingBatches.find(b => {
+        const isSameName = b.filename === file.name;
+        const isSameDate = b.excel_export_date && excelExportDate &&
+          new Date(b.excel_export_date).getTime() === excelExportDate.getTime();
+        return isSameName || isSameDate;
+      });
+
+      const duplicateBatch = duplicateByHash || duplicateByNameOrDate;
+
+      if (duplicateBatch) {
+        this.isProcessing.set(false);
+        const contentsIdentical = duplicateBatch.file_hash === fileHash;
+
+        this.showConfirmDuplicate.set(true);
+        this.duplicateConfirmData.set({
+          batchId: duplicateBatch.id,
+          filename: file.name,
+          excelExportDate: excelExportDate || new Date(),
+          contentsIdentical,
+          file,
+          arrayBuffer,
+          fileHash
+        });
+        return;
+      }
+
+      // No duplicate found, run import directly
+      await this.runImportWorkflow(arrayBuffer, file.name, fileHash);
+    } catch (err: any) {
+      console.error('Error pre-checking Excel import:', err);
+      this.excelError.set(err.message || 'Une erreur est survenue lors de la lecture du fichier Excel.');
+      this.isProcessing.set(false);
+    }
+  }
+
+  private async runImportWorkflow(arrayBuffer: ArrayBuffer, filename: string, fileHash: string) {
+    this.isProcessing.set(true);
+    this.excelError.set(null);
+    this.excelSuccessSummary.set(null);
+
+    try {
       // Initialize processor and invoke client-side pipeline
       const processor = new TriskellImportProcessor(this.projetService['supabase'].client);
-      const result = await processor.processImportBuffer(arrayBuffer, file.name);
+      const result = await processor.processImportBuffer(arrayBuffer, filename, (progress) => {
+        this.excelImportProgress.set(progress);
+      }, fileHash);
 
       this.excelSuccessSummary.set(result);
 
@@ -489,6 +566,42 @@ export class AdministrationComponent implements OnInit {
       this.excelError.set(err.message || 'Une erreur est survenue lors de la lecture du fichier Excel.');
     } finally {
       this.isProcessing.set(false);
+      this.excelImportProgress.set(null);
+    }
+  }
+
+  confirmDuplicateImport() {
+    const data = this.duplicateConfirmData();
+    if (data) {
+      this.showConfirmDuplicate.set(false);
+      this.duplicateConfirmData.set(null);
+      this.runImportWorkflow(data.arrayBuffer, data.filename, data.fileHash);
+    }
+  }
+
+  cancelDuplicateImport() {
+    this.showConfirmDuplicate.set(false);
+    this.duplicateConfirmData.set(null);
+  }
+
+  getDuplicateModalMessage(): string {
+    const data = this.duplicateConfirmData();
+    if (!data) return '';
+    
+    const formattedDate = this.formatDate(data.excelExportDate.toISOString());
+    const matchType = data.contentsIdentical ? 'strictement identique (même contenu)' : 'différent (modifié)';
+    
+    return `Un lot avec ce nom de fichier ou la même date d'export (${formattedDate}) a déjà été importé sous le Lot #${data.batchId}.\n\nLe contenu du fichier que vous tentez d'importer est ${matchType} par rapport à celui déjà enregistré.`;
+  }
+
+  getDuplicateModalWarning(): string {
+    const data = this.duplicateConfirmData();
+    if (!data) return '';
+    
+    if (data.contentsIdentical) {
+      return `⚠️ ATTENTION : Importer ce fichier identique va créer un lot doublon inutile avec les mêmes données budgétaires.`;
+    } else {
+      return `⚠️ NOTE : Le contenu de ce fichier a été modifié depuis le dernier import. L'importer créera un nouveau lot contenant vos modifications, mais veillez à désactiver l'ancien lot pour éviter les conflits.`;
     }
   }
 

@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute } from '@angular/router';
@@ -82,7 +82,11 @@ export class ImportViewComponent implements OnInit {
   Shield = Shield;
 
   // Selected Batch ID state
-  selectedBatchId = signal<number | null>(null);
+  selectedBatchId = signal<number | null>(
+    localStorage.getItem('selected_import_batch_id')
+      ? Number(localStorage.getItem('selected_import_batch_id'))
+      : null
+  );
   showStats = signal<boolean>(false);
   // Active Tab & Anomaly Filters
   activeTab = signal<'data' | 'anomalies' | 'administration'>('data');
@@ -113,7 +117,8 @@ export class ImportViewComponent implements OnInit {
   selectedBatch = computed(() => {
     const batches = this.batchesQuery.data() || [];
     const id = this.selectedBatchId();
-    if (!id && batches.length > 0) {
+    const exists = batches.some(b => b.id === id);
+    if ((!id || !exists) && batches.length > 0) {
       // Auto-select latest batch
       setTimeout(() => this.selectedBatchId.set(batches[0].id), 0);
       return batches[0];
@@ -463,6 +468,15 @@ export class ImportViewComponent implements OnInit {
     // fallback: find projects matching the code
     return projets.filter((p) => p.code_projet === row.project_code);
   });
+
+  constructor() {
+    effect(() => {
+      const id = this.selectedBatchId();
+      if (id !== null) {
+        localStorage.setItem('selected_import_batch_id', String(id));
+      }
+    });
+  }
 
   ngOnInit() {
     this.route.queryParams.subscribe(params => {

@@ -12,6 +12,13 @@ export interface ImportResult {
   reconciliation: ReconciliationResult;
 }
 
+export interface ImportProgress {
+  stage: 'reading' | 'creating_batch' | 'inserting' | 'reconciling';
+  percent: number;
+  current?: number;
+  total?: number;
+}
+
 export class TriskellImportProcessor {
   private reader: ExcelReader;
   private transformer: RoadmapTransformer;
@@ -26,25 +33,44 @@ export class TriskellImportProcessor {
   /**
    * Main entrypoint to import an Excel file.
    */
-  public async processImport(filePath: string, filename: string): Promise<ImportResult> {
+  public async processImport(
+    filePath: string,
+    filename: string,
+    onProgress?: (progress: ImportProgress) => void,
+    fileHash?: string
+  ): Promise<ImportResult> {
+    if (onProgress) onProgress({ stage: 'reading', percent: 0 });
     const parsedData = await this.reader.readFile(filePath);
-    return this.executeImportWorkflow(parsedData, filename);
+    return this.executeImportWorkflow(parsedData, filename, onProgress, fileHash);
   }
 
   /**
    * Entrypoint to import an Excel file from an ArrayBuffer (browser context).
    */
-  public async processImportBuffer(buffer: ArrayBuffer, filename: string): Promise<ImportResult> {
+  public async processImportBuffer(
+    buffer: ArrayBuffer,
+    filename: string,
+    onProgress?: (progress: ImportProgress) => void,
+    fileHash?: string
+  ): Promise<ImportResult> {
+    if (onProgress) onProgress({ stage: 'reading', percent: 0 });
     const parsedData = await this.reader.readArrayBuffer(buffer);
-    return this.executeImportWorkflow(parsedData, filename);
+    return this.executeImportWorkflow(parsedData, filename, onProgress, fileHash);
   }
 
-  private async executeImportWorkflow(parsedData: any, filename: string): Promise<ImportResult> {
+  private async executeImportWorkflow(
+    parsedData: any,
+    filename: string,
+    onProgress?: (progress: ImportProgress) => void,
+    fileHash?: string
+  ): Promise<ImportResult> {
     let batchId: number | null = null;
     let excelExportDate: Date | null = null;
 
     try {
       excelExportDate = parsedData.excelExportDate;
+
+      if (onProgress) onProgress({ stage: 'creating_batch', percent: 0 });
 
       // 2. Create the import batch tracking record (status = 'pending')
       const { data: batchData, error: batchError } = await this.supabase
@@ -54,6 +80,7 @@ export class TriskellImportProcessor {
           filename: filename,
           status: 'pending',
           is_active: false,
+          file_hash: fileHash || null
         })
         .select('id')
         .single();
@@ -76,7 +103,18 @@ export class TriskellImportProcessor {
 
       // 4. Bulk insert staging rows into roadmap_import_budget (chunked for safety)
       const chunkSize = 200;
-      for (let i = 0; i < stagingRowsWithBatch.length; i += chunkSize) {
+      const totalRows = stagingRowsWithBatch.length;
+      
+      for (let i = 0; i < totalRows; i += chunkSize) {
+        if (onProgress) {
+          onProgress({
+            stage: 'inserting',
+            percent: Math.round((i / totalRows) * 100),
+            current: i,
+            total: totalRows
+          });
+        }
+
         const chunk = stagingRowsWithBatch.slice(i, i + chunkSize);
         const { error: insertError } = await this.supabase.from('roadmap_import_budget').insert(chunk);
 
@@ -85,12 +123,31 @@ export class TriskellImportProcessor {
         }
       }
 
+      if (onProgress) {
+        onProgress({
+          stage: 'inserting',
+          percent: 100,
+          current: totalRows,
+          total: totalRows
+        });
+      }
+
       if (!batchId || !excelExportDate) {
         throw new Error('Import state is invalid: missing batchId or excelExportDate');
       }
 
       // 5. Run the reconciliation process
-      const reconciliationResult = await this.reconciliator.reconcile(batchId);
+      if (onProgress) onProgress({ stage: 'reconciling', percent: 0 });
+      const reconciliationResult = await this.reconciliator.reconcile(batchId, (recProgress) => {
+        if (onProgress) {
+          onProgress({
+            stage: 'reconciling',
+            percent: recProgress.percent,
+            current: recProgress.current,
+            total: recProgress.total,
+          });
+        }
+      });
 
       // 6. Mark batch as processed
       const { error: finalizeError } = await this.supabase

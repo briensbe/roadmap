@@ -31,10 +31,9 @@
               [ngModel]="selectedBatchId()"
               (ngModelChange)="selectedBatchId.set(toNumber($event))"
               class="batch-select">
-              @for (batch of batchesQuery.data(); track batch.id; let idx = $index; let total = $count) {
+              @for (batch of batchesQuery.data(); track batch.id) {
                 <option [value]="batch.id">
-                  N° {{ total - idx }} (Importé le {{ formatDate(batch.imported_at || batch.excel_export_date) }}) -
-                  {{ batch.filename }}@if (batch.is_active) { - (Actif)}
+                  N° {{ batch.id }} (Exporté le {{ formatDate(batch.excel_export_date) }}) - {{ batch.filename }}@if (batch.is_active) { - (Actif)}
                 </option>
               }
             </select>

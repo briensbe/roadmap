@@ -31,10 +31,46 @@
   <!-- Processing / Loader State overlay -->
   @if (isProcessing()) {
     <div class="processing-overlay">
-      <div class="processing-card">
+      <div class="processing-card progress-card-layout">
         <lucide-icon [img]="RefreshCw" [size]="36" class="spinner"></lucide-icon>
-        <h4>Traitement du fichier Excel en cours...</h4>
-        <p>Lecture, modélisation des données et exécution du réconciliateur automatique...</p>
+        <h4>Traitement du fichier Excel...</h4>
+        
+        @if (excelImportProgress(); as progress) {
+          @if (progress.stage === 'reading') {
+            <p class="progress-sub">Lecture et analyse du fichier Excel...</p>
+            <div class="progress-bar-container indeterminate">
+              <div class="progress-bar-fill"></div>
+            </div>
+            <span class="progress-text">Analyse...</span>
+          }
+          @if (progress.stage === 'creating_batch') {
+            <p class="progress-sub">Création du lot de données...</p>
+            <div class="progress-bar-container indeterminate">
+              <div class="progress-bar-fill"></div>
+            </div>
+            <span class="progress-text">Préparation...</span>
+          }
+          @if (progress.stage === 'inserting') {
+            <p class="progress-sub">Écriture en staging...</p>
+            <div class="progress-bar-container">
+              <div class="progress-bar-fill" [style.width.%]="progress.percent"></div>
+            </div>
+            <span class="progress-text">{{ progress.current }} / {{ progress.total }} lignes insérées ({{ progress.percent }}%)</span>
+          }
+          @if (progress.stage === 'reconciling') {
+            <p class="progress-sub">Association automatique des projets...</p>
+            <div class="progress-bar-container">
+              <div class="progress-bar-fill" [style.width.%]="progress.percent"></div>
+            </div>
+            <span class="progress-text">Association : {{ progress.current }} / {{ progress.total }} ({{ progress.percent }}%)</span>
+          }
+        } @else {
+          <p class="progress-sub">Lecture, modélisation des données et exécution du réconciliateur automatique...</p>
+          <div class="progress-bar-container indeterminate">
+            <div class="progress-bar-fill"></div>
+          </div>
+          <span class="progress-text">Initialisation...</span>
+        }
       </div>
     </div>
   }
@@ -525,4 +561,16 @@
   variant="primary"
   (confirm)="confirmReconcileBatch()"
   (cancel)="showConfirmReconcile.set(false)">
+</app-confirm-modal>
+
+<app-confirm-modal
+  [visible]="showConfirmDuplicate()"
+  title="Fichier déjà importé ?"
+  [message]="getDuplicateModalMessage()"
+  [warningText]="getDuplicateModalWarning()"
+  confirmLabel="Importer quand même"
+  cancelLabel="Annuler"
+  [variant]="duplicateConfirmData()?.contentsIdentical ? 'danger' : 'primary'"
+  (confirm)="confirmDuplicateImport()"
+  (cancel)="cancelDuplicateImport()">
 </app-confirm-modal>
