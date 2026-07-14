@@ -377,14 +377,13 @@ export class AdministrationComponent implements OnInit {
   confirmReconcileBatch() {
     const batchId = this.batchIdToReconcile();
     if (batchId !== null) {
+      this.showConfirmReconcile.set(false);
       this.reconcileBatchMutation.mutate(batchId, {
         onSuccess: () => {
-          this.showConfirmReconcile.set(false);
           this.batchIdToReconcile.set(null);
         },
         onError: (err: any) => {
           alert('Erreur lors de la réconciliation : ' + (err.message || err));
-          this.showConfirmReconcile.set(false);
           this.batchIdToReconcile.set(null);
         },
       });

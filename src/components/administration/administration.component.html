@@ -39,6 +39,17 @@
     </div>
   }
 
+  <!-- Processing / Loader State overlay for batch reconciliation -->
+  @if (reconcileBatchMutation.isPending()) {
+    <div class="processing-overlay">
+      <div class="processing-card">
+        <lucide-icon [img]="RefreshCw" [size]="36" class="spinner"></lucide-icon>
+        <h4>Association automatique en cours...</h4>
+        <p>Recherche des correspondances et association automatique des lignes budgétaires pour le lot #{{ batchIdToReconcile() }}...</p>
+      </div>
+    </div>
+  }
+
   <!-- Error dialog popup -->
   @if (excelError()) {
     <div class="modal-overlay" (click)="closeError()">
