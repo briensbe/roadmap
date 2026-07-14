@@ -6,294 +6,278 @@
     </div>
   </div>
 
-  <!-- Tab Navigation -->
-  <div class="tabs-container">
-    <button class="tab-btn" [class.active]="activeTab() === 'mapping'" (click)="setTab('mapping')">
-      <lucide-icon [img]="Building2" [size]="18"></lucide-icon>
-      Mappings de Services
-    </button>
-    <button class="tab-btn" [class.active]="activeTab() === 'batches'" (click)="setTab('batches')">
-      <lucide-icon [img]="FileSpreadsheet" [size]="18"></lucide-icon>
-      Gestion des Lots (Batches)
-    </button>
-  </div>
+  <!-- Gestion des Lots (Batches) -->
+  <div class="card fade-in" style="margin-bottom: 24px;">
+    <div class="card-header">
+      <h2>Gestion des Lots d'Importation</h2>
+      <p class="card-subtitle">
+        Visualisez l'historique des importations Triskell et activez le lot contenant les données budgétaires à
+        utiliser.
+      </p>
+    </div>
 
-  <!-- TAB CONTENT: MAPPING -->
-  @if (activeTab() === 'mapping') {
-    <div class="card fade-in">
-      <div class="card-header">
-        <h2>Lier un Service local à un Service Triskell</h2>
-        <p class="card-subtitle">
-          Configurez la correspondance pour que les budgets importés de Triskell soient correctement attribués aux
-          services de l'application.
-        </p>
-      </div>
-
-      <!-- Mappings Table -->
-      <div class="table-container" style="margin-top: 0;">
-        <h3>Mappings Actuels</h3>
-
-        @if (serviceMappingsQuery.isPending()) {
-          <div class="loading-state">
-            <lucide-icon [img]="RefreshCw" [size]="24" class="spin"></lucide-icon>
-            Chargement des mappings...
-          </div>
-        } @else if (serviceMappingsQuery.isError()) {
-          <div class="alert alert-danger">Erreur lors du chargement des mappings.</div>
-        } @else {
-          @if (serviceMappingsQuery.data(); as mappings) {
-            @if (mappings.length === 0) {
-              <p class="empty-state">Aucun mapping défini pour le moment.</p>
-            } @else {
-              <table class="admin-table">
-                <thead>
-                  <tr>
-                    <th style="width: 300px;">Nom du Service Triskell (Source Excel)</th>
-                    <th style="width: 60px; text-align: center;"></th>
-                    <th>Service local</th>
-                    <th class="actions-col">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (mapping of mappings; track mapping.id) {
-                    <tr>
-                      @if (editingId() === mapping.id) {
-                        <!-- EDIT MODE -->
-                        <td>
-                          <input
-                            type="text"
-                            [(ngModel)]="editServiceName"
-                            name="editServiceName"
-                            class="form-control table-input"
-                            placeholder="Saisir le nom" />
-                          @if (editFormError()) {
-                            <div class="error-text">{{ editFormError() }}</div>
-                          }
-                        </td>
-                        <td style="text-align: center; color: #94a3b8;">
-                          <lucide-icon [img]="ArrowRight" [size]="16"></lucide-icon>
-                        </td>
-                        <td>
-                          <select [(ngModel)]="editServiceId" name="editServiceId" class="form-control table-input">
-                            @for (srv of localServices(); track srv.id) {
-                              <option [value]="srv.id">{{ srv.nom }}</option>
-                            }
-                          </select>
-                        </td>
-                        <td class="actions-cell">
-                          <button
-                            class="btn-icon-only success"
-                            (click)="handleUpdateMapping(mapping.id)"
-                            title="Valider"
-                            [disabled]="updateMappingMutation.isPending()">
-                            <lucide-icon [img]="Check" [size]="16"></lucide-icon>
-                          </button>
-                          <button class="btn-icon-only cancel" (click)="cancelEdit()" title="Annuler">
-                            <lucide-icon [img]="X" [size]="16"></lucide-icon>
-                          </button>
-                        </td>
-                      } @else {
-                        <!-- VIEW MODE -->
-                        <td class="code-font">{{ mapping.service_name }}</td>
-                        <td style="text-align: center; color: #94a3b8;">
-                          <lucide-icon [img]="ArrowRight" [size]="16"></lucide-icon>
-                        </td>
-                        <td>
-                          <span class="badge-service">
-                            {{ mapping.roadmap_services?.nom || 'Service inconnu' }}
+    <div class="table-container">
+      @if (batchesQuery.isPending()) {
+        <div class="loading-state">
+          <lucide-icon [img]="RefreshCw" [size]="24" class="spin"></lucide-icon>
+          Chargement des lots...
+        </div>
+      } @else if (batchesQuery.isError()) {
+        <div class="alert alert-danger">Erreur lors du chargement des lots d'importation.</div>
+      } @else {
+        @if (batchesQuery.data(); as batchResult) {
+          @if (batchResult.length === 0) {
+            <p class="empty-state">Aucun lot d'importation trouvé.</p>
+          } @else {
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th style="width: 80px;">ID</th>
+                  <th>Fichier</th>
+                  <th style="width: 240px;">Date d'export PPM Triskell</th>
+                  <th style="width: 180px;">Date d'import</th>
+                  <th style="width: 120px;">Statut</th>
+                  <th class="actions-col" style="width: 200px;">État / Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (batch of batchResult; track batch.id) {
+                  <tr [class.row-active]="batch.is_active">
+                    <td class="id-cell font-mono" style="font-weight: 600; color: #666;">
+                      #{{ batch.id }}
+                    </td>
+                    <td>
+                      <div class="filename-cell">
+                        <lucide-icon [img]="Database" [size]="16" class="file-icon"></lucide-icon>
+                        <span>{{ batch.filename }}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="date-cell">
+                        <lucide-icon [img]="Calendar" [size]="14" class="meta-icon"></lucide-icon>
+                        <span>{{ batch.excel_export_date | date: 'dd/MM/yyyy HH:mm' }}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="date-cell">
+                        <lucide-icon [img]="Calendar" [size]="14" class="meta-icon"></lucide-icon>
+                        <span>{{ batch.imported_at | date: 'dd/MM/yyyy HH:mm' }}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="status-badge" [class]="batch.status">
+                        @if (batch.status === 'processed') {
+                          Conforme
+                        }
+                        @if (batch.status === 'pending') {
+                          En cours
+                        }
+                        @if (batch.status === 'failed') {
+                          Échec
+                        }
+                      </span>
+                    </td>
+                    <td class="actions-cell">
+                      <div class="status-action-container" style="display: flex; align-items: center; gap: 12px;">
+                        @if (batch.is_active) {
+                          <span class="active-badge">
+                            <lucide-icon [img]="CheckCircle" [size]="12"></lucide-icon>
+                            Actif
                           </span>
-                        </td>
-                        <td class="actions-cell">
-                          <button class="btn-icon-only edit" (click)="startEdit(mapping)" title="Modifier">
-                            <lucide-icon [img]="Edit2" [size]="14"></lucide-icon>
-                          </button>
-                          <button
-                            class="btn-icon-only delete"
-                            (click)="handleDeleteMapping(mapping.id)"
-                            title="Supprimer">
-                            <lucide-icon [img]="Trash2" [size]="14"></lucide-icon>
-                          </button>
-                        </td>
-                      }
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            }
+                        } @else {
+                          <span class="inactive-badge">Inactif</span>
+                          @if (batch.status === 'processed') {
+                            <button
+                              class="btn btn-sm btn-activate"
+                              (click)="handleActivateBatch(batch.id)"
+                              [disabled]="activateBatchMutation.isPending()">
+                              <lucide-icon [img]="Check" [size]="14"></lucide-icon>
+                              Activer
+                            </button>
+                          }
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
           }
         }
-      </div>
-
-      <!-- Add Mapping Trigger -->
-      <div class="add-mapping-trigger" (click)="showAddForm.set(!showAddForm())">
-        <lucide-icon [img]="PlusCircle" [size]="16"></lucide-icon>
-        <span>Ajouter un mapping</span>
-      </div>
-
-      <!-- Add Mapping Form Container -->
-      @if (showAddForm()) {
-        <div class="add-mapping-container fade-in">
-          <!-- Add Mapping Form -->
-          <form (submit)="handleAddMapping(); $event.preventDefault()" class="add-mapping-form">
-            <div class="form-group">
-              <label for="triskell-service">Nom de Service Triskell (Source Excel)</label>
-              <input
-                id="triskell-service"
-                type="text"
-                [(ngModel)]="newServiceName"
-                name="newServiceName"
-                placeholder="Ex: TRISKELL_SERVICE_DEV"
-                list="triskell-names-list"
-                class="form-control" />
-              <datalist id="triskell-names-list">
-                @for (name of unmappedTriskellServiceNames(); track name) {
-                  <option [value]="name"></option>
-                }
-              </datalist>
-            </div>
-
-            <div class="form-group">
-              <label for="local-service">Service Local</label>
-              <select
-                id="local-service"
-                [(ngModel)]="newServiceId"
-                name="newServiceId"
-                class="form-control"
-                [disabled]="isLoadingLocalServices()">
-                <option value="">-- Sélectionner un service --</option>
-                @for (srv of unmappedLocalServices(); track srv.id) {
-                  <option [value]="srv.id">{{ srv.nom }}</option>
-                }
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label class="label-invisible">&nbsp;</label>
-              <div style="display: flex; gap: 8px;">
-                <button type="submit" class="btn btn-primary" [disabled]="createMappingMutation.isPending()">
-                  <lucide-icon [img]="Plus" [size]="16" class="btn-icon"></lucide-icon>
-                  Ajouter
-                </button>
-                <button type="button" class="btn btn-secondary" (click)="cancelAddMapping()">
-                  Annuler
-                </button>
-              </div>
-            </div>
-          </form>
-
-          @if (formError()) {
-            <div class="alert alert-danger" style="margin-top: 12px;">
-              {{ formError() }}
-            </div>
-          }
-        </div>
       }
     </div>
-  }
+  </div>
 
-  <!-- TAB CONTENT: BATCHES -->
-  @if (activeTab() === 'batches') {
-    <div class="card fade-in">
-      <div class="card-header">
-        <h2>Gestion des Lots d'Importation</h2>
-        <p class="card-subtitle">
-          Visualisez l'historique des importations Triskell et activez le lot contenant les données budgétaires à
-          utiliser.
-        </p>
-      </div>
+  <!-- Service Mapping -->
+  <div class="card fade-in">
+    <div class="card-header">
+      <h2>Lier un Service local à un Service Triskell</h2>
+      <p class="card-subtitle">
+        Configurez la correspondance pour que les budgets importés de Triskell soient correctement attribués aux
+        services de l'application.
+      </p>
+    </div>
 
-      <div class="table-container">
-        @if (batchesQuery.isPending()) {
-          <div class="loading-state">
-            <lucide-icon [img]="RefreshCw" [size]="24" class="spin"></lucide-icon>
-            Chargement des lots...
-          </div>
-        } @else if (batchesQuery.isError()) {
-          <div class="alert alert-danger">Erreur lors du chargement des lots d'importation.</div>
-        } @else {
-          @if (batchesQuery.data(); as batchResult) {
-            @if (batchResult.length === 0) {
-              <p class="empty-state">Aucun lot d'importation trouvé.</p>
-            } @else {
-              <table class="admin-table">
-                <thead>
+    <!-- Mappings Table -->
+    <div class="table-container" style="margin-top: 0;">
+      <h3>Mappings Actuels</h3>
+
+      @if (serviceMappingsQuery.isPending()) {
+        <div class="loading-state">
+          <lucide-icon [img]="RefreshCw" [size]="24" class="spin"></lucide-icon>
+          Chargement des mappings...
+        </div>
+      } @else if (serviceMappingsQuery.isError()) {
+        <div class="alert alert-danger">Erreur lors du chargement des mappings.</div>
+      } @else {
+        @if (serviceMappingsQuery.data(); as mappings) {
+          @if (mappings.length === 0) {
+            <p class="empty-state">Aucun mapping défini pour le moment.</p>
+          } @else {
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th style="width: 300px;">Nom du Service Triskell (Source Excel)</th>
+                  <th style="width: 60px; text-align: center;"></th>
+                  <th>Service local</th>
+                  <th class="actions-col">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (mapping of mappings; track mapping.id) {
                   <tr>
-                    <th style="width: 80px;">ID</th>
-                    <th>Fichier</th>
-                    <th style="width: 240px;">Date d'export PPM Triskell</th>
-                    <th style="width: 180px;">Date d'import</th>
-                    <th style="width: 120px;">Statut</th>
-                    <th class="actions-col" style="width: 200px;">État / Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (batch of batchResult; track batch.id) {
-                    <tr [class.row-active]="batch.is_active">
-                      <td class="id-cell font-mono" style="font-weight: 600; color: #666;">
-                        #{{ batch.id }}
+                    @if (editingId() === mapping.id) {
+                      <!-- EDIT MODE -->
+                      <td>
+                        <input
+                          type="text"
+                          [(ngModel)]="editServiceName"
+                          name="editServiceName"
+                          class="form-control table-input"
+                          placeholder="Saisir le nom" />
+                        @if (editFormError()) {
+                          <div class="error-text">{{ editFormError() }}</div>
+                        }
+                      </td>
+                      <td style="text-align: center; color: #94a3b8;">
+                        <lucide-icon [img]="ArrowRight" [size]="16"></lucide-icon>
                       </td>
                       <td>
-                        <div class="filename-cell">
-                          <lucide-icon [img]="Database" [size]="16" class="file-icon"></lucide-icon>
-                          <span>{{ batch.filename }}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <div class="date-cell">
-                          <lucide-icon [img]="Calendar" [size]="14" class="meta-icon"></lucide-icon>
-                          <span>{{ batch.excel_export_date | date: 'dd/MM/yyyy HH:mm' }}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <div class="date-cell">
-                          <lucide-icon [img]="Calendar" [size]="14" class="meta-icon"></lucide-icon>
-                          <span>{{ batch.imported_at | date: 'dd/MM/yyyy HH:mm' }}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <span class="status-badge" [class]="batch.status">
-                          @if (batch.status === 'processed') {
-                            Conforme
+                        <select [(ngModel)]="editServiceId" name="editServiceId" class="form-control table-input">
+                          @for (srv of localServices(); track srv.id) {
+                            <option [value]="srv.id">{{ srv.nom }}</option>
                           }
-                          @if (batch.status === 'pending') {
-                            En cours
-                          }
-                          @if (batch.status === 'failed') {
-                            Échec
-                          }
+                        </select>
+                      </td>
+                      <td class="actions-cell">
+                        <button
+                          class="btn-icon-only success"
+                          (click)="handleUpdateMapping(mapping.id)"
+                          title="Valider"
+                          [disabled]="updateMappingMutation.isPending()">
+                          <lucide-icon [img]="Check" [size]="16"></lucide-icon>
+                        </button>
+                        <button class="btn-icon-only cancel" (click)="cancelEdit()" title="Annuler">
+                          <lucide-icon [img]="X" [size]="16"></lucide-icon>
+                        </button>
+                      </td>
+                    } @else {
+                      <!-- VIEW MODE -->
+                      <td class="code-font">{{ mapping.service_name }}</td>
+                      <td style="text-align: center; color: #94a3b8;">
+                        <lucide-icon [img]="ArrowRight" [size]="16"></lucide-icon>
+                      </td>
+                      <td>
+                        <span class="badge-service">
+                          {{ mapping.roadmap_services?.nom || 'Service inconnu' }}
                         </span>
                       </td>
                       <td class="actions-cell">
-                        <div class="status-action-container" style="display: flex; align-items: center; gap: 12px;">
-                          @if (batch.is_active) {
-                            <span class="active-badge">
-                              <lucide-icon [img]="CheckCircle" [size]="12"></lucide-icon>
-                              Actif
-                            </span>
-                          } @else {
-                            <span class="inactive-badge">Inactif</span>
-                            @if (batch.status === 'processed') {
-                              <button
-                                class="btn btn-sm btn-activate"
-                                (click)="handleActivateBatch(batch.id)"
-                                [disabled]="activateBatchMutation.isPending()">
-                                <lucide-icon [img]="Check" [size]="14"></lucide-icon>
-                                Activer
-                              </button>
-                            }
-                          }
-                        </div>
+                        <button class="btn-icon-only edit" (click)="startEdit(mapping)" title="Modifier">
+                          <lucide-icon [img]="Edit2" [size]="14"></lucide-icon>
+                        </button>
+                        <button
+                          class="btn-icon-only delete"
+                          (click)="handleDeleteMapping(mapping.id)"
+                          title="Supprimer">
+                          <lucide-icon [img]="Trash2" [size]="14"></lucide-icon>
+                        </button>
                       </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            }
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
           }
         }
-      </div>
+      }
     </div>
-  }
+
+    <!-- Add Mapping Trigger -->
+    <div class="add-mapping-trigger" (click)="showAddForm.set(!showAddForm())">
+      <lucide-icon [img]="PlusCircle" [size]="16"></lucide-icon>
+      <span>Ajouter un mapping</span>
+    </div>
+
+    <!-- Add Mapping Form Container -->
+    @if (showAddForm()) {
+      <div class="add-mapping-container fade-in">
+        <!-- Add Mapping Form -->
+        <form (submit)="handleAddMapping(); $event.preventDefault()" class="add-mapping-form">
+          <div class="form-group">
+            <label for="triskell-service">Nom de Service Triskell (Source Excel)</label>
+            <input
+              id="triskell-service"
+              type="text"
+              [(ngModel)]="newServiceName"
+              name="newServiceName"
+              placeholder="Ex: TRISKELL_SERVICE_DEV"
+              list="triskell-names-list"
+              class="form-control" />
+            <datalist id="triskell-names-list">
+              @for (name of unmappedTriskellServiceNames(); track name) {
+                <option [value]="name"></option>
+              }
+            </datalist>
+          </div>
+
+          <div class="form-group">
+            <label for="local-service">Service Local</label>
+            <select
+              id="local-service"
+              [(ngModel)]="newServiceId"
+              name="newServiceId"
+              class="form-control"
+              [disabled]="isLoadingLocalServices()">
+              <option value="">-- Sélectionner un service --</option>
+              @for (srv of unmappedLocalServices(); track srv.id) {
+                <option [value]="srv.id">{{ srv.nom }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="label-invisible">&nbsp;</label>
+            <div style="display: flex; gap: 8px;">
+              <button type="submit" class="btn btn-primary" [disabled]="createMappingMutation.isPending()">
+                <lucide-icon [img]="Plus" [size]="16" class="btn-icon"></lucide-icon>
+                Ajouter
+              </button>
+              <button type="button" class="btn btn-secondary" (click)="cancelAddMapping()">
+                Annuler
+              </button>
+            </div>
+          </div>
+        </form>
+
+        @if (formError()) {
+          <div class="alert alert-danger" style="margin-top: 12px;">
+            {{ formError() }}
+          </div>
+        }
+      </div>
+    }
+  </div>
 </div>
 
 <app-confirm-modal
@@ -307,4 +291,3 @@
   (confirm)="confirmActivateBatch()"
   (cancel)="showConfirmActivate.set(false)">
 </app-confirm-modal>
-

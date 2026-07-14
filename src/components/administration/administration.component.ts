@@ -53,8 +53,7 @@ export class AdministrationComponent implements OnInit {
   Calendar = Calendar;
   ArrowRight = ArrowRight;
 
-  // Navigation
-  activeTab = signal<'mapping' | 'batches'>('mapping');
+
 
   // Local Services Cache
   localServices = signal<Service[]>([]);
@@ -116,9 +115,7 @@ export class AdministrationComponent implements OnInit {
     }
   }
 
-  setTab(tab: 'mapping' | 'batches') {
-    this.activeTab.set(tab);
-  }
+
 
   // CRUD Actions
   async handleAddMapping() {
