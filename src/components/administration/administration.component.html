@@ -434,3 +434,15 @@
   (confirm)="confirmDeleteBatch()"
   (cancel)="showConfirmDelete.set(false)">
 </app-confirm-modal>
+
+<app-confirm-modal
+  [visible]="showConfirmDeleteMapping()"
+  title="Supprimer ce mapping de service ?"
+  message="Vous êtes sur le point de supprimer la liaison entre ce service Triskell et le service local."
+  warningText="⚠️ ATTENTION : Sans cette liaison, les budgets Triskell associés à ce service ne seront plus attribués au service local correspondant."
+  confirmLabel="Supprimer le mapping"
+  cancelLabel="Annuler"
+  variant="danger"
+  (confirm)="confirmDeleteMapping()"
+  (cancel)="showConfirmDeleteMapping.set(false)">
+</app-confirm-modal>
