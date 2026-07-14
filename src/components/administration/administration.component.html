@@ -29,59 +29,8 @@
         </p>
       </div>
 
-      <!-- Add Mapping Form -->
-      <form (submit)="handleAddMapping(); $event.preventDefault()" class="add-mapping-form">
-        <div class="form-group">
-          <label for="local-service">Service Local</label>
-          <select
-            id="local-service"
-            [(ngModel)]="newServiceId"
-            name="newServiceId"
-            class="form-control"
-            [disabled]="isLoadingLocalServices()">
-            <option value="">-- Sélectionner un service --</option>
-            @for (srv of unmappedLocalServices(); track srv.id) {
-              <option [value]="srv.id">{{ srv.nom }}</option>
-            }
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="triskell-service">Nom de Service Triskell</label>
-          <input
-            id="triskell-service"
-            type="text"
-            [(ngModel)]="newServiceName"
-            name="newServiceName"
-            placeholder="Ex: TRISKELL_SERVICE_DEV"
-            list="triskell-names-list"
-            class="form-control" />
-          <datalist id="triskell-names-list">
-            @for (name of unmappedTriskellServiceNames(); track name) {
-              <option [value]="name"></option>
-            }
-          </datalist>
-        </div>
-
-        <div class="form-group">
-          <label class="label-invisible">&nbsp;</label>
-          <button type="submit" class="btn btn-primary" [disabled]="createMappingMutation.isPending()">
-            <lucide-icon [img]="Plus" [size]="16" class="btn-icon"></lucide-icon>
-            Ajouter le mapping
-          </button>
-        </div>
-      </form>
-
-      @if (formError()) {
-        <div class="alert alert-danger">
-          {{ formError() }}
-        </div>
-      }
-
-      <div class="divider"></div>
-
       <!-- Mappings Table -->
-      <div class="table-container">
+      <div class="table-container" style="margin-top: 0;">
         <h3>Mappings Actuels</h3>
 
         @if (serviceMappingsQuery.isPending()) {
@@ -99,8 +48,9 @@
               <table class="admin-table">
                 <thead>
                   <tr>
-                    <th>Service Local</th>
-                    <th>Nom du Service Triskell (Source)</th>
+                    <th style="width: 300px;">Nom du Service Triskell (Source Excel)</th>
+                    <th style="width: 60px; text-align: center;"></th>
+                    <th>Service local</th>
                     <th class="actions-col">Actions</th>
                   </tr>
                 </thead>
@@ -109,13 +59,6 @@
                     <tr>
                       @if (editingId() === mapping.id) {
                         <!-- EDIT MODE -->
-                        <td>
-                          <select [(ngModel)]="editServiceId" name="editServiceId" class="form-control table-input">
-                            @for (srv of localServices(); track srv.id) {
-                              <option [value]="srv.id">{{ srv.nom }}</option>
-                            }
-                          </select>
-                        </td>
                         <td>
                           <input
                             type="text"
@@ -126,6 +69,16 @@
                           @if (editFormError()) {
                             <div class="error-text">{{ editFormError() }}</div>
                           }
+                        </td>
+                        <td style="text-align: center; color: #94a3b8;">
+                          <lucide-icon [img]="ArrowRight" [size]="16"></lucide-icon>
+                        </td>
+                        <td>
+                          <select [(ngModel)]="editServiceId" name="editServiceId" class="form-control table-input">
+                            @for (srv of localServices(); track srv.id) {
+                              <option [value]="srv.id">{{ srv.nom }}</option>
+                            }
+                          </select>
                         </td>
                         <td class="actions-cell">
                           <button
@@ -141,12 +94,15 @@
                         </td>
                       } @else {
                         <!-- VIEW MODE -->
+                        <td class="code-font">{{ mapping.service_name }}</td>
+                        <td style="text-align: center; color: #94a3b8;">
+                          <lucide-icon [img]="ArrowRight" [size]="16"></lucide-icon>
+                        </td>
                         <td>
                           <span class="badge-service">
                             {{ mapping.roadmap_services?.nom || 'Service inconnu' }}
                           </span>
                         </td>
-                        <td class="code-font">{{ mapping.service_name }}</td>
                         <td class="actions-cell">
                           <button class="btn-icon-only edit" (click)="startEdit(mapping)" title="Modifier">
                             <lucide-icon [img]="Edit2" [size]="14"></lucide-icon>
@@ -167,6 +123,71 @@
           }
         }
       </div>
+
+      <!-- Add Mapping Trigger -->
+      <div class="add-mapping-trigger" (click)="showAddForm.set(!showAddForm())">
+        <lucide-icon [img]="PlusCircle" [size]="16"></lucide-icon>
+        <span>Ajouter un mapping</span>
+      </div>
+
+      <!-- Add Mapping Form Container -->
+      @if (showAddForm()) {
+        <div class="add-mapping-container fade-in">
+          <!-- Add Mapping Form -->
+          <form (submit)="handleAddMapping(); $event.preventDefault()" class="add-mapping-form">
+            <div class="form-group">
+              <label for="triskell-service">Nom de Service Triskell (Source Excel)</label>
+              <input
+                id="triskell-service"
+                type="text"
+                [(ngModel)]="newServiceName"
+                name="newServiceName"
+                placeholder="Ex: TRISKELL_SERVICE_DEV"
+                list="triskell-names-list"
+                class="form-control" />
+              <datalist id="triskell-names-list">
+                @for (name of unmappedTriskellServiceNames(); track name) {
+                  <option [value]="name"></option>
+                }
+              </datalist>
+            </div>
+
+            <div class="form-group">
+              <label for="local-service">Service Local</label>
+              <select
+                id="local-service"
+                [(ngModel)]="newServiceId"
+                name="newServiceId"
+                class="form-control"
+                [disabled]="isLoadingLocalServices()">
+                <option value="">-- Sélectionner un service --</option>
+                @for (srv of unmappedLocalServices(); track srv.id) {
+                  <option [value]="srv.id">{{ srv.nom }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="label-invisible">&nbsp;</label>
+              <div style="display: flex; gap: 8px;">
+                <button type="submit" class="btn btn-primary" [disabled]="createMappingMutation.isPending()">
+                  <lucide-icon [img]="Plus" [size]="16" class="btn-icon"></lucide-icon>
+                  Ajouter
+                </button>
+                <button type="button" class="btn btn-secondary" (click)="cancelAddMapping()">
+                  Annuler
+                </button>
+              </div>
+            </div>
+          </form>
+
+          @if (formError()) {
+            <div class="alert alert-danger" style="margin-top: 12px;">
+              {{ formError() }}
+            </div>
+          }
+        </div>
+      }
     </div>
   }
 

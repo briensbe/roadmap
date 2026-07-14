@@ -12,6 +12,7 @@ import {
   Layers,
   FileSpreadsheet,
   Plus,
+  PlusCircle,
   Trash2,
   Edit2,
   Check,
@@ -21,6 +22,7 @@ import {
   Database,
   Building2,
   Calendar,
+  ArrowRight,
 } from 'lucide-angular';
 
 @Component({
@@ -39,6 +41,7 @@ export class AdministrationComponent implements OnInit {
   Layers = Layers;
   FileSpreadsheet = FileSpreadsheet;
   Plus = Plus;
+  PlusCircle = PlusCircle;
   Trash2 = Trash2;
   Edit2 = Edit2;
   Check = Check;
@@ -48,6 +51,7 @@ export class AdministrationComponent implements OnInit {
   Database = Database;
   Building2 = Building2;
   Calendar = Calendar;
+  ArrowRight = ArrowRight;
 
   // Navigation
   activeTab = signal<'mapping' | 'batches'>('mapping');
@@ -55,6 +59,9 @@ export class AdministrationComponent implements OnInit {
   // Local Services Cache
   localServices = signal<Service[]>([]);
   isLoadingLocalServices = signal<boolean>(false);
+
+  // Toggle Add Form Visibility
+  showAddForm = signal<boolean>(false);
 
   // Form State - Add Mapping
   newServiceId = signal<string>('');
@@ -164,6 +171,13 @@ export class AdministrationComponent implements OnInit {
         },
       }
     );
+  }
+
+  cancelAddMapping() {
+    this.newServiceId.set('');
+    this.newServiceName.set('');
+    this.formError.set(null);
+    this.showAddForm.set(false);
   }
 
   startEdit(mapping: ServiceMapping) {

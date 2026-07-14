@@ -171,6 +171,23 @@
   cursor: not-allowed;
 }
 
+.btn-secondary {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+}
+
+.btn-secondary:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.btn-secondary:disabled {
+  background: #f8fafc;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
 .btn-sm {
   padding: 6px 12px;
   font-size: 12.5px;
@@ -220,6 +237,10 @@
   border-bottom: 1px solid #e2e8f0;
 }
 
+.admin-table tbody tr {
+  background: #ffffff;
+}
+
 .admin-table td {
   padding: 14px 16px;
   border-bottom: 1px solid #f1f5f9;
@@ -229,7 +250,7 @@
 }
 
 .admin-table tr:hover {
-  background: #fafafa;
+  background: #ffffff;
 }
 
 .admin-table tr.row-active {
@@ -311,7 +332,6 @@
   color: #ef4444;
   margin-top: 4px;
 }
-
 /* Badges */
 .badge-service {
   display: inline-block;
@@ -325,11 +345,9 @@
 
 .code-font {
   font-family: monospace;
-  background: #f1f5f9;
-  padding: 2px 6px;
-  border-radius: 4px;
   font-size: 12.5px;
   color: #0f172a;
+  background: transparent;
 }
 
 .status-badge {
@@ -458,3 +476,38 @@
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* Add Mapping trigger link */
+.add-mapping-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #2563eb;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 16px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: background-color 0.2s, color 0.2s;
+  user-select: none;
+  width: fit-content;
+}
+
+.add-mapping-trigger:hover {
+  background-color: #eff6ff;
+  color: #1d4ed8;
+}
+
+.add-mapping-trigger lucide-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.add-mapping-container {
+  margin-top: 16px;
+  border-top: 1px dashed #e2e8f0;
+  padding-top: 20px;
+}
+
