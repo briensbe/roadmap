@@ -133,8 +133,8 @@ export class ProjetService implements OnDestroy {
     return injectQuery(() => ({
       queryKey: projetQueryKeys.list(),
       queryFn: async () => {
-        return paginateQuery<Projet>(() =>
-          this.supabase.client.from(DB_TABLES.PROJETS).select('*').order('rank', { ascending: true }),
+        return paginateQuery<Projet>(
+          () => this.supabase.client.from(DB_TABLES.PROJETS).select('*').order('rank', { ascending: true }).order('id', { ascending: true })
         );
       },
       // Ajoutez ces 3 lignes ⬇️
@@ -155,8 +155,8 @@ export class ProjetService implements OnDestroy {
     return this.queryClient.fetchQuery({
       queryKey: projetQueryKeys.list(),
       queryFn: async () => {
-        return paginateQuery<Projet>(() =>
-          this.supabase.client.from(DB_TABLES.PROJETS).select('*').order('rank', { ascending: true }),
+        return paginateQuery<Projet>(
+          () => this.supabase.client.from(DB_TABLES.PROJETS).select('*').order('rank', { ascending: true }).order('id', { ascending: true })
         );
       },
     });
@@ -221,8 +221,8 @@ export class ProjetService implements OnDestroy {
     return this.queryClient.fetchQuery({
       queryKey: projetQueryKeys.equipeLinks(),
       queryFn: async () => {
-        return paginateQuery<{ equipe_id: string; projet_id: string }>(() =>
-          this.supabase.client.from(DB_TABLES.EQUIPES_PROJETS).select('*'),
+        return paginateQuery<{ equipe_id: string; projet_id: string }>(
+          () => this.supabase.client.from(DB_TABLES.EQUIPES_PROJETS).select('*').order('projet_id', { ascending: true }).order('equipe_id', { ascending: true })
         );
       },
     });

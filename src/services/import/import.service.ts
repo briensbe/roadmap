@@ -65,11 +65,8 @@ export class ImportService {
     return injectQuery(() => ({
       queryKey: ['import-batches'],
       queryFn: async () => {
-        return paginateQuery<ImportBatch>(() =>
-          this.supabase.client
-            .from(DB_TABLES.IMPORT_BATCHES)
-            .select('*')
-            .order('id', { ascending: false }),
+        return paginateQuery<ImportBatch>(
+          () => this.supabase.client.from(DB_TABLES.IMPORT_BATCHES).select('*').order('id', { ascending: false })
         );
       },
     }));
@@ -84,12 +81,8 @@ export class ImportService {
       queryFn: async () => {
         const id = batchIdFn();
         if (id === null || id === undefined) return [];
-        return paginateQuery<ImportBudgetRow>(() =>
-          this.supabase.client
-            .from(DB_TABLES.IMPORT_BUDGET)
-            .select('*')
-            .eq('batch_id', id)
-            .order('project_code', { ascending: true }),
+        return paginateQuery<ImportBudgetRow>(
+          () => this.supabase.client.from(DB_TABLES.IMPORT_BUDGET).select('*').eq('batch_id', id).order('project_code', { ascending: true }).order('id', { ascending: true })
         );
       },
       enabled: !!batchIdFn(),

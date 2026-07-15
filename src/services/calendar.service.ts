@@ -8,7 +8,9 @@ import { paginateQuery } from '../utils/supabase-pagination';
   providedIn: 'root',
 })
 export class CalendarService {
-  constructor(private supabase: SupabaseService) {}
+  constructor(
+    private supabase: SupabaseService
+  ) {}
 
   getWeekStart(date: Date): Date {
     const d = new Date(date);
@@ -57,7 +59,7 @@ export class CalendarService {
       if (filters?.departementId) query = query.eq('departement_id', filters.departementId);
       if (filters?.societeId) query = query.eq('societe_id', filters.societeId);
 
-      return query.order('semaine_debut');
+      return query.order('semaine_debut', { ascending: true }).order('id', { ascending: true });
     });
   }
 
@@ -130,7 +132,7 @@ export class CalendarService {
 
       if (projetId) query = query.eq('projet_id', projetId);
 
-      return query.order('semaine_debut');
+      return query.order('semaine_debut', { ascending: true }).order('id', { ascending: true });
     });
   }
 
@@ -162,7 +164,7 @@ export class CalendarService {
 
       if (projetId) query = query.eq('projet_id', projetId);
 
-      return query.order('date_jalon');
+      return query.order('date_jalon', { ascending: true }).order('id', { ascending: true });
     });
   }
 

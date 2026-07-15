@@ -34,8 +34,8 @@ export class ChiffresService {
     }
 
     // Récupération de tous les chiffres depuis la vue unifiée avec gestion de la limite de 1000 lignes de PostgREST
-    const data = await paginateQuery<BudgetUnifieEntry>(() =>
-      this.supabase.client.from(DB_VIEWS.VIEW_BUDGET_UNIFIE).select('*'),
+    const data = await paginateQuery<BudgetUnifieEntry>(
+      () => this.supabase.client.from(DB_VIEWS.VIEW_BUDGET_UNIFIE).select('*').order('id_projet', { ascending: true }).order('id_service', { ascending: true })
     );
 
     this._chiffresCache = data as any || [];
@@ -47,8 +47,8 @@ export class ChiffresService {
       return this._chiffresCache.filter((c) => c.id_projet === idProjet);
     }
 
-    const data = await paginateQuery<Chiffre>(() =>
-      this.supabase.client.from(DB_TABLES.CHIFFRES).select('*').eq('id_projet', idProjet).order('id_service'),
+    const data = await paginateQuery<Chiffre>(
+      () => this.supabase.client.from(DB_TABLES.CHIFFRES).select('*').eq('id_projet', idProjet).order('id_service', { ascending: true }).order('id_chiffres', { ascending: true })
     );
 
     return data || [];
@@ -63,11 +63,12 @@ export class ChiffresService {
    * ⚠️ Pagination obligatoire : PostgREST plafonne silencieusement à 1000 lignes.
    */
   async getChiffresByProjectFromView(idProjet: string): Promise<BudgetUnifieEntry[]> {
-    return paginateQuery<BudgetUnifieEntry>(() =>
-      this.supabase.client
+    return paginateQuery<BudgetUnifieEntry>(
+      () => this.supabase.client
         .from(DB_VIEWS.VIEW_BUDGET_UNIFIE)
         .select('*')
-        .eq('id_projet', idProjet),
+        .eq('id_projet', idProjet)
+        .order('id_service', { ascending: true })
     );
   }
 

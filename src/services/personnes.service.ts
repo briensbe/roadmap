@@ -35,8 +35,8 @@ export class PersonnesService {
       return this._personnesCache;
     }
 
-    const data = await paginateQuery<Personne>(() =>
-      this.supabase.client.from(DB_TABLES.PERSONNES).select('*').order('nom', { ascending: true }),
+    const data = await paginateQuery<Personne>(
+      () => this.supabase.client.from(DB_TABLES.PERSONNES).select('*').order('nom', { ascending: true }).order('id', { ascending: true })
     );
 
     this._personnesCache = data || [];

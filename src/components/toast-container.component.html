@@ -1,0 +1,23 @@
+<div class="toast-container">
+  @for (toast of toastService.toasts(); track toast.id) {
+    <div class="toast-item" [ngClass]="toast.type">
+      <div class="toast-icon">
+        @if (toast.type === 'success') {
+          <lucide-icon [img]="CheckCircleIcon" class="icon-success" size="20"></lucide-icon>
+        } @else if (toast.type === 'warning') {
+          <lucide-icon [img]="AlertTriangleIcon" class="icon-warning" size="20"></lucide-icon>
+        } @else if (toast.type === 'error') {
+          <lucide-icon [img]="AlertCircleIcon" class="icon-error" size="20"></lucide-icon>
+        } @else {
+          <lucide-icon [img]="InfoIcon" class="icon-info" size="20"></lucide-icon>
+        }
+      </div>
+      <div class="toast-message">
+        {{ toast.message }}
+      </div>
+      <button class="toast-close" (click)="toastService.dismiss(toast.id)" aria-label="Fermer">
+        <lucide-icon [img]="XIcon" size="16"></lucide-icon>
+      </button>
+    </div>
+  }
+</div>

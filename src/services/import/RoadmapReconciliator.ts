@@ -21,11 +21,12 @@ export class RoadmapReconciliator {
     onProgress?: (progress: { current: number; total: number; percent: number }) => void
   ): Promise<ReconciliationResult> {
     // 1. Fetch all staging rows for this batch
-    const stagingRows = await paginateQuery<any>(() =>
-      this.supabase
+    const stagingRows = await paginateQuery<any>(
+      () => this.supabase
         .from(DB_TABLES.IMPORT_BUDGET)
         .select('id, project_code, project_name, jira_references, service_name')
-        .eq('batch_id', batchId),
+        .eq('batch_id', batchId)
+        .order('id', { ascending: true })
     );
 
     if (!stagingRows || stagingRows.length === 0) {
@@ -36,11 +37,12 @@ export class RoadmapReconciliator {
     const uniqueProjectCodes = Array.from(new Set(stagingRows.map((r) => r.project_code)));
 
     // 2. Fetch all matching projects from roadmap_projets
-    const dbProjects = await paginateQuery<any>(() =>
-      this.supabase
+    const dbProjects = await paginateQuery<any>(
+      () => this.supabase
         .from(DB_TABLES.PROJETS)
         .select('id, code_projet, reference_externe')
-        .in('code_projet', uniqueProjectCodes),
+        .in('code_projet', uniqueProjectCodes)
+        .order('id', { ascending: true })
     );
 
     const projectsDb = dbProjects || [];

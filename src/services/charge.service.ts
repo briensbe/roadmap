@@ -14,7 +14,7 @@ export class ChargeService {
 
   constructor(
     private supabase: SupabaseService,
-    private teamService: TeamService,
+    private teamService: TeamService
   ) {}
 
   private clearCache() {
@@ -24,8 +24,8 @@ export class ChargeService {
   async getAllCharges(): Promise<Charge[]> {
     if (this._chargesCache) return this._chargesCache;
 
-    const data = await paginateQuery<Charge>(() =>
-      this.supabase.client.from(DB_TABLES.CHARGES).select('*').order('semaine_debut', { nullsFirst: true }),
+    const data = await paginateQuery<Charge>(
+      () => this.supabase.client.from(DB_TABLES.CHARGES).select('*').order('semaine_debut', { nullsFirst: true }).order('id', { ascending: true })
     );
 
     this._chargesCache = data || [];
@@ -38,12 +38,13 @@ export class ChargeService {
       return this._chargesCache.filter((c) => c.projet_id === projectId);
     }
 
-    const data = await paginateQuery<Charge>(() =>
-      this.supabase.client
+    const data = await paginateQuery<Charge>(
+      () => this.supabase.client
         .from(DB_TABLES.CHARGES)
         .select('*')
         .eq('projet_id', projectId)
-        .order('semaine_debut', { nullsFirst: true }),
+        .order('semaine_debut', { nullsFirst: true })
+        .order('id', { ascending: true })
     );
 
     return data || [];
@@ -54,12 +55,13 @@ export class ChargeService {
       return this._chargesCache.filter((c) => c.equipe_id === teamId);
     }
 
-    const data = await paginateQuery<Charge>(() =>
-      this.supabase.client
+    const data = await paginateQuery<Charge>(
+      () => this.supabase.client
         .from(DB_TABLES.CHARGES)
         .select('*')
         .eq('equipe_id', teamId)
-        .order('semaine_debut', { nullsFirst: true }),
+        .order('semaine_debut', { nullsFirst: true })
+        .order('id', { ascending: true })
     );
 
     return data || [];
@@ -189,21 +191,23 @@ export class ChargeService {
     const sourceWeeks = moves.map((m) => m.fromWeek);
 
     // 1. SELECT existing records for all affected weeks (source + destination)
-    const existing = await paginateQuery<any>(() => {
-      let query: any = this.supabase.client
-        .from(DB_TABLES.CHARGES)
-        .select('id, semaine_debut')
-        .eq('projet_id', projetId)
-        .eq('equipe_id', equipeId)
-        .in('semaine_debut', allWeeks);
+    const existing = await paginateQuery<any>(
+      () => {
+        let query: any = this.supabase.client
+          .from(DB_TABLES.CHARGES)
+          .select('id, semaine_debut')
+          .eq('projet_id', projetId)
+          .eq('equipe_id', equipeId)
+          .in('semaine_debut', allWeeks);
 
-      if (roleId) query = query.eq('role_id', roleId);
-      else query = query.is('role_id', null);
-      if (personneId) query = query.eq('personne_id', personneId);
-      else query = query.is('personne_id', null);
+        if (roleId) query = query.eq('role_id', roleId);
+        else query = query.is('role_id', null);
+        if (personneId) query = query.eq('personne_id', personneId);
+        else query = query.is('personne_id', null);
 
-      return query;
-    });
+        return query.order('id', { ascending: true });
+      }
+    );
 
     const existingByWeek = new Map<string, string>((existing || []).map((r: any) => [r.semaine_debut, r.id]));
 
@@ -265,12 +269,13 @@ export class ChargeService {
     const allRoles = await this.teamService.getAllRoles();
 
     // Get all charges for this project+team
-    const chargesInCombination = await paginateQuery<any>(() =>
-      this.supabase.client
+    const chargesInCombination = await paginateQuery<any>(
+      () => this.supabase.client
         .from(DB_TABLES.CHARGES)
         .select('role_id')
         .eq('projet_id', projetId)
-        .eq('equipe_id', equipeId),
+        .eq('equipe_id', equipeId)
+        .order('role_id', { ascending: true })
     );
 
     // Extract role IDs already in charges for this project+team
@@ -289,12 +294,13 @@ export class ChargeService {
     const allPersonnes = await this.teamService.getAllPersonnes();
 
     // Get all charges for this project+team
-    const chargesInCombination = await paginateQuery<any>(() =>
-      this.supabase.client
+    const chargesInCombination = await paginateQuery<any>(
+      () => this.supabase.client
         .from(DB_TABLES.CHARGES)
         .select('personne_id')
         .eq('projet_id', projetId)
-        .eq('equipe_id', equipeId),
+        .eq('equipe_id', equipeId)
+        .order('personne_id', { ascending: true })
     );
 
     // Extract person IDs already in charges for this project+team
@@ -311,12 +317,14 @@ export class ChargeService {
 
     const formattedFirstDay = this.getFirstDayOfWeek(fromDate);
 
-    const data = await paginateQuery<Charge>(() =>
-      this.supabase.client
+    const data = await paginateQuery<Charge>(
+      () => this.supabase.client
         .from(DB_TABLES.CHARGES)
         .select('*')
         .eq('projet_id', id)
-        .gte('semaine_debut', formattedFirstDay),
+        .gte('semaine_debut', formattedFirstDay)
+        .order('semaine_debut', { ascending: true })
+        .order('id', { ascending: true })
     );
 
     return data || [];

@@ -16,10 +16,12 @@ import { EasterEggService } from './services/easter-egg.service';
 import { SupabaseService } from './services/supabase.service';
 import { JiraCollectorService } from './services/jira-collector.service';
 
+import { ToastContainerComponent } from './components/toast-container.component';
+
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, SidebarNavigationComponent, ReleaseNotesComponent, MatrixEasterEggComponent],
+  imports: [CommonModule, RouterOutlet, SidebarNavigationComponent, ReleaseNotesComponent, MatrixEasterEggComponent, ToastContainerComponent],
   template: `
     <div class="app-layout">
       <app-sidebar-navigation></app-sidebar-navigation>
@@ -28,6 +30,7 @@ import { JiraCollectorService } from './services/jira-collector.service';
       </main>
       <app-release-notes></app-release-notes>
       <app-matrix-easter-egg *ngIf="showEasterEgg" (close)="showEasterEgg = false"></app-matrix-easter-egg>
+      <app-toast-container></app-toast-container>
     </div>
   `,
   styles: [

@@ -44,8 +44,8 @@ export class TeamService {
       return this._equipesCache;
     }
 
-    const data = await paginateQuery<Equipe>(() =>
-      this.supabase.client.from(DB_TABLES.EQUIPES).select('*').order('nom'),
+    const data = await paginateQuery<Equipe>(
+      () => this.supabase.client.from(DB_TABLES.EQUIPES).select('*').order('nom', { ascending: true }).order('id', { ascending: true })
     );
 
     this._equipesCache = data || [];
@@ -60,11 +60,12 @@ export class TeamService {
     const resources: EquipeResource[] = [];
 
     // Get roles attached to this team
-    const roleAttachments = await paginateQuery<any>(() =>
-      this.supabase.client
+    const roleAttachments = await paginateQuery<any>(
+      () => this.supabase.client
         .from(DB_TABLES.ROLE_ATTACHMENTS)
-        .select(`id, role_id, roles:${DB_TABLES.ROLES}(*)`) // attention on met roles: pour ne pas avoir à changer le reste du code suite renommage table
-        .eq('equipe_id', equipeId),
+        .select(`id, role_id, roles:${DB_TABLES.ROLES}(*)`)
+        .eq('equipe_id', equipeId)
+        .order('id', { ascending: true })
     );
 
     if (roleAttachments) {
@@ -83,8 +84,8 @@ export class TeamService {
     }
 
     // Get persons attached to this team
-    const personnes = await paginateQuery<any>(() =>
-      this.supabase.client.from(DB_TABLES.PERSONNES).select('*').eq('equipe_id', equipeId),
+    const personnes = await paginateQuery<any>(
+      () => this.supabase.client.from(DB_TABLES.PERSONNES).select('*').eq('equipe_id', equipeId).order('id', { ascending: true })
     );
 
     if (personnes) {
@@ -110,7 +111,9 @@ export class TeamService {
       return this._rolesCache;
     }
 
-    const data = await paginateQuery<Role>(() => this.supabase.client.from(DB_TABLES.ROLES).select('*').order('nom'));
+    const data = await paginateQuery<Role>(
+      () => this.supabase.client.from(DB_TABLES.ROLES).select('*').order('nom', { ascending: true }).order('id', { ascending: true })
+    );
 
     this._rolesCache = data || [];
     return this._rolesCache;
@@ -121,8 +124,8 @@ export class TeamService {
     const allRoles = await this.getAllRoles();
 
     // Get roles already attached to THIS specific team
-    const attachments = await paginateQuery<any>(() =>
-      this.supabase.client.from(DB_TABLES.ROLE_ATTACHMENTS).select('role_id').eq('equipe_id', equipeId),
+    const attachments = await paginateQuery<any>(
+      () => this.supabase.client.from(DB_TABLES.ROLE_ATTACHMENTS).select('role_id').eq('equipe_id', equipeId).order('role_id', { ascending: true })
     );
 
     // Extract role IDs already attached to this team
@@ -137,8 +140,8 @@ export class TeamService {
       return this._personnesCache;
     }
 
-    const data = await paginateQuery<Personne>(() =>
-      this.supabase.client.from(DB_TABLES.PERSONNES).select('*').order('nom', { ascending: true }),
+    const data = await paginateQuery<Personne>(
+      () => this.supabase.client.from(DB_TABLES.PERSONNES).select('*').order('nom', { ascending: true }).order('id', { ascending: true })
     );
 
     this._personnesCache = data || [];
@@ -150,8 +153,8 @@ export class TeamService {
     const allPersonnes = await this.getAllPersonnes();
 
     // Get persons already attached to THIS specific team
-    const personnes = await paginateQuery<any>(() =>
-      this.supabase.client.from(DB_TABLES.PERSONNES).select('id').eq('equipe_id', equipeId),
+    const personnes = await paginateQuery<any>(
+      () => this.supabase.client.from(DB_TABLES.PERSONNES).select('id').eq('equipe_id', equipeId).order('id', { ascending: true })
     );
 
     // Extract person IDs already attached to this team
@@ -214,16 +217,18 @@ export class TeamService {
       return this._capacitesCache.get(cacheKey)!;
     }
 
-    const result = await paginateQuery<Capacite>(() => {
-      let query = this.supabase.client.from(DB_TABLES.CAPACITES).select('*').eq('equipe_id', equipeId);
+    const result = await paginateQuery<Capacite>(
+      () => {
+        let query = this.supabase.client.from(DB_TABLES.CAPACITES).select('*').eq('equipe_id', equipeId);
 
-      if (type === 'role') {
-        query = query.eq('role_id', resourceId);
-      } else {
-        query = query.eq('personne_id', resourceId);
+        if (type === 'role') {
+          query = query.eq('role_id', resourceId);
+        } else {
+          query = query.eq('personne_id', resourceId);
+        }
+        return query.order('semaine_debut', { ascending: true }).order('id', { ascending: true });
       }
-      return query.order('semaine_debut');
-    });
+    );
 
     this._capacitesCache.set(cacheKey, result);
     return result;
@@ -295,7 +300,9 @@ export class TeamService {
       return this._allCapacitiesCache;
     }
 
-    const data = await paginateQuery<Capacite>(() => this.supabase.client.from(DB_TABLES.CAPACITES).select('*'));
+    const data = await paginateQuery<Capacite>(
+      () => this.supabase.client.from(DB_TABLES.CAPACITES).select('*').order('id', { ascending: true })
+    );
 
     this._allCapacitiesCache = data || [];
     return this._allCapacitiesCache;

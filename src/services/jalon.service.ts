@@ -10,7 +10,9 @@ import { paginateQuery } from '../utils/supabase-pagination';
 export class JalonService {
   private _jalonsCache: Jalon[] | null = null;
 
-  constructor(private supabase: SupabaseService) {}
+  constructor(
+    private supabase: SupabaseService
+  ) {}
 
   private clearCache() {
     this._jalonsCache = null;
@@ -21,8 +23,8 @@ export class JalonService {
       return this._jalonsCache;
     }
 
-    const data = await paginateQuery<Jalon>(() =>
-      this.supabase.client.from(DB_TABLES.JALONS).select('*').order('event_date', { ascending: true }),
+    const data = await paginateQuery<Jalon>(
+      () => this.supabase.client.from(DB_TABLES.JALONS).select('*').order('event_date', { ascending: true }).order('id', { ascending: true })
     );
 
     this._jalonsCache = data || [];
@@ -30,12 +32,13 @@ export class JalonService {
   }
 
   async getJalonsByProject(projetId: string): Promise<Jalon[]> {
-    const data = await paginateQuery<Jalon>(() =>
-      this.supabase.client
+    const data = await paginateQuery<Jalon>(
+      () => this.supabase.client
         .from(DB_TABLES.JALONS)
         .select('*')
         .eq('projet_id', projetId)
-        .order('event_date', { ascending: true }),
+        .order('event_date', { ascending: true })
+        .order('id', { ascending: true })
     );
 
     return data || [];

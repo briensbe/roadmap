@@ -40,8 +40,8 @@ export class ResourceService {
 
   async getAllSocietes(): Promise<Societe[]> {
     if (this._societesCache) return this._societesCache;
-    const data = await paginateQuery<Societe>(() =>
-      this.supabase.client.from(DB_TABLES.SOCIETES).select('*').order('nom'),
+    const data = await paginateQuery<Societe>(
+      () => this.supabase.client.from(DB_TABLES.SOCIETES).select('*').order('nom', { ascending: true }).order('id', { ascending: true })
     );
 
     this._societesCache = data || [];
@@ -57,8 +57,8 @@ export class ResourceService {
 
   async getAllDepartements(): Promise<Departement[]> {
     if (this._departementsCache) return this._departementsCache;
-    const data = await paginateQuery<Departement>(() =>
-      this.supabase.client.from(DB_TABLES.DEPARTEMENTS).select('*').order('nom'),
+    const data = await paginateQuery<Departement>(
+      () => this.supabase.client.from(DB_TABLES.DEPARTEMENTS).select('*').order('nom', { ascending: true }).order('id', { ascending: true })
     );
 
     this._departementsCache = data || [];
@@ -78,8 +78,8 @@ export class ResourceService {
 
   async getAllServices(): Promise<Service[]> {
     if (this._servicesCache) return this._servicesCache;
-    const data = await paginateQuery<Service>(() =>
-      this.supabase.client.from(DB_TABLES.SERVICES).select('*').order('nom'),
+    const data = await paginateQuery<Service>(
+      () => this.supabase.client.from(DB_TABLES.SERVICES).select('*').order('nom', { ascending: true }).order('id', { ascending: true })
     );
 
     this._servicesCache = data || [];
@@ -95,8 +95,8 @@ export class ResourceService {
 
   async getAllEquipes(): Promise<Equipe[]> {
     if (this._equipesCache) return this._equipesCache;
-    const data = await paginateQuery<Equipe>(() =>
-      this.supabase.client.from(DB_TABLES.EQUIPES).select('*').order('nom'),
+    const data = await paginateQuery<Equipe>(
+      () => this.supabase.client.from(DB_TABLES.EQUIPES).select('*').order('nom', { ascending: true }).order('id', { ascending: true })
     );
 
     this._equipesCache = data || [];
@@ -112,7 +112,9 @@ export class ResourceService {
 
   async getAllRoles(): Promise<Role[]> {
     if (this._rolesCache) return this._rolesCache;
-    const data = await paginateQuery<Role>(() => this.supabase.client.from(DB_TABLES.ROLES).select('*').order('nom'));
+    const data = await paginateQuery<Role>(
+      () => this.supabase.client.from(DB_TABLES.ROLES).select('*').order('nom', { ascending: true }).order('id', { ascending: true })
+    );
 
     this._rolesCache = data || [];
     return this._rolesCache;
@@ -145,8 +147,8 @@ export class ResourceService {
 
   async getAllPersonnes(): Promise<Personne[]> {
     if (this._personnesCache) return this._personnesCache;
-    const data = await paginateQuery<Personne>(() =>
-      this.supabase.client.from(DB_TABLES.PERSONNES).select('*').order('nom'),
+    const data = await paginateQuery<Personne>(
+      () => this.supabase.client.from(DB_TABLES.PERSONNES).select('*').order('nom', { ascending: true }).order('id', { ascending: true })
     );
 
     this._personnesCache = data || [];

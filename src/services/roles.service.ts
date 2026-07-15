@@ -37,8 +37,8 @@ export class RolesService {
       return this._rolesCache;
     }
 
-    const data = await paginateQuery<Role>(() =>
-      this.supabase.client.from(DB_TABLES.ROLES).select('*').order('nom', { ascending: true }),
+    const data = await paginateQuery<Role>(
+      () => this.supabase.client.from(DB_TABLES.ROLES).select('*').order('nom', { ascending: true }).order('id', { ascending: true })
     );
 
     this._rolesCache = data || [];
@@ -53,8 +53,8 @@ export class RolesService {
       return this._attachmentsCache;
     }
 
-    const data = await paginateQuery<RoleAttachment>(() =>
-      this.supabase.client.from(DB_TABLES.ROLE_ATTACHMENTS).select('*'),
+    const data = await paginateQuery<RoleAttachment>(
+      () => this.supabase.client.from(DB_TABLES.ROLE_ATTACHMENTS).select('*').order('id', { ascending: true })
     );
 
     this._attachmentsCache = data || [];
