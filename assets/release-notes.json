@@ -1,5 +1,19 @@
 [
   {
+    "version": "2026.07.15",
+    "date": "2026-07-15",
+    "news": [
+      {
+        "title": "Toaster, PaginateOptions et tris par défaut",
+        "items": [
+          "Ajout de tris par défaut sur primary key pour se protéger d'un bug pagination si absence totale de tri.",
+          "Ajout de Toaster pour les notifications de succès et d'erreurs.",
+          "Ajout de PaginateOptions pour configurer la pagination. limit: 1000 ( Taille maximale d'une page de résultats (défaut: 1000)) et maxIterations: 200 (Nombre maximum de pages à charger avant abandon de sécurité (défaut: 200))"
+        ]
+      }
+    ]
+  },
+  {
     "version": "2026.07.14",
     "date": "2026-07-14",
     "news": [
