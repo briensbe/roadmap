@@ -12,6 +12,7 @@ export class SupabaseService {
   private supabase: SupabaseClient;
   private _user = signal<User | null>(null);
   private _isLocalLogout = false;
+  private initializationPromise: Promise<void>;
 
   /**
    * Observable pour suivre l'état de l'authentification (compatibilité ascendante)
@@ -33,18 +34,75 @@ export class SupabaseService {
   constructor() {
     this.supabase = createClient(environment.supabaseUrl, environment.supabaseKey, {
       auth: {
+        flowType: 'pkce',
+        detectSessionInUrl: false,
         // On utilise une version sûre du lock
         lock: (name, acquireTimeout, acquireFn) => this.safeLock(name, acquireFn),
       },
     });
 
+    const supabaseClient = this.supabase;
     this.initializeAuthListener();
-    // Chargement initial de la session pour peupler le signal immédiatement
-    this.supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        this._user.set(session.user);
+
+    // On conserve la promesse d'initialisation pour les guards et récupérations de session
+    this.initializationPromise = (async () => {
+      await this.handleRedirectCode(supabaseClient);
+      try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session?.user) {
+          this._user.set(session.user);
+        }
+      } catch (err) {
+        console.error('Error fetching initial session:', err);
       }
-    });
+    })();
+  }
+
+  private async handleRedirectCode(client: SupabaseClient): Promise<void> {
+    try {
+      const url = new URL(window.location.href);
+      let code = url.searchParams.get('code');
+
+      // Si le code est dans le hash (ex: /#/login?code=xxx ou /#/?code=xxx)
+      if (!code && url.hash.includes('code=')) {
+        const hashQueryIndex = url.hash.indexOf('?');
+        if (hashQueryIndex !== -1) {
+          const hashParams = new URLSearchParams(url.hash.substring(hashQueryIndex));
+          code = hashParams.get('code');
+        }
+      }
+
+      if (code) {
+        console.log('PKCE flow: code found in URL, exchanging for session...');
+        const { error } = await client.auth.exchangeCodeForSession(code);
+        if (error) {
+          console.error('Error exchanging code for session:', error.message);
+        } else {
+          console.log('PKCE flow: session successfully established.');
+        }
+
+        // Nettoyage de l'URL pour éviter de re-traiter le code au rafraîchissement
+        if (url.searchParams.has('code')) {
+          url.searchParams.delete('code');
+        }
+        
+        let cleanHash = url.hash;
+        if (cleanHash.includes('code=')) {
+          const hashQueryIndex = cleanHash.indexOf('?');
+          if (hashQueryIndex !== -1) {
+            const hashParams = new URLSearchParams(cleanHash.substring(hashQueryIndex));
+            hashParams.delete('code');
+            const paramString = hashParams.toString();
+            cleanHash = cleanHash.substring(0, hashQueryIndex) + (paramString ? '?' + paramString : '');
+          }
+        }
+
+        const newUrl = url.pathname + url.search + cleanHash;
+        window.history.replaceState({}, document.title, newUrl);
+      }
+    } catch (err) {
+      console.error('Error handling redirect code:', err);
+    }
   }
 
   private async safeLock<T>(name: string, acquireFn: () => Promise<T>, retries = 5, delayMs = 50): Promise<T> {
@@ -110,6 +168,8 @@ export class SupabaseService {
    * Optimisé pour utiliser le cache local et éviter les appels réseau inutiles.
    */
   async getUser(): Promise<{ data: { user: User | null }; error: any }> {
+    await this.initializationPromise;
+
     const cachedUser = this._user(); // signal -> rapide
     if (cachedUser) {
       return { data: { user: cachedUser }, error: null };
@@ -209,6 +269,7 @@ export class SupabaseService {
   }
 
   async getSession() {
+    await this.initializationPromise;
     return this.supabase.auth.getSession();
   }
 
