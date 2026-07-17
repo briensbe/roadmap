@@ -1,5 +1,17 @@
 [
   {
+    "version": "2026.07.16",
+    "date": "2026-07-16",
+    "news": [
+      {
+        "title": "Bug Authentification Google",
+        "items": [
+          "Correction du problème d'authentification Google causé par le changement HashLocationStrategy, en passant au flux PKCE (Proof Key for Code Exchange)."
+        ]
+      }
+    ]
+  },
+  {
     "version": "2026.07.15",
     "date": "2026-07-15",
     "news": [
