@@ -1,5 +1,53 @@
 [
   {
+    "version": "2026.07.19",
+    "date": "2026-07-19",
+    "news": [
+      {
+        "title": "Aperçu des chiffres",
+        "items": [
+          "Accès direct aux chiffres associés (Initial, Révisé, Prévisionnel, Consommé, Restant) à partir du badge des chiffres dans la vue planification."
+        ],
+        "imageUrl": "assets/release-notes/2026-07-19-chiffres-dans-popover.png",
+        "imageMaxHeight": 200
+      },
+      {
+        "title": "Sélecteur de vue",
+        "items": [
+          "Déplacement du sélecteur de vue vers l'en-tête (icône 'layers' ouvrant un popover épuré) et mise en place d'un tutoriel d'accompagnement dédié."
+        ],
+        "imageUrl": "assets/release-notes/2026-07-19-chgt-vue-layers.png",
+        "imageMaxHeight": 150
+      },
+      {
+        "title": "Skeletons de chargement",
+        "items": [
+          "Ajout d'effets visuels de squelettes (skeletons) de chargement si le temps de chargement des données dépasse 250ms sur les capacités et planifications."
+        ],
+        "imageUrl": "assets/release-notes/2026-07-19-skeleton.png",
+        "imageMaxHeight": 250
+      },
+      {
+        "title": "Raccourcis Dashboard",
+        "items": [
+          "Raccourci de navigation rapide vers les projets spécifiques directement depuis les tuiles du Dashboard grâce à l'icône de lien externe."
+        ],
+        "imageUrl": "assets/release-notes/2026-07-19-dashboard-external-link-project.png",
+        "imageMaxHeight": 70
+      },
+      {
+        "title": "Export et partage groupé des anomalies Triskell",
+        "items": [
+          "Nouvelle fonctionnalité d'exportation des anomalies (dépassements et écarts de révision) depuis la vue d'importation Triskell.",
+          "Export global sous format Markdown (prêt à coller sur Slack/Teams/Email), Excel (.xlsx) et CSV, basé uniquement sur vos données filtrées.",
+          "Génération et copie de rapports individuels personnalisés pour chaque Chef de Projet en un clic pour les prévenir rapidement sur Slack/Teams."
+        ],
+        "imageUrl": "assets/release-notes/2026-07-19-exports-anomalies.png",
+        "imageMaxHeight": 300
+      }
+    ]
+  },
+  {
     "version": "2026.07.16",
     "date": "2026-07-16",
     "news": [
