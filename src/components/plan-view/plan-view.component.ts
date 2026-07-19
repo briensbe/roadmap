@@ -923,19 +923,31 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private startTutorial(force = false) {
-    const tutorialKey = 'tutorial-actions-menu-v1';
-    if (!force && (localStorage.getItem(tutorialKey) || this.tutorialStarted)) return;
+    const keyActions = 'tutorial-actions-menu-v1';
+    const keyVue = 'tutorial-view-mode-selector-v1';
+
+    const hasSeenActions = !!localStorage.getItem(keyActions);
+    const hasSeenVue = !!localStorage.getItem(keyVue);
+
+    if (!force && hasSeenActions && hasSeenVue) return;
+
+    // Determine mode
+    let mode: 'full' | 'vue-only' = 'full';
+    if (!force && hasSeenActions && !hasSeenVue) {
+      mode = 'vue-only';
+    }
+
     this.tutorialStarted = true;
 
     if (force) {
-      this.runTutorialLogic(tutorialKey);
+      this.runTutorialLogic(mode);
     } else {
       // We use a timeout to ensure data is loaded and DOM is fully rendered on first load
-      setTimeout(() => this.runTutorialLogic(tutorialKey), 2000);
+      setTimeout(() => this.runTutorialLogic(mode), 2000);
     }
   }
 
-  private runTutorialLogic(tutorialKey: string) {
+  private runTutorialLogic(mode: 'full' | 'vue-only') {
     // On ouvre les filtres globaux au début du tutoriel
     // pour s'assurer que la barre de recherche est bien présente et mesurable par driver.js
     if (!this.showGlobalFilters()) {
@@ -943,8 +955,10 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       this.cdr.detectChanges();
     }
 
-    const steps: any[] = [
-      {
+    const steps: any[] = [];
+
+    if (mode === 'full') {
+      steps.push({
         element: '[data-tour="actions-menu"]',
         popover: {
           title: 'Nouveau menu "Actions"',
@@ -954,54 +968,68 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
           align: 'end',
           showButtons: ['next', 'previous', 'close'],
         },
-      },
-    ];
-
-    // Check for line menu presence now that we've waited for render
-    const hasLineMenu = document.querySelector('[data-tour="line-menu"]');
-    if (hasLineMenu) {
-      steps.push({
-        element: '[data-tour="line-menu"]',
-        popover: {
-          title: 'Options de ligne',
-          description: 'Retrouvez ici les actions spécifiques à cette ligne (ajout de ressource, suppression, etc.).',
-          side: 'right',
-          align: 'start',
-          showButtons: ['next', 'previous', 'close'],
-        },
       });
     }
 
-    // Check for drag handle presence (Project Mode)
-    const hasDragHandle = document.querySelector('[data-tour="drag-handle"]');
-    if (hasDragHandle) {
-      steps.push({
-        element: '[data-tour="drag-handle"]',
-        popover: {
-          title: 'Réorganisation',
-          description:
-            'Désormais, uniquement dans la Vue "Par Projets", les lignes déplaçables sont indiquées avec la poignée cdkdraghandle.',
-          side: 'right',
-          align: 'start',
-          showButtons: ['next', 'previous', 'close'],
-        },
-      });
-    }
-
-    // La recherche globale en fin de tutorial
     steps.push({
-      element: '.header-search-bar',
+      element: '[data-tour="view-mode-selector"]',
       popover: {
-        title: 'Recherche globale',
-        description: 'Vous pouvez filtrer les lignes projets visibles via une chaîne de caractères.',
+        title: 'Choix de la Vue',
+        description:
+          'Le choix de la vue (Par Projet, Par Équipe, Par Ressources) a été déplacé ici. Cliquez sur cette icône pour changer de vue.',
         side: 'bottom',
         align: 'start',
         showButtons: ['next', 'previous', 'close'],
       },
     });
 
+    if (mode === 'full') {
+      // Check for line menu presence now that we've waited for render
+      const hasLineMenu = document.querySelector('[data-tour="line-menu"]');
+      if (hasLineMenu) {
+        steps.push({
+          element: '[data-tour="line-menu"]',
+          popover: {
+            title: 'Options de ligne',
+            description: 'Retrouvez ici les actions spécifiques à cette ligne (ajout de ressource, suppression, etc.).',
+            side: 'right',
+            align: 'start',
+            showButtons: ['next', 'previous', 'close'],
+          },
+        });
+      }
+
+      // Check for drag handle presence (Project Mode)
+      const hasDragHandle = document.querySelector('[data-tour="drag-handle"]');
+      if (hasDragHandle) {
+        steps.push({
+          element: '[data-tour="drag-handle"]',
+          popover: {
+            title: 'Réorganisation',
+            description:
+              'Désormais, uniquement dans la Vue "Par Projets", les lignes déplaçables sont indiquées avec la poignée cdkdraghandle.',
+            side: 'right',
+            align: 'start',
+            showButtons: ['next', 'previous', 'close'],
+          },
+        });
+      }
+
+      // La recherche globale en fin de tutorial
+      steps.push({
+        element: '.header-search-bar',
+        popover: {
+          title: 'Recherche globale',
+          description: 'Vous pouvez filtrer les lignes projets visibles via une chaîne de caractères.',
+          side: 'bottom',
+          align: 'start',
+          showButtons: ['next', 'previous', 'close'],
+        },
+      });
+    }
+
     const driverObj = driver({
-      showProgress: true,
+      showProgress: steps.length > 1,
       nextBtnText: 'Suivant',
       prevBtnText: 'Précédent',
       doneBtnText: 'Terminer',
@@ -1011,7 +1039,12 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       popoverClass: 'premium-driver-popover',
       steps: steps,
       onDestroyed: () => {
-        localStorage.setItem(tutorialKey, 'true');
+        if (mode === 'full') {
+          localStorage.setItem('tutorial-actions-menu-v1', 'true');
+          localStorage.setItem('tutorial-view-mode-selector-v1', 'true');
+        } else {
+          localStorage.setItem('tutorial-view-mode-selector-v1', 'true');
+        }
       },
     });
 
