@@ -157,110 +157,147 @@
       </div>
 
       <!-- Body Rows -->
+      <!-- Body Rows -->
       <div class="calendar-body">
-        <ng-container *ngFor="let teamRow of filteredTeamRows">
-          <!-- Team Row -->
-          <div class="calendar-row team-row-container">
-            <div
-              class="label-cell team-label-cell sticky-col"
-              (click)="toggleTeam(teamRow)"
-              [style.cursor]="teamRow.resources.length > 0 ? 'pointer' : 'default'">
-              <div class="color-bar-container">
-                <div class="color-bar-v" [style.background-color]="teamRow.equipe.color || '#94a3b8'"></div>
-              </div>
-              <lucide-icon
-                [name]="teamRow.expanded ? 'chevron-down' : 'chevron-right'"
-                [size]="18"
-                class="expand-icon-l"
-                [style.visibility]="teamRow.resources.length > 0 ? 'visible' : 'hidden'"></lucide-icon>
-              <div class="row-info-stack-wrapper">
-                <div class="info-stack">
-                  <span
-                    class="info-label"
-                    (mouseenter)="showTooltip($event, teamRow.equipe.nom)"
-                    (mouseleave)="hideTooltip()"
-                    >{{ teamRow.equipe.nom }}</span
-                  >
+        @if (showSkeleton) {
+          <!-- Skeleton Rows -->
+          @for (placeholder of [1, 2, 3, 4]; track placeholder) {
+            <div class="calendar-row team-row-container skeleton-row">
+              <div class="label-cell team-label-cell sticky-col">
+                <div class="color-bar-container">
+                  <div class="color-bar-v" style="background-color: #e2e8f0"></div>
                 </div>
-              </div>
-              <button class="btn-hover-add" (click)="openAddResourceModal(teamRow.equipe); $event.stopPropagation()">
-                <lucide-icon [name]="'plus'" [size]="14"></lucide-icon>
-                Ressource
-              </button>
-            </div>
-            <div class="weeks-cells-container">
-              <div *ngFor="let week of displayedWeeks" class="week-cell team-cell">
-                <div class="team-summary" *ngIf="getTeamTotalCapacity(teamRow, week) > 0">
-                  <div class="capacity-value">
-                    {{ getTeamTotalCapacity(teamRow, week) | number: '1.0-1' }}
-                  </div>
-                  <div class="days-value" *ngIf="showDaysInCells">
-                    {{ getTeamTotalDays(teamRow, week) | number: '1.1-1' }}j
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Resource Rows -->
-          <ng-container *ngIf="teamRow.expanded">
-            <div
-              *ngFor="let resource of teamRow.resources"
-              class="calendar-row resource-row-container"
-              [attr.data-resource-id]="resource.uniqueId"
-              (mousedown)="onMouseDown($event, resource)"
-              (mousemove)="onMouseMove($event, resource)"
-              (mouseup)="onMouseUp()"
-              (mouseleave)="onMouseUp()">
-              <div class="label-cell resource-label-cell sticky-col">
-                <div class="resource-icon-wrapper" [style.background-color]="resource.color || '#e2e8f0'">
-                  <lucide-icon
-                    [name]="resource.type === 'role' ? 'contact' : 'user'"
-                    [size]="14"
-                    class="resource-icon"></lucide-icon>
-                </div>
-                <span
-                  class="resource-name"
-                  (mouseenter)="showTooltip($event, resource.label)"
-                  (mouseleave)="hideTooltip()"
-                  >{{ resource.label }}</span
-                >
-                <div
-                  class="resource-total-badge"
-                  [class.anchor-active]="activeAnchorId === resource.uniqueId"
-                  (click)="openYearPopover($event, resource.uniqueId)"
-                  (mouseenter)="$event.stopPropagation(); showTooltip($event, 'Cliquer pour filtrer par année')"
-                  (mouseleave)="hideTooltip()">
-                  <span class="badge-prefix">{{ getBadgePrefix() }}</span>
-                  <span class="badge-val">{{ getResourceTotalPlannedDays(resource) | number: '1.0-1' }}</span>
-                  <span class="badge-unit">j</span>
-                </div>
-                <button class="btn-hover-delete" (click)="removeResource(resource, teamRow.equipe)">×</button>
+                <div class="skeleton-line" style="width: 140px; height: 16px; margin-left: 28px; border-radius: 4px;"></div>
               </div>
               <div class="weeks-cells-container">
-                <div
-                  *ngFor="let week of displayedWeeks; let i = index"
-                  class="week-cell resource-cell"
-                  [class.selected]="isCellSelected(resource, week)"
-                  [class.has-capacity]="getCapacite(resource, week) > 0"
-                  [attr.data-week-index]="i">
-                  <div class="cell-content" *ngIf="getCapacite(resource, week) > 0">
-                    <div class="capacity-value">{{ getCapacite(resource, week) }}</div>
+                @for (week of displayedWeeks; track week) {
+                  <div class="week-cell team-cell">
+                    <div class="skeleton-line" style="width: 24px; height: 14px; opacity: 0.3; border-radius: 3px;"></div>
+                  </div>
+                }
+              </div>
+            </div>
+            @if (placeholder === 1 || placeholder === 3) {
+              <div class="calendar-row resource-row-container skeleton-row">
+                <div class="label-cell resource-label-cell sticky-col" style="padding-left: 24px;">
+                  <div class="resource-icon-wrapper" style="background-color: #f1f5f9; width: 20px; height: 20px; border-radius: 4px;"></div>
+                  <div class="skeleton-line" style="width: 100px; height: 14px; margin-left: 8px; border-radius: 4px;"></div>
+                </div>
+                <div class="weeks-cells-container">
+                  @for (week of displayedWeeks; track week) {
+                    <div class="week-cell resource-cell">
+                      <div class="skeleton-line" style="width: 16px; height: 12px; opacity: 0.2; border-radius: 3px;"></div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          }
+        } @else {
+          <ng-container *ngFor="let teamRow of filteredTeamRows">
+            <!-- Team Row -->
+            <div class="calendar-row team-row-container">
+              <div
+                class="label-cell team-label-cell sticky-col"
+                (click)="toggleTeam(teamRow)"
+                [style.cursor]="teamRow.resources.length > 0 ? 'pointer' : 'default'">
+                <div class="color-bar-container">
+                  <div class="color-bar-v" [style.background-color]="teamRow.equipe.color || '#94a3b8'"></div>
+                </div>
+                <lucide-icon
+                  [name]="teamRow.expanded ? 'chevron-down' : 'chevron-right'"
+                  [size]="18"
+                  class="expand-icon-l"
+                  [style.visibility]="teamRow.resources.length > 0 ? 'visible' : 'hidden'"></lucide-icon>
+                <div class="row-info-stack-wrapper">
+                  <div class="info-stack">
+                    <span
+                      class="info-label"
+                      (mouseenter)="showTooltip($event, teamRow.equipe.nom)"
+                      (mouseleave)="hideTooltip()"
+                      >{{ teamRow.equipe.nom }}</span
+                    >
+                  </div>
+                </div>
+                <button class="btn-hover-add" (click)="openAddResourceModal(teamRow.equipe); $event.stopPropagation()">
+                  <lucide-icon [name]="'plus'" [size]="14"></lucide-icon>
+                  Ressource
+                </button>
+              </div>
+              <div class="weeks-cells-container">
+                <div *ngFor="let week of displayedWeeks" class="week-cell team-cell">
+                  <div class="team-summary" *ngIf="getTeamTotalCapacity(teamRow, week) > 0">
+                    <div class="capacity-value">
+                      {{ getTeamTotalCapacity(teamRow, week) | number: '1.0-1' }}
+                    </div>
                     <div class="days-value" *ngIf="showDaysInCells">
-                      {{ getCapacite(resource, week) * resource.jours_par_semaine | number: '1.1-1' }}j
+                      {{ getTeamTotalDays(teamRow, week) | number: '1.1-1' }}j
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </ng-container>
-        </ng-container>
 
-        <!-- Empty State -->
-        <div *ngIf="filteredTeamRows.length === 0" class="calendar-row empty-state-row">
-          <div class="label-cell empty-state-label sticky-col">Aucune équipe correspondante</div>
-          <div class="weeks-cells-container empty-state-weeks">Aucune donnée</div>
-        </div>
+            <!-- Resource Rows -->
+            <ng-container *ngIf="teamRow.expanded">
+              <div
+                *ngFor="let resource of teamRow.resources"
+                class="calendar-row resource-row-container"
+                [attr.data-resource-id]="resource.uniqueId"
+                (mousedown)="onMouseDown($event, resource)"
+                (mousemove)="onMouseMove($event, resource)"
+                (mouseup)="onMouseUp()"
+                (mouseleave)="onMouseUp()">
+                <div class="label-cell resource-label-cell sticky-col">
+                  <div class="resource-icon-wrapper" [style.background-color]="resource.color || '#e2e8f0'">
+                    <lucide-icon
+                      [name]="resource.type === 'role' ? 'contact' : 'user'"
+                      [size]="14"
+                      class="resource-icon"></lucide-icon>
+                  </div>
+                  <span
+                    class="resource-name"
+                    (mouseenter)="showTooltip($event, resource.label)"
+                    (mouseleave)="hideTooltip()"
+                    >{{ resource.label }}</span
+                  >
+                  <div
+                    class="resource-total-badge"
+                    [class.anchor-active]="activeAnchorId === resource.uniqueId"
+                    (click)="openYearPopover($event, resource.uniqueId)"
+                    (mouseenter)="$event.stopPropagation(); showTooltip($event, 'Cliquer pour filtrer par année')"
+                    (mouseleave)="hideTooltip()">
+                    <span class="badge-prefix">{{ getBadgePrefix() }}</span>
+                    <span class="badge-val">{{ getResourceTotalPlannedDays(resource) | number: '1.0-1' }}</span>
+                    <span class="badge-unit">j</span>
+                  </div>
+                  <button class="btn-hover-delete" (click)="removeResource(resource, teamRow.equipe)">×</button>
+                </div>
+                <div class="weeks-cells-container">
+                  <div
+                    *ngFor="let week of displayedWeeks; let i = index"
+                    class="week-cell resource-cell"
+                    [class.selected]="isCellSelected(resource, week)"
+                    [class.has-capacity]="getCapacite(resource, week) > 0"
+                    [attr.data-week-index]="i">
+                    <div class="cell-content" *ngIf="getCapacite(resource, week) > 0">
+                      <div class="capacity-value">{{ getCapacite(resource, week) }}</div>
+                      <div class="days-value" *ngIf="showDaysInCells">
+                        {{ getCapacite(resource, week) * resource.jours_par_semaine | number: '1.1-1' }}j
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </ng-container>
+          </ng-container>
+
+          <!-- Empty State -->
+          <div *ngIf="filteredTeamRows.length === 0" class="calendar-row empty-state-row">
+            <div class="label-cell empty-state-label sticky-col">Aucune équipe correspondante</div>
+            <div class="weeks-cells-container empty-state-weeks">Aucune donnée</div>
+          </div>
+        }
       </div>
     </div>
     @if (selectedCells.length > 0 && isSelectionFinished) {

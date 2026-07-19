@@ -1064,9 +1064,111 @@
 
       <!-- Data rows -->
       <div class="calendar-body">
-        <!-- Tree View -->
-        <!-- Tree View -->
-        @if (displayFormat() === 'tree') {
+        @if (showSkeleton) {
+          <!-- Skeleton Loader -->
+          @for (placeholder of [1, 2, 3, 4, 5]; track placeholder) {
+            <div class="calendar-row skeleton-row">
+              <!-- Label cell matching current format -->
+              <div
+                [class]="displayFormat() === 'tree' ? 'label-cell row-label-parent' : 'label-cell row-label-flat'"
+                [style.width.px]="labelColumnWidth()"
+                [style.minWidth.px]="labelColumnWidth()">
+                <div class="row-label-content" style="display: flex; align-items: center; gap: 8px;">
+                  <div class="color-bar-container">
+                    <div class="color-bar-v" style="background-color: #e2e8f0"></div>
+                  </div>
+                  @if (displayFormat() === 'tree') {
+                    <div style="width: 16px; height: 16px; background-color: #f1f5f9; border-radius: 4px;"></div>
+                  }
+                  <div class="skeleton-line" style="width: 130px; height: 16px; border-radius: 4px;"></div>
+                </div>
+              </div>
+
+              <!-- Saisie Mode cells -->
+              @if (planningMode() === 'saisie') {
+                <div class="weeks-container">
+                  @for (week of displayedWeeks; track week; let i = $index) {
+                    <div class="week-cell team-cell" style="display: flex; align-items: center; justify-content: center;">
+                      @if (placeholder % 2 === 0 && i % 4 === 0) {
+                        <div class="skeleton-line" style="width: 20px; height: 12px; opacity: 0.2; border-radius: 3px;"></div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+
+              <!-- Visualisation Mode: Gantt Timeline -->
+              @if (planningMode() === 'visualisation') {
+                <div class="weeks-container gantt-timeline-row" style="position: relative; flex-grow: 1; min-height: 40px; display: flex; align-items: center;">
+                  <!-- Background grid matching months -->
+                  <div class="gantt-grid-bg" style="position: absolute; inset: 0; display: flex; pointer-events: none; z-index: 1;">
+                    @for (m of displayedMonths; track m) {
+                      <div
+                        class="gantt-grid-col"
+                        [style.flex-grow]="m.weeks.length"
+                        [style.flex-basis]="'calc(var(--cell-width, 80px) * ' + m.weeks.length + ')'"
+                        [style.min-width]="'calc(var(--cell-width, 80px) * ' + m.weeks.length + ')'"
+                        style="border-right: 1px solid #f1f5f9; height: 100%; box-sizing: border-box;"></div>
+                    }
+                  </div>
+                  <!-- Shimmer Gantt bar placeholder -->
+                  <div
+                    class="skeleton-line"
+                    [style.margin-left.%]="placeholder === 1 ? 15 : placeholder === 2 ? 35 : placeholder === 3 ? 5 : placeholder === 4 ? 60 : 25"
+                    [style.width.%]="placeholder === 1 ? 30 : placeholder === 2 ? 20 : placeholder === 3 ? 45 : placeholder === 4 ? 25 : 35"
+                    style="height: 18px; border-radius: 9px; z-index: 2; opacity: 0.7;"></div>
+                </div>
+              }
+            </div>
+
+            <!-- Nested rows in tree mode for child/resources -->
+            @if (displayFormat() === 'tree' && (placeholder === 1 || placeholder === 3)) {
+              <div class="calendar-row skeleton-row" style="opacity: 0.85;">
+                <div
+                  class="label-cell row-label-child"
+                  [style.width.px]="labelColumnWidth()"
+                  [style.minWidth.px]="labelColumnWidth()"
+                  style="padding-left: 24px;">
+                  <div class="row-label-content" style="display: flex; align-items: center; gap: 8px;">
+                    <div style="width: 14px; height: 14px; background-color: #f1f5f9; border-radius: 3px;"></div>
+                    <div class="skeleton-line" style="width: 100px; height: 14px; border-radius: 4px;"></div>
+                  </div>
+                </div>
+                
+                @if (planningMode() === 'saisie') {
+                  <div class="weeks-container">
+                    @for (week of displayedWeeks; track week) {
+                      <div class="week-cell team-cell"></div>
+                    }
+                  </div>
+                }
+
+                @if (planningMode() === 'visualisation') {
+                  <div class="weeks-container gantt-timeline-row" style="position: relative; flex-grow: 1; min-height: 40px; display: flex; align-items: center;">
+                    <div class="gantt-grid-bg" style="position: absolute; inset: 0; display: flex; pointer-events: none; z-index: 1;">
+                      @for (m of displayedMonths; track m) {
+                        <div
+                          class="gantt-grid-col"
+                          [style.flex-grow]="m.weeks.length"
+                          [style.flex-basis]="'calc(var(--cell-width, 80px) * ' + m.weeks.length + ')'"
+                          [style.min-width]="'calc(var(--cell-width, 80px) * ' + m.weeks.length + ')'"
+                          style="border-right: 1px solid #f1f5f9; height: 100%; box-sizing: border-box;"></div>
+                      }
+                    </div>
+                    <div
+                      class="skeleton-line"
+                      [style.margin-left.%]="placeholder === 1 ? 20 : 40"
+                      [style.width.%]="placeholder === 1 ? 25 : 15"
+                      style="height: 14px; border-radius: 7px; z-index: 2; opacity: 0.5;"></div>
+                  </div>
+                }
+              </div>
+            }
+          }
+        } @else {
+          <!-- Tree View -->
+          <!-- Tree View -->
+          @if (displayFormat() === 'tree') {
           <div cdkDropList (cdkDropListDropped)="drop($event)">
             @for (row of rows; track trackByRow($index, row)) {
               <div cdkDrag [cdkDragDisabled]="viewMode() !== 'project'" class="project-draggable-group">
@@ -2202,6 +2304,7 @@
           <div class="empty-state">
             <p>Aucune donnée</p>
           </div>
+        }
         }
       </div>
     </div>

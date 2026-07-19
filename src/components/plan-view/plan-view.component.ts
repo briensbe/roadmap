@@ -226,6 +226,7 @@ interface FlatRow {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
+  showSkeleton: boolean = false;
   @ViewChild('tooltipElement') tooltipElement?: ElementRef<HTMLElement>;
   @ViewChild('dragProjectionTooltip') dragProjectionTooltip?: ElementRef<HTMLElement>;
   @ViewChild('headerRow') headerRowElement?: ElementRef<HTMLElement>;
@@ -1357,6 +1358,11 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async loadData() {
+    const timer = setTimeout(() => {
+      this.showSkeleton = true;
+      this.cdr.markForCheck();
+    }, 250);
+
     try {
       const [
         equipes,
@@ -1412,6 +1418,10 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       this.cdr.markForCheck();
     } catch (error) {
       console.error('Error loading data:', error);
+    } finally {
+      clearTimeout(timer);
+      this.showSkeleton = false;
+      this.cdr.markForCheck();
     }
   }
 

@@ -62,6 +62,7 @@ interface TeamRow {
 export class CapacityViewComponent implements OnInit, OnDestroy {
   displayedWeeks: Date[] = [];
   currentDate: Date = new Date();
+  showSkeleton: boolean = false;
 
   teamRows: TeamRow[] = [];
   allEquipes: Equipe[] = [];
@@ -207,6 +208,11 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   }
 
   async loadData() {
+    const timer = setTimeout(() => {
+      this.showSkeleton = true;
+      this.cdr.markForCheck();
+    }, 250);
+
     try {
       // 1️⃣ Load ALL data in parallel (no nested loops with await!)
       const [equipes, allCapacities, roles, personnes] = await Promise.all([
@@ -272,6 +278,10 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
       });
     } catch (error) {
       console.error('Error loading data:', error);
+    } finally {
+      clearTimeout(timer);
+      this.showSkeleton = false;
+      this.cdr.markForCheck();
     }
   }
 
