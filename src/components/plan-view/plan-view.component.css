@@ -3359,3 +3359,30 @@ input:checked + .slider:before {
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite ease-in-out;
 }
+
+/* ===== Chiffre Popover Item Styling ===== */
+.chiffre-popover {
+  width: 210px !important;
+}
+
+.chiffre-popover .popover-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.chiffre-popover .popover-item-val {
+  font-size: 11px;
+  font-weight: 700;
+  color: #7c3aed;
+  background: #f5f3ff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.chiffre-popover .popover-item.active .popover-item-val {
+  color: #ffffff;
+  background: #7c3aed;
+}

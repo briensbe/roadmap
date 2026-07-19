@@ -1446,7 +1446,11 @@
                                         (click)="
                                           openChiffrePopover(
                                             $event,
-                                            'chiffre-' + getResourceUniqueId(resource, child, row)
+                                            'chiffre-' + getResourceUniqueId(resource, child, row),
+                                            child.id,
+                                            row.id,
+                                            resource.resourceId,
+                                            resource.type
                                           )
                                         "
                                         title="Cliquer pour changer la catégorie">
@@ -1871,7 +1875,11 @@
                                       (click)="
                                         openChiffrePopover(
                                           $event,
-                                          'chiffre-' + getResourceUniqueId(resource, child, row)
+                                          'chiffre-' + getResourceUniqueId(resource, child, row),
+                                          row.id,
+                                          child.id,
+                                          resource.resourceId,
+                                          resource.type
                                         )
                                       "
                                       title="Cliquer pour changer la catégorie">
@@ -1901,7 +1909,11 @@
                                       (click)="
                                         openChiffrePopover(
                                           $event,
-                                          'chiffre-' + getResourceUniqueId(resource, child, row)
+                                          'chiffre-' + getResourceUniqueId(resource, child, row),
+                                          row.id.split('_')[0],
+                                          resource.id,
+                                          resource.resourceId,
+                                          resource.type
                                         )
                                       "
                                       title="Cliquer pour changer la catégorie">
@@ -2123,7 +2135,11 @@
                       (click)="
                         openChiffrePopover(
                           $event,
-                          'chiffre-' + getResourceUniqueId(row.resource, row.child, row.parent)
+                          'chiffre-' + getResourceUniqueId(row.resource, row.child, row.parent),
+                          row.child.id,
+                          row.parent.id,
+                          row.resource.resourceId,
+                          row.resource.type
                         )
                       "
                       title="Cliquer pour changer la catégorie">
@@ -2148,7 +2164,11 @@
                       (click)="
                         openChiffrePopover(
                           $event,
-                          'chiffre-' + getResourceUniqueId(row.resource, row.child, row.parent)
+                          'chiffre-' + getResourceUniqueId(row.resource, row.child, row.parent),
+                          row.parent.id,
+                          row.child.id,
+                          row.resource.resourceId,
+                          row.resource.type
                         )
                       "
                       title="Cliquer pour changer la catégorie">
@@ -2178,7 +2198,11 @@
                       (click)="
                         openChiffrePopover(
                           $event,
-                          'chiffre-' + getResourceUniqueId(row.resource, row.child, row.parent)
+                          'chiffre-' + getResourceUniqueId(row.resource, row.child, row.parent),
+                          row.parent.id.split('_')[0],
+                          row.resource.id,
+                          row.resource.resourceId,
+                          row.resource.type
                         )
                       "
                       title="Cliquer pour changer la catégorie">
@@ -2658,28 +2682,46 @@
           class="popover-item"
           [class.active]="chiffreMode() === 'initial'"
           (click)="switchChiffreMode('initial')">
-          Initial
+          <span>Initial</span>
+          <span class="popover-item-val">
+            {{ getChiffrePreviewValue('initial') !== null ? (getChiffrePreviewValue('initial') | number: '1.0-1') + 'j' : '—' }}
+          </span>
         </button>
-        <button class="popover-item" [class.active]="chiffreMode() === 'revise'" (click)="switchChiffreMode('revise')">
-          Révisé
+        <button
+          class="popover-item"
+          [class.active]="chiffreMode() === 'revise'"
+          (click)="switchChiffreMode('revise')">
+          <span>Révisé</span>
+          <span class="popover-item-val">
+            {{ getChiffrePreviewValue('revise') !== null ? (getChiffrePreviewValue('revise') | number: '1.0-1') + 'j' : '—' }}
+          </span>
         </button>
         <button
           class="popover-item"
           [class.active]="chiffreMode() === 'previsionnel'"
           (click)="switchChiffreMode('previsionnel')">
-          Prévisionnel
+          <span>Prévisionnel</span>
+          <span class="popover-item-val">
+            {{ getChiffrePreviewValue('previsionnel') !== null ? (getChiffrePreviewValue('previsionnel') | number: '1.0-1') + 'j' : '—' }}
+          </span>
         </button>
         <button
           class="popover-item"
           [class.active]="chiffreMode() === 'consomme'"
           (click)="switchChiffreMode('consomme')">
-          Consommé
+          <span>Consommé</span>
+          <span class="popover-item-val">
+            {{ getChiffrePreviewValue('consomme') !== null ? (getChiffrePreviewValue('consomme') | number: '1.0-1') + 'j' : '—' }}
+          </span>
         </button>
         <button
           class="popover-item"
           [class.active]="chiffreMode() === 'restant'"
           (click)="switchChiffreMode('restant')">
-          Restant
+          <span>Restant</span>
+          <span class="popover-item-val">
+            {{ getChiffrePreviewValue('restant') !== null ? (getChiffrePreviewValue('restant') | number: '1.0-1') + 'j' : '—' }}
+          </span>
         </button>
       </div>
     </div>

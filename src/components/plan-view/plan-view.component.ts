@@ -300,6 +300,12 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   chiffrePopoverPosition: PopoverPosition | null = null;
   chiffrePopoverArrowSide: 'top' | 'bottom' = 'top';
   activeChiffreAnchorId: string | null = null;
+  activeChiffrePopoverData: {
+    teamId: string;
+    projectId: string;
+    resourceId?: string;
+    resourceType?: 'role' | 'personne';
+  } | null = null;
   popoverPosition: PopoverPosition | null = null;
   popoverArrowSide: 'top' | 'bottom' = 'top';
   activeAnchorId: string | null = null;
@@ -341,6 +347,8 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.openJalonDropdown = false;
     this.showYearPopover = false;
     this.showChiffrePopover = false;
+    this.activeChiffreAnchorId = null;
+    this.activeChiffrePopoverData = null;
     this.clearSelection();
     this.cdr.markForCheck();
   }
@@ -897,6 +905,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
             this.activeAnchorId = null;
             this.showChiffrePopover = false;
             this.activeChiffreAnchorId = null;
+            this.activeChiffrePopoverData = null;
             this.cdr.markForCheck();
           });
         }
@@ -4532,11 +4541,12 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
    * Peut aussi prendre en compte une ressource spécifique pour une résolution plus granulaire du service.
    * Retourne null si aucun chiffre trouvé.
    */
-  getChiffreValue(
+  getChiffreValueForMode(
     teamId: string,
     projectId: string,
-    resourceId?: string,
-    resourceType?: 'role' | 'personne',
+    resourceId: string | undefined,
+    resourceType: 'role' | 'personne' | undefined,
+    mode: 'initial' | 'revise' | 'previsionnel' | 'consomme' | 'restant',
   ): number | null {
     let idService: string | null = null;
 
@@ -4559,7 +4569,6 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     const chiffre = this.allChiffres.find((c) => c.id_projet === projectId && c.id_service === idService);
     if (!chiffre) return null;
 
-    const mode = this.chiffreMode();
     if (mode === 'restant') {
       const previsionnel = chiffre.previsionnel ?? 0;
       const consomme = chiffre.consomme ?? 0;
@@ -4567,6 +4576,26 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     const value = (chiffre as any)[mode];
     return value !== undefined ? value : null;
+  }
+
+  getChiffreValue(
+    teamId: string,
+    projectId: string,
+    resourceId?: string,
+    resourceType?: 'role' | 'personne',
+  ): number | null {
+    return this.getChiffreValueForMode(teamId, projectId, resourceId, resourceType, this.chiffreMode());
+  }
+
+  getChiffrePreviewValue(mode: 'initial' | 'revise' | 'previsionnel' | 'consomme' | 'restant'): number | null {
+    if (!this.activeChiffrePopoverData) return null;
+    return this.getChiffreValueForMode(
+      this.activeChiffrePopoverData.teamId,
+      this.activeChiffrePopoverData.projectId,
+      this.activeChiffrePopoverData.resourceId,
+      this.activeChiffrePopoverData.resourceType,
+      mode,
+    );
   }
 
   /** Libellé court du mode actif pour le badge chiffre. */
@@ -4588,19 +4617,29 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   switchChiffreMode(mode: 'initial' | 'revise' | 'previsionnel' | 'consomme' | 'restant') {
     this.chiffreMode.set(mode);
     this.showChiffrePopover = false;
+    this.activeChiffrePopoverData = null;
   }
 
-  openChiffrePopover(event: MouseEvent, anchorId: string) {
+  openChiffrePopover(
+    event: MouseEvent,
+    anchorId: string,
+    teamId: string,
+    projectId: string,
+    resourceId?: string,
+    resourceType?: 'role' | 'personne',
+  ) {
     event.stopPropagation();
     const targetElement = event.currentTarget as HTMLElement;
 
     if (this.showChiffrePopover && this.activeChiffreAnchorId === anchorId) {
       this.showChiffrePopover = false;
       this.activeChiffreAnchorId = null;
+      this.activeChiffrePopoverData = null;
       return;
     }
 
     this.activeChiffreAnchorId = anchorId;
+    this.activeChiffrePopoverData = { teamId, projectId, resourceId, resourceType };
     this.showChiffrePopover = true;
 
     // Calculate best position
@@ -4610,7 +4649,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       viewportHeight: window.innerHeight,
       viewportWidth: window.innerWidth,
       popoverHeight: 180, // Estimated height of the chiffre popover
-      popoverWidth: 160,
+      popoverWidth: 210, // A bit wider to accommodate values
     });
     this.chiffrePopoverPosition = pos;
     this.chiffrePopoverArrowSide = pos.arrowSide;
@@ -4623,6 +4662,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       }
       this.showChiffrePopover = false;
       this.activeChiffreAnchorId = null;
+      this.activeChiffrePopoverData = null;
       this.cdr.markForCheck();
       document.removeEventListener('click', closeHandler);
     };
