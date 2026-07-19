@@ -703,7 +703,7 @@
           <div class="header-label-content">
             <div class="view-mode-popover-wrapper">
               <span style="font-weight: 600">{{
-                viewMode() === 'project' ? 'Projets / Équipes' : 'Équipes / Projets'
+                viewMode() === 'project' ? 'Projets / Équipes' : viewMode() === 'resource' ? 'Équipes / Ressources' : 'Équipes / Projets'
               }}</span>
               <button
                 class="view-mode-trigger"
