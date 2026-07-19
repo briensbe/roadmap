@@ -144,8 +144,6 @@ export class ChiffresService {
     // For now, we'll sum all charges from the project after the date
     const data = await this.chargeService.getChargesByProjectIdAndDate(idProjet, fromDate);
 
-    console.log(data);
-
     // dans data je veux filtrer à la fois sur les role_id ou les personne_id non nulls
     //maintenant je veux filtrer sur le service correspondant
     const filteredData = [];
@@ -173,7 +171,6 @@ export class ChiffresService {
       }
     }
 
-    console.log('filteredData : ' + filteredData);
     //on ajoute les charges des roles et des personnes qui sont associées au service
     const total = filteredData.reduce(
       (sum, charge) => sum + (charge.unite_ressource || 0) * (charge.jours_par_semaine || 0),

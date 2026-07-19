@@ -46,7 +46,6 @@ export class ChiffresModalComponent implements OnInit, OnChanges {
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['visible'] && changes['visible'].currentValue && this.idProjet) {
-      console.log('Loading chiffres for project:', this.idProjet);
       this.loadChiffres();
     }
   }
