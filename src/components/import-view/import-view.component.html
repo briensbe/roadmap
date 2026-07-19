@@ -690,6 +690,12 @@
             </select>
             <lucide-icon [img]="ChevronDown" [size]="14" class="filter-select-icon"></lucide-icon>
           </div>
+
+          <!-- Export Button -->
+          <button (click)="showExportModal.set(true)" class="btn-export-anomalies" title="Exporter les anomalies actuellement filtrées">
+            <lucide-icon [img]="Share2" [size]="15"></lucide-icon>
+            <span>Exporter</span>
+          </button>
         </div>
       </div>
 
@@ -1119,6 +1125,83 @@
           </button>
         }
         <button (click)="closeReconcileModal()" class="btn btn-secondary">Annuler</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Export Anomalies Modal -->
+@if (showExportModal()) {
+  <div class="modal-overlay" (click)="showExportModal.set(false)">
+    <div class="modal-container export-modal-container" (click)="$event.stopPropagation()">
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h3>Exporter les anomalies</h3>
+          <p class="modal-subtitle">
+            Générez des rapports groupés par Chef de Projet (sur les <strong>{{ anomaliesByPm().length }}</strong> personnes filtrées)
+          </p>
+        </div>
+        <button class="btn-close" (click)="showExportModal.set(false)">×</button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body export-modal-body">
+        
+        <!-- Global Actions -->
+        <div class="export-global-section">
+          <h4>Rapports globaux (données filtrées uniquement)</h4>
+          <div class="export-buttons-grid">
+            <button (click)="copyTextToClipboard(generateGlobalReportMarkdown(), true)" class="btn-export-option btn-copy-global">
+              <lucide-icon [img]="Clipboard" [size]="18"></lucide-icon>
+              <span>{{ copiedExportText() ? 'Copié !' : 'Copier le rapport global' }}</span>
+            </button>
+
+            <button (click)="exportAnomaliesToExcel()" class="btn-export-option btn-excel">
+              <lucide-icon [img]="FileSpreadsheet" [size]="18"></lucide-icon>
+              <span>Télécharger Excel (.xlsx)</span>
+            </button>
+
+            <button (click)="exportAnomaliesToCSV()" class="btn-export-option btn-csv">
+              <lucide-icon [img]="Download" [size]="18"></lucide-icon>
+              <span>Télécharger CSV (.csv)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Individual PM Actions -->
+        <div class="export-pm-section">
+          <h4>Envoyer un message individuel par personne</h4>
+          <p class="section-help">Copiez un résumé des alertes d'une personne au format Slack/Teams pour lui envoyer directement :</p>
+          
+          <div class="pm-list-scroll">
+            @for (g of anomaliesByPm(); track g.pm) {
+              <div class="pm-export-item">
+                <div class="pm-info-side">
+                  <span class="pm-name">{{ g.pm }}</span>
+                  <span class="pm-alert-count">
+                    {{ g.projects.length }} projet(s) • {{ g.totalAlerts }} alerte(s)
+                  </span>
+                </div>
+                <button 
+                  (click)="copyTextToClipboard(generateIndividualReportMarkdown(g.pm), false, g.pm)" 
+                  class="btn-copy-pm"
+                  [class.copied]="copiedPmCode() === g.pm">
+                  <lucide-icon [img]="copiedPmCode() === g.pm ? Check : Copy" [size]="14"></lucide-icon>
+                  <span>{{ copiedPmCode() === g.pm ? 'Copié !' : 'Copier Slack/Teams' }}</span>
+                </button>
+              </div>
+            } @empty {
+              <div class="empty-results">Aucune anomalie à exporter avec les filtres actuels.</div>
+            }
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer">
+        <button (click)="showExportModal.set(false)" class="btn btn-secondary">Fermer</button>
       </div>
     </div>
   </div>
