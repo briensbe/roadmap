@@ -75,6 +75,7 @@ import {
   Trash2,
   Copy,
   Check,
+  Layers,
 } from 'lucide-angular';
 import * as XLSX from 'xlsx';
 import { getISOWeekYear } from 'date-fns';
@@ -132,6 +133,7 @@ import { driver } from 'driver.js';
       Trash2,
       Copy,
       Check,
+      Layers,
     }),
   ],
   exports: [LucideAngularModule],
@@ -500,6 +502,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   showPeriodDropdown = false;
   openSizeDropdown = false;
   openJalonDropdown = false;
+  openViewDropdown = false;
 
   // Actions menu state
   showActionsMenu = false;
@@ -683,6 +686,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   Trash2 = Trash2;
   Copy = Copy;
   Check = Check;
+  Layers = Layers;
 
   AlertTriangle = AlertTriangle;
   Info = Info;
@@ -3427,6 +3431,10 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!target.closest('.actions-menu-wrapper')) {
       this.showActionsMenu = false;
     }
+    // Close view mode popover if clicking outside
+    if (!target.closest('.view-mode-popover-wrapper')) {
+      this.openViewDropdown = false;
+    }
     // Close line menu if clicking outside
     if (!target.closest('.line-menu-wrapper') && !target.closest('.line-menu-trigger')) {
       this.activeLineMenuId = null;
@@ -3434,8 +3442,25 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
+  toggleViewDropdown(event: MouseEvent) {
+    event.stopPropagation();
+    this.openViewDropdown = !this.openViewDropdown;
+    if (this.openViewDropdown) {
+      this.openEquipeDropdown = false;
+      this.openProjetDropdown = false;
+      this.openResourceDropdown = false;
+      this.openStatusDropdown = false;
+      this.openSizeDropdown = false;
+      this.showPeriodDropdown = false;
+      this.openJalonDropdown = false;
+      this.showActionsMenu = false;
+    }
+    this.cdr.markForCheck();
+  }
+
   toggleDropdown(name: 'equipe' | 'projet' | 'resource' | 'statut' | 'size' | 'jalon', event: MouseEvent) {
     event.stopPropagation();
+    this.openViewDropdown = false;
     if (name === 'equipe') {
       this.openEquipeDropdown = !this.openEquipeDropdown;
       this.openProjetDropdown = false;
@@ -3498,6 +3523,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   toggleActionsMenu(event: MouseEvent) {
     event.stopPropagation();
+    this.openViewDropdown = false;
     this.showActionsMenu = !this.showActionsMenu;
     if (!this.showActionsMenu) {
       this.activeActionsSubmenu = null;

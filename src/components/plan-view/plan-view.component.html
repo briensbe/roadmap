@@ -90,62 +90,6 @@
 
         @if (showActionsMenu) {
           <div class="actions-dropdown" (click)="$event.stopPropagation()">
-            <!-- Vue mode -->
-            <div class="actions-dropdown-section">
-              <div class="actions-dropdown-item has-submenu" (click)="toggleActionsSubmenu('vue', $event)">
-                <lucide-icon [img]="Network" [size]="15"></lucide-icon>
-                Vue
-                <span class="actions-selected-text">{{
-                  viewMode() === 'project' ? 'Par Projet' : viewMode() === 'team' ? 'Par Équipe' : 'Par Ressources'
-                }}</span>
-                <lucide-icon [img]="ChevronLeft" [size]="15" class="submenu-arrow"></lucide-icon>
-                @if (activeActionsSubmenu === 'vue') {
-                  <div class="actions-submenu left-submenu" (click)="$event.stopPropagation()">
-                    <div class="actions-section-label">Sélectionner la Vue</div>
-                    <label class="actions-radio-item" [class.selected]="viewMode() === 'project'">
-                      <input
-                        type="radio"
-                        name="viewMode"
-                        value="project"
-                        [checked]="viewMode() === 'project'"
-                        (change)="switchViewMode('project')" />
-                      <lucide-icon [img]="Network" [size]="15"></lucide-icon>
-                      Par Projet
-                      @if (viewMode() === 'project') {
-                        <span class="actions-check">✓</span>
-                      }
-                    </label>
-                    <label class="actions-radio-item" [class.selected]="viewMode() === 'team'">
-                      <input
-                        type="radio"
-                        name="viewMode"
-                        value="team"
-                        [checked]="viewMode() === 'team'"
-                        (change)="switchViewMode('team')" />
-                      <lucide-icon [img]="Users" [size]="15"></lucide-icon>
-                      Par Équipe
-                      @if (viewMode() === 'team') {
-                        <span class="actions-check">✓</span>
-                      }
-                    </label>
-                    <label class="actions-radio-item" [class.selected]="viewMode() === 'resource'">
-                      <input
-                        type="radio"
-                        name="viewMode"
-                        value="resource"
-                        [checked]="viewMode() === 'resource'"
-                        (change)="switchViewMode('resource')" />
-                      <lucide-icon [img]="BookUser" [size]="15"></lucide-icon>
-                      Par Ressources
-                      @if (viewMode() === 'resource') {
-                        <span class="actions-check">✓</span>
-                      }
-                    </label>
-                  </div>
-                }
-              </div>
-            </div>
-            <div class="actions-dropdown-divider"></div>
             <!-- Format arborescence/plat -->
             <div class="actions-dropdown-section">
               <div class="actions-dropdown-item has-submenu" (click)="toggleActionsSubmenu('affichage', $event)">
@@ -757,9 +701,60 @@
           [style.width.px]="labelColumnWidth()"
           [style.minWidth.px]="labelColumnWidth()">
           <div class="header-label-content">
-            <span style="font-weight: 600">{{
-              viewMode() === 'project' ? 'Projets / Équipes' : 'Équipes / Projets'
-            }}</span>
+            <div class="view-mode-popover-wrapper">
+              <span style="font-weight: 600">{{
+                viewMode() === 'project' ? 'Projets / Équipes' : 'Équipes / Projets'
+              }}</span>
+              <button
+                class="view-mode-trigger"
+                (click)="toggleViewDropdown($event)"
+                title="Changer de vue"
+                [class.active]="openViewDropdown">
+                <lucide-icon [img]="Layers" [size]="15"></lucide-icon>
+              </button>
+
+              @if (openViewDropdown) {
+                <div class="view-mode-popover" (click)="$event.stopPropagation()">
+                  <div class="popover-section-label">Sélectionner la Vue</div>
+                  <label class="actions-radio-item" [class.selected]="viewMode() === 'project'" (click)="switchViewMode('project'); openViewDropdown = false">
+                    <input
+                      type="radio"
+                      name="viewMode"
+                      value="project"
+                      [checked]="viewMode() === 'project'" />
+                    <lucide-icon [img]="Network" [size]="15"></lucide-icon>
+                    Par Projet
+                    @if (viewMode() === 'project') {
+                      <span class="actions-check">✓</span>
+                    }
+                  </label>
+                  <label class="actions-radio-item" [class.selected]="viewMode() === 'team'" (click)="switchViewMode('team'); openViewDropdown = false">
+                    <input
+                      type="radio"
+                      name="viewMode"
+                      value="team"
+                      [checked]="viewMode() === 'team'" />
+                    <lucide-icon [img]="Users" [size]="15"></lucide-icon>
+                    Par Équipe
+                    @if (viewMode() === 'team') {
+                      <span class="actions-check">✓</span>
+                    }
+                  </label>
+                  <label class="actions-radio-item" [class.selected]="viewMode() === 'resource'" (click)="switchViewMode('resource'); openViewDropdown = false">
+                    <input
+                      type="radio"
+                      name="viewMode"
+                      value="resource"
+                      [checked]="viewMode() === 'resource'" />
+                    <lucide-icon [img]="BookUser" [size]="15"></lucide-icon>
+                    Par Ressources
+                    @if (viewMode() === 'resource') {
+                      <span class="actions-check">✓</span>
+                    }
+                  </label>
+                </div>
+              }
+            </div>
             <div class="header-expand-controls">
               <button class="btn-icon-s" (click)="expandAll()" title="Tout déplier">
                 <lucide-icon name="square-plus" [size]="16"></lucide-icon>
