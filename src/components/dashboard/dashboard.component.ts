@@ -13,6 +13,7 @@ import {
   Plus,
   ChevronRight,
   ChevronDown,
+  ExternalLink,
 } from 'lucide-angular';
 import { ProjetService } from '../../services/projet.service';
 import { RolesService } from '../../services/roles.service';
@@ -71,6 +72,7 @@ export class DashboardComponent implements OnInit {
   Plus = Plus;
   ChevronRight = ChevronRight;
   ChevronDown = ChevronDown;
+  ExternalLink = ExternalLink;
 
   projets: Projet[] = [];
   jalons: Jalon[] = [];
@@ -398,6 +400,11 @@ export class DashboardComponent implements OnInit {
     if (!projetId) return null;
     const projet = this.projets.find((p) => p.id === projetId);
     return projet?.nom_projet || null;
+  }
+
+  getProjectById(projetId?: string | null): Projet | null {
+    if (!projetId) return null;
+    return this.projets.find((p) => p.id === projetId) || null;
   }
 
   getDaysRemaining(dateStr: string): number {

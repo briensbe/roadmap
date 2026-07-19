@@ -712,3 +712,58 @@
   color: #0f172a;
   border-color: #cbd5e1;
 }
+
+/* Project navigation links & animations */
+.project-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.project-link:hover {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.project-link-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.project-link-group:hover .project-name-text {
+  color: #3b82f6;
+}
+
+.activity-link-wrapper {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  cursor: pointer;
+}
+
+.activity-link-wrapper:hover .activity-project-name {
+  color: #3b82f6;
+}
+
+.link-icon {
+  opacity: 0.5;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  display: inline-flex;
+  align-self: center;
+}
+
+.project-link:hover .link-icon,
+.project-link-group:hover .link-icon,
+.activity-link-wrapper:hover .link-icon {
+  opacity: 1;
+  transform: translate(1px, -1px);
+}
+

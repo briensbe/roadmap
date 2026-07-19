@@ -32,7 +32,16 @@
             <div class="milestone-list-item">
               <div class="item-main">
                 <span class="item-name">{{ jalon.title }}</span>
-                <span class="item-project">{{ getProjectName(jalon.projet_id) || 'Global' }}</span>
+                <span class="item-project">
+                  @if (getProjectById(jalon.projet_id); as project) {
+                    <a [routerLink]="['/projets']" [queryParams]="{ search: project.code_projet }" class="project-link" title="Voir le projet">
+                      {{ project.nom_projet }}
+                      <lucide-icon [img]="ExternalLink" [size]="10" class="link-icon"></lucide-icon>
+                    </a>
+                  } @else {
+                    Global
+                  }
+                </span>
               </div>
               <div class="item-date-group">
                 <span class="item-date">{{ formatDate(jalon.event_date) }}</span>
@@ -65,7 +74,16 @@
             <div class="milestone-list-item">
               <div class="item-main">
                 <span class="item-name">{{ jalon.title }}</span>
-                <span class="item-project">{{ getProjectName(jalon.projet_id) || 'Global' }}</span>
+                <span class="item-project">
+                  @if (getProjectById(jalon.projet_id); as project) {
+                    <a [routerLink]="['/projets']" [queryParams]="{ search: project.code_projet }" class="project-link" title="Voir le projet">
+                      {{ project.nom_projet }}
+                      <lucide-icon [img]="ExternalLink" [size]="10" class="link-icon"></lucide-icon>
+                    </a>
+                  } @else {
+                    Global
+                  }
+                </span>
               </div>
               <div class="item-date-group">
                 <span class="item-date">{{ formatDate(jalon.event_date) }}</span>
@@ -98,7 +116,16 @@
             <div class="milestone-list-item">
               <div class="item-main">
                 <span class="item-name">{{ jalon.title }}</span>
-                <span class="item-project">{{ getProjectName(jalon.projet_id) || 'Global' }}</span>
+                <span class="item-project">
+                  @if (getProjectById(jalon.projet_id); as project) {
+                    <a [routerLink]="['/projets']" [queryParams]="{ search: project.code_projet }" class="project-link" title="Voir le projet">
+                      {{ project.nom_projet }}
+                      <lucide-icon [img]="ExternalLink" [size]="10" class="link-icon"></lucide-icon>
+                    </a>
+                  } @else {
+                    Global
+                  }
+                </span>
               </div>
               <div class="item-date-group">
                 <span class="item-date">{{ formatDate(jalon.event_date) }}</span>
@@ -156,12 +183,15 @@
                       <div class="project-row" [style.border-left-color]="projInfo.projet.color || '#64748b'">
                         <div class="project-main-info">
                           <div class="project-title-row">
-                            <span class="project-code" [style.color]="projInfo.projet.color || '#64748b'">
-                              {{ projInfo.projet.code_projet }}
-                            </span>
-                            <h4 class="project-name-text">
-                              {{ projInfo.projet.nom_projet }}
-                            </h4>
+                            <a [routerLink]="['/projets']" [queryParams]="{ search: projInfo.projet.code_projet }" class="project-link-group" title="Voir le projet">
+                              <span class="project-code" [style.color]="projInfo.projet.color || '#64748b'">
+                                {{ projInfo.projet.code_projet }}
+                              </span>
+                              <h4 class="project-name-text" style="display: inline-flex; align-items: center; gap: 6px; margin: 0;">
+                                {{ projInfo.projet.nom_projet }}
+                                <lucide-icon [img]="ExternalLink" [size]="12" class="link-icon"></lucide-icon>
+                              </h4>
+                            </a>
                             <span class="status-badge" [attr.data-status]="projInfo.projet.statut">
                               {{ projInfo.projet.statut }}
                             </span>
@@ -225,13 +255,18 @@
         @if (addedProjects.length > 0) {
           @for (item of addedProjects; track item.projet.id) {
             <div class="activity-item" [style.border-left-color]="item.projet.color || '#3b82f6'">
-              <div class="activity-project-header">
-                <span class="project-code" [style.color]="item.projet.color || '#3b82f6'">{{
-                  item.projet.code_projet
-                }}</span>
-                <span class="status-badge small" [attr.data-status]="item.projet.statut">{{ item.projet.statut }}</span>
-              </div>
-              <div class="activity-project-name">{{ item.projet.nom_projet }}</div>
+              <a [routerLink]="['/projets']" [queryParams]="{ search: item.projet.code_projet }" class="activity-link-wrapper" title="Voir le projet">
+                <div class="activity-project-header">
+                  <span class="project-code" [style.color]="item.projet.color || '#3b82f6'">{{
+                    item.projet.code_projet
+                  }}</span>
+                  <span class="status-badge small" [attr.data-status]="item.projet.statut">{{ item.projet.statut }}</span>
+                </div>
+                <div class="activity-project-name" style="display: flex; align-items: center; gap: 6px;">
+                  {{ item.projet.nom_projet }}
+                  <lucide-icon [img]="ExternalLink" [size]="12" class="link-icon"></lucide-icon>
+                </div>
+              </a>
               <div class="activity-time">
                 <lucide-icon [img]="Clock" [size]="12"></lucide-icon>
                 <span>Saisi le {{ formatDate(item.dateSaisie) }}</span>
@@ -257,13 +292,18 @@
         @if (modifiedProjects.length > 0) {
           @for (item of modifiedProjects; track item.projet.id) {
             <div class="activity-item" [style.border-left-color]="item.projet.color || '#3b82f6'">
-              <div class="activity-project-header">
-                <span class="project-code" [style.color]="item.projet.color || '#3b82f6'">{{
-                  item.projet.code_projet
-                }}</span>
-                <span class="status-badge small" [attr.data-status]="item.projet.statut">{{ item.projet.statut }}</span>
-              </div>
-              <div class="activity-project-name">{{ item.projet.nom_projet }}</div>
+              <a [routerLink]="['/projets']" [queryParams]="{ search: item.projet.code_projet }" class="activity-link-wrapper" title="Voir le projet">
+                <div class="activity-project-header">
+                  <span class="project-code" [style.color]="item.projet.color || '#3b82f6'">{{
+                    item.projet.code_projet
+                  }}</span>
+                  <span class="status-badge small" [attr.data-status]="item.projet.statut">{{ item.projet.statut }}</span>
+                </div>
+                <div class="activity-project-name" style="display: flex; align-items: center; gap: 6px;">
+                  {{ item.projet.nom_projet }}
+                  <lucide-icon [img]="ExternalLink" [size]="12" class="link-icon"></lucide-icon>
+                </div>
+              </a>
               <div class="activity-time">
                 <lucide-icon [img]="Clock" [size]="12"></lucide-icon>
                 <span>Modifié le {{ formatDate(item.dateModification) }}</span>
