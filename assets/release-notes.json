@@ -44,6 +44,12 @@
         ],
         "imageUrl": "assets/release-notes/2026-07-19-exports-anomalies.png",
         "imageMaxHeight": 300
+      },
+      {
+        "title": "Focus Input - SIDE-78",
+        "items": [
+          "Ajout de l'événement (focus)=`$any($event.target).select()` sur les éléments <input> (Saisie classique, Ressources de projection, et Jours de projection)"
+        ]
       }
     ]
   },
