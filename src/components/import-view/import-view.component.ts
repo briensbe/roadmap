@@ -625,7 +625,8 @@ export class ImportViewComponent implements OnInit {
     text += `Voici un récapitulatif des alertes/écarts budgétaires constatés sur tes projets (Import Triskell) :\n\n`;
 
     pmGroup.projects.forEach((proj: any) => {
-      text += `*Projet : ${proj.project_code} - ${proj.project_name}*\n`;
+      const jiraStr = proj.jira_references && proj.jira_references.length > 0 ? ` [${proj.jira_references.join(', ')}]` : '';
+      text += `*Projet : ${proj.project_code} - ${proj.project_name}*${jiraStr}\n`;
       proj.services.forEach((srv: any) => {
         text += `  - *${srv.service_name}* :`;
         if (srv.hasConsumedAnomaly) {
@@ -656,7 +657,8 @@ export class ImportViewComponent implements OnInit {
       text += `👤 *Chef de projet : ${g.pm}* (${g.totalAlerts} alerte(s))\n`;
       text += `==================================================\n`;
       g.projects.forEach((proj: any) => {
-        text += `• *Projet : ${proj.project_code} - ${proj.project_name}*\n`;
+        const jiraStr = proj.jira_references && proj.jira_references.length > 0 ? ` [${proj.jira_references.join(', ')}]` : '';
+        text += `• *Projet : ${proj.project_code} - ${proj.project_name}*${jiraStr}\n`;
         proj.services.forEach((srv: any) => {
           if (srv.hasConsumedAnomaly) {
             text += `  - [${srv.service_name}] ⚠️ Dépassement : +${srv.consumedGap.toFixed(1)} JH (Consommé : ${(srv.consomme_jh ?? 0).toFixed(1)} JH vs Prév : ${(srv.previsionnel_jh ?? 0).toFixed(1)} JH)\n`;
@@ -710,6 +712,7 @@ export class ImportViewComponent implements OnInit {
             'Chef de projet': g.pm,
             'Code Projet': proj.project_code,
             'Nom Projet': proj.project_name || '',
+            'Réf JIRA': (proj.jira_references || []).join(', '),
             'Service': srv.service_name,
             'Initial (JH)': srv.initial_jh,
             'Révisé (JH)': srv.revised_jh,
@@ -730,6 +733,7 @@ export class ImportViewComponent implements OnInit {
       {wch: 25}, // PM
       {wch: 15}, // Code
       {wch: 35}, // Nom
+      {wch: 20}, // JIRA
       {wch: 25}, // Service
       {wch: 12}, // Initial
       {wch: 12}, // Revised
@@ -747,7 +751,7 @@ export class ImportViewComponent implements OnInit {
   exportAnomaliesToCSV() {
     const groups = this.anomaliesByPm();
     let csvContent = '\uFEFF'; // UTF-8 BOM
-    csvContent += 'Chef de projet;Code Projet;Nom Projet;Service;Initial (JH);Révisé (JH);Prévisionnel (JH);Consommé (JH);Diagnostic;Écart (JH)\n';
+    csvContent += 'Chef de projet;Code Projet;Nom Projet;Réf JIRA;Service;Initial (JH);Révisé (JH);Prévisionnel (JH);Consommé (JH);Diagnostic;Écart (JH)\n';
 
     groups.forEach(g => {
       g.projects.forEach((proj: any) => {
@@ -767,6 +771,7 @@ export class ImportViewComponent implements OnInit {
           const pm = (g.pm || '').replace(/"/g, '""');
           const code = (proj.project_code || '').replace(/"/g, '""');
           const name = (proj.project_name || '').replace(/"/g, '""');
+          const jira = ((proj.jira_references || []).join(', ')).replace(/"/g, '""');
           const srvName = (srv.service_name || '').replace(/"/g, '""');
 
           const initial = srv.initial_jh !== null ? String(srv.initial_jh).replace('.', ',') : '';
@@ -775,7 +780,7 @@ export class ImportViewComponent implements OnInit {
           const cons = srv.consomme_jh !== null ? String(srv.consomme_jh).replace('.', ',') : '';
           const gapStr = String(gap).replace('.', ',');
 
-          csvContent += `"${pm}";"${code}";"${name}";"${srvName}";"${initial}";"${revised}";"${prev}";"${cons}";"${diag}";"${gapStr}"\n`;
+          csvContent += `"${pm}";"${code}";"${name}";"${jira}";"${srvName}";"${initial}";"${revised}";"${prev}";"${cons}";"${diag}";"${gapStr}"\n`;
         });
       });
     });
