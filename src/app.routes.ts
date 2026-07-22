@@ -23,7 +23,7 @@ export const routes: Routes = [
     path: '',
     canActivate: [AuthGuard],
     children: [
-      { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
+      { path: '', redirectTo: '/planification', pathMatch: 'full' },
       { path: 'dashboard', component: DashboardComponent },
       { path: 'charges-sprints', component: DashboardSprintsComponent },
       { path: 'organisation', component: OrganizationViewComponent },
