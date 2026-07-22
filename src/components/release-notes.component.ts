@@ -443,7 +443,7 @@ export class ReleaseNotesComponent implements OnInit, OnDestroy {
   }
   showHistory = false;
   activeImageUrl: string | null = null;
-  private readonly STORAGE_KEY = 'last_seen_release_version';
+  private readonly STORAGE_KEY = 'roadmap_last_seen_release_version';
   private subscription: Subscription | null = null;
   private hasBeenClosedInSession = false;
 
