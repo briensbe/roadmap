@@ -1,0 +1,192 @@
+import { Injectable } from '@angular/core';
+import { SupabaseService } from './supabase.service';
+import { DB_TABLES } from '../constants/db-tables';
+import {
+  CrewdayzDiscoveryResponse,
+  CrewdayzTeamAvailability,
+  RoadmapMappingRoleProfile,
+} from '../models/crewdayz.types';
+import { paginateQuery } from '../utils/supabase-pagination';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class CrewdayzIntegrationService {
+  private _discoveryCache: CrewdayzDiscoveryResponse | null = null;
+  private _mappingsCache: RoadmapMappingRoleProfile[] | null = null;
+
+  constructor(private supabase: SupabaseService) {}
+
+  /**
+   * Récupère la liste hiérarchique des équipes et profils Crewdayz (API Discovery)
+   */
+  async getDiscovery(forceRefresh = false): Promise<CrewdayzDiscoveryResponse> {
+    if (this._discoveryCache && !forceRefresh) {
+      return this._discoveryCache;
+    }
+
+    const { data, error } = await this.supabase.client.rpc('cd_get_teams_discovery');
+    if (error) {
+      console.error('[CrewdayzIntegrationService] Error calling cd_get_teams_discovery:', error);
+      return { equipes: [] };
+    }
+
+    this._discoveryCache = (data as CrewdayzDiscoveryResponse) || { equipes: [] };
+    return this._discoveryCache;
+  }
+
+  /**
+   * Récupère les disponibilités par équipe, profil et semaine pour une plage de dates
+   */
+  async getAvailabilities(
+    startDate: string,
+    endDate: string,
+    teamName?: string
+  ): Promise<CrewdayzTeamAvailability[]> {
+    const { data, error } = await this.supabase.client.rpc('cd_get_availabilities', {
+      p_start_date: startDate,
+      p_end_date: endDate,
+      p_team_name: teamName || null,
+    });
+
+    if (error) {
+      console.error('[CrewdayzIntegrationService] Error calling cd_get_availabilities:', error);
+      return [];
+    }
+
+    return (data as CrewdayzTeamAvailability[]) || [];
+  }
+
+  /**
+   * Récupère les règles de mapping Roadmap <-> Crewdayz
+   */
+  async getMappings(forceRefresh = false): Promise<RoadmapMappingRoleProfile[]> {
+    if (this._mappingsCache && !forceRefresh) {
+      return this._mappingsCache;
+    }
+
+    const data = await paginateQuery<RoadmapMappingRoleProfile>(() =>
+      this.supabase.client
+        .from(DB_TABLES.MAPPING_ROLES_PROFILES)
+        .select('*')
+        .order('created_at', { ascending: true })
+        .order('id', { ascending: true })
+    );
+
+    this._mappingsCache = data || [];
+    return this._mappingsCache;
+  }
+
+  /**
+   * Enregistre un nouveau mapping ou met à jour un mapping existant
+   */
+  async saveMapping(
+    mapping: Partial<RoadmapMappingRoleProfile>
+  ): Promise<RoadmapMappingRoleProfile> {
+    this._mappingsCache = null;
+
+    const { id, ...payload } = mapping;
+
+    if (id) {
+      const { data, error } = await this.supabase.client
+        .from(DB_TABLES.MAPPING_ROLES_PROFILES)
+        .update({
+          ...payload,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } else {
+      const { data, error } = await this.supabase.client
+        .from(DB_TABLES.MAPPING_ROLES_PROFILES)
+        .insert([payload])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    }
+  }
+
+  /**
+   * Supprime un mapping par son ID
+   */
+  async deleteMapping(id: string): Promise<void> {
+    this._mappingsCache = null;
+    const { error } = await this.supabase.client
+      .from(DB_TABLES.MAPPING_ROLES_PROFILES)
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  }
+
+  /**
+   * Calcule le nombre d'unités de ressource (disponibilité ETP) pour un élément Roadmap et une date de semaine données.
+   *
+   * @param weekStartDate String au format YYYY-MM-DD (semaine_debut dans Roadmap)
+   * @param attachmentOrTeamId ID de l'attachment de rôle ou de l'équipe Roadmap
+   * @param personneId ID de la personne Roadmap (optionnel)
+   * @param availabilities Liste des disponibilités renvoyées par la RPC Crewdayz
+   * @param mappings Liste des règles de mapping
+   */
+  calculateAvailableCount(
+    weekStartDate: string,
+    attachmentOrTeamId: string,
+    personneId: string | null,
+    teamId: string,
+    availabilities: CrewdayzTeamAvailability[],
+    mappings: RoadmapMappingRoleProfile[]
+  ): number | null {
+    // 1. Filtrer les règles de mapping applicables à cette ressource / rôle / équipe Roadmap
+    const relevantMappings = mappings.filter((m) => {
+      if (personneId && m.roadmap_personne_id === personneId) return true;
+      if (m.roadmap_role_attachment_id && m.roadmap_role_attachment_id === attachmentOrTeamId) return true;
+      if (m.roadmap_team_id && m.roadmap_team_id === teamId && !m.roadmap_role_attachment_id && !m.roadmap_personne_id) return true;
+      return false;
+    });
+
+    if (relevantMappings.length === 0) {
+      return null;
+    }
+
+    let totalAvailableEtp = 0;
+
+    // Normalize weekStartDate to YYYY-MM-DD
+    const targetWeekStart = weekStartDate.substring(0, 10);
+
+    for (const mapping of relevantMappings) {
+      const ratio = mapping.availability_ratio ?? 1.0;
+      if (ratio === 0) continue;
+
+      // Retrouver l'équipe Crewdayz correspondante
+      const teamData = availabilities.find(
+        (t) => t.teamName.trim().toLowerCase() === mapping.crewdayz_team_name.trim().toLowerCase()
+      );
+      if (!teamData) continue;
+
+      // Retrouver le profil Crewdayz correspondant
+      const profileData = teamData.profiles.find(
+        (p) => p.profileName.trim().toLowerCase() === mapping.crewdayz_profile_name.trim().toLowerCase()
+      );
+      if (!profileData) continue;
+
+      // Retrouver la semaine correspondante par sa date de début (startDate)
+      const weekData = profileData.weeks.find((w) => w.startDate === targetWeekStart);
+      if (!weekData) continue;
+
+      // standard 5 jours travaillés par membre par semaine
+      const daysPerMember = weekData.membersCount > 0 ? (weekData.capacityDays / weekData.membersCount) : 5.0;
+      const baseDays = daysPerMember > 0 ? daysPerMember : 5.0;
+
+      const profileEtp = (weekData.availableDays / baseDays) * ratio;
+      totalAvailableEtp += profileEtp;
+    }
+
+    return Math.round(totalAvailableEtp * 100) / 100;
+  }
+}

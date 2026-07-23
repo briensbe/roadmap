@@ -20,6 +20,7 @@ export const DB_TABLES = {
   SOCIETES: `${DB_PREFIX}societes`,
   IMPORT_BATCHES: `${DB_PREFIX}import_batches`,
   IMPORT_BUDGET: `${DB_PREFIX}import_budget`,
+  MAPPING_ROLES_PROFILES: `${DB_PREFIX}mapping_roles_profiles`,
 } as const;
 
 export const DB_VIEWS = {

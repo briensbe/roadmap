@@ -6,7 +6,10 @@
   <div class="capacity-header">
     <h1>Gestion de Capacité par Équipe</h1>
     <div class="header-actions">
-      <!-- <button class="btn btn-secondary" (click)="goToToday()">Aujourd'hui</button> -->
+      <button class="btn btn-secondary btn-sm" (click)="openCrewdayzMappingModal()" style="display: flex; align-items: center; gap: 6px; font-weight: 500;">
+        <lucide-icon name="sliders" [size]="14"></lucide-icon>
+        Mapping Crewdayz
+      </button>
     </div>
   </div>
 
@@ -278,10 +281,13 @@
                     *ngFor="let week of displayedWeeks; let i = index"
                     class="week-cell resource-cell"
                     [class.selected]="isCellSelected(resource, week)"
-                    [class.has-capacity]="getCapacite(resource, week) > 0"
+                    [class.has-capacity]="getCapacite(resource, week) > 0 || getCrewdayzDispo(resource, week) !== null"
                     [attr.data-week-index]="i">
-                    <div class="cell-content" *ngIf="getCapacite(resource, week) > 0">
+                    <div class="cell-content" *ngIf="getCapacite(resource, week) > 0 || getCrewdayzDispo(resource, week) !== null">
                       <div class="capacity-value">{{ getCapacite(resource, week) }}</div>
+                      <div class="crewdayz-dispo-pill" *ngIf="getCrewdayzDispo(resource, week) !== null" title="Disponibilité calculée depuis Crewdayz (unités ETP)">
+                        {{ getCrewdayzDispo(resource, week) }}
+                      </div>
                       <div class="days-value" *ngIf="showDaysInCells">
                         {{ getCapacite(resource, week) * resource.jours_par_semaine | number: '1.1-1' }}j
                       </div>
@@ -416,3 +422,14 @@
   (confirm)="onConfirmAction()"
   (cancel)="showConfirmModal = false">
 </app-confirm-modal>
+
+<app-crewdayz-mapping-modal
+  [isOpen]="showCrewdayzMappingModal"
+  [roadmapTeams]="allEquipes"
+  [roadmapRoles]="availableRoles"
+  [roadmapPersonnes]="availablePersonnes"
+  [roleAttachments]="roleAttachmentsList"
+  (closeModal)="showCrewdayzMappingModal = false"
+  (mappingSaved)="onCrewdayzMappingSaved()">
+</app-crewdayz-mapping-modal>
+

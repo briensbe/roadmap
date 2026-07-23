@@ -850,3 +850,17 @@
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite ease-in-out;
 }
+
+/* Crewdayz Availability Pill */
+.crewdayz-dispo-pill {
+  font-size: 10px;
+  font-weight: 600;
+  color: #4f46e5;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  padding: 1px 4px;
+  border-radius: 4px;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+

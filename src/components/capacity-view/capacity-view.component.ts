@@ -3,9 +3,13 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SelectionToolbarComponent } from '../selection-toolbar.component';
 import { ConfirmModalComponent } from '../confirm-modal.component';
+import { CrewdayzMappingModalComponent } from '../crewdayz-mapping/crewdayz-mapping-modal.component';
 import { TeamService } from '../../services/team.service';
 import { CalendarService } from '../../services/calendar.service';
-import { Equipe, Role, Personne, Capacite, EquipeResource } from '../../models/types';
+import { RolesService } from '../../services/roles.service';
+import { CrewdayzIntegrationService } from '../../services/crewdayz-integration.service';
+import { Equipe, Role, Personne, Capacite, EquipeResource, RoleAttachment } from '../../models/types';
+import { CrewdayzTeamAvailability, RoadmapMappingRoleProfile } from '../../models/crewdayz.types';
 import {
   LucideAngularModule,
   ChevronDown,
@@ -16,6 +20,7 @@ import {
   Contact,
   SquarePlus,
   SquareMinus,
+  Sliders,
 } from 'lucide-angular';
 import { getISOWeekYear } from 'date-fns';
 import { storageSignal } from '../../utils/storage-signal';
@@ -29,7 +34,7 @@ import { textContains } from '../../utils/text.utils';
 
 @NgModule({
   imports: [
-    LucideAngularModule.pick({ ChevronDown, ChevronRight, Plus, User, Users, Contact, SquarePlus, SquareMinus }),
+    LucideAngularModule.pick({ ChevronDown, ChevronRight, Plus, User, Users, Contact, SquarePlus, SquareMinus, Sliders }),
   ],
   exports: [LucideAngularModule],
 })
@@ -55,7 +60,14 @@ interface TeamRow {
 @Component({
   selector: 'app-capacity-view',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideIconsModule, SelectionToolbarComponent, ConfirmModalComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    LucideIconsModule,
+    SelectionToolbarComponent,
+    ConfirmModalComponent,
+    CrewdayzMappingModalComponent,
+  ],
   templateUrl: './capacity-view.component.html',
   styleUrl: './capacity-view.component.css',
 })
@@ -141,9 +153,18 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   popoverArrowSide: 'top' | 'bottom' = 'top';
   private scrollCloseListener?: () => void;
 
+  // Crewdayz Integration State
+  showCrewdayzMappingModal = false;
+  crewdayzAvailabilities: CrewdayzTeamAvailability[] = [];
+  crewdayzMappings: RoadmapMappingRoleProfile[] = [];
+  roleAttachmentsList: RoleAttachment[] = [];
+  Sliders = Sliders;
+
   constructor(
     private teamService: TeamService,
     private calendarService: CalendarService,
+    private rolesService: RolesService,
+    private crewdayzService: CrewdayzIntegrationService,
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone,
   ) {}
@@ -214,17 +235,26 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
     }, 250);
 
     try {
-      // 1️⃣ Load ALL data in parallel (no nested loops with await!)
-      const [equipes, allCapacities, roles, personnes] = await Promise.all([
+      const startDateStr = this.calendarService.formatWeekStart(this.displayedWeeks[0]);
+      const endDateStr = this.calendarService.formatWeekStart(this.displayedWeeks[this.displayedWeeks.length - 1]);
+
+      // 1️⃣ Load ALL data in parallel (including Crewdayz RPCs & mappings)
+      const [equipes, allCapacities, roles, personnes, roleAtts, mappings, availabilities] = await Promise.all([
         this.teamService.getAllEquipes(),
         this.teamService.getAllCapacities(),
         this.teamService.getAllRoles(),
         this.teamService.getAllPersonnes(),
+        this.rolesService.getAllRoleAttachments(),
+        this.crewdayzService.getMappings(),
+        this.crewdayzService.getAvailabilities(startDateStr, endDateStr),
       ]);
 
       this.availableRoles = roles;
       this.availablePersonnes = personnes;
       this.allEquipes = equipes;
+      this.roleAttachmentsList = roleAtts;
+      this.crewdayzMappings = mappings;
+      this.crewdayzAvailabilities = availabilities;
 
       // Load all resources for all teams in parallel
       const allResourcesArrays = await Promise.all(
@@ -850,19 +880,35 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
     return total;
   }
 
-  goToPreviousMonth() {
+  async loadCrewdayzAvailabilities() {
+    if (!this.displayedWeeks || this.displayedWeeks.length === 0) return;
+    const startDateStr = this.calendarService.formatWeekStart(this.displayedWeeks[0]);
+    const endDateStr = this.calendarService.formatWeekStart(this.displayedWeeks[this.displayedWeeks.length - 1]);
+
+    try {
+      this.crewdayzAvailabilities = await this.crewdayzService.getAvailabilities(startDateStr, endDateStr);
+      this.cdr.markForCheck();
+    } catch (err) {
+      console.error('Erreur lors du chargement des disponibilités Crewdayz :', err);
+    }
+  }
+
+  async goToPreviousMonth() {
     this.currentDate.setMonth(this.currentDate.getMonth() - 1);
     this.generateWeeks();
+    await this.loadCrewdayzAvailabilities();
   }
 
-  goToNextMonth() {
+  async goToNextMonth() {
     this.currentDate.setMonth(this.currentDate.getMonth() + 1);
     this.generateWeeks();
+    await this.loadCrewdayzAvailabilities();
   }
 
-  goToToday() {
+  async goToToday() {
     this.currentDate = new Date();
     this.generateWeeks();
+    await this.loadCrewdayzAvailabilities();
   }
 
   getTeamTotalCapacity(teamRow: TeamRow, week: Date): number {
@@ -986,5 +1032,30 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
     if (!this.selectedStartDate) return '';
     const d = this.selectedStartDate;
     return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
+  }
+
+  getCrewdayzDispo(resource: ResourceRow, week: Date): number | null {
+    if (!this.crewdayzMappings || this.crewdayzMappings.length === 0) return null;
+    const weekStr = this.calendarService.formatWeekStart(week);
+
+    const attachmentOrTeamId = resource.type === 'role' ? resource.uniqueId : resource.equipeId;
+    const personneId = resource.type === 'personne' ? resource.id : null;
+
+    return this.crewdayzService.calculateAvailableCount(
+      weekStr,
+      attachmentOrTeamId,
+      personneId,
+      resource.equipeId,
+      this.crewdayzAvailabilities,
+      this.crewdayzMappings
+    );
+  }
+
+  openCrewdayzMappingModal() {
+    this.showCrewdayzMappingModal = true;
+  }
+
+  async onCrewdayzMappingSaved() {
+    await this.loadData();
   }
 }
