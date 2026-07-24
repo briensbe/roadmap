@@ -1,5 +1,39 @@
 [
   {
+    "version": "2026.07.24",
+    "date": "2026-07-24",
+    "news": [
+      {
+        "title": "Séparation visuelle des années - SIDE-87",
+        "items": [
+          "Ajout d'une séparation visuelle distincte lors des changements d'année dans les vues Capacité et Planification.",
+          "Optimisation des performances de rendu des données dans les grilles de capacité et de planification."
+        ]
+      },
+      {
+        "title": "Connexion Crewdayz (Mode RPC V1)",
+        "items": ["Intégration et synchronisation entre Crewdayz et Roadmap avec modale de mapping dédiée."]
+      }
+    ]
+  },
+  {
+    "version": "2026.07.22",
+    "date": "2026-07-22",
+    "news": [
+      {
+        "title": "Export des anomalies - SIDE-84",
+        "items": ["Ajout de la prise en compte des étiquettes (labels) JIRA lors de l'export des anomalies."]
+      },
+      {
+        "title": "Navigation et Release Notes - SIDE-82",
+        "items": [
+          "Redirection par défaut vers la vue Planification lors de l'arrivée sur l'application.",
+          "Gestion d'une clé LocalStorage spécifique pour le suivi des Release Notes."
+        ]
+      }
+    ]
+  },
+  {
     "version": "2026.07.19",
     "date": "2026-07-19",
     "news": [
