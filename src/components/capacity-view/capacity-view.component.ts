@@ -452,12 +452,15 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
     return this.calendarService.getWeekNumber(date);
   }
 
+  isYearChangeMap: boolean[] = [];
+
   updateDisplayedYears() {
     this.displayedYears = [];
+    this.isYearChangeMap = [];
     if (!this.displayedWeeks || this.displayedWeeks.length === 0) return;
 
     const yearsMap: { year: number; weeksCount: number }[] = [];
-    this.displayedWeeks.forEach((week) => {
+    this.displayedWeeks.forEach((week, index) => {
       const year = this.calendarService.getWeekYear(week);
       const last = yearsMap[yearsMap.length - 1];
       if (last && last.year === year) {
@@ -465,15 +468,19 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
       } else {
         yearsMap.push({ year, weeksCount: 1 });
       }
+
+      if (index === 0) {
+        this.isYearChangeMap.push(false);
+      } else {
+        const prevYear = this.calendarService.getWeekYear(this.displayedWeeks[index - 1]);
+        this.isYearChangeMap.push(year !== prevYear);
+      }
     });
     this.displayedYears = yearsMap;
   }
 
   isFirstWeekOfYear(index: number): boolean {
-    if (index <= 0 || !this.displayedWeeks || index >= this.displayedWeeks.length) return false;
-    const currentYear = this.calendarService.getWeekYear(this.displayedWeeks[index]);
-    const prevYear = this.calendarService.getWeekYear(this.displayedWeeks[index - 1]);
-    return currentYear !== prevYear;
+    return this.isYearChangeMap[index] ?? false;
   }
 
   isCurrentWeek(date: Date): boolean {
