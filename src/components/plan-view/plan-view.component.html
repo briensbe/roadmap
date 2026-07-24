@@ -768,20 +768,36 @@
           <div class="resize-handle" (mousedown)="onResizeStart($event)"></div>
         </div>
         @if (planningMode() === 'saisie') {
-          <div class="weeks-container">
-            @for (week of displayedWeeks; track week; let i = $index) {
-              <div class="week-header-cell" [class.current-week]="isCurrentWeek(week)">
-                <div class="week-date">{{ formatWeekHeader(week) }}</div>
-                <div class="week-number">S{{ getWeekNumber(week) }}</div>
-                <button
-                  class="week-filter-icon"
-                  [class.active]="isWeekFiltered(i)"
-                  (click)="toggleWeekFilter(i); $event.stopPropagation()"
-                  [title]="isWeekFiltered(i) ? 'Retirer le filtre' : 'Filtrer les lignes sans charge'">
-                  <lucide-icon [name]="isWeekFiltered(i) ? 'funnel-x' : 'funnel-plus'" [size]="14"></lucide-icon>
-                </button>
-              </div>
-            }
+          <div class="weeks-header-wrapper">
+            <div class="years-header-row">
+              @for (y of displayedYears; track y.year) {
+                <div
+                  class="year-header-cell"
+                  [style.flex-grow]="y.weeksCount"
+                  [style.flex-basis]="'calc(var(--cell-width, 80px) * ' + y.weeksCount + ')'"
+                  [style.min-width]="'calc(var(--cell-width, 80px) * ' + y.weeksCount + ')'">
+                  <span class="year-label">{{ y.year }}</span>
+                </div>
+              }
+            </div>
+            <div class="weeks-container">
+              @for (week of displayedWeeks; track week; let i = $index) {
+                <div
+                  class="week-header-cell"
+                  [class.current-week]="isCurrentWeek(week)"
+                  [class.is-year-change]="isFirstWeekOfYear(i)">
+                  <div class="week-date">{{ formatWeekHeader(week) }}</div>
+                  <div class="week-number">S{{ getWeekNumber(week) }}</div>
+                  <button
+                    class="week-filter-icon"
+                    [class.active]="isWeekFiltered(i)"
+                    (click)="toggleWeekFilter(i); $event.stopPropagation()"
+                    [title]="isWeekFiltered(i) ? 'Retirer le filtre' : 'Filtrer les lignes sans charge'">
+                    <lucide-icon [name]="isWeekFiltered(i) ? 'funnel-x' : 'funnel-plus'" [size]="14"></lucide-icon>
+                  </button>
+                </div>
+              }
+            </div>
           </div>
         }
 
@@ -1006,8 +1022,8 @@
         <!-- Saisie Mode: Week cells -->
         @if (planningMode() === 'saisie') {
           <div class="weeks-container">
-            @for (week of displayedWeeks; track week) {
-              <div class="week-cell milestone-cell" [class.current-week]="isCurrentWeek(week)">
+            @for (week of displayedWeeks; track week; let i = $index) {
+              <div class="week-cell milestone-cell" [class.current-week]="isCurrentWeek(week)" [class.is-year-change]="isFirstWeekOfYear(i)">
                 <div class="milestones-container">
                   @for (jalon of getJalonsForWeek(week); track jalon) {
                     <div
@@ -1088,7 +1104,7 @@
               @if (planningMode() === 'saisie') {
                 <div class="weeks-container">
                   @for (week of displayedWeeks; track week; let i = $index) {
-                    <div class="week-cell team-cell" style="display: flex; align-items: center; justify-content: center;">
+                    <div class="week-cell team-cell" [class.is-year-change]="isFirstWeekOfYear(i)" style="display: flex; align-items: center; justify-content: center;">
                       @if (placeholder % 2 === 0 && i % 4 === 0) {
                         <div class="skeleton-line" style="width: 20px; height: 12px; opacity: 0.2; border-radius: 3px;"></div>
                       }
@@ -1137,8 +1153,8 @@
                 
                 @if (planningMode() === 'saisie') {
                   <div class="weeks-container">
-                    @for (week of displayedWeeks; track week) {
-                      <div class="week-cell team-cell"></div>
+                    @for (week of displayedWeeks; track week; let i = $index) {
+                      <div class="week-cell team-cell" [class.is-year-change]="isFirstWeekOfYear(i)"></div>
                     }
                   </div>
                 }
@@ -1286,6 +1302,7 @@
                       @for (week of displayedWeeks; track trackByWeek($index, week)) {
                         <div
                           class="week-cell team-cell"
+                          [class.is-year-change]="isFirstWeekOfYear($index)"
                           [class.team-cell-positive]="
                             viewMode() === 'resource' &&
                             row.metrics?.get(formatWeekStart(week))?.status === 'positive'
@@ -1500,6 +1517,7 @@
                                 @let cell = resource.cellData?.[i];
                                 <div
                                   class="week-cell resource-detail-cell"
+                                  [class.is-year-change]="isFirstWeekOfYear(i)"
                                   [ngClass]="getCellSelectionClasses(resource, week, i, child, row)"
                                   [class.has-capacity]="cell?.value! > 0"
                                   [class.cell-positive]="
@@ -1725,7 +1743,7 @@
                           @if (planningMode() === 'saisie') {
                             <div class="weeks-container">
                               @for (week of displayedWeeks; track trackByWeek($index, week)) {
-                                <div class="week-cell resource-cell"></div>
+                                <div class="week-cell resource-cell" [class.is-year-change]="isFirstWeekOfYear($index)"></div>
                               }
                             </div>
                           }
@@ -1967,6 +1985,7 @@
                                   @let cell = resource.cellData?.[i];
                                   <div
                                     class="week-cell resource-detail-cell"
+                                    [class.is-year-change]="isFirstWeekOfYear(i)"
                                     [ngClass]="getCellSelectionClasses(resource, week, i, child, row)"
                                     [class.has-capacity]="cell?.value! > 0"
                                     [class.cell-positive]="
@@ -2226,6 +2245,7 @@
                     @let cell = row.resource.cellData?.[i];
                     <div
                       class="week-cell resource-detail-cell"
+                      [class.is-year-change]="isFirstWeekOfYear(i)"
                       [ngClass]="getCellSelectionClasses(row.resource, week, i, row.child, row.parent)"
                       [class.has-capacity]="cell?.value! > 0"
                       [class.cell-positive]="

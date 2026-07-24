@@ -151,10 +151,28 @@
             </div>
           </div>
         </div>
-        <div class="weeks-header-container">
-          <div *ngFor="let week of displayedWeeks" class="week-header-cell" [class.current-week]="isCurrentWeek(week)">
-            <div class="week-date">{{ formatWeekHeader(week) }}</div>
-            <div class="week-number">S{{ getWeekNumber(week) }}</div>
+        <div class="header-right-container">
+          <div class="years-header-row">
+            @for (y of displayedYears; track y.year) {
+              <div
+                class="year-header-cell"
+                [style.flex-grow]="y.weeksCount"
+                [style.flex-basis]="'calc(var(--cell-width, 80px) * ' + y.weeksCount + ')'"
+                [style.min-width]="'calc(var(--cell-width, 80px) * ' + y.weeksCount + ')'">
+                <span class="year-label">{{ y.year }}</span>
+              </div>
+            }
+          </div>
+          <div class="weeks-header-container">
+            @for (week of displayedWeeks; track week; let i = $index) {
+              <div
+                class="week-header-cell"
+                [class.current-week]="isCurrentWeek(week)"
+                [class.is-year-change]="isFirstWeekOfYear(i)">
+                <div class="week-date">{{ formatWeekHeader(week) }}</div>
+                <div class="week-number">S{{ getWeekNumber(week) }}</div>
+              </div>
+            }
           </div>
         </div>
       </div>
@@ -173,8 +191,8 @@
                 <div class="skeleton-line" style="width: 140px; height: 16px; margin-left: 28px; border-radius: 4px;"></div>
               </div>
               <div class="weeks-cells-container">
-                @for (week of displayedWeeks; track week) {
-                  <div class="week-cell team-cell">
+                @for (week of displayedWeeks; track week; let i = $index) {
+                  <div class="week-cell team-cell" [class.is-year-change]="isFirstWeekOfYear(i)">
                     <div class="skeleton-line" style="width: 24px; height: 14px; opacity: 0.3; border-radius: 3px;"></div>
                   </div>
                 }
@@ -187,8 +205,8 @@
                   <div class="skeleton-line" style="width: 100px; height: 14px; margin-left: 8px; border-radius: 4px;"></div>
                 </div>
                 <div class="weeks-cells-container">
-                  @for (week of displayedWeeks; track week) {
-                    <div class="week-cell resource-cell">
+                  @for (week of displayedWeeks; track week; let i = $index) {
+                    <div class="week-cell resource-cell" [class.is-year-change]="isFirstWeekOfYear(i)">
                       <div class="skeleton-line" style="width: 16px; height: 12px; opacity: 0.2; border-radius: 3px;"></div>
                     </div>
                   }
@@ -228,7 +246,7 @@
                 </button>
               </div>
               <div class="weeks-cells-container">
-                <div *ngFor="let week of displayedWeeks" class="week-cell team-cell">
+                <div *ngFor="let week of displayedWeeks; let i = index" class="week-cell team-cell" [class.is-year-change]="isFirstWeekOfYear(i)">
                   <div class="team-summary" *ngIf="getTeamTotalCapacity(teamRow, week) > 0">
                     <div class="capacity-value">
                       {{ getTeamTotalCapacity(teamRow, week) | number: '1.0-1' }}
@@ -282,6 +300,7 @@
                     class="week-cell resource-cell"
                     [class.selected]="isCellSelected(resource, week)"
                     [class.has-capacity]="getCapacite(resource, week) > 0 || getCrewdayzDispo(resource, week) !== null"
+                    [class.is-year-change]="isFirstWeekOfYear(i)"
                     [attr.data-week-index]="i">
                     <div class="cell-content" *ngIf="getCapacite(resource, week) > 0 || getCrewdayzDispo(resource, week) !== null">
                       <div class="capacity-value">{{ getCapacite(resource, week) }}</div>

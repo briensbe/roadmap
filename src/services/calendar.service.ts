@@ -27,6 +27,14 @@ export class CalendarService {
     return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
   }
 
+  getWeekYear(date: Date): number {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    return d.getUTCFullYear();
+  }
+
+
   //TODO: move to utils et surtout à réutiliser dans les autres services et components
   isCurrentWeek(date: Date): boolean {
     const now = new Date();

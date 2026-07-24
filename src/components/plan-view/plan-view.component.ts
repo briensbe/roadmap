@@ -362,6 +362,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   usageMap: Map<string, number> = new Map();
 
   displayedWeeks: Date[] = [];
+  displayedYears: { year: number; weeksCount: number }[] = [];
   currentDate: Date = new Date();
 
   rows: ParentRow[] = [];
@@ -1139,6 +1140,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     this.generateMonths();
+    this.generateYears();
   }
 
   generateMonths() {
@@ -2290,6 +2292,30 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   getWeekNumber(date: Date): number {
     return this.calendarService.getWeekNumber(date);
+  }
+
+  generateYears() {
+    this.displayedYears = [];
+    if (!this.displayedWeeks || this.displayedWeeks.length === 0) return;
+
+    const yearsMap: { year: number; weeksCount: number }[] = [];
+    this.displayedWeeks.forEach((week) => {
+      const year = this.calendarService.getWeekYear(week);
+      const last = yearsMap[yearsMap.length - 1];
+      if (last && last.year === year) {
+        last.weeksCount++;
+      } else {
+        yearsMap.push({ year, weeksCount: 1 });
+      }
+    });
+    this.displayedYears = yearsMap;
+  }
+
+  isFirstWeekOfYear(index: number): boolean {
+    if (index <= 0 || !this.displayedWeeks || index >= this.displayedWeeks.length) return false;
+    const currentYear = this.calendarService.getWeekYear(this.displayedWeeks[index]);
+    const prevYear = this.calendarService.getWeekYear(this.displayedWeeks[index - 1]);
+    return currentYear !== prevYear;
   }
 
   isCurrentWeek(date: Date): boolean {
