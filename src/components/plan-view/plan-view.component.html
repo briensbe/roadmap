@@ -770,9 +770,10 @@
         @if (planningMode() === 'saisie') {
           <div class="weeks-header-wrapper">
             <div class="years-header-row">
-              @for (y of displayedYears; track y.year) {
+              @for (y of displayedYears; track y.year; let index = $index) {
                 <div
                   class="year-header-cell"
+                  [class.is-year-change]="index > 0"
                   [style.flex-grow]="y.weeksCount"
                   [style.flex-basis]="'calc(var(--cell-width, 80px) * ' + y.weeksCount + ')'"
                   [style.min-width]="'calc(var(--cell-width, 80px) * ' + y.weeksCount + ')'">

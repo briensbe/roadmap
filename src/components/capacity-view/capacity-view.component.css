@@ -216,10 +216,14 @@
   font-size: 11px;
   letter-spacing: 0.05em;
   color: #1e293b;
-  border-right: 2px solid #2563eb;
+  border-right: 1px solid #e2e8f0;
   box-sizing: border-box;
   background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
   position: relative;
+}
+
+.year-header-cell.is-year-change {
+  border-left: 2px solid #2563eb !important;
 }
 
 .year-label {
