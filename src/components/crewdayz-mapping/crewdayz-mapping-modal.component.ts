@@ -12,6 +12,7 @@ import { Equipe, Role, Personne, RoleAttachment } from '../../models/types';
 import {
   LucideAngularModule,
   Plus,
+  PlusCircle,
   Trash2,
   Edit2,
   X,
@@ -47,6 +48,7 @@ export class CrewdayzMappingModalComponent implements OnInit, OnChanges {
   savingSource: string | null = null; // equipeId en cours de sauvegarde
   loading = false;
   saving = false;
+  showForm = false;
 
   // Form State
   editingId: string | null = null;
@@ -59,6 +61,7 @@ export class CrewdayzMappingModalComponent implements OnInit, OnChanges {
 
   // Lucide icons
   Plus = Plus;
+  PlusCircle = PlusCircle;
   Trash2 = Trash2;
   Edit2 = Edit2;
   X = X;
@@ -175,6 +178,29 @@ export class CrewdayzMappingModalComponent implements OnInit, OnChanges {
     return this.roadmapPersonnes.filter((p) => p.equipe_id === this.selectedRoadmapTeamId);
   }
 
+  /**
+   * Équipes Roadmap pour lesquelles au moins un mapping Crewdayz existe
+   */
+  get teamsWithCrewdayzMapping(): Equipe[] {
+    const teamIdsWithMapping = new Set<string>();
+
+    for (const m of this.mappings) {
+      if (m.roadmap_team_id) {
+        teamIdsWithMapping.add(m.roadmap_team_id);
+      }
+      if (m.roadmap_role_attachment_id) {
+        const att = this.roleAttachments.find((a) => a.id === m.roadmap_role_attachment_id);
+        if (att?.equipe_id) teamIdsWithMapping.add(att.equipe_id);
+      }
+      if (m.roadmap_personne_id) {
+        const p = this.roadmapPersonnes.find((pers) => pers.id === m.roadmap_personne_id);
+        if (p?.equipe_id) teamIdsWithMapping.add(p.equipe_id);
+      }
+    }
+
+    return this.roadmapTeams.filter((t) => t.id && teamIdsWithMapping.has(t.id));
+  }
+
   startNewMapping() {
     this.editingId = null;
     this.selectedRoadmapTeamId = this.roadmapTeams.length > 0 ? this.roadmapTeams[0].id! : '';
@@ -183,6 +209,7 @@ export class CrewdayzMappingModalComponent implements OnInit, OnChanges {
     this.selectedCrewdayzTeamName = this.discovery.equipes.length > 0 ? this.discovery.equipes[0].nom : '';
     this.selectedCrewdayzProfileName = '';
     this.availabilityRatio = 1.0;
+    this.showForm = true;
   }
 
   editMapping(m: RoadmapMappingRoleProfile) {
@@ -193,11 +220,12 @@ export class CrewdayzMappingModalComponent implements OnInit, OnChanges {
     this.selectedCrewdayzTeamName = m.crewdayz_team_name;
     this.selectedCrewdayzProfileName = m.crewdayz_profile_name;
     this.availabilityRatio = m.availability_ratio ?? 1.0;
+    this.showForm = true;
   }
 
   cancelEdit() {
     this.editingId = null;
-    this.startNewMapping();
+    this.showForm = false;
   }
 
   async saveMapping() {
