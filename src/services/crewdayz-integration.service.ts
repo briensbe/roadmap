@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { DB_TABLES } from '../constants/db-tables';
 import {
+  CapacitySource,
+  CapacitySourceConfig,
   CrewdayzDiscoveryResponse,
   CrewdayzTeamAvailability,
   RoadmapMappingRoleProfile,
@@ -14,6 +16,7 @@ import { paginateQuery } from '../utils/supabase-pagination';
 export class CrewdayzIntegrationService {
   private _discoveryCache: CrewdayzDiscoveryResponse | null = null;
   private _mappingsCache: RoadmapMappingRoleProfile[] | null = null;
+  private _sourceConfigCache: CapacitySourceConfig[] | null = null;
 
   constructor(private supabase: SupabaseService) {}
 
@@ -188,5 +191,57 @@ export class CrewdayzIntegrationService {
     }
 
     return Math.round(totalAvailableEtp * 100) / 100;
+  }
+
+  // ============================================
+  // CAPACITY SOURCE CONFIG
+  // ============================================
+
+  /**
+   * Récupère la configuration de source de capacité pour toutes les équipes.
+   * Si une équipe n'a pas de config, elle est considérée comme 'roadmap' (défaut).
+   */
+  async getCapacitySourceConfigs(forceRefresh = false): Promise<CapacitySourceConfig[]> {
+    if (this._sourceConfigCache && !forceRefresh) return this._sourceConfigCache;
+
+    const data = await paginateQuery<CapacitySourceConfig>(() =>
+      this.supabase.client
+        .from(DB_TABLES.CAPACITY_SOURCE_CONFIG)
+        .select('*')
+        .order('id', { ascending: true })
+    );
+
+    this._sourceConfigCache = data || [];
+    return this._sourceConfigCache;
+  }
+
+  /**
+   * Définit la source de capacité pour une équipe (upsert).
+   * Ne touche pas aux mappings existants.
+   */
+  async setCapacitySource(equipeId: string, source: CapacitySource): Promise<void> {
+    this._sourceConfigCache = null;
+
+    const { error } = await this.supabase.client
+      .from(DB_TABLES.CAPACITY_SOURCE_CONFIG)
+      .upsert(
+        {
+          equipe_id: equipeId,
+          capacity_source: source,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'equipe_id' }
+      );
+
+    if (error) throw error;
+  }
+
+  /**
+   * Retourne la source de capacité effective pour une équipe donnée.
+   * Défaut : 'roadmap' si aucune config n'existe pour cette équipe.
+   */
+  getSourceForTeam(equipeId: string, configs: CapacitySourceConfig[]): CapacitySource {
+    const config = configs.find((c) => c.equipe_id === equipeId);
+    return config?.capacity_source ?? 'roadmap';
   }
 }

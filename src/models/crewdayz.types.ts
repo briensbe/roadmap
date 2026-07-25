@@ -45,3 +45,13 @@ export interface RoadmapMappingRoleProfile {
   created_at?: string;
   updated_at?: string;
 }
+
+export type CapacitySource = 'roadmap' | 'crewdayz';
+
+export interface CapacitySourceConfig {
+  id?: string;
+  equipe_id: string;
+  capacity_source: CapacitySource;
+  created_at?: string;
+  updated_at?: string;
+}

@@ -27,6 +27,70 @@
             <span>Chargement des données Discovery Crewdayz et des mappings...</span>
           </div>
         } @else {
+          <!-- ===================================================== -->
+          <!-- Section : Source de Capacité par Équipe                -->
+          <!-- ===================================================== -->
+          <div class="source-section">
+            <div class="source-section-header">
+              <div class="source-section-icon">
+                <i-lucide [img]="Zap" class="icon-sm"></i-lucide>
+              </div>
+              <div>
+                <h3 class="source-section-title">Source de Capacité par Équipe</h3>
+                <p class="source-section-subtitle">
+                  Choisissez la source des capacités utilisée dans la vue Planification pour chaque équipe.
+                  Les mappings ci-dessous restent actifs quelle que soit la source choisie.
+                </p>
+              </div>
+            </div>
+
+            @if (roadmapTeams.length === 0) {
+              <div class="source-empty">Aucune équipe disponible.</div>
+            } @else {
+              <div class="source-teams-list">
+                @for (team of roadmapTeams; track team.id) {
+                  <div class="source-team-row">
+                    <div class="source-team-name">
+                      @if (team.color) {
+                        <span class="team-color-dot" [style.background]="team.color"></span>
+                      }
+                      {{ team.nom }}
+                    </div>
+
+                    <div class="source-toggle-group">
+                      <button
+                        class="source-toggle-btn"
+                        [class.active]="getSourceForTeam(team.id!) === 'roadmap'"
+                        [disabled]="savingSource === team.id"
+                        (click)="setSource(team.id!, 'roadmap')"
+                        title="Utiliser roadmap_capacites comme source"
+                      >
+                        <i-lucide [img]="Database" class="icon-xs"></i-lucide>
+                        Roadmap
+                      </button>
+                      <button
+                        class="source-toggle-btn source-toggle-crewdayz"
+                        [class.active]="getSourceForTeam(team.id!) === 'crewdayz'"
+                        [disabled]="savingSource === team.id"
+                        (click)="setSource(team.id!, 'crewdayz')"
+                        title="Utiliser cd_get_availabilities comme source"
+                      >
+                        <i-lucide [img]="Zap" class="icon-xs"></i-lucide>
+                        Crewdayz
+                      </button>
+                      @if (savingSource === team.id) {
+                        <i-lucide [img]="RefreshCw" class="spin-icon icon-xs saving-indicator"></i-lucide>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- ===================================================== -->
+          <!-- Section : Formulaire de Mapping                        -->
+          <!-- ===================================================== -->
           <!-- Form Section -->
           <div class="form-card">
             <div class="form-card-title">

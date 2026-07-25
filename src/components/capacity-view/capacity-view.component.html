@@ -239,6 +239,9 @@
                       (mouseleave)="hideTooltip()"
                       >{{ teamRow.equipe.nom }}</span
                     >
+                    @if (getSourceForTeam(teamRow.equipe.id!) === 'crewdayz') {
+                      <span class="source-badge-crewdayz" title="Capacités issues de Crewdayz">⚡ Crewdayz</span>
+                    }
                   </div>
                 </div>
                 <button class="btn-hover-add" (click)="openAddResourceModal(teamRow.equipe); $event.stopPropagation()">

@@ -420,6 +420,21 @@
   text-overflow: ellipsis;
 }
 
+.source-badge-crewdayz {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  color: #fff;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .calendar-row:hover .team-label-cell,
 .calendar-row:hover .resource-label-cell {
   background: #f3f4f6;

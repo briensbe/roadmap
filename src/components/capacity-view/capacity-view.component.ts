@@ -9,7 +9,7 @@ import { CalendarService } from '../../services/calendar.service';
 import { RolesService } from '../../services/roles.service';
 import { CrewdayzIntegrationService } from '../../services/crewdayz-integration.service';
 import { Equipe, Role, Personne, Capacite, EquipeResource, RoleAttachment } from '../../models/types';
-import { CrewdayzTeamAvailability, RoadmapMappingRoleProfile } from '../../models/crewdayz.types';
+import { CapacitySourceConfig, CrewdayzTeamAvailability, RoadmapMappingRoleProfile } from '../../models/crewdayz.types';
 import {
   LucideAngularModule,
   ChevronDown,
@@ -158,6 +158,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   showCrewdayzMappingModal = false;
   crewdayzAvailabilities: CrewdayzTeamAvailability[] = [];
   crewdayzMappings: RoadmapMappingRoleProfile[] = [];
+  capacitySourceConfigs: CapacitySourceConfig[] = [];
   roleAttachmentsList: RoleAttachment[] = [];
   Sliders = Sliders;
 
@@ -241,7 +242,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
       const endDateStr = this.calendarService.formatWeekStart(this.displayedWeeks[this.displayedWeeks.length - 1]);
 
       // 1️⃣ Load ALL data in parallel (including Crewdayz RPCs & mappings)
-      const [equipes, allCapacities, roles, personnes, roleAtts, mappings, availabilities] = await Promise.all([
+      const [equipes, allCapacities, roles, personnes, roleAtts, mappings, availabilities, sourceConfigs] = await Promise.all([
         this.teamService.getAllEquipes(),
         this.teamService.getAllCapacities(),
         this.teamService.getAllRoles(),
@@ -249,6 +250,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
         this.rolesService.getAllRoleAttachments(),
         this.crewdayzService.getMappings(),
         this.crewdayzService.getAvailabilities(startDateStr, endDateStr),
+        this.crewdayzService.getCapacitySourceConfigs(),
       ]);
 
       this.availableRoles = roles;
@@ -257,6 +259,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
       this.roleAttachmentsList = roleAtts;
       this.crewdayzMappings = mappings;
       this.crewdayzAvailabilities = availabilities;
+      this.capacitySourceConfigs = sourceConfigs;
 
       // Load all resources for all teams in parallel
       const allResourcesArrays = await Promise.all(
@@ -1082,6 +1085,14 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
       this.crewdayzAvailabilities,
       this.crewdayzMappings
     );
+  }
+
+  /**
+   * Retourne la source de capacité effective pour une équipe donnée.
+   * Utilisé pour l'affichage du badge dans le template.
+   */
+  getSourceForTeam(equipeId: string): 'roadmap' | 'crewdayz' {
+    return this.crewdayzService.getSourceForTeam(equipeId, this.capacitySourceConfigs);
   }
 
   openCrewdayzMappingModal() {

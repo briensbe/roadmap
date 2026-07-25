@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CrewdayzIntegrationService } from '../../services/crewdayz-integration.service';
 import {
+  CapacitySource,
+  CapacitySourceConfig,
   CrewdayzDiscoveryResponse,
   RoadmapMappingRoleProfile,
 } from '../../models/crewdayz.types';
@@ -18,6 +20,8 @@ import {
   Sliders,
   Layers,
   Users,
+  Zap,
+  Database,
 } from 'lucide-angular';
 
 @Component({
@@ -39,6 +43,8 @@ export class CrewdayzMappingModalComponent implements OnInit, OnChanges {
 
   discovery: CrewdayzDiscoveryResponse = { equipes: [] };
   mappings: RoadmapMappingRoleProfile[] = [];
+  sourceConfigs: CapacitySourceConfig[] = [];
+  savingSource: string | null = null; // equipeId en cours de sauvegarde
   loading = false;
   saving = false;
 
@@ -61,6 +67,8 @@ export class CrewdayzMappingModalComponent implements OnInit, OnChanges {
   Sliders = Sliders;
   Layers = Layers;
   Users = Users;
+  Zap = Zap;
+  Database = Database;
 
   constructor(
     private crewdayzService: CrewdayzIntegrationService,
@@ -83,12 +91,14 @@ export class CrewdayzMappingModalComponent implements OnInit, OnChanges {
     this.loading = true;
     this.cdr.markForCheck();
     try {
-      const [disc, mapList] = await Promise.all([
+      const [disc, mapList, sourceConfigs] = await Promise.all([
         this.crewdayzService.getDiscovery(true),
         this.crewdayzService.getMappings(true),
+        this.crewdayzService.getCapacitySourceConfigs(true),
       ]);
       this.discovery = disc;
       this.mappings = mapList;
+      this.sourceConfigs = sourceConfigs;
     } catch (err) {
       console.error('[CrewdayzMappingModal] Error loading data:', err);
     } finally {
@@ -103,6 +113,33 @@ export class CrewdayzMappingModalComponent implements OnInit, OnChanges {
       (t) => t.nom.trim().toLowerCase() === this.selectedCrewdayzTeamName.trim().toLowerCase()
     );
     return team ? team.profils : [];
+  }
+
+  getSourceForTeam(equipeId: string): CapacitySource {
+    return this.crewdayzService.getSourceForTeam(equipeId, this.sourceConfigs);
+  }
+
+  async setSource(equipeId: string, source: CapacitySource): Promise<void> {
+    if (this.savingSource === equipeId) return;
+    this.savingSource = equipeId;
+    this.cdr.markForCheck();
+    try {
+      await this.crewdayzService.setCapacitySource(equipeId, source);
+      // Mettre à jour le cache local
+      const idx = this.sourceConfigs.findIndex((c) => c.equipe_id === equipeId);
+      if (idx >= 0) {
+        this.sourceConfigs[idx] = { ...this.sourceConfigs[idx], capacity_source: source };
+      } else {
+        this.sourceConfigs = [...this.sourceConfigs, { equipe_id: equipeId, capacity_source: source }];
+      }
+      this.mappingSaved.emit();
+    } catch (err: any) {
+      console.error('[CrewdayzMappingModal] Error saving source config:', err);
+      alert('Erreur lors de la sauvegarde de la source : ' + (err.message || err));
+    } finally {
+      this.savingSource = null;
+      this.cdr.markForCheck();
+    }
   }
 
   onCrewdayzTeamChange() {
