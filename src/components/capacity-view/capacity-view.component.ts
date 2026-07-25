@@ -21,6 +21,8 @@ import {
   SquarePlus,
   SquareMinus,
   Sliders,
+  Zap,
+  Database,
 } from 'lucide-angular';
 import { getISOWeekYear } from 'date-fns';
 import { storageSignal } from '../../utils/storage-signal';
@@ -34,7 +36,7 @@ import { textContains } from '../../utils/text.utils';
 
 @NgModule({
   imports: [
-    LucideAngularModule.pick({ ChevronDown, ChevronRight, Plus, User, Users, Contact, SquarePlus, SquareMinus, Sliders }),
+    LucideAngularModule.pick({ ChevronDown, ChevronRight, Plus, User, Users, Contact, SquarePlus, SquareMinus, Sliders, Zap, Database }),
   ],
   exports: [LucideAngularModule],
 })
@@ -161,6 +163,8 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   capacitySourceConfigs: CapacitySourceConfig[] = [];
   roleAttachmentsList: RoleAttachment[] = [];
   Sliders = Sliders;
+  Zap = Zap;
+  Database = Database;
 
   constructor(
     private teamService: TeamService,

@@ -406,8 +406,8 @@
 
 .info-stack {
   display: flex;
-  flex-direction: column;
-  gap: 1px;
+  align-items: center;
+  gap: 6px;
   overflow: hidden;
 }
 
@@ -420,19 +420,26 @@
   text-overflow: ellipsis;
 }
 
-.source-badge-crewdayz {
+.source-icon-badge {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  font-size: 10px;
-  font-weight: 600;
-  padding: 1px 6px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
-  color: #fff;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
+  justify-content: center;
   flex-shrink: 0;
+}
+
+.source-icon-crewdayz {
+  color: #0284c7;
+}
+
+.source-icon-roadmap {
+  color: #64748b;
+}
+
+.icon-source,
+.source-icon-badge ::ng-deep svg {
+  width: 14px !important;
+  height: 14px !important;
+  display: block;
 }
 
 .calendar-row:hover .team-label-cell,

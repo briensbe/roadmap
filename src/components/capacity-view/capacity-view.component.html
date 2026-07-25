@@ -237,10 +237,15 @@
                       class="info-label"
                       (mouseenter)="showTooltip($event, teamRow.equipe.nom)"
                       (mouseleave)="hideTooltip()"
-                      >{{ teamRow.equipe.nom }}</span
-                    >
+                      >{{ teamRow.equipe.nom }}</span>
                     @if (getSourceForTeam(teamRow.equipe.id!) === 'crewdayz') {
-                      <span class="source-badge-crewdayz" title="Capacités issues de Crewdayz">⚡ Crewdayz</span>
+                      <span class="source-icon-badge source-icon-crewdayz" title="Capacités issues de Crewdayz">
+                        <i-lucide [img]="Zap" class="icon-source"></i-lucide>
+                      </span>
+                    } @else {
+                      <span class="source-icon-badge source-icon-roadmap" title="Capacités issues de Roadmap">
+                        <i-lucide [img]="Database" class="icon-source"></i-lucide>
+                      </span>
                     }
                   </div>
                 </div>
