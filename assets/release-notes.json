@@ -1,18 +1,52 @@
 [
   {
+    "version": "2026.07.25",
+    "date": "2026-07-25",
+    "news": [
+      {
+        "title": "Choix dynamique de la Source de Capacité par Équipe (Crewdayz / Roadmap)",
+        "items": [
+          "Possibilité de définir la source de capacité au niveau de chaque équipe : basculez instantanément entre la source classique 'Roadmap' (roadmap_capacites) et la source synchrone 'Crewdayz' (cd_get_availabilities).",
+          "Calcul automatique des disponibilités conservé en mode Crewdayz dans la vue Planification, si c'est la source choisie",
+          "Stratégie de secours (fallback) automatique : si aucun mapping Crewdayz n'est trouvé pour une équipe configurée en mode Crewdayz, les capacités de la base Roadmap restent prises en compte.",
+          "Indicateur visuel sous forme de badge discret dans la vue Capacité (icône BDD pour Roadmap, icône Éclair pour Crewdayz) directement accolé au nom de l'équipe."
+        ],
+        "imageUrl": "assets/release-notes/2026-07-25-connexion-C-R-Mapping-et-Choix-source-v2.png",
+        "imageMaxHeight": 320
+      },
+      {
+        "title": "Refonte UX/UI de la Modale de Mapping Crewdayz",
+        "items": [
+          "Vue synthétique prioritaire sur les associations déjà configurées entre équipes/rôles/personnes Roadmap et couples Équipe + Profil Crewdayz.",
+          "Formulaire d'ajout masqué par défaut et activable d'un clic via le bouton 'Ajouter une association' pour une expérience plus épurée.",
+          "Panneau dédié à la sélection de la Source de Capacité par Équipe placé sous le tableau, disponible spécifiquement pour les équipes disposant d'un mapping Crewdayz activement paramétré."
+        ]
+      }
+    ]
+  },
+  {
     "version": "2026.07.24",
     "date": "2026-07-24",
     "news": [
+      {
+        "title": "Intégration & Mapping Crewdayz (Mode RPC V1)",
+        "items": [
+          "Mise en place de l'intégration avec Crewdayz via les fonctions RPC Supabase (cd_get_teams_discovery et cd_get_availabilities).",
+          "Création de la modale d'association permettant de lier une équipe, un rôle spécifique ou une personne Roadmap avec une équipe et un profil Crewdayz.",
+          "Prise en compte d'un coefficient de disponibilité configurable (availability_ratio) pour pondérer le temps disponible (ex: 1.0 = 100%, 0.5 = 50%).",
+          "Affichage en supplément des disponibilités crewdayz en-dessous des capacités Roadmap déjà saisies (uniquement pour les équipes ayant un mapping actif)"
+        ],
+        "imageUrl": "assets/release-notes/2026-07-24-connexion-C-R-RPC-v1.png",
+        "imageMaxHeight": 280
+      },
       {
         "title": "Séparation visuelle des années - SIDE-87",
         "items": [
           "Ajout d'une séparation visuelle distincte lors des changements d'année dans les vues Capacité et Planification.",
           "Optimisation des performances de rendu des données dans les grilles de capacité et de planification."
-        ]
-      },
-      {
-        "title": "Connexion Crewdayz (Mode RPC V1)",
-        "items": ["Intégration et synchronisation entre Crewdayz et Roadmap avec modale de mapping dédiée."]
+        ],
+        "imageUrl": "assets/release-notes/2026-07-24-séparation-années.png",
+        "imageMaxHeight": 220
       }
     ]
   },
