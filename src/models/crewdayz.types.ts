@@ -55,3 +55,11 @@ export interface CapacitySourceConfig {
   created_at?: string;
   updated_at?: string;
 }
+
+export interface CrewdayzCacheStatus {
+  cachedAt: Date | null;
+  lastCrewdayzEventAt: Date | null;
+  isStale: boolean;
+  isFetching: boolean;
+}
+

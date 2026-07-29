@@ -31,5 +31,8 @@
     "strictInputAccessModifiers": true,
     "strictTemplates": true,
     "strictStandalone": true
-  }
+  },
+  "exclude": [
+    "supabase/**/*"
+  ]
 }

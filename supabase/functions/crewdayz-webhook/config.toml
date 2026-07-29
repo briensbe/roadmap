@@ -1,0 +1,3 @@
+#ATTENTION EN LOCAL ça ne fonctionne pas et il faut mettre cette section directement dans le config.toml général dans /supabase/
+[functions.crewdayz-webhook]
+verify_jwt = false

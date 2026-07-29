@@ -22,6 +22,7 @@ export const DB_TABLES = {
   IMPORT_BUDGET: `${DB_PREFIX}import_budget`,
   MAPPING_ROLES_PROFILES: `${DB_PREFIX}mapping_roles_profiles`,
   CAPACITY_SOURCE_CONFIG: `${DB_PREFIX}capacity_source_config`,
+  INTEGRATION_EVENTS: `${DB_PREFIX}integration_events`,
 } as const;
 
 export const DB_VIEWS = {

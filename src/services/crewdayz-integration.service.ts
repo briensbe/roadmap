@@ -4,6 +4,7 @@ import { DB_TABLES } from '../constants/db-tables';
 import {
   CapacitySource,
   CapacitySourceConfig,
+  CrewdayzCacheStatus,
   CrewdayzDiscoveryResponse,
   CrewdayzTeamAvailability,
   RoadmapMappingRoleProfile,
@@ -18,7 +19,31 @@ export class CrewdayzIntegrationService {
   private _mappingsCache: RoadmapMappingRoleProfile[] | null = null;
   private _sourceConfigCache: CapacitySourceConfig[] | null = null;
 
+  // In-Memory Cache des Disponibilités avec Invalidation événementielle
+  private _availabilitiesCache: CrewdayzTeamAvailability[] | null = null;
+  private _cacheParamsKey: string | null = null;
+  private _cachedAt: Date | null = null;
+  private _lastCrewdayzEventAt: Date | null = null;
+  private _isFetchingAvailabilities = false;
+
   constructor(private supabase: SupabaseService) {}
+
+  /**
+   * Retourne l'état actuel du cache en mémoire et l'horodatage des événements
+   */
+  getCacheStatus(): CrewdayzCacheStatus {
+    const isStale =
+      !this._availabilitiesCache ||
+      !this._cachedAt ||
+      (!!this._lastCrewdayzEventAt && this._lastCrewdayzEventAt.getTime() > this._cachedAt.getTime());
+
+    return {
+      cachedAt: this._cachedAt,
+      lastCrewdayzEventAt: this._lastCrewdayzEventAt,
+      isStale,
+      isFetching: this._isFetchingAvailabilities,
+    };
+  }
 
   /**
    * Récupère la liste hiérarchique des équipes et profils Crewdayz (API Discovery)
@@ -39,26 +64,70 @@ export class CrewdayzIntegrationService {
   }
 
   /**
-   * Récupère les disponibilités par équipe, profil et semaine pour une plage de dates
+   * Récupère les disponibilités par équipe, profil et semaine pour une plage de dates.
+   * Utilise le cache en mémoire et vérifie la table d'événements (roadmap_integration_events)
+   * pour invalider uniquement si un événement plus récent que cachedAt existe.
    */
   async getAvailabilities(
     startDate: string,
     endDate: string,
-    teamName?: string
+    teamName?: string,
+    forceRefresh = false
   ): Promise<CrewdayzTeamAvailability[]> {
-    const { data, error } = await this.supabase.client.rpc('cd_get_availabilities', {
-      p_start_date: startDate,
-      p_end_date: endDate,
-      p_team_name: teamName || null,
-    });
+    const currentParamsKey = `${startDate}_${endDate}_${teamName || 'all'}`;
 
-    if (error) {
-      console.error('[CrewdayzIntegrationService] Error calling cd_get_availabilities:', error);
-      return [];
+    // 1. Si le cache existe pour ces mêmes paramètres et qu'un rafraîchissement n'est pas forcé
+    if (this._availabilitiesCache && this._cacheParamsKey === currentParamsKey && !forceRefresh) {
+      try {
+        // Contrôle rapide (< 10ms) sur le dernier événement 'crewdayz' dans roadmap_integration_events
+        const { data } = await this.supabase.client
+          .from(DB_TABLES.INTEGRATION_EVENTS)
+          .select('created_at')
+          .eq('source', 'crewdayz')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (data?.created_at) {
+          this._lastCrewdayzEventAt = new Date(data.created_at);
+        }
+
+        // Si aucun événement plus récent que la date de mise en cache -> Retourner le cache instantanément (0ms) !
+        if (
+          !this._lastCrewdayzEventAt ||
+          (this._cachedAt && this._lastCrewdayzEventAt.getTime() <= this._cachedAt.getTime())
+        ) {
+          return this._availabilitiesCache;
+        }
+      } catch (err) {
+        console.warn('[CrewdayzIntegrationService] Fast event check error, using in-memory cache:', err);
+        return this._availabilitiesCache;
+      }
     }
 
-    return (data as CrewdayzTeamAvailability[]) || [];
+    // 2. Si le cache est absent, obsolète ou réclamé explicitement -> Appel de la RPC lourde (3-4s)
+    this._isFetchingAvailabilities = true;
+    try {
+      const { data, error } = await this.supabase.client.rpc('cd_get_availabilities', {
+        p_start_date: startDate,
+        p_end_date: endDate,
+        p_team_name: teamName || null,
+      });
+
+      if (error) {
+        console.error('[CrewdayzIntegrationService] Error calling cd_get_availabilities:', error);
+        return this._availabilitiesCache || [];
+      }
+
+      this._availabilitiesCache = (data as CrewdayzTeamAvailability[]) || [];
+      this._cacheParamsKey = currentParamsKey;
+      this._cachedAt = new Date();
+      return this._availabilitiesCache;
+    } finally {
+      this._isFetchingAvailabilities = false;
+    }
   }
+
 
   /**
    * Récupère les règles de mapping Roadmap <-> Crewdayz

@@ -63,7 +63,7 @@ supabase/.storage/
 /environments
 environment.ts
 environment*
-.env
+.env*
 
 # perso 
 private-docs/
