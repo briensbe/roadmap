@@ -4,10 +4,17 @@
     "date": "2026-07-30",
     "news": [
       {
+        "title": "Supabase Realtime pour la Connexion Crewdayz-Roadmap",
+        "items": [
+          "Activation de Supabase Realtime sur la table roadmap_integration_events en dernière optimisation.",
+          "Abonnement du service Angular aux événements en temps réel : invalidation instantanée du cache des disponibilités sans besoin de requêtes SQL de contrôle systématiques."
+        ]
+      },
+      {
         "title": "Optimisation des performances Connexion Crewdayz-Roadmap (C-R) (Cache In-Memory & Webhook)",
         "items": [
           "Les disponibilités Crewdayz sont conservées en mémoire dans Roadmap, ce qui minimise les skeletons de chargement.",
-          "Vérification des nouveaux événements Crewdayz dans rodamp_integration_events, évitant de relancer inutilement la RPC de 3-4s.",
+          "Vérification des nouveaux événements Crewdayz dans roadmap_integration_events (+ realtime), évitant de relancer inutilement la RPC de 3-4s.",
           "Rechargement sur notification : La RPC de calcul des disponibilités ne s'exécute qu'après la réception d'un webhook d'invalidation ou sur action manuelle."
         ]
       },
