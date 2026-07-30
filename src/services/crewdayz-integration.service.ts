@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { Injectable, OnDestroy } from '@angular/core';
+import { RealtimeChannel } from '@supabase/supabase-js';
 import { SupabaseService } from './supabase.service';
 import { DB_TABLES } from '../constants/db-tables';
 import {
@@ -14,19 +15,59 @@ import { paginateQuery } from '../utils/supabase-pagination';
 @Injectable({
   providedIn: 'root',
 })
-export class CrewdayzIntegrationService {
+export class CrewdayzIntegrationService implements OnDestroy {
   private _discoveryCache: CrewdayzDiscoveryResponse | null = null;
   private _mappingsCache: RoadmapMappingRoleProfile[] | null = null;
   private _sourceConfigCache: CapacitySourceConfig[] | null = null;
 
-  // In-Memory Cache des Disponibilités avec Invalidation événementielle
+  // In-Memory Cache des Disponibilités avec Invalidation événementielle en Temps Réel
   private _availabilitiesCache: CrewdayzTeamAvailability[] | null = null;
   private _cacheParamsKey: string | null = null;
   private _cachedAt: Date | null = null;
   private _lastCrewdayzEventAt: Date | null = null;
   private _isFetchingAvailabilities = false;
+  private realtimeChannel: RealtimeChannel | null = null;
 
-  constructor(private supabase: SupabaseService) {}
+  constructor(private supabase: SupabaseService) {
+    this.setupRealtimeSubscription();
+  }
+
+  ngOnDestroy(): void {
+    if (this.realtimeChannel) {
+      this.supabase.client.removeChannel(this.realtimeChannel);
+      this.realtimeChannel = null;
+    }
+  }
+
+  /**
+   * Configure l'écoute Supabase Realtime sur la table roadmap_integration_events
+   * Invalide automatiquement le cache des disponibilités dès qu'un nouvel événement 'crewdayz' survient.
+   */
+  private setupRealtimeSubscription(): void {
+    this.realtimeChannel = this.supabase.client
+      .channel('roadmap-integration-events-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: DB_TABLES.INTEGRATION_EVENTS,
+        },
+        (payload) => {
+          const newRecord = payload.new as { source?: string; created_at?: string } | null;
+          if (!newRecord?.source || newRecord.source === 'crewdayz') {
+            console.log('[CrewdayzIntegrationService] Événement Realtime reçu sur roadmap_integration_events, invalidation du cache :', payload);
+            if (newRecord?.created_at) {
+              this._lastCrewdayzEventAt = new Date(newRecord.created_at);
+            } else {
+              this._lastCrewdayzEventAt = new Date();
+            }
+            this._availabilitiesCache = null;
+          }
+        }
+      )
+      .subscribe();
+  }
 
   /**
    * Retourne l'état actuel du cache en mémoire et l'horodatage des événements
@@ -65,8 +106,7 @@ export class CrewdayzIntegrationService {
 
   /**
    * Récupère les disponibilités par équipe, profil et semaine pour une plage de dates.
-   * Utilise le cache en mémoire et vérifie la table d'événements (roadmap_integration_events)
-   * pour invalider uniquement si un événement plus récent que cachedAt existe.
+   * Utilise le cache en mémoire et se fie au canal Realtime pour les invalidations.
    */
   async getAvailabilities(
     startDate: string,
@@ -76,36 +116,12 @@ export class CrewdayzIntegrationService {
   ): Promise<CrewdayzTeamAvailability[]> {
     const currentParamsKey = `${startDate}_${endDate}_${teamName || 'all'}`;
 
-    // 1. Si le cache existe pour ces mêmes paramètres et qu'un rafraîchissement n'est pas forcé
+    // 1. Si le cache existe pour ces mêmes paramètres et qu'un rafraîchissement n'est pas forcé -> 0ms !
     if (this._availabilitiesCache && this._cacheParamsKey === currentParamsKey && !forceRefresh) {
-      try {
-        // Contrôle rapide (< 10ms) sur le dernier événement 'crewdayz' dans roadmap_integration_events
-        const { data } = await this.supabase.client
-          .from(DB_TABLES.INTEGRATION_EVENTS)
-          .select('created_at')
-          .eq('source', 'crewdayz')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (data?.created_at) {
-          this._lastCrewdayzEventAt = new Date(data.created_at);
-        }
-
-        // Si aucun événement plus récent que la date de mise en cache -> Retourner le cache instantanément (0ms) !
-        if (
-          !this._lastCrewdayzEventAt ||
-          (this._cachedAt && this._lastCrewdayzEventAt.getTime() <= this._cachedAt.getTime())
-        ) {
-          return this._availabilitiesCache;
-        }
-      } catch (err) {
-        console.warn('[CrewdayzIntegrationService] Fast event check error, using in-memory cache:', err);
-        return this._availabilitiesCache;
-      }
+      return this._availabilitiesCache;
     }
 
-    // 2. Si le cache est absent, obsolète ou réclamé explicitement -> Appel de la RPC lourde (3-4s)
+    // 2. Si le cache est absent, obsolète ou réclamé explicitement -> Appel de la RPC
     this._isFetchingAvailabilities = true;
     try {
       const { data, error } = await this.supabase.client.rpc('cd_get_availabilities', {
