@@ -64,6 +64,8 @@ function printUsage() {
 }
 
 async function main() {
+  const scriptStartTime = performance.now();
+
   const args = process.argv.slice(2);
   let envFileArg = '';
   let startDate = '2026-07-01';
@@ -93,15 +95,20 @@ async function main() {
     process.exit(1);
   }
 
+  const tConfigStart = performance.now();
   const { url, key, resolvedPath } = await loadConfig(envFileArg);
 
   console.log(`📍 Fichier d'environnement chargé : ${resolvedPath}`);
   console.log(`🌐 URL Supabase cible : ${url}\n`);
 
   const supabase = createClient(url, key);
+  const configDuration = performance.now() - tConfigStart;
 
   console.log('Testing RPC cd_get_teams_discovery...');
+  const tDiscoveryStart = performance.now();
   const { data: discoveryData, error: discoveryError } = await supabase.rpc('cd_get_teams_discovery');
+  const discoveryDuration = performance.now() - tDiscoveryStart;
+
   if (discoveryError) {
     console.error('Discovery Error:', discoveryError);
   } else {
@@ -114,10 +121,13 @@ async function main() {
   console.log(`   - p_end_date   = "${endDate}"`);
   console.log('------------------------------------------------------------');
 
+  const tAvailStart = performance.now();
   const { data: availData, error: availError } = await supabase.rpc('cd_get_availabilities', {
     p_start_date: startDate,
     p_end_date: endDate,
   });
+  const availDuration = performance.now() - tAvailStart;
+
   if (availError) {
     console.error('Availabilities Error:', availError);
   } else {
@@ -125,12 +135,28 @@ async function main() {
   }
 
   console.log('\nTesting table roadmap_mapping_roles_profiles...');
+  const tMappingStart = performance.now();
   const { data: mappingData, error: mappingError } = await supabase.from('roadmap_mapping_roles_profiles').select('*');
+  const mappingDuration = performance.now() - tMappingStart;
+
   if (mappingError) {
     console.error('Mapping Table Error:', mappingError);
   } else {
     console.log('Mapping Table Result:', mappingData);
   }
+
+  const totalDuration = performance.now() - scriptStartTime;
+
+  console.log('\n============================================================');
+  console.log('⏱️  RÉCAPITULATIF DES TEMPS D\'EXÉCUTION :');
+  console.log('------------------------------------------------------------');
+  console.log(`  • Config & client Supabase    : ${configDuration.toFixed(2)} ms`);
+  console.log(`  • RPC cd_get_teams_discovery  : ${discoveryDuration.toFixed(2)} ms`);
+  console.log(`  • RPC cd_get_availabilities   : ${availDuration.toFixed(2)} ms`);
+  console.log(`  • Table mapping roles/profiles: ${mappingDuration.toFixed(2)} ms`);
+  console.log('------------------------------------------------------------');
+  console.log(`  ⏱️  TEMPS TOTAL D'EXÉCUTION    : ${totalDuration.toFixed(2)} ms (${(totalDuration / 1000).toFixed(2)} s)`);
+  console.log('============================================================\n');
 }
 
 main();

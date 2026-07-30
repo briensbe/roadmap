@@ -67,6 +67,7 @@ environment*
 
 # perso 
 private-docs/
+toto*
 
 # Claude Code
 .claude/
