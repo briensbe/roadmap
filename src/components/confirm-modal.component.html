@@ -1,0 +1,41 @@
+@if (visible) {
+  <div class="confirm-overlay" (click)="onCancel()">
+    <div class="confirm-card" (click)="$event.stopPropagation()">
+      <div class="confirm-header">
+        <div class="header-left">
+          <div class="icon-container" [class.danger]="variant === 'danger'" [class.primary]="variant === 'primary'">
+            <lucide-icon [name]="icon" [size]="24" class="confirm-icon"></lucide-icon>
+          </div>
+          <h3 class="confirm-title">{{ title }}</h3>
+        </div>
+        <button class="close-btn" (click)="onCancel()" title="Fermer">
+          <lucide-icon name="x" [size]="20"></lucide-icon>
+        </button>
+      </div>
+
+      <div class="confirm-body">
+        <p class="confirm-message">{{ message }}</p>
+        
+        @if (warningText) {
+          <div class="confirm-warning-box">
+            <lucide-icon name="alert-triangle" [size]="18" class="warning-icon"></lucide-icon>
+            <p class="warning-text">{{ warningText }}</p>
+          </div>
+        }
+      </div>
+
+      <div class="confirm-footer">
+        @if (showCancel) {
+          <button class="btn btn-secondary" (click)="onCancel()">{{ cancelLabel }}</button>
+        }
+        <button
+          class="btn"
+          [class.btn-danger]="variant === 'danger'"
+          [class.btn-primary]="variant === 'primary'"
+          (click)="onConfirm()">
+          {{ confirmLabel }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

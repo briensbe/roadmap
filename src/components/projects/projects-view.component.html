@@ -10,10 +10,12 @@
           <lucide-icon [img]="FileUp" [size]="18"></lucide-icon>
           Exporter
         </button>
-        <div class="dropdown-menu export-dropdown" *ngIf="showExportMenu">
-          <button class="dropdown-item" (click)="exportToExcel('filtered')">Projets filtrés</button>
-          <button class="dropdown-item" (click)="exportToExcel('all')">Tous les projets</button>
-        </div>
+        @if (showExportMenu) {
+          <div class="dropdown-menu export-dropdown">
+            <button class="dropdown-item" (click)="exportToExcel('filtered')">Projets filtrés</button>
+            <button class="dropdown-item" (click)="exportToExcel('all')">Tous les projets</button>
+          </div>
+        }
       </div>
       <button class="btn btn-secondary" (click)="triggerImport()">
         <lucide-icon [img]="FileDown" [size]="18"></lucide-icon>
@@ -40,98 +42,41 @@
     </div>
 
     <div class="controls-right">
-      <div class="status-dropdown-container" style="position: relative">
+      <div class="status-dropdown-container">
         <div
           class="filter-select select-trigger"
           [class.active]="showStatusDropdown()"
-          (click)="toggleStatusDropdown($event)"
-          style="
-            width: 170px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            cursor: pointer;
-            user-select: none;
-          ">
-          <span class="trigger-label" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">
+          (click)="toggleStatusDropdown($event)">
+          <span class="trigger-label">
             {{ getStatusFilterLabel() }}
           </span>
           <lucide-icon
             [img]="ChevronDown"
             [size]="14"
-            style="color: #64748b; flex-shrink: 0; margin-left: 4px"></lucide-icon>
+            class="trigger-icon"></lucide-icon>
         </div>
 
         @if (showStatusDropdown()) {
           <div
-            class="dropdown-menu shadow-lg"
-            (click)="$event.stopPropagation()"
-            style="
-              position: absolute;
-              top: 100%;
-              right: 0;
-              width: 220px;
-              background: white;
-              border: 1px solid #e2e8f0;
-              border-radius: 8px;
-              margin-top: 8px;
-              z-index: 2000;
-              display: flex;
-              flex-direction: column;
-              max-height: 400px;
-              padding: 0;
-              box-shadow:
-                0 10px 15px -3px rgba(0, 0, 0, 0.1),
-                0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            ">
-            <div
-              class="dropdown-header"
-              style="
-                padding: 8px 12px;
-                border-bottom: 1px solid #f1f5f9;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                background: #f8fafc;
-                border-radius: 8px 8px 0 0;
-                font-size: 11px;
-                font-weight: 600;
-                color: #64748b;
-                user-select: none;
-              ">
+            class="dropdown-menu status-dropdown"
+            (click)="$event.stopPropagation()">
+            <div class="dropdown-header">
               <span>{{ statusFilter().length }} sélectionné(s)</span>
               @if (statusFilter().length > 0) {
                 <button
                   class="btn-clear"
-                  (click)="clearStatusFilter(); $event.stopPropagation()"
-                  style="
-                    background: transparent;
-                    border: none;
-                    color: #3b82f6;
-                    cursor: pointer;
-                    font-size: 11px;
-                    padding: 0;
-                    font-family: inherit;
-                  ">
+                  (click)="clearStatusFilter(); $event.stopPropagation()">
                   Effacer
                 </button>
               }
             </div>
-            <div class="dropdown-list" style="overflow-y: auto; padding: 4px 0">
+            <div class="dropdown-list">
               @for (s of ['Actif', 'En cours', 'Planifié', 'Terminé', 'En pause']; track s) {
                 <div
                   class="dropdown-item"
-                  (click)="toggleStatusSelection(s); $event.stopPropagation()"
-                  style="
-                    padding: 8px 12px;
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                    cursor: pointer;
-                    transition: background 0.15s ease;
-                  ">
+                  (click)="toggleStatusSelection(s); $event.stopPropagation()">
                   <input type="checkbox" [checked]="isStatusSelected(s)" style="pointer-events: none" />
-                  <span class="status-badge" [attr.data-status]="s" style="margin: 0">{{ s }}</span>
+                  <span class="status-badge" [attr.data-status]="s">{{ s }}</span>
                 </div>
               }
             </div>
@@ -180,284 +125,322 @@
   </div>
 
   <!-- Table View -->
-  <div *ngIf="viewMode() === 'table'" class="projects-table-wrapper">
-    <table class="projects-table">
-      <thead>
-        <tr>
-          <th class="col-code">Code</th>
-          <th class="col-name">Nom du projet</th>
-          <th class="col-status">Statut</th>
-          <th class="col-manager">Chef de projet</th>
-          <th class="col-description">Description</th>
-          <th class="col-ref">Réf. Ext.</th>
-          <th class="col-actions"></th>
-        </tr>
-      </thead>
-      <tbody cdkDropList (cdkDropListDropped)="drop($event)">
-        <tr
-          *ngFor="let projet of filteredProjects(); let i = index"
-          cdkDrag
-          class="project-table-row"
-          (click)="openEditModal(projet)">
-          <td class="col-code">
-            <div style="display: inline-flex; align-items: center; gap: 6px;">
-              <span class="project-code" [style.color]="projet.color || '#3b82f6'">{{ projet.code_projet }}</span>
-              <button
-                *ngIf="projet.code_projet"
-                (click)="copyToClipboard($event, projet.code_projet)"
-                class="btn-copy-code"
-                [class.copied]="copiedCodes().has(projet.code_projet)"
-                [title]="copiedCodes().has(projet.code_projet) ? 'Code copié !' : 'Copier le code projet'">
-                <lucide-icon [img]="copiedCodes().has(projet.code_projet) ? Check : Copy" [size]="11"></lucide-icon>
-              </button>
-            </div>
-          </td>
-          <td class="col-name">
-            <div class="name-with-color">
-              <span class="color-indicator" [style.background-color]="projet.color || '#3b82f6'"></span>
-              {{ projet.nom_projet }}
-            </div>
-          </td>
-          <td class="col-status">
-            <span class="status-badge small" [attr.data-status]="projet.statut">{{ projet.statut }}</span>
-          </td>
-          <td class="col-manager">{{ projet.chef_projet || '—' }}</td>
-          <td class="col-description">
-            <div class="truncate-desc" [title]="projet.description">{{ projet.description || '—' }}</div>
-          </td>
-          <td class="col-ref">
-            <span *ngIf="projet.reference_externe; else noRef">
-              <ng-container *ngIf="externalReferenceUrl(); else noLinkTable">
-                <a
-                  [href]="externalReferenceUrl() + projet.reference_externe"
-                  target="_blank"
-                  class="ref-link"
-                  (click)="$event.stopPropagation()">
-                  #{{ projet.reference_externe }}
-                  <lucide-icon [img]="ExternalLink" [size]="12"></lucide-icon>
-                </a>
-              </ng-container>
-              <ng-template #noLinkTable> #{{ projet.reference_externe }} </ng-template>
-            </span>
-            <ng-template #noRef>—</ng-template>
-          </td>
-          <td class="col-actions" (click)="$event.stopPropagation()">
-            <div class="menu-container">
-              <button class="menu-btn" (click)="toggleMenu($event, projet.id!)">
-                <lucide-icon [img]="MoreVertical" [size]="18"></lucide-icon>
-              </button>
-              <div
-                class="dropdown-menu right"
-                [class.up]="i >= filteredProjects().length - 2 && i > 0"
-                *ngIf="activeMenuId === projet.id">
-                <button class="dropdown-item" (click)="openEditModal(projet)">
-                  <lucide-icon [img]="Edit" [size]="14"></lucide-icon>
-                  Modifier
-                </button>
-                <button class="dropdown-item" (click)="openChiffresModal(projet.id)">
-                  <lucide-icon [img]="LucideCalculator" [size]="14"></lucide-icon>
-                  Gérer les chiffres
-                </button>
-                <button class="dropdown-item" (click)="duplicateProjet(projet)">
-                  <lucide-icon [img]="Copy" [size]="14"></lucide-icon>
-                  Dupliquer
-                </button>
-                <button class="dropdown-item delete" (click)="deleteProjet(projet)">
-                  <lucide-icon [img]="Trash2" [size]="14"></lucide-icon>
-                  Supprimer
-                </button>
-              </div>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  @if (viewMode() === 'table') {
+    <div class="projects-table-wrapper">
+      <table class="projects-table">
+        <thead>
+          <tr>
+            <th class="col-code">Code</th>
+            <th class="col-name">Nom du projet</th>
+            <th class="col-status">Statut</th>
+            <th class="col-manager">Chef de projet</th>
+            <th class="col-description">Description</th>
+            <th class="col-ref">Réf. Ext.</th>
+            <th class="col-actions"></th>
+          </tr>
+        </thead>
+        <tbody cdkDropList (cdkDropListDropped)="drop($event)">
+          @for (projet of filteredProjects(); track projet.id || projet.code_projet; let i = $index) {
+            <tr
+              cdkDrag
+              class="project-table-row"
+              (click)="openEditModal(projet)">
+              <td class="col-code">
+                <div class="code-cell-wrapper">
+                  <span class="project-code" [style.color]="projet.color || '#3b82f6'">{{ projet.code_projet }}</span>
+                  @if (projet.code_projet) {
+                    <button
+                      (click)="copyToClipboard($event, projet.code_projet)"
+                      class="btn-copy-code"
+                      [class.copied]="copiedCodes().has(projet.code_projet)"
+                      [title]="copiedCodes().has(projet.code_projet) ? 'Code copié !' : 'Copier le code projet'">
+                      <lucide-icon [img]="copiedCodes().has(projet.code_projet) ? Check : Copy" [size]="11"></lucide-icon>
+                    </button>
+                  }
+                </div>
+              </td>
+              <td class="col-name">
+                <div class="name-with-color">
+                  <span class="color-indicator" [style.background-color]="projet.color || '#3b82f6'"></span>
+                  {{ projet.nom_projet }}
+                </div>
+              </td>
+              <td class="col-status">
+                <span class="status-badge small" [attr.data-status]="projet.statut">{{ projet.statut }}</span>
+              </td>
+              <td class="col-manager">{{ projet.chef_projet || '—' }}</td>
+              <td class="col-description">
+                <div class="truncate-desc" [title]="projet.description">{{ projet.description || '—' }}</div>
+              </td>
+              <td class="col-ref">
+                @if (projet.reference_externe) {
+                  @if (externalReferenceUrl()) {
+                    <a
+                      [href]="externalReferenceUrl() + projet.reference_externe"
+                      target="_blank"
+                      class="ref-link"
+                      (click)="$event.stopPropagation()">
+                      #{{ projet.reference_externe }}
+                      <lucide-icon [img]="ExternalLink" [size]="12"></lucide-icon>
+                    </a>
+                  } @else {
+                    #{{ projet.reference_externe }}
+                  }
+                } @else {
+                  —
+                }
+              </td>
+              <td class="col-actions" (click)="$event.stopPropagation()">
+                <div class="menu-container">
+                  <button class="menu-btn" (click)="toggleMenu($event, projet.id!)">
+                    <lucide-icon [img]="MoreVertical" [size]="18"></lucide-icon>
+                  </button>
+                  @if (activeMenuId === projet.id) {
+                    <div
+                      class="dropdown-menu right"
+                      [class.up]="i >= filteredProjects().length - 2 && i > 0">
+                      <button class="dropdown-item" (click)="openEditModal(projet)">
+                        <lucide-icon [img]="Edit" [size]="14"></lucide-icon>
+                        Modifier
+                      </button>
+                      <button class="dropdown-item" (click)="openChiffresModal(projet.id)">
+                        <lucide-icon [img]="LucideCalculator" [size]="14"></lucide-icon>
+                        Gérer les chiffres
+                      </button>
+                      <button class="dropdown-item" (click)="duplicateProjet(projet)">
+                        <lucide-icon [img]="Copy" [size]="14"></lucide-icon>
+                        Dupliquer
+                      </button>
+                      <button class="dropdown-item delete" (click)="deleteProjet(projet)">
+                        <lucide-icon [img]="Trash2" [size]="14"></lucide-icon>
+                        Supprimer
+                      </button>
+                    </div>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
 
-    <div *ngIf="filteredProjects().length === 0" class="empty-state">
-      <p>Aucun projet trouvé</p>
+      @if (filteredProjects().length === 0) {
+        <div class="empty-state">
+          <p>Aucun projet trouvé</p>
+        </div>
+      }
     </div>
-  </div>
+  }
 
   <!-- Card View -->
-  <div *ngIf="viewMode() === 'card'" class="projects-grid" cdkDropList (cdkDropListDropped)="drop($event)">
-    <div
-      *ngFor="let projet of filteredProjects()"
-      cdkDrag
-      class="project-card"
-      [style.border-left-color]="projet.color || '#3b82f6'"
-      [class.menu-active]="activeMenuId === projet.id"
-      (click)="openEditModal(projet)">
-      <div class="card-header">
-        <div class="card-header-top">
-          <div class="project-identifiers">
-            <span class="project-code" [style.color]="projet.color || '#3b82f6'">{{ projet.code_projet }}</span>
-            <button
-              *ngIf="projet.code_projet"
-              (click)="copyToClipboard($event, projet.code_projet)"
-              class="btn-copy-code"
-              [class.copied]="copiedCodes().has(projet.code_projet)"
-              [title]="copiedCodes().has(projet.code_projet) ? 'Code copié !' : 'Copier le code projet'">
-              <lucide-icon [img]="copiedCodes().has(projet.code_projet) ? Check : Copy" [size]="11"></lucide-icon>
-            </button>
-            <span class="external-ref-tag" *ngIf="projet.reference_externe">
-              <ng-container *ngIf="externalReferenceUrl(); else noLink">
-                <a
-                  [href]="externalReferenceUrl() + projet.reference_externe"
-                  target="_blank"
-                  class="ref-link"
-                  (click)="$event.stopPropagation()">
-                  #{{ projet.reference_externe }}
-                  <lucide-icon [img]="ExternalLink" [size]="12"></lucide-icon>
-                </a>
-              </ng-container>
-              <ng-template #noLink> #{{ projet.reference_externe }} </ng-template>
-            </span>
+  @if (viewMode() === 'card') {
+    <div class="projects-grid" cdkDropList (cdkDropListDropped)="drop($event)">
+      @for (projet of filteredProjects(); track projet.id || projet.code_projet) {
+        <div
+          cdkDrag
+          class="project-card"
+          [style.border-left-color]="projet.color || '#3b82f6'"
+          [class.menu-active]="activeMenuId === projet.id"
+          (click)="openEditModal(projet)">
+          <div class="card-header">
+            <div class="card-header-top">
+              <div class="project-identifiers">
+                <span class="project-code" [style.color]="projet.color || '#3b82f6'">{{ projet.code_projet }}</span>
+                @if (projet.code_projet) {
+                  <button
+                    (click)="copyToClipboard($event, projet.code_projet)"
+                    class="btn-copy-code"
+                    [class.copied]="copiedCodes().has(projet.code_projet)"
+                    [title]="copiedCodes().has(projet.code_projet) ? 'Code copié !' : 'Copier le code projet'">
+                    <lucide-icon [img]="copiedCodes().has(projet.code_projet) ? Check : Copy" [size]="11"></lucide-icon>
+                  </button>
+                }
+                @if (projet.reference_externe) {
+                  <span class="external-ref-tag">
+                    @if (externalReferenceUrl()) {
+                      <a
+                        [href]="externalReferenceUrl() + projet.reference_externe"
+                        target="_blank"
+                        class="ref-link"
+                        (click)="$event.stopPropagation()">
+                        #{{ projet.reference_externe }}
+                        <lucide-icon [img]="ExternalLink" [size]="12"></lucide-icon>
+                      </a>
+                    } @else {
+                      #{{ projet.reference_externe }}
+                    }
+                  </span>
+                }
+              </div>
+              <div class="header-actions">
+                <span class="status-badge" [attr.data-status]="projet.statut">{{ projet.statut }}</span>
+                <div class="menu-container" (click)="$event.stopPropagation()">
+                  <button class="menu-btn" (click)="toggleMenu($event, projet.id!)">
+                    <lucide-icon [img]="MoreVertical" [size]="20"></lucide-icon>
+                  </button>
+                  @if (activeMenuId === projet.id) {
+                    <div class="dropdown-menu">
+                      <button class="dropdown-item" (click)="openEditModal(projet)">
+                        <lucide-icon [img]="Edit" [size]="14"></lucide-icon>
+                        Modifier
+                      </button>
+                      <button class="dropdown-item" (click)="openChiffresModal(projet.id)">
+                        <lucide-icon [img]="LucideCalculator" [size]="14"></lucide-icon>
+                        Gérer les chiffres
+                      </button>
+                      <button class="dropdown-item" (click)="duplicateProjet(projet)">
+                        <lucide-icon [img]="Copy" [size]="14"></lucide-icon>
+                        Dupliquer
+                      </button>
+                      <button class="dropdown-item delete" (click)="deleteProjet(projet)">
+                        <lucide-icon [img]="Trash2" [size]="14"></lucide-icon>
+                        Supprimer
+                      </button>
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="header-actions">
-            <span class="status-badge" [attr.data-status]="projet.statut">{{ projet.statut }}</span>
+
+          <div class="card-body">
+            <h3 class="project-name">{{ projet.nom_projet }}</h3>
+            @if (projet.chef_projet) {
+              <p class="project-manager">
+                <span class="label">Chef de projet:</span> {{ projet.chef_projet }}
+              </p>
+            }
+            @if (projet.description) {
+              <p class="project-description">{{ projet.description }}</p>
+            }
+
+            <div class="progress-section">
+              <div class="progress-header">
+                <span class="progress-label">Progression</span>
+                <span class="progress-percent">{{ getProgressPercent(projet) }}%</span>
+              </div>
+              <div class="progress-bar">
+                <div
+                  class="progress-fill"
+                  [style.width.%]="getProgressPercent(projet)"
+                  [class.warning]="getProgressPercent(projet) > 80 && getProgressPercent(projet) <= 100"
+                  [class.danger]="getProgressPercent(projet) > 100"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (filteredProjects().length === 0) {
+        <div class="empty-state">
+          <p>Aucun projet trouvé</p>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- List View -->
+  @if (viewMode() === 'list') {
+    <div class="projects-list-view" cdkDropList (cdkDropListDropped)="drop($event)">
+      @for (projet of filteredProjects(); track projet.id || projet.code_projet) {
+        <div
+          cdkDrag
+          class="project-list-card"
+          [style.border-left-color]="projet.color || '#3b82f6'"
+          [class.menu-active]="activeMenuId === projet.id"
+          (click)="openEditModal(projet)">
+          <div class="card-left">
+            <div class="project-info">
+              <div class="project-name-row">
+                <span class="project-name">{{ projet.nom_projet }}</span>
+                <span class="status-badge small" [attr.data-status]="projet.statut">{{ projet.statut }}</span>
+              </div>
+              <div class="project-meta">
+                <span class="project-code">{{ projet.code_projet }}</span>
+                @if (projet.code_projet) {
+                  <button
+                    (click)="copyToClipboard($event, projet.code_projet)"
+                    class="btn-copy-code"
+                    [class.copied]="copiedCodes().has(projet.code_projet)"
+                    [title]="copiedCodes().has(projet.code_projet) ? 'Code copié !' : 'Copier le code projet'">
+                    <lucide-icon [img]="copiedCodes().has(projet.code_projet) ? Check : Copy" [size]="11"></lucide-icon>
+                  </button>
+                }
+                @if (projet.reference_externe) {
+                  <span>
+                    •
+                    <span class="external-ref-tag">
+                      @if (externalReferenceUrl()) {
+                        <a
+                          [href]="externalReferenceUrl() + projet.reference_externe"
+                          target="_blank"
+                          class="ref-link"
+                          (click)="$event.stopPropagation()">
+                          #{{ projet.reference_externe }}
+                          <lucide-icon [img]="ExternalLink" [size]="12"></lucide-icon>
+                        </a>
+                      } @else {
+                        #{{ projet.reference_externe }}
+                      }
+                    </span>
+                  </span>
+                }
+                @if (projet.chef_projet) {
+                  <span>
+                    • <span class="manager-name">{{ projet.chef_projet }}</span>
+                  </span>
+                }
+              </div>
+            </div>
+          </div>
+
+          <div class="card-right">
             <div class="menu-container" (click)="$event.stopPropagation()">
               <button class="menu-btn" (click)="toggleMenu($event, projet.id!)">
                 <lucide-icon [img]="MoreVertical" [size]="20"></lucide-icon>
               </button>
-              <div class="dropdown-menu" *ngIf="activeMenuId === projet.id">
-                <button class="dropdown-item" (click)="openEditModal(projet)">
-                  <lucide-icon [img]="Edit" [size]="14"></lucide-icon>
-                  Modifier
-                </button>
-                <button class="dropdown-item" (click)="openChiffresModal(projet.id)">
-                  <lucide-icon [img]="LucideCalculator" [size]="14"></lucide-icon>
-                  Gérer les chiffres
-                </button>
-                <button class="dropdown-item" (click)="duplicateProjet(projet)">
-                  <lucide-icon [img]="Copy" [size]="14"></lucide-icon>
-                  Dupliquer
-                </button>
-                <button class="dropdown-item delete" (click)="deleteProjet(projet)">
-                  <lucide-icon [img]="Trash2" [size]="14"></lucide-icon>
-                  Supprimer
-                </button>
-              </div>
+              @if (activeMenuId === projet.id) {
+                <div class="dropdown-menu right">
+                  <button class="dropdown-item" (click)="openEditModal(projet)">
+                    <lucide-icon [img]="Edit" [size]="14"></lucide-icon>
+                    Modifier
+                  </button>
+                  <button class="dropdown-item" (click)="openChiffresModal(projet.id)">
+                    <lucide-icon [img]="LucideCalculator" [size]="14"></lucide-icon>
+                    Gérer les chiffres
+                  </button>
+                  <button class="dropdown-item" (click)="duplicateProjet(projet)">
+                    <lucide-icon [img]="Copy" [size]="14"></lucide-icon>
+                    Dupliquer
+                  </button>
+                  <button class="dropdown-item delete" (click)="deleteProjet(projet)">
+                    <lucide-icon [img]="Trash2" [size]="14"></lucide-icon>
+                    Supprimer
+                  </button>
+                </div>
+              }
             </div>
           </div>
         </div>
-      </div>
+      }
 
-      <div class="card-body">
-        <h3 class="project-name">{{ projet.nom_projet }}</h3>
-        <p class="project-manager" *ngIf="projet.chef_projet">
-          <span class="label">Chef de projet:</span> {{ projet.chef_projet }}
-        </p>
-        <p class="project-description" *ngIf="projet.description">{{ projet.description }}</p>
-
-        <div class="progress-section">
-          <div class="progress-header">
-            <span class="progress-label">Progression</span>
-            <span class="progress-percent">{{ getProgressPercent(projet) }}%</span>
-          </div>
-          <div class="progress-bar">
-            <div
-              class="progress-fill"
-              [style.width.%]="getProgressPercent(projet)"
-              [class.warning]="getProgressPercent(projet) > 80 && getProgressPercent(projet) <= 100"
-              [class.danger]="getProgressPercent(projet) > 100"></div>
-          </div>
+      @if (filteredProjects().length === 0) {
+        <div class="empty-state">
+          <p>Aucun projet trouvé</p>
         </div>
-      </div>
+      }
     </div>
-
-    <div *ngIf="filteredProjects().length === 0" class="empty-state">
-      <p>Aucun projet trouvé</p>
-    </div>
-  </div>
-
-  <!-- List View -->
-  <div *ngIf="viewMode() === 'list'" class="projects-list-view" cdkDropList (cdkDropListDropped)="drop($event)">
-    <div
-      *ngFor="let projet of filteredProjects()"
-      cdkDrag
-      class="project-list-card"
-      [style.border-left-color]="projet.color || '#3b82f6'"
-      [class.menu-active]="activeMenuId === projet.id"
-      (click)="openEditModal(projet)">
-      <div class="card-left">
-        <div class="project-info">
-          <div class="project-name-row">
-            <span class="project-name">{{ projet.nom_projet }}</span>
-            <span class="status-badge small" [attr.data-status]="projet.statut">{{ projet.statut }}</span>
-          </div>
-          <div class="project-meta">
-            <span class="project-code">{{ projet.code_projet }}</span>
-            <button
-              *ngIf="projet.code_projet"
-              (click)="copyToClipboard($event, projet.code_projet)"
-              class="btn-copy-code"
-              [class.copied]="copiedCodes().has(projet.code_projet)"
-              [title]="copiedCodes().has(projet.code_projet) ? 'Code copié !' : 'Copier le code projet'">
-              <lucide-icon [img]="copiedCodes().has(projet.code_projet) ? Check : Copy" [size]="11"></lucide-icon>
-            </button>
-            <span *ngIf="projet.reference_externe">
-              •
-              <span class="external-ref-tag">
-                <ng-container *ngIf="externalReferenceUrl(); else noLinkList">
-                  <a
-                    [href]="externalReferenceUrl() + projet.reference_externe"
-                    target="_blank"
-                    class="ref-link"
-                    (click)="$event.stopPropagation()">
-                    #{{ projet.reference_externe }}
-                    <lucide-icon [img]="ExternalLink" [size]="12"></lucide-icon>
-                  </a>
-                </ng-container>
-                <ng-template #noLinkList> #{{ projet.reference_externe }} </ng-template>
-              </span>
-            </span>
-            <span *ngIf="projet.chef_projet">
-              • <span class="manager-name">{{ projet.chef_projet }}</span></span
-            >
-          </div>
-        </div>
-      </div>
-
-      <div class="card-right">
-        <div class="menu-container" (click)="$event.stopPropagation()">
-          <button class="menu-btn" (click)="toggleMenu($event, projet.id!)">
-            <lucide-icon [img]="MoreVertical" [size]="20"></lucide-icon>
-          </button>
-          <div class="dropdown-menu right" *ngIf="activeMenuId === projet.id">
-            <button class="dropdown-item" (click)="openEditModal(projet)">
-              <lucide-icon [img]="Edit" [size]="14"></lucide-icon>
-              Modifier
-            </button>
-            <button class="dropdown-item" (click)="openChiffresModal(projet.id)">
-              <lucide-icon [img]="LucideCalculator" [size]="14"></lucide-icon>
-              Gérer les chiffres
-            </button>
-            <button class="dropdown-item" (click)="duplicateProjet(projet)">
-              <lucide-icon [img]="Copy" [size]="14"></lucide-icon>
-              Dupliquer
-            </button>
-            <button class="dropdown-item delete" (click)="deleteProjet(projet)">
-              <lucide-icon [img]="Trash2" [size]="14"></lucide-icon>
-              Supprimer
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div *ngIf="filteredProjects().length === 0" class="empty-state">
-      <p>Aucun projet trouvé</p>
-    </div>
-  </div>
+  }
 </div>
 
 <!-- Project Modal -->
-<app-project-modal
-  *ngIf="showProjectModal"
-  [projet]="newProjet"
-  (saved)="onProjectSaved()"
-  (closed)="closeModal()"
-  (openChiffres)="openChiffresModal($event)"></app-project-modal>
+@if (showProjectModal) {
+  <app-project-modal
+    [projet]="newProjet"
+    (saved)="onProjectSaved()"
+    (closed)="closeModal()"
+    (openChiffres)="openChiffresModal($event)"></app-project-modal>
+}
 
 <!-- chiffres modal -->
 <div>
@@ -479,3 +462,4 @@
   (confirm)="onConfirmAction()"
   (cancel)="showConfirmModal = false">
 </app-confirm-modal>
+

@@ -178,9 +178,17 @@ textarea:focus {
 }
 
 .btn-secondary {
-  background: var(--color-secondary);
-  color: var(--text-inverse);
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
 }
+
+.btn-secondary:hover:not([disabled]) {
+  background: var(--bg-input);
+  color: var(--text-main);
+  border-color: var(--border-default);
+}
+
 
 .btn-success {
   background: var(--color-success);
@@ -558,3 +566,172 @@ textarea:focus {
 .premium-driver-popover .driver-popover-next-btn:hover {
   background: var(--color-primary-hover) !important;
 }
+
+/* Shared Status Badges */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: none;
+}
+
+.status-badge.small {
+  padding: 2px 8px;
+  font-size: 11px;
+  border-radius: 8px;
+}
+
+/* Light mode status badge defaults */
+.status-badge[data-status='Actif'] {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge[data-status='En cours'] {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.status-badge[data-status='Planifié'] {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge[data-status='Terminé'] {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.status-badge[data-status='En pause'] {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Dark mode status badge overrides */
+body.dark-mode .status-badge[data-status='Actif'] {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+}
+
+body.dark-mode .status-badge[data-status='En cours'] {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+body.dark-mode .status-badge[data-status='Planifié'] {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+body.dark-mode .status-badge[data-status='Terminé'] {
+  background: rgba(148, 163, 184, 0.2);
+  color: #cbd5e1;
+}
+
+body.dark-mode .status-badge[data-status='En pause'] {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+/* Shared Dropdown Styles */
+.dropdown-menu {
+  position: absolute;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+  color: var(--text-main);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0;
+  min-width: 160px;
+}
+
+.dropdown-header {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-muted);
+  border-radius: 8px 8px 0 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.dropdown-list {
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.dropdown-item {
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: var(--text-body);
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-size: 13px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.dropdown-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-main);
+}
+
+.dropdown-item.delete,
+.dropdown-item.danger {
+  color: var(--color-danger);
+}
+
+.dropdown-item.delete:hover,
+.dropdown-item.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--color-danger);
+}
+
+/* Shared View Toggle Styles */
+.view-toggle {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-card);
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid var(--border-default);
+}
+
+.toggle-btn {
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toggle-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-main);
+}
+
+.toggle-btn.active {
+  background: var(--color-primary);
+  color: var(--text-inverse);
+}
+
