@@ -1,0 +1,313 @@
+<div class="settings-container">
+  <header class="settings-header">
+    <div class="header-left">
+      <div class="header-icon-container">
+        <lucide-icon [img]="SettingsIcon" class="header-icon" [size]="24"></lucide-icon>
+      </div>
+      <div>
+        <h1>Paramètres</h1>
+        <p class="subtitle">Gérez les configurations globales et spécifiques du système</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="search-bar">
+        <lucide-icon [img]="SearchIcon" [size]="18" class="search-icon"></lucide-icon>
+        <input type="text" placeholder="Rechercher une clé..." [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" />
+      </div>
+      <button class="btn btn-primary" (click)="openCreateModal()">
+        <lucide-icon [img]="PlusIcon" [size]="18"></lucide-icon>
+        Nouveau Paramètre
+      </button>
+    </div>
+  </header>
+
+  <div class="settings-grid">
+    <div class="settings-card">
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Clé / Scope</th>
+              <th>Valeur</th>
+              <th>Type</th>
+              <th>Description</th>
+              <th class="actions-cell">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (settingsQuery.isPending()) {
+              <tr>
+                <td colspan="5" class="empty-state">Chargement des paramètres...</td>
+              </tr>
+            } @else if (settingsQuery.isError()) {
+              <tr>
+                <td colspan="5" class="empty-state">Erreur lors du chargement des paramètres</td>
+              </tr>
+            } @else {
+              @for (setting of filteredSettings(); track setting.id) {
+                <tr class="setting-row">
+                  <td>
+                    <div class="key-scope">
+                      <span class="setting-key">{{ setting.key }}</span>
+                      <div class="scope-badge" [class.global]="setting.scope === 'global'">
+                        <lucide-icon
+                          [img]="setting.scope === 'global' ? GlobeIcon : UserIcon"
+                          [size]="12"></lucide-icon>
+                        {{ setting.scope }}
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <code class="value-preview">{{ setting.value }}</code>
+                  </td>
+                  <td>
+                    <span class="type-tag" [attr.data-type]="setting.type">
+                      {{ setting.type }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="description-text">{{ setting.description || '-' }}</span>
+                  </td>
+                  <td class="actions-cell">
+                    <button class="action-btn edit" (click)="editSetting(setting)" title="Modifier">
+                      <lucide-icon [img]="EditIcon" [size]="16"></lucide-icon>
+                    </button>
+                    <button class="action-btn delete" (click)="deleteSetting(setting)" title="Supprimer">
+                      <lucide-icon [img]="TrashIcon" [size]="16"></lucide-icon>
+                    </button>
+                  </td>
+                </tr>
+              }
+              @if (filteredSettings().length === 0) {
+                <tr>
+                  <td colspan="5" class="empty-state">
+                    <lucide-icon [img]="SearchIcon" [size]="48"></lucide-icon>
+                    <p>Aucun paramètre trouvé</p>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="tools-section">
+    <div class="section-header">
+      <lucide-icon [img]="CodeIcon" [size]="20"></lucide-icon>
+      <h2>Outils & Bookmarklets</h2>
+    </div>
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-main">
+          <div class="tool-info">
+            <div class="tool-icon-wrapper jira">
+              <lucide-icon [img]="FileJsonIcon" [size]="24"></lucide-icon>
+            </div>
+            <div>
+              <h3>Extracteur Jira (Cloud & DataCenter)</h3>
+              <p>
+                Bookmarklet universel pour extraire les données d'un ticket Jira (Cloud ou DataCenter / On-Premise)
+                vers le format JSON compatible.
+              </p>
+            </div>
+          </div>
+          <div class="tool-actions">
+            <button class="tool-btn" (click)="loadAndToggleCode()">
+              <lucide-icon [img]="showCode() ? ChevronUpIcon : CodeIcon" [size]="16"></lucide-icon>
+              {{ showCode() ? 'Masquer' : 'Voir le code' }}
+            </button>
+          </div>
+        </div>
+
+        @if (showCode()) {
+          <div class="code-preview-container" @slideInOut>
+            <div class="code-header">
+              <span class="file-name">extract-jira.js</span>
+              <button class="copy-btn" (click)="copyToClipboard(codeRaw)" [class.success]="copySuccess()">
+                <lucide-icon [img]="copySuccess() ? CheckIcon : CopyIcon" [size]="14"></lucide-icon>
+                {{ copySuccess() ? 'Copié !' : 'Copier' }}
+              </button>
+            </div>
+            <div class="code-content" [innerHTML]="codeRendered()"></div>
+          </div>
+        }
+      </div>
+
+      <div class="help-card">
+        <button class="help-header" (click)="toggleHelp()">
+          <div class="help-title">
+            <lucide-icon [img]="HelpCircleIcon" [size]="20" class="help-icon"></lucide-icon>
+            <span>Comment utiliser le bookmarklet ?</span>
+          </div>
+          <lucide-icon
+            [img]="showHelp() ? ChevronUpIcon : ChevronDownIcon"
+            [size]="18"
+            class="chevron-icon"></lucide-icon>
+        </button>
+
+        @if (showHelp()) {
+          <div class="help-content" @slideInOut>
+            <div class="steps-list">
+              <!-- Step 1 -->
+              <div class="step-item">
+                <div class="step-header">
+                  <span class="step-number">1</span>
+                  <h4>Copier le code</h4>
+                </div>
+                <p class="step-text">
+                  Cliquez sur le bouton <strong>"Voir le code"</strong> ci-dessus puis sur
+                  <strong>"Copier"</strong> pour mettre le script de l'extracteur dans votre presse-papiers.
+                </p>
+                <div class="step-media">
+                  <img
+                    src="assets/release-notes/2026-06-10-bookmarklet-step1-copycode.gif"
+                    alt="Étape 1 : Copier le code" />
+                </div>
+              </div>
+
+              <!-- Step 2 -->
+              <div class="step-item">
+                <div class="step-header">
+                  <span class="step-number">2</span>
+                  <h4>Créer le favori (Bookmarklet)</h4>
+                </div>
+                <p class="step-text">
+                  Dans la barre de favoris de votre navigateur, créez un nouveau favori. Nommez-le (ex:
+                  <code>Extraire Jira</code>) et collez le code copié dans le champ <strong>URL / Adresse</strong>.
+                </p>
+                <div class="step-media">
+                  <img
+                    src="assets/release-notes/2026-06-10-bookmarklet-step2-createbookmark.gif"
+                    alt="Étape 2 : Créer le favori" />
+                </div>
+              </div>
+
+              <!-- Step 3 -->
+              <div class="step-item">
+                <div class="step-header">
+                  <span class="step-number">3</span>
+                  <h4>Utiliser le favori sur Jira</h4>
+                </div>
+                <p class="step-text">
+                  Rendez-vous sur la page d'un ticket Jira. Cliquez simplement sur votre favori
+                  <code>Extraire Jira</code>. Un message confirmera que les données ont été copiées au format JSON.
+                </p>
+                <div class="step-media">
+                  <img
+                    src="assets/release-notes/2026-06-10-bookmarklet-step3-extractJiraInfosCopy.gif"
+                    alt="Étape 3 : Utiliser sur Jira" />
+                </div>
+              </div>
+
+              <!-- Step 4 -->
+              <div class="step-item">
+                <div class="step-header">
+                  <span class="step-number">4</span>
+                  <h4>Importer le JSON du projet</h4>
+                </div>
+                <p class="step-text">
+                  Revenez sur l'application dans la section Projets, ouvrez la boîte de dialogue d'importation et
+                  collez le JSON extrait pour créer ou mettre à jour le projet.
+                </p>
+                <div class="step-media">
+                  <img
+                    src="assets/release-notes/2026-06-10-bookmarklet-step4-createProject.gif"
+                    alt="Étape 4 : Importer le JSON" />
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Add/Edit -->
+  @if (isModalOpen) {
+    <div class="modal-overlay" (click)="closeModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>{{ editingSetting?.id ? 'Modifier le paramètre' : 'Nouveau paramètre' }}</h2>
+          <button class="close-btn" (click)="closeModal()" title="Fermer">
+            <lucide-icon [img]="XIcon" [size]="20"></lucide-icon>
+          </button>
+        </div>
+        <form (ngSubmit)="saveSetting()" #settingsForm="ngForm">
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="key">Clé</label>
+              <input
+                type="text"
+                id="key"
+                name="key"
+                [(ngModel)]="currentSetting.key"
+                required
+                placeholder="ex: api_timeout" />
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="type">Type</label>
+                <select id="type" name="type" [(ngModel)]="currentSetting.type" required>
+                  <option value="string">String</option>
+                  <option value="number">Number</option>
+                  <option value="boolean">Boolean</option>
+                  <option value="json">JSON</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="scope">Scope</label>
+                <input
+                  type="text"
+                  id="scope"
+                  name="scope"
+                  [(ngModel)]="currentSetting.scope"
+                  required
+                  placeholder="global" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="value">Valeur</label>
+              <textarea
+                id="value"
+                name="value"
+                [(ngModel)]="currentSetting.value"
+                required
+                rows="3"
+                [placeholder]="valuePlaceholder"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="description">Description</label>
+              <textarea
+                id="description"
+                name="description"
+                [(ngModel)]="currentSetting.description"
+                rows="2"
+                placeholder="À quoi sert ce paramètre ?"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="closeModal()">Annuler</button>
+            <button type="submit" class="btn btn-primary" [disabled]="!settingsForm.form.valid">
+              <lucide-icon [img]="SaveIcon" [size]="18"></lucide-icon>
+              Enregistrer
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <app-confirm-modal
+    [visible]="showConfirmModal"
+    [title]="confirmTitle"
+    [message]="confirmMessage"
+    confirmLabel="Supprimer"
+    (confirm)="onConfirmAction()"
+    (cancel)="showConfirmModal = false">
+  </app-confirm-modal>
+</div>
