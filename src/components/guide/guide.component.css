@@ -1,0 +1,221 @@
+.guide-page {
+  padding: 40px 20px;
+  max-width: 900px;
+  margin: 0 auto;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.guide-container {
+  background: var(--bg-card);
+  border-radius: 16px;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border-default);
+  overflow: hidden;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.guide-content {
+  padding: 40px;
+  color: var(--text-body);
+  line-height: 1.7;
+  font-size: 1.05rem;
+}
+
+/* Markdown Styles */
+:host ::ng-deep .guide-content h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-top: 0;
+  margin-bottom: 24px;
+}
+
+:host ::ng-deep .guide-content h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-top: 32px;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--border-subtle);
+}
+
+:host ::ng-deep .guide-content h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-top: 24px;
+  margin-bottom: 12px;
+}
+
+:host ::ng-deep .guide-content p {
+  margin-bottom: 16px;
+}
+
+:host ::ng-deep .guide-content strong {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+:host ::ng-deep .guide-content ul,
+:host ::ng-deep .guide-content ol {
+  margin-bottom: 16px;
+  padding-left: 24px;
+}
+
+:host ::ng-deep .guide-content li {
+  margin-bottom: 8px;
+}
+
+:host ::ng-deep .guide-content blockquote {
+  margin: 24px 0;
+  padding: 16px 24px;
+  background: var(--bg-muted);
+  border-left: 4px solid var(--color-primary);
+  border-radius: 4px;
+  font-style: italic;
+  color: var(--text-secondary);
+}
+
+:host ::ng-deep .guide-content blockquote p {
+  margin-bottom: 0;
+}
+
+:host ::ng-deep .guide-content code {
+  background: var(--bg-input);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.9em;
+  color: var(--color-primary);
+  border: 1px solid var(--border-subtle);
+}
+
+:host ::ng-deep .guide-content pre {
+  background: var(--bg-app);
+  color: var(--text-main);
+  padding: 20px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 24px 0;
+  border: 1px solid var(--border-default);
+}
+
+:host ::ng-deep .guide-content pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font-size: 0.95rem;
+  border: none;
+}
+
+:host ::ng-deep .guide-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 24px 0;
+  font-size: 0.95rem;
+}
+
+:host ::ng-deep .guide-content th {
+  background: var(--bg-muted);
+  text-align: left;
+  padding: 12px 16px;
+  border-bottom: 2px solid var(--border-default);
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+:host ::ng-deep .guide-content td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+:host ::ng-deep .guide-content tr:last-child td {
+  border-bottom: none;
+}
+
+:host ::ng-deep .guide-content hr {
+  margin: 40px 0;
+  border: 0;
+  border-top: 1px solid var(--border-default);
+}
+
+/* Details/Summary styling */
+:host ::ng-deep details {
+  margin: 24px 0;
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  background: var(--bg-muted);
+  transition: all 0.2s ease;
+}
+
+:host ::ng-deep details[open] {
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+:host ::ng-deep summary {
+  padding: 16px 20px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1.2rem;
+  color: var(--text-main);
+  outline: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: background-color 0.2s ease;
+}
+
+:host ::ng-deep summary:hover {
+  background-color: var(--bg-hover);
+}
+
+:host ::ng-deep summary::-webkit-details-marker {
+  display: none;
+}
+
+:host ::ng-deep summary::before {
+  content: '▶';
+  font-size: 0.9rem;
+  color: var(--color-primary);
+  transition: transform 0.2s ease;
+  background: var(--bg-hover);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+}
+
+:host ::ng-deep details[open] summary {
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 16px;
+}
+
+:host ::ng-deep details[open] summary::before {
+  transform: rotate(90deg);
+}
+
+:host ::ng-deep details .guide-content,
+:host ::ng-deep details > *:not(summary) {
+  padding: 0 16px 16px 16px;
+}
+
+:host ::ng-deep details table {
+  margin-top: 0;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

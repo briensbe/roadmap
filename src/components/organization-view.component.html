@@ -1,0 +1,272 @@
+<div class="organization-view">
+  <!-- Header -->
+  <header class="header">
+    <div class="header-left">
+      <div class="logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#3b82f6" />
+          <path d="M2 17L12 22L22 17V12L12 17L2 12V17Z" fill="#3b82f6" opacity="0.6" />
+        </svg>
+        <span class="logo-text">ResourceFlow</span>
+      </div>
+    </div>
+    <div class="header-right dropdown-container" (click)="$event.stopPropagation()">
+      <button class="btn btn-primary" (click)="toggleAddDropdown()">
+        <lucide-icon name="plus" [size]="18"></lucide-icon>
+        Ajouter
+      </button>
+      @if (showAddDropdown) {
+        <div class="add-dropdown">
+          <button (click)="selectAddOption('societe')">
+            <lucide-icon name="building-2" [size]="16"></lucide-icon>
+            Société
+          </button>
+          <button (click)="selectAddOption('departement')">
+            <lucide-icon name="layers" [size]="16"></lucide-icon>
+            Département
+          </button>
+          <button (click)="selectAddOption('service')">
+            <lucide-icon name="box" [size]="16"></lucide-icon>
+            Service
+          </button>
+          <button (click)="selectAddOption('equipe')">
+            <lucide-icon name="users" [size]="16"></lucide-icon>
+            Équipe
+          </button>
+        </div>
+      }
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <h1 class="page-title">Organisation</h1>
+    <p class="page-subtitle">Structurez votre organisation</p>
+
+    <!-- Summary Stats Section -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon societe"><lucide-icon name="building-2" [size]="24"></lucide-icon></div>
+        <div class="stat-value">{{ societes.length }}</div>
+        <div class="stat-label">Sociétés</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon departement"><lucide-icon name="layers" [size]="24"></lucide-icon></div>
+        <div class="stat-value">{{ departements.length }}</div>
+        <div class="stat-label">Départements</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon service"><lucide-icon name="box" [size]="24"></lucide-icon></div>
+        <div class="stat-value">{{ services.length }}</div>
+        <div class="stat-label">Services</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon equipe"><lucide-icon name="users" [size]="24"></lucide-icon></div>
+        <div class="stat-value">{{ equipes.length }}</div>
+        <div class="stat-label">Équipes</div>
+      </div>
+    </div>
+
+    <!-- Organization Structure Section -->
+    <section class="org-structure">
+      <div class="tree-container">
+        <!-- Recursive Tree Rendering -->
+        @for (node of orgTree; track node.id) {
+          <ng-container *ngTemplateOutlet="nodeTemplate; context: { $implicit: node }"></ng-container>
+        }
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal Overlay -->
+  @if (showCreateModal || showEditModal) {
+    <div class="modal-overlay" (click)="closeModals()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <h2 class="modal-title">
+          {{ showEditModal ? 'Modifier' : 'Créer' }}
+          {{ getModalTitleType() }}
+        </h2>
+
+        <div class="form-group">
+          <label>Nom</label>
+          <input type="text" [(ngModel)]="formData.nom" placeholder="Nom" />
+        </div>
+
+        <div class="form-group">
+          <label>Code</label>
+          <input type="text" [(ngModel)]="formData.code" placeholder="Code (e.g. CAT)" />
+        </div>
+
+        <div class="form-group">
+          <label>Couleur</label>
+          <div class="color-palette">
+            @for (color of predefinedColors; track color) {
+              <div
+                class="color-swatch"
+                [style.background-color]="color"
+                [class.active]="formData.color === color && !isCustomColor"
+                (click)="selectColor(color)"></div>
+            }
+            <div
+              class="color-swatch custom-trigger"
+              [class.active]="isCustomColor"
+              (click)="isCustomColor = !isCustomColor"
+              title="Couleur personnalisée">
+              @if (!isCustomColor) {
+                <lucide-icon name="plus" [size]="16"></lucide-icon>
+              } @else {
+                <div class="custom-preview" [style.background-color]="formData.color"></div>
+              }
+            </div>
+          </div>
+
+          @if (isCustomColor) {
+            <div class="custom-color-input-wrapper">
+              <input type="color" [(ngModel)]="formData.color" class="color-input" />
+              <input type="text" [(ngModel)]="formData.color" placeholder="#000000" class="color-hex-input" />
+            </div>
+          }
+        </div>
+
+        <!-- Parent Selectors based on type -->
+        @if (createModalType === 'departement' || editingNode?.type === 'departement') {
+          <div class="form-group">
+            <label>Société de rattachement</label>
+            <select [(ngModel)]="formData.societe_id">
+              @for (s of societes; track s.id) {
+                <option [value]="s.id">{{ s.nom }}</option>
+              }
+            </select>
+          </div>
+        }
+
+        @if (createModalType === 'service' || editingNode?.type === 'service') {
+          <div class="form-group">
+            <label>Département de rattachement</label>
+            <select [(ngModel)]="formData.departement_id">
+              @for (d of departements; track d.id) {
+                <option [value]="d.id">{{ d.nom }}</option>
+              }
+            </select>
+          </div>
+        }
+
+        @if (createModalType === 'equipe' || editingNode?.type === 'equipe') {
+          <div class="form-group">
+            <label>Rattachement (Service ou Département)</label>
+            <select [(ngModel)]="formData.parentType" (change)="formData.parentId = ''">
+              <option value="service" selected>Service</option>
+              <option value="departement">Département</option>
+            </select>
+          </div>
+        }
+
+        @if (
+          (createModalType === 'equipe' || editingNode?.type === 'equipe') && formData.parentType === 'service'
+        ) {
+          <div class="form-group">
+            <label>Service</label>
+            <select [(ngModel)]="formData.parentId">
+              @for (s of services; track s.id) {
+                <option [value]="s.id">{{ s.nom }}</option>
+              }
+            </select>
+          </div>
+        }
+
+        @if (
+          (createModalType === 'equipe' || editingNode?.type === 'equipe') && formData.parentType === 'departement'
+        ) {
+          <div class="form-group">
+            <label>Département</label>
+            <select [(ngModel)]="formData.parentId">
+              @for (d of departements; track d.id) {
+                <option [value]="d.id">{{ d.nom }}</option>
+              }
+            </select>
+          </div>
+        }
+
+        <div class="modal-actions">
+          <button class="btn btn-secondary" (click)="closeModals()">Annuler</button>
+          <button class="btn btn-primary" (click)="showEditModal ? handleUpdate() : handleCreate()">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Recursive Node Template -->
+  <ng-template #nodeTemplate let-node>
+    <div
+      class="tree-node"
+      [style.margin-left.px]="node.level * 32"
+      [class.menu-active]="activeMenuId === node.id"
+      (click)="toggleNode(node)">
+      <!-- Expand/Collapse Icon -->
+      @if (node.children.length > 0) {
+        <div class="toggle-icon">
+          <lucide-icon [name]="node.expanded ? 'chevron-down' : 'chevron-right'" [size]="20"></lucide-icon>
+        </div>
+      } @else {
+        <!-- Spacer for leaves -->
+        <div class="toggle-placeholder"></div>
+      }
+
+      <!-- Type Icon -->
+      <div
+        class="node-icon"
+        [ngClass]="node.type"
+        [style.background-color]="node.color || '#e5e7eb'"
+        [style.color]="'#fff'">
+        @if (node.type === 'societe') {
+          <lucide-icon name="building-2" [size]="18"></lucide-icon>
+        }
+        @if (node.type === 'departement') {
+          <lucide-icon name="layers" [size]="18"></lucide-icon>
+        }
+        @if (node.type === 'service') {
+          <lucide-icon name="box" [size]="18"></lucide-icon>
+        }
+        @if (node.type === 'equipe') {
+          <lucide-icon name="users" [size]="18"></lucide-icon>
+        }
+      </div>
+
+      <div class="node-info">
+        <span class="node-name">{{ node.nom }}</span>
+        @if (node.code) {
+          <span class="node-code">({{ node.code }})</span>
+        }
+      </div>
+
+      <!-- Kebab Menu -->
+      <div class="kebab-menu-container" (click)="$event.stopPropagation()">
+        <button class="kebab-btn" (click)="toggleMenu(node, $event)" title="Options">
+          <lucide-icon name="more-vertical" [size]="16"></lucide-icon>
+        </button>
+        @if (activeMenuId === node.id) {
+          <div class="menu-dropdown">
+            <button (click)="openEditModal(node)">Modifier</button>
+            <button (click)="handleDelete(node)" class="delete-btn">Supprimer</button>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Children -->
+    @if (node.expanded) {
+      @for (child of node.children; track child.id) {
+        <ng-container *ngTemplateOutlet="nodeTemplate; context: { $implicit: child }"></ng-container>
+      }
+    }
+  </ng-template>
+
+  <app-confirm-modal
+    [visible]="showConfirmModal"
+    [title]="confirmTitle"
+    [message]="confirmMessage"
+    confirmLabel="Supprimer"
+    (confirm)="onConfirmAction()"
+    (cancel)="showConfirmModal = false">
+  </app-confirm-modal>
+</div>

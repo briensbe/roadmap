@@ -1,0 +1,246 @@
+<div class="resource-manager">
+  <div class="view-header">
+    <div class="title-group">
+      <h1 class="view-title">Ressources</h1>
+      <p class="view-subtitle">Gérez vos équipes et collaborateurs</p>
+    </div>
+
+    <div class="header-actions">
+      <div class="search-container">
+        <lucide-icon name="search" [size]="18" class="search-icon"></lucide-icon>
+        <input
+          type="text"
+          [(ngModel)]="searchQuery"
+          placeholder="Rechercher par nom ou code..."
+          class="search-input" />
+      </div>
+      <button class="btn btn-primary" (click)="openCreateModal()">
+        <lucide-icon name="plus" [size]="18"></lucide-icon>
+        Ajouter {{ activeTab === 'role' ? 'un Rôle' : 'une Personne' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button [class.active]="activeTab === 'role'" (click)="activeTab = 'role'" class="tab-btn">
+      <lucide-icon name="layers" [size]="18"></lucide-icon>
+      Rôles
+    </button>
+    <button [class.active]="activeTab === 'personne'" (click)="activeTab = 'personne'" class="tab-btn">
+      <lucide-icon name="users" [size]="18"></lucide-icon>
+      Personnes
+    </button>
+  </div>
+
+  <div class="resource-list">
+    @if (activeTab === 'role') {
+      @for (role of filteredRoles(); track role.id) {
+        <div class="resource-card" (click)="openEditModal('role', role)">
+          <div class="card-left">
+            <div class="avatar role" [style.background-color]="role.color || '#3b82f6'">
+              {{ role.nom.charAt(0).toUpperCase() }}
+            </div>
+            <div class="resource-info">
+              <div class="resource-name">{{ role.nom }}</div>
+              <div class="resource-meta">
+                @if (role.code) {
+                  <span>{{ role.code }}</span> •
+                }
+                <span>{{ role.jours_par_semaine }}j/sem</span>
+                @if (getRoleServiceName(role.id!)) {
+                  • <span>{{ getRoleServiceName(role.id!) }}</span>
+                }
+              </div>
+            </div>
+          </div>
+          <div class="card-right">
+            <div class="kebab-menu-container" (click)="$event.stopPropagation()">
+              <button class="kebab-btn" (click)="toggleMenu(role.id!, $event)" title="Options">
+                <lucide-icon name="more-vertical" [size]="20"></lucide-icon>
+              </button>
+              @if (activeMenuId === role.id) {
+                <div class="menu-dropdown">
+                  <button (click)="openEditModal('role', role)">
+                    <lucide-icon name="edit" [size]="14"></lucide-icon> Modifier
+                  </button>
+                  <button (click)="handleDelete('role', role.id!)" class="delete-btn">
+                    <lucide-icon name="trash2" [size]="14"></lucide-icon> Supprimer
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      } @empty {
+        <div class="empty-state">Aucun rôle trouvé.</div>
+      }
+    } @else {
+      @for (personne of filteredPersonnes(); track personne.id) {
+        <div class="resource-card" (click)="openEditModal('personne', personne)">
+          <div class="card-left">
+            <div class="avatar personne" [style.background-color]="personne.color || '#10b981'">
+              {{ getPersonneInitials(personne) }}
+            </div>
+            <div class="resource-info">
+              <div class="resource-name">{{ personne.prenom }} {{ personne.nom }}</div>
+              <div class="resource-meta">
+                @if (personne.email) {
+                  <span>{{ personne.email }}</span> •
+                }
+                <span>{{ personne.jours_par_semaine }}j/sem</span>
+                @if (getServiceName(personne.service_id)) {
+                  • <span>{{ getServiceName(personne.service_id) }}</span>
+                }
+              </div>
+            </div>
+          </div>
+          <div class="card-right">
+            <div class="kebab-menu-container" (click)="$event.stopPropagation()">
+              <button class="kebab-btn" (click)="toggleMenu(personne.id!, $event)" title="Options">
+                <lucide-icon name="more-vertical" [size]="20"></lucide-icon>
+              </button>
+              @if (activeMenuId === personne.id) {
+                <div class="menu-dropdown">
+                  <button (click)="openEditModal('personne', personne)">
+                    <lucide-icon name="edit" [size]="14"></lucide-icon> Modifier
+                  </button>
+                  <button (click)="handleDelete('personne', personne.id!)" class="delete-btn">
+                    <lucide-icon name="trash2" [size]="14"></lucide-icon> Supprimer
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      } @empty {
+        <div class="empty-state">Aucune personne trouvée.</div>
+      }
+    }
+  </div>
+
+  <!-- Modal Création/Édition -->
+  @if (showModal) {
+    <div class="modal-overlay" (click)="closeModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <h2 class="modal-title">
+          {{ isEditing ? 'Modifier' : 'Ajouter' }} {{ activeTab === 'role' ? 'un Rôle' : 'une Personne' }}
+        </h2>
+
+        <form (submit)="$event.preventDefault(); handleSave()">
+          <div class="form-grid">
+            @if (activeTab === 'personne') {
+              <div class="form-group">
+                <label>Prénom</label>
+                <input type="text" [(ngModel)]="formData.prenom" name="prenom" placeholder="Ex: Jean" required />
+              </div>
+            }
+            <div class="form-group">
+              <label>Nom</label>
+              <input
+                type="text"
+                [(ngModel)]="formData.nom"
+                name="nom"
+                [placeholder]="activeTab === 'role' ? 'Ex: Développeur Senior' : 'Ex: Dupont'"
+                required />
+            </div>
+
+            @if (activeTab === 'personne') {
+              <div class="form-group full-width">
+                <label>Email</label>
+                <input
+                  type="email"
+                  [(ngModel)]="formData.email"
+                  name="email"
+                  placeholder="jean.dupont@exemple.com" />
+              </div>
+            }
+
+            @if (activeTab === 'role') {
+              <div class="form-group">
+                <label>Code</label>
+                <input type="text" [(ngModel)]="formData.code" name="code" placeholder="Ex: DEV-SEN" />
+              </div>
+            }
+
+            <div class="form-group">
+              <label>Service rattaché</label>
+              <select [(ngModel)]="formData.service_id" name="service_id">
+                <option value="">Aucun service</option>
+                @for (s of services; track s.id) {
+                  <option [value]="s.id">{{ s.nom }}</option>
+                }
+              </select>
+              @if (!formData.service_id) {
+                <div class="service-warning">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  <span>L'absence de service empêchera l'affichage des chiffres sur cette ressource dans la planification.</span>
+                </div>
+              }
+            </div>
+
+            <div class="form-group">
+              <label>Jours / Semaine</label>
+              <input
+                type="number"
+                [(ngModel)]="formData.jours_par_semaine"
+                name="jours_par_semaine"
+                step="0.5"
+                min="0.5"
+                max="7"
+                required />
+            </div>
+
+            <div class="form-group full-width">
+              <label>Couleur</label>
+              <div class="color-palette">
+                @for (color of predefinedColors; track color) {
+                  <div
+                    class="color-swatch"
+                    [style.background-color]="color"
+                    [class.active]="formData.color === color"
+                    (click)="selectColor(color)"></div>
+                }
+                <div
+                  class="color-swatch custom-trigger"
+                  [class.active]="isCustomColor"
+                  (click)="isCustomColor = !isCustomColor">
+                  @if (!isCustomColor) {
+                    <lucide-icon name="plus" [size]="16"></lucide-icon>
+                  } @else {
+                    <div class="custom-preview" [style.background-color]="formData.color"></div>
+                  }
+                </div>
+              </div>
+
+              @if (isCustomColor) {
+                <div class="custom-color-input-wrapper">
+                  <input type="color" [(ngModel)]="formData.color" name="customColor" class="color-input" />
+                  <input
+                    type="text"
+                    [(ngModel)]="formData.color"
+                    name="customColorText"
+                    class="color-hex-input"
+                    placeholder="#HEXCODE" />
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" (click)="closeModal()">Annuler</button>
+            <button type="submit" class="btn btn-primary">{{ isEditing ? 'Mettre à jour' : 'Créer' }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <app-confirm-modal
+    [visible]="showConfirmModal"
+    [title]="confirmTitle"
+    [message]="confirmMessage"
+    confirmLabel="Supprimer"
+    (confirm)="onConfirmAction()"
+    (cancel)="showConfirmModal = false">
+  </app-confirm-modal>
+</div>
