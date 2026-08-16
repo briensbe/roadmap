@@ -1,4 +1,4 @@
-import { Component, HostListener, OnInit, inject, effect } from '@angular/core';
+import { Component, OnInit, inject, effect } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideRouter, RouterOutlet, Router, withHashLocation } from '@angular/router';
@@ -9,19 +9,24 @@ import { routes } from '../src/app.routes';
 import { provideAngularQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { provideHttpClient } from '@angular/common/http';
 import { ReleaseNotesComponent } from './components/release-notes.component';
-
 import { MatrixEasterEggComponent } from './components/matrix-easter-egg.component';
-
 import { EasterEggService } from './services/easter-egg.service';
 import { SupabaseService } from './services/supabase.service';
 import { JiraCollectorService } from './services/jira-collector.service';
-
+import { ThemeService } from './services/theme.service';
 import { ToastContainerComponent } from './components/toast-container.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, SidebarNavigationComponent, ReleaseNotesComponent, MatrixEasterEggComponent, ToastContainerComponent],
+  imports: [
+    CommonModule,
+    RouterOutlet,
+    SidebarNavigationComponent,
+    ReleaseNotesComponent,
+    MatrixEasterEggComponent,
+    ToastContainerComponent,
+  ],
   template: `
     <div class="app-layout">
       <app-sidebar-navigation></app-sidebar-navigation>
@@ -29,7 +34,9 @@ import { ToastContainerComponent } from './components/toast-container.component'
         <router-outlet></router-outlet>
       </main>
       <app-release-notes></app-release-notes>
-      <app-matrix-easter-egg *ngIf="showEasterEgg" (close)="showEasterEgg = false"></app-matrix-easter-egg>
+      @if (showEasterEgg) {
+        <app-matrix-easter-egg (close)="showEasterEgg = false"></app-matrix-easter-egg>
+      }
       <app-toast-container></app-toast-container>
     </div>
   `,
@@ -39,6 +46,7 @@ import { ToastContainerComponent } from './components/toast-container.component'
         display: flex;
         min-height: 100vh;
         overflow-x: hidden;
+        background-color: var(--bg-app);
       }
 
       .main-content {
@@ -46,6 +54,7 @@ import { ToastContainerComponent } from './components/toast-container.component'
         margin-left: 256px;
         transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         overflow-x: hidden;
+        background-color: var(--bg-app);
       }
 
       .main-content.sidebar-collapsed {
@@ -64,6 +73,8 @@ export class App implements OnInit {
   private readonly router = inject(Router);
   private readonly queryClient = inject(QueryClient);
   private readonly jiraCollectorService = inject(JiraCollectorService);
+  // Ensure ThemeService is initialized early
+  private readonly themeService = inject(ThemeService);
 
   constructor() {
     // Watch for authentication changes globally
@@ -91,7 +102,7 @@ export class App implements OnInit {
     });
   }
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.sidebarService.collapsed$.subscribe((collapsed) => {
       this.sidebarCollapsed = collapsed;
     });

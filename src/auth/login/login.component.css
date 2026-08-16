@@ -2,14 +2,18 @@
   max-width: 400px;
   margin: 2rem auto;
   padding: 2rem;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  box-shadow: var(--shadow-card);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
 }
 
 h2 {
   text-align: center;
-  color: #1e293b;
+  color: var(--text-main);
   margin-bottom: 2rem;
 }
 
@@ -17,9 +21,9 @@ h2 {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  background-color: #f0f9ff;
-  border: 1px solid #bae6fd;
-  color: #0369a1;
+  background-color: var(--color-primary-bg);
+  border: 1px solid var(--border-focus);
+  color: var(--color-primary);
   padding: 0.75rem 1rem;
   border-radius: 6px;
   margin-bottom: 1.5rem;
@@ -47,17 +51,23 @@ form {
 
 input {
   padding: 0.75rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-input);
+  background-color: var(--bg-input);
+  color: var(--text-main);
   border-radius: 6px;
   font-size: 1rem;
   width: 100%;
   box-sizing: border-box;
 }
 
+input:focus {
+  border-color: var(--border-focus);
+}
+
 button[type='submit'] {
   padding: 0.75rem;
-  background: #2563eb;
-  color: white;
+  background: var(--color-primary);
+  color: var(--text-inverse);
   border: none;
   border-radius: 6px;
   font-size: 1rem;
@@ -67,22 +77,23 @@ button[type='submit'] {
 }
 
 button[type='submit']:hover {
-  background: #1d4ed8;
+  background: var(--color-primary-hover);
 }
 
 button[type='submit']:disabled {
-  background: #94a3b8;
+  background: var(--color-secondary);
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
 p {
   text-align: center;
   margin-top: 1.5rem;
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 a {
-  color: #2563eb;
+  color: var(--color-primary);
   text-decoration: none;
   cursor: pointer;
   font-weight: 500;
@@ -98,14 +109,14 @@ a:hover {
   align-items: center;
   text-align: center;
   margin: 1.5rem 0;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .divider::before,
 .divider::after {
   content: '';
   flex: 1;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .divider:not(:empty)::before {
@@ -130,9 +141,9 @@ a:hover {
   gap: 0.75rem;
   width: 100%;
   padding: 0.75rem;
-  background: white;
-  color: #1e293b;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-hover);
+  color: var(--text-main);
+  border: 1px solid var(--border-input);
   border-radius: 6px;
   font-size: 1rem;
   font-weight: 500;
@@ -141,8 +152,8 @@ a:hover {
 }
 
 .google-btn:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
+  background: var(--bg-input);
+  border-color: var(--border-focus);
 }
 
 .google-btn:disabled {
@@ -171,80 +182,9 @@ a:hover {
   padding: 0;
   display: flex;
   align-items: center;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .toggle-password:hover {
-  color: #1e293b;
-}
-
-/* Dark Mode Overrides */
-:host-context(body.dark-mode) .container {
-  background: #1e293b;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.5);
-}
-
-:host-context(body.dark-mode) h2 {
-  color: #f8fafc;
-}
-
-:host-context(body.dark-mode) input {
-  background: #334155;
-  border-color: #475569;
-  color: #f8fafc;
-}
-
-:host-context(body.dark-mode) input:focus {
-  border-color: #3b82f6;
-}
-
-:host-context(body.dark-mode) .toggle-password {
-  color: #94a3b8;
-}
-
-:host-context(body.dark-mode) .toggle-password:hover {
-  color: #f8fafc;
-}
-
-:host-context(body.dark-mode) p {
-  color: #cbd5e1;
-}
-
-:host-context(body.dark-mode) a {
-  color: #60a5fa;
-}
-
-:host-context(body.dark-mode) input:-webkit-autofill,
-:host-context(body.dark-mode) input:-webkit-autofill:hover,
-:host-context(body.dark-mode) input:-webkit-autofill:focus,
-:host-context(body.dark-mode) input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 30px #334155 inset !important;
-  -webkit-text-fill-color: #f8fafc !important;
-  caret-color: #f8fafc;
-}
-
-:host-context(body.dark-mode) .divider {
-  color: #94a3b8;
-}
-
-:host-context(body.dark-mode) .divider::before,
-:host-context(body.dark-mode) .divider::after {
-  border-color: #475569;
-}
-
-:host-context(body.dark-mode) .google-btn {
-  background: #334155;
-  color: #f8fafc;
-  border-color: #475569;
-}
-
-:host-context(body.dark-mode) .google-btn:hover {
-  background: #475569;
-  border-color: #64748b;
-}
-
-:host-context(body.dark-mode) .session-expired-alert {
-  background-color: #0c4a6e;
-  border-color: #075985;
-  color: #bae6fd;
+  color: var(--text-main);
 }

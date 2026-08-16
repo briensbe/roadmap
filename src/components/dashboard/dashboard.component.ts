@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import {
@@ -58,21 +58,30 @@ interface TeamSprintContent {
   standalone: true,
   imports: [CommonModule, RouterLink, LucideAngularModule],
   templateUrl: './dashboard.component.html',
-  styleUrls: ['./dashboard.component.css'],
+  styleUrl: './dashboard.component.css',
 })
 export class DashboardComponent implements OnInit {
+  private readonly projetService = inject(ProjetService);
+  private readonly rolesService = inject(RolesService);
+  private readonly personnesService = inject(PersonnesService);
+  private readonly servicesService = inject(ServicesService);
+  private readonly teamService = inject(TeamService);
+  private readonly jalonService = inject(JalonService);
+  private readonly chargeService = inject(ChargeService);
+  private readonly router = inject(Router);
+
   // Lucide icons
-  Calendar = Calendar;
-  FolderKanban = FolderKanban;
-  Users = Users;
-  Building2 = Building2;
-  Flag = Flag;
-  Rocket = Rocket;
-  Clock = Clock;
-  Plus = Plus;
-  ChevronRight = ChevronRight;
-  ChevronDown = ChevronDown;
-  ExternalLink = ExternalLink;
+  readonly Calendar = Calendar;
+  readonly FolderKanban = FolderKanban;
+  readonly Users = Users;
+  readonly Building2 = Building2;
+  readonly Flag = Flag;
+  readonly Rocket = Rocket;
+  readonly Clock = Clock;
+  readonly Plus = Plus;
+  readonly ChevronRight = ChevronRight;
+  readonly ChevronDown = ChevronDown;
+  readonly ExternalLink = ExternalLink;
 
   projets: Projet[] = [];
   jalons: Jalon[] = [];
@@ -95,22 +104,11 @@ export class DashboardComponent implements OnInit {
   sprintContentByTeam: TeamSprintContent[] = [];
 
   // Recent projects activity
-  addedProjects: Array<{ projet: Projet; dateSaisie: string }> = [];
-  modifiedProjects: Array<{ projet: Projet; dateModification: string }> = [];
+  addedProjects: { projet: Projet; dateSaisie: string }[] = [];
+  modifiedProjects: { projet: Projet; dateModification: string }[] = [];
 
   hoveredStatus: string | null = null;
   hoveredResource: string | null = null;
-
-  constructor(
-    private projetService: ProjetService,
-    private rolesService: RolesService,
-    private personnesService: PersonnesService,
-    private servicesService: ServicesService,
-    private teamService: TeamService,
-    private jalonService: JalonService,
-    private chargeService: ChargeService,
-    private router: Router,
-  ) {}
 
   async ngOnInit() {
     await Promise.all([
