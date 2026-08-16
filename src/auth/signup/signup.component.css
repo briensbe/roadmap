@@ -2,14 +2,18 @@
   max-width: 400px;
   margin: 2rem auto;
   padding: 2rem;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  box-shadow: var(--shadow-card);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
 }
 
 h2 {
   text-align: center;
-  color: #1e293b;
+  color: var(--text-main);
   margin-bottom: 2rem;
 }
 
@@ -21,17 +25,23 @@ form {
 
 input {
   padding: 0.75rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-input);
+  background-color: var(--bg-input);
+  color: var(--text-main);
   border-radius: 6px;
   font-size: 1rem;
   width: 100%;
   box-sizing: border-box;
 }
 
+input:focus {
+  border-color: var(--border-focus);
+}
+
 button {
   padding: 0.75rem;
-  background: #2563eb;
-  color: white;
+  background: var(--color-primary);
+  color: var(--text-inverse);
   border: none;
   border-radius: 6px;
   font-size: 1rem;
@@ -41,7 +51,7 @@ button {
 }
 
 button:hover {
-  background: #1d4ed8;
+  background: var(--color-primary-hover);
 }
 
 .message {
@@ -52,23 +62,25 @@ button:hover {
 }
 
 .error {
-  background: #fee2e2;
-  color: #991b1b;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid var(--color-danger);
+  color: var(--color-danger);
 }
 
 .success {
-  background: #dcfce7;
-  color: #166534;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid var(--color-success);
+  color: var(--color-success);
 }
 
 p {
   text-align: center;
   margin-top: 1.5rem;
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 a {
-  color: #2563eb;
+  color: var(--color-primary);
   text-decoration: none;
   cursor: pointer;
   font-weight: 500;
@@ -94,65 +106,9 @@ a:hover {
   padding: 0;
   display: flex;
   align-items: center;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .toggle-password:hover {
-  background: none;
-  color: #1e293b;
-}
-
-/* Dark Mode Overrides */
-:host-context(body.dark-mode) .container {
-  background: #1e293b;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.5);
-}
-
-:host-context(body.dark-mode) h2 {
-  color: #f8fafc;
-}
-
-:host-context(body.dark-mode) input {
-  background: #334155;
-  border-color: #475569;
-  color: #f8fafc;
-}
-
-:host-context(body.dark-mode) input:focus {
-  border-color: #3b82f6;
-}
-
-:host-context(body.dark-mode) .toggle-password {
-  color: #94a3b8;
-}
-
-:host-context(body.dark-mode) .toggle-password:hover {
-  color: #f8fafc;
-}
-
-:host-context(body.dark-mode) p {
-  color: #cbd5e1;
-}
-
-:host-context(body.dark-mode) a {
-  color: #60a5fa;
-}
-
-:host-context(body.dark-mode) .error {
-  background: #7f1d1d;
-  color: #fecaca;
-}
-
-:host-context(body.dark-mode) .success {
-  background: #14532d;
-  color: #bbf7d0;
-}
-
-:host-context(body.dark-mode) input:-webkit-autofill,
-:host-context(body.dark-mode) input:-webkit-autofill:hover,
-:host-context(body.dark-mode) input:-webkit-autofill:focus,
-:host-context(body.dark-mode) input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 30px #334155 inset !important;
-  -webkit-text-fill-color: #f8fafc !important;
-  caret-color: #f8fafc;
+  color: var(--text-main);
 }

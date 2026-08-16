@@ -1,5 +1,93 @@
 @import 'driver.js/dist/driver.css';
 
+:root {
+  /* Background colors */
+  --bg-app: #f5f7fa;
+  --bg-surface: #ffffff;
+  --bg-sidebar: #ffffff;
+  --bg-card: #ffffff;
+  --bg-input: #ffffff;
+  --bg-hover: #f3f4f6;
+  --bg-active: #eff6ff;
+  --bg-muted: #f8fafc;
+  --bg-overlay: rgba(0, 0, 0, 0.5);
+  --bg-popover: rgba(255, 255, 255, 0.95);
+
+  /* Text colors */
+  --text-main: #111827;
+  --text-body: #2c3e50;
+  --text-secondary: #4b5563;
+  --text-muted: #6b7280;
+  --text-subtle: #9ca3af;
+  --text-inverse: #ffffff;
+
+  /* Border colors */
+  --border-subtle: #e5e7eb;
+  --border-default: #e2e8f0;
+  --border-input: #d1d5db;
+  --border-focus: #3b82f6;
+
+  /* Accent & Status */
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+  --color-primary-bg: #eff6ff;
+  --color-secondary: #6b7280;
+  --color-success: #10b981;
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+}
+
+body.dark-mode {
+  /* Background colors */
+  --bg-app: #0f172a;        /* Slate 900 */
+  --bg-surface: #1e293b;    /* Slate 800 */
+  --bg-sidebar: #1e293b;    /* Slate 800 */
+  --bg-card: #1e293b;       /* Slate 800 */
+  --bg-input: #334155;      /* Slate 700 */
+  --bg-hover: #334155;      /* Slate 700 */
+  --bg-active: #1e3a8a;     /* Dark Blue */
+  --bg-muted: #1e293b;
+  --bg-overlay: rgba(0, 0, 0, 0.75);
+  --bg-popover: rgba(30, 41, 59, 0.95);
+
+  /* Text colors */
+  --text-main: #f8fafc;     /* Slate 50 */
+  --text-body: #e2e8f0;     /* Slate 200 */
+  --text-secondary: #cbd5e1;/* Slate 300 */
+  --text-muted: #94a3b8;    /* Slate 400 */
+  --text-subtle: #64748b;   /* Slate 500 */
+  --text-inverse: #ffffff;
+
+  /* Border colors */
+  --border-subtle: #334155; /* Slate 700 */
+  --border-default: #334155;/* Slate 700 */
+  --border-input: #475569;  /* Slate 600 */
+  --border-focus: #60a5fa;
+
+  /* Accent & Status */
+  --color-primary: #3b82f6;
+  --color-primary-hover: #60a5fa;
+  --color-primary-bg: #1e3a8a;
+  --color-secondary: #94a3b8;
+  --color-success: #10b981;
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+  --shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -10,8 +98,9 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   font-size: 14px;
   line-height: 1.5;
-  color: #2c3e50;
-  background: #f5f7fa;
+  color: var(--text-body);
+  background: var(--bg-app);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 h1,
@@ -22,6 +111,7 @@ h5,
 h6 {
   line-height: 1.2;
   font-weight: 600;
+  color: var(--text-main);
 }
 
 h1 {
@@ -53,16 +143,18 @@ textarea {
   font-family: inherit;
   font-size: inherit;
   padding: 8px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-input);
   border-radius: 6px;
   outline: none;
-  transition: border-color 0.2s ease;
+  background-color: var(--bg-input);
+  color: var(--text-main);
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
 }
 
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: #3b82f6;
+  border-color: var(--border-focus);
 }
 
 .container {
@@ -81,23 +173,23 @@ textarea:focus {
 }
 
 .btn-primary {
-  background: #3b82f6;
-  color: white;
+  background: var(--color-primary);
+  color: var(--text-inverse);
 }
 
 .btn-secondary {
-  background: #6b7280;
-  color: white;
+  background: var(--color-secondary);
+  color: var(--text-inverse);
 }
 
 .btn-success {
-  background: #10b981;
-  color: white;
+  background: var(--color-success);
+  color: var(--text-inverse);
 }
 
 .btn-danger {
-  background: #ef4444;
-  color: white;
+  background: var(--color-danger);
+  color: var(--text-inverse);
 }
 
 .btn-sm {
@@ -106,11 +198,13 @@ textarea:focus {
 }
 
 .card {
-  background: white;
+  background: var(--bg-card);
   border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-card);
   padding: 20px;
   margin-bottom: 20px;
+  color: var(--text-body);
 }
 
 .form-group {
@@ -121,7 +215,7 @@ textarea:focus {
   display: block;
   margin-bottom: 6px;
   font-weight: 500;
-  color: #374151;
+  color: var(--text-secondary);
 }
 
 .form-group input,
@@ -184,7 +278,7 @@ textarea:focus {
 }
 
 .text-gray {
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
 .modal-overlay {
@@ -193,7 +287,7 @@ textarea:focus {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--bg-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -201,14 +295,16 @@ textarea:focus {
 }
 
 .modal {
-  background: white;
+  background: var(--bg-surface);
+  color: var(--text-body);
   border-radius: 12px;
+  border: 1px solid var(--border-subtle);
   padding: 24px;
   min-width: 500px;
   max-width: 90vw;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-modal);
 }
 
 .modal-header {
@@ -220,7 +316,7 @@ textarea:focus {
 
 .modal-close {
   background: transparent;
-  color: #6b7280;
+  color: var(--text-muted);
   font-size: 24px;
   padding: 0;
   width: 32px;
@@ -229,16 +325,19 @@ textarea:focus {
 }
 
 .modal-close:hover {
-  background: #f3f4f6;
+  background: var(--bg-hover);
+  color: var(--text-main);
 }
 
 /* Shared Selection Toolbar Styles */
 .selection-toolbar {
   position: fixed;
-  background: white;
+  background: var(--bg-surface);
+  color: var(--text-body);
   padding: 16px 24px;
   border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-lg);
   align-items: center;
   gap: 16px;
   z-index: 1000;
@@ -259,18 +358,18 @@ textarea:focus {
 .selection-info .highlight {
   font-size: 14px;
   font-weight: 700;
-  color: #059669; /* Emeraude green */
+  color: var(--color-success);
 }
 
 .selection-info .details {
   font-size: 13px;
   font-weight: 500;
-  color: #64748b; /* Slate gray */
+  color: var(--text-muted);
 }
 
 .selection-info .details .count {
   font-weight: 700;
-  color: #334155; /* Darker slate for emphasis */
+  color: var(--text-main);
 }
 
 .selection-input-row {
@@ -295,30 +394,24 @@ textarea:focus {
 .bulk-input {
   width: 100%;
   padding: 6px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-input);
   border-radius: 6px;
+  background: var(--bg-input);
+  color: var(--text-main);
 }
 
 /* Year Popover Styles */
 .year-popover {
   position: fixed;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--bg-popover);
   backdrop-filter: blur(8px);
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-default);
   border-radius: 12px;
-  box-shadow:
-    0 10px 25px -5px rgba(0, 0, 0, 0.1),
-    0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-lg);
   z-index: 1001;
   width: 160px;
-
-  /* Manual Positioning (JS calculates top/left) */
-  /* position-anchor: --year-popover-anchor; */
-  /* position-area: bottom span-right; */
-  /* position-try-fallbacks: flip-block; */
   margin-top: 8px;
   margin-bottom: 8px;
-
   animation: popOverIn 0.2s cubic-bezier(0, 0, 0.2, 1);
 }
 
@@ -337,21 +430,21 @@ textarea:focus {
   position: absolute;
   width: 12px;
   height: 12px;
-  background: white;
+  background: var(--bg-surface);
   transform: rotate(45deg);
   left: 20px;
 }
 
 .popover-arrow.top {
   top: -6px;
-  border-left: 1px solid #e2e8f0;
-  border-top: 1px solid #e2e8f0;
+  border-left: 1px solid var(--border-default);
+  border-top: 1px solid var(--border-default);
 }
 
 .popover-arrow.bottom {
   bottom: -6px;
-  border-right: 1px solid #e2e8f0;
-  border-bottom: 1px solid #e2e8f0;
+  border-right: 1px solid var(--border-default);
+  border-bottom: 1px solid var(--border-default);
 }
 
 .popover-content {
@@ -369,19 +462,19 @@ textarea:focus {
   text-align: left;
   font-size: 13px;
   font-weight: 500;
-  color: #475569;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .popover-item:hover {
-  background: #f1f5f9;
-  color: #1e293b;
+  background: var(--bg-hover);
+  color: var(--text-main);
 }
 
 .popover-item.active {
-  background: #eff6ff;
-  color: #2563eb;
+  background: var(--bg-active);
+  color: var(--color-primary);
   font-weight: 600;
 }
 
@@ -394,42 +487,40 @@ textarea:focus {
 .popover-date-jump .jump-input {
   width: 100%;
   padding: 6px 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-default);
   border-radius: 6px;
   font-size: 12px;
-  color: #1e293b;
-  background: white;
+  color: var(--text-main);
+  background: var(--bg-input);
   outline: none;
   transition: border-color 0.2s ease;
 }
 
 .popover-date-jump .jump-input:focus {
-  border-color: #2563eb;
+  border-color: var(--color-primary);
 }
 
 /* Premium Driver.js Popover Styles */
 .premium-driver-popover {
-  background: #ffffff !important;
+  background: var(--bg-surface) !important;
   border-radius: 12px !important;
   padding: 20px !important;
-  box-shadow:
-    0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
-  border: 1px solid #e2e8f0 !important;
+  box-shadow: var(--shadow-modal) !important;
+  border: 1px solid var(--border-default) !important;
   max-width: 320px !important;
 }
 
 .premium-driver-popover .driver-popover-title {
   font-size: 18px !important;
   font-weight: 700 !important;
-  color: #1e293b !important;
+  color: var(--text-main) !important;
   margin-bottom: 8px !important;
   font-family: inherit !important;
 }
 
 .premium-driver-popover .driver-popover-description {
   font-size: 14px !important;
-  color: #475569 !important;
+  color: var(--text-secondary) !important;
   line-height: 1.6 !important;
   font-family: inherit !important;
 }
@@ -447,23 +538,23 @@ textarea:focus {
   font-size: 13px !important;
   font-weight: 600 !important;
   transition: all 0.2s !important;
-  background: #f1f5f9 !important;
-  color: #475569 !important;
-  border: 1px solid #e2e8f0 !important;
+  background: var(--bg-hover) !important;
+  color: var(--text-secondary) !important;
+  border: 1px solid var(--border-subtle) !important;
   text-shadow: none !important;
 }
 
 .premium-driver-popover .driver-popover-btn:hover {
-  background: #e2e8f0 !important;
+  background: var(--bg-input) !important;
 }
 
 .premium-driver-popover .driver-popover-next-btn {
-  background: #4f46e5 !important;
-  color: white !important;
-  border-color: #4f46e5 !important;
+  background: var(--color-primary) !important;
+  color: var(--text-inverse) !important;
+  border-color: var(--color-primary) !important;
   text-shadow: none;
 }
 
 .premium-driver-popover .driver-popover-next-btn:hover {
-  background: #4338ca !important;
+  background: var(--color-primary-hover) !important;
 }

@@ -1,0 +1,74 @@
+<nav class="sidebar" [class.collapsed]="isCollapsed">
+  <div class="sidebar-header">
+    <div class="logo-container">
+      @if (!isCollapsed) {
+        <div class="logo-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#3b82f6" />
+            <path d="M2 17L12 22L22 17V12L12 17L2 12V17Z" fill="#3b82f6" opacity="0.6" />
+          </svg>
+        </div>
+        <span class="logo-text">ResourceFlow</span>
+      }
+    </div>
+    <button
+      class="toggle-btn"
+      (click)="toggleSidebar()"
+      [title]="isCollapsed ? 'Déplier le menu' : 'Replier le menu'">
+      <lucide-icon [img]="isCollapsed ? ChevronRight : ChevronLeft" [size]="20"></lucide-icon>
+    </button>
+  </div>
+
+  <div class="nav-items">
+    @for (item of navigationItems; track item.label) {
+      @if (item.route) {
+        <a
+          class="nav-item"
+          [routerLink]="item.route"
+          [queryParams]="item.queryParams || null"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="item.routerLinkActiveOptions || { exact: false }"
+          [title]="isCollapsed ? item.label : ''">
+          <div class="nav-item-icon">
+            <lucide-icon [img]="item.icon" [size]="20"></lucide-icon>
+          </div>
+          @if (!isCollapsed) {
+            <span class="nav-item-label">{{ item.label }}</span>
+          }
+        </a>
+      } @else if (item.href) {
+        <a
+          class="nav-item"
+          [href]="item.href"
+          target="_blank"
+          [title]="isCollapsed ? item.label : ''">
+          <div class="nav-item-icon">
+            <lucide-icon [img]="item.icon" [size]="20"></lucide-icon>
+          </div>
+          @if (!isCollapsed) {
+            <span class="nav-item-label">{{ item.label }}</span>
+          }
+        </a>
+      }
+    }
+  </div>
+
+  <div class="sidebar-footer">
+    <button
+      class="theme-toggle-btn"
+      (click)="themeService.toggleTheme()"
+      [title]="themeService.isDarkMode() ? 'Passer en mode clair' : 'Passer en mode sombre'">
+      <lucide-icon [img]="themeService.isDarkMode() ? Sun : Moon" [size]="18"></lucide-icon>
+      @if (!isCollapsed) {
+        <span class="theme-toggle-text">{{ themeService.isDarkMode() ? 'Mode clair' : 'Mode sombre' }}</span>
+      }
+    </button>
+    <span class="version-text clickable" (click)="openReleaseNotes()" title="Voir l'historique des versions">
+      @if (!isCollapsed) {
+        v{{ version }}
+      } @else {
+        {{ version }}
+      }
+    </span>
+  </div>
+</nav>

@@ -1,12 +1,32 @@
 <!doctype html>
-<html lang="en">
+<html lang="fr">
   <head>
-    <title>Roadmap</title>
+    <title>Roadmap Vision</title>
     <meta charset="UTF-8" />
     <base href="/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <script>
+      (function () {
+        try {
+          var preference = localStorage.getItem('roadmap_theme_preference');
+          var systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var isDark = preference === 'dark' || ((!preference || preference === 'system') && systemDark);
+          if (isDark) {
+            document.documentElement.classList.add('dark-mode');
+            if (document.body) {
+              document.body.classList.add('dark-mode');
+            } else {
+              document.addEventListener('DOMContentLoaded', function () {
+                document.body.classList.add('dark-mode');
+              });
+            }
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
-    <app-root>Loading...</app-root>
+    <app-root>Chargement...</app-root>
   </body>
 </html>

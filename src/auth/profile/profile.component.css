@@ -3,44 +3,49 @@
   max-width: 500px;
   margin: 2rem auto;
   padding: 2rem;
-  background: #ffffff;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
   border-radius: 12px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  text-align: left; /* Alignement général à gauche */
+  box-shadow: var(--shadow-card);
+  font-family: inherit;
+  text-align: left;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
 }
 
 /* Style du titre */
 .container h2 {
-  color: #2c3e50;
+  color: var(--text-main);
   margin-bottom: 1.5rem;
-  font-weight: 500;
-  text-align: left; /* Alignement à gauche */
+  font-weight: 600;
+  text-align: left;
 }
 
 /* Style des paragraphes d'information */
 .container p {
   margin-bottom: 1rem;
-  color: #555;
+  color: var(--text-secondary);
   line-height: 1.5;
-  text-align: left; /* Alignement à gauche */
+  text-align: left;
 }
 
 /* Style du message de bienvenue */
 .container p:first-of-type {
-  font-size: 1.1rem;
-  margin-bottom: 2rem;
-  color: #27ae60; /* Vert pour un message positif */
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  color: var(--color-success);
+  font-weight: 500;
 }
 
 /* Style des paragraphes d'information utilisateur */
 .container p:not(:first-of-type) {
   font-weight: 500;
-  color: #2c3e50;
-  word-break: break-all; /* Pour éviter les débordements */
+  color: var(--text-main);
+  word-break: break-all;
 }
 
-/* Style du bouton de déconnexion */
+/* Style des boutons */
 .container .btn {
   display: flex;
   align-items: center;
@@ -49,97 +54,67 @@
   width: 100%;
   padding: 0.85rem;
   margin-top: 1rem;
-  background-color: #e74c3c; /* Rouge pour indiquer une action importante */
-  color: white;
-  border: none;
   border-radius: 6px;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: all 0.2s ease;
 }
 
-.container .btn:hover {
-  background-color: #c0392b;
+.container .btn-primary {
+  background-color: var(--color-primary);
+  color: var(--text-inverse);
+}
+
+.container .btn-primary:hover {
+  background-color: var(--color-primary-hover);
 }
 
 .container .btn-secondary {
-  background-color: #6c757d; /* couleur différente pour le 2e bouton */
-  margin-top: 2rem;
+  background-color: var(--bg-hover);
+  color: var(--text-main);
+  border: 1px solid var(--border-input);
+  margin-top: 1.5rem;
 }
+
 .container .btn-secondary:hover {
-  background-color: #5a6268;
+  background-color: var(--bg-input);
+  border-color: var(--border-focus);
 }
 
-.container .btn-theme {
-  background-color: #3498db;
-  margin-top: 2rem;
+.container .btn-danger {
+  background-color: var(--color-danger);
+  color: var(--text-inverse);
 }
 
-.container .btn-theme:hover {
-  background-color: #2980b9;
-}
-
-/* Dark Mode Overrides */
-:host-context(body.dark-mode) .container {
-  background: #1e293b;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
-}
-
-:host-context(body.dark-mode) .container h2 {
-  color: #f8fafc;
-}
-
-:host-context(body.dark-mode) .container p {
-  color: #cbd5e1;
-}
-
-:host-context(body.dark-mode) .container p:first-of-type {
-  color: #4ade80;
-}
-
-:host-context(body.dark-mode) .container p:not(:first-of-type) {
-  color: #f8fafc;
-}
-
-:host-context(body.dark-mode) .container .btn-secondary {
-  background-color: #334155;
-  color: #cbd5e1;
-}
-
-:host-context(body.dark-mode) .container .btn-secondary:hover {
-  background-color: #475569;
-  color: #f8fafc;
+.container .btn-danger:hover {
+  opacity: 0.9;
 }
 
 .user-info {
   margin-top: 1.5rem;
   padding: 1rem;
-  background: #f8f9fa;
+  background: var(--bg-hover);
   border-radius: 8px;
-  border: 1px solid #e9ecef;
-}
-
-:host-context(body.dark-mode) .user-info {
-  background: #334155;
-  border-color: #475569;
+  border: 1px solid var(--border-subtle);
 }
 
 /* Theme Selector Styles */
 .theme-selector {
-  margin-top: 2rem;
-  padding: 1.5rem;
-  background: #f8f9fa;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding: 1.25rem;
+  background: var(--bg-hover);
   border-radius: 8px;
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--border-subtle);
 }
 
 .theme-selector label {
   display: block;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   font-weight: 600;
-  color: #2c3e50;
-  font-size: 0.95rem;
+  color: var(--text-main);
+  font-size: 0.9rem;
 }
 
 .theme-buttons {
@@ -155,27 +130,28 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 1rem 0.75rem;
-  background: white;
-  color: #2c3e50;
-  border: 2px solid #e9ecef;
-  border-radius: 6px;
+  padding: 0.85rem 0.5rem;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border: 2px solid var(--border-input);
+  border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .theme-btn:hover {
-  border-color: #3498db;
-  background: #f0f7ff;
+  border-color: var(--color-primary);
+  background: var(--bg-surface);
+  color: var(--text-main);
 }
 
 .theme-btn.active {
-  background: #3498db;
-  color: white;
-  border-color: #3498db;
-  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+  background: var(--color-primary);
+  color: var(--text-inverse);
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
 }
 
 .theme-btn lucide-icon {
@@ -184,32 +160,4 @@
 
 .theme-btn span {
   display: block;
-}
-
-/* Dark Mode Overrides for Theme Selector */
-:host-context(body.dark-mode) .theme-selector {
-  background: #334155;
-  border-color: #475569;
-}
-
-:host-context(body.dark-mode) .theme-selector label {
-  color: #f8fafc;
-}
-
-:host-context(body.dark-mode) .theme-btn {
-  background: #1e293b;
-  color: #cbd5e1;
-  border-color: #475569;
-}
-
-:host-context(body.dark-mode) .theme-btn:hover {
-  border-color: #64b5f6;
-  background: #0f172a;
-}
-
-:host-context(body.dark-mode) .theme-btn.active {
-  background: #3b82f6;
-  color: white;
-  border-color: #3b82f6;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
