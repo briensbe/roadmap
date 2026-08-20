@@ -473,7 +473,7 @@ textarea:focus {
   text-align: left;
   font-size: 13px;
   font-weight: 500;
-  color: var(--text-secondary);
+  color: var(--text-main);
   cursor: pointer;
   transition: all 0.15s ease;
 }

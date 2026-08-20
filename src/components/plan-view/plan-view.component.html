@@ -268,42 +268,19 @@
           </div>
           @if (openEquipeDropdown) {
             <div class="filters-dropdown" (click)="$event.stopPropagation()">
-              <div
-                class="dropdown-header"
-                style="
-                  padding: 8px 12px;
-                  border-bottom: 1px solid #f1f5f9;
-                  display: flex;
-                  justify-content: space-between;
-                  align-items: center;
-                  background: #f8fafc;
-                  border-radius: 8px 8px 0 0;
-                  font-size: 11px;
-                  font-weight: 600;
-                  color: #64748b;
-                  user-select: none;
-                ">
+              <div class="dropdown-header">
                 <span>{{ filterEquipeIds().length }} sélectionnée(s)</span>
                 @if (filterEquipeIds().length > 0) {
                   <button
                     class="btn-clear"
-                    (click)="filterEquipeIds.set([]); applyFilters(); $event.stopPropagation()"
-                    style="
-                      background: transparent;
-                      border: none;
-                      color: #3b82f6;
-                      cursor: pointer;
-                      font-size: 11px;
-                      padding: 0;
-                      font-family: inherit;
-                    ">
+                    (click)="filterEquipeIds.set([]); applyFilters(); $event.stopPropagation()">
                     Effacer
                   </button>
                 }
               </div>
               <div class="dropdown-list">
                 @for (e of allEquipes; track e.id) {
-                  <label class="dropdown-item" style="display: flex; align-items: center; gap: 8px; cursor: pointer">
+                  <label class="dropdown-item" style="cursor: pointer">
                     <input
                       type="checkbox"
                       [value]="e.id"
@@ -314,7 +291,7 @@
                       class="item-color-badge"
                       [style.background-color]="e.color || '#e2e8f0'"
                       style="width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0"></div>
-                    <span class="item-label" style="font-size: 13px; color: #334155">{{ e.nom }}</span>
+                    <span class="item-label">{{ e.nom }}</span>
                   </label>
                 }
               </div>
@@ -389,42 +366,19 @@
           </div>
           @if (openStatusDropdown) {
             <div class="filters-dropdown" (click)="$event.stopPropagation()">
-              <div
-                class="dropdown-header"
-                style="
-                  padding: 8px 12px;
-                  border-bottom: 1px solid #f1f5f9;
-                  display: flex;
-                  justify-content: space-between;
-                  align-items: center;
-                  background: #f8fafc;
-                  border-radius: 8px 8px 0 0;
-                  font-size: 11px;
-                  font-weight: 600;
-                  color: #64748b;
-                  user-select: none;
-                ">
+              <div class="dropdown-header">
                 <span>{{ filterStatusIds().length }} sélectionné(s)</span>
                 @if (filterStatusIds().length > 0) {
                   <button
                     class="btn-clear"
-                    (click)="filterStatusIds.set([]); applyFilters(); $event.stopPropagation()"
-                    style="
-                      background: transparent;
-                      border: none;
-                      color: #3b82f6;
-                      cursor: pointer;
-                      font-size: 11px;
-                      padding: 0;
-                      font-family: inherit;
-                    ">
+                    (click)="filterStatusIds.set([]); applyFilters(); $event.stopPropagation()">
                     Effacer
                   </button>
                 }
               </div>
               <div class="dropdown-list">
                 @for (s of PROJECT_STATUSES; track s) {
-                  <label class="dropdown-item" style="display: flex; align-items: center; gap: 8px; cursor: pointer">
+                  <label class="dropdown-item" style="cursor: pointer">
                     <input
                       type="checkbox"
                       [value]="s"
@@ -452,35 +406,12 @@
           </div>
           @if (openResourceDropdown) {
             <div class="filters-dropdown" (click)="$event.stopPropagation()">
-              <div
-                class="dropdown-header"
-                style="
-                  padding: 8px 12px;
-                  border-bottom: 1px solid #f1f5f9;
-                  display: flex;
-                  justify-content: space-between;
-                  align-items: center;
-                  background: #f8fafc;
-                  border-radius: 8px 8px 0 0;
-                  font-size: 11px;
-                  font-weight: 600;
-                  color: #64748b;
-                  user-select: none;
-                ">
+              <div class="dropdown-header">
                 <span>{{ filterResourceIds().length }} sélectionné(s)</span>
                 @if (filterResourceIds().length > 0) {
                   <button
                     class="btn-clear"
-                    (click)="filterResourceIds.set([]); applyFilters(); $event.stopPropagation()"
-                    style="
-                      background: transparent;
-                      border: none;
-                      color: #3b82f6;
-                      cursor: pointer;
-                      font-size: 11px;
-                      padding: 0;
-                      font-family: inherit;
-                    ">
+                    (click)="filterResourceIds.set([]); applyFilters(); $event.stopPropagation()">
                     Effacer
                   </button>
                 }
@@ -488,7 +419,7 @@
               <div class="dropdown-list">
                 <div class="dropdown-group">Rôles</div>
                 @for (r of availableRoles; track r) {
-                  <label class="dropdown-item" style="display: flex; align-items: center; gap: 8px; cursor: pointer">
+                  <label class="dropdown-item" style="cursor: pointer">
                     <input
                       type="checkbox"
                       [value]="'role:' + r.id"
@@ -499,12 +430,12 @@
                       class="item-color-badge"
                       [style.background-color]="r.color || '#e2e8f0'"
                       style="width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0"></div>
-                    <span class="item-label" style="font-size: 13px; color: #334155">{{ r.nom }}</span>
+                    <span class="item-label">{{ r.nom }}</span>
                   </label>
                 }
                 <div class="dropdown-group">Personnes</div>
                 @for (p of availablePersonnes; track p) {
-                  <label class="dropdown-item" style="display: flex; align-items: center; gap: 8px; cursor: pointer">
+                  <label class="dropdown-item" style="cursor: pointer">
                     <input
                       type="checkbox"
                       [value]="'personne:' + p.id"
@@ -515,7 +446,7 @@
                       class="item-color-badge"
                       [style.background-color]="p.color || '#e2e8f0'"
                       style="width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0"></div>
-                    <span class="item-label" style="font-size: 13px; color: #334155">{{ p.prenom }} {{ p.nom }}</span>
+                    <span class="item-label">{{ p.prenom }} {{ p.nom }}</span>
                   </label>
                 }
               </div>
@@ -804,56 +735,27 @@
 
         <!-- Double header in visualisation mode -->
         @if (planningMode() === 'visualisation') {
-          <div class="weeks-container gantt-header-container" style="flex-direction: column; flex: 1">
+          <div class="weeks-container gantt-header-container">
             <!-- Quarters row -->
-            <div
-              class="quarters-row"
-              style="display: flex; width: 100%; border-bottom: 1px solid #e2e8f0; height: 30px; align-items: center">
+            <div class="quarters-row">
               @for (q of displayedQuarters; track q) {
                 <div
                   class="quarter-header-cell"
                   [style.flex-grow]="q.weeksCount"
                   [style.flex-basis]="'calc(var(--cell-width, 80px) * ' + q.weeksCount + ')'"
-                  [style.min-width]="'calc(var(--cell-width, 80px) * ' + q.weeksCount + ')'"
-                  style="
-                    text-align: center;
-                    font-weight: 600;
-                    padding: 6px 0;
-                    border-right: 1px solid #e2e8f0;
-                    font-size: 12px;
-                    color: #475569;
-                    background: #f8fafc;
-                    height: 100%;
-                    box-sizing: border-box;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                  ">
+                  [style.min-width]="'calc(var(--cell-width, 80px) * ' + q.weeksCount + ')'">
                   {{ q.label }}
                 </div>
               }
             </div>
             <!-- Months row -->
-            <div class="months-row" style="display: flex; width: 100%; height: 30px; align-items: center">
+            <div class="months-row">
               @for (m of displayedMonths; track m) {
                 <div
                   class="month-header-cell"
                   [style.flex-grow]="m.weeks.length"
                   [style.flex-basis]="'calc(var(--cell-width, 80px) * ' + m.weeks.length + ')'"
-                  [style.min-width]="'calc(var(--cell-width, 80px) * ' + m.weeks.length + ')'"
-                  style="
-                    text-align: center;
-                    padding: 6px 0;
-                    border-right: 1px solid #e2e8f0;
-                    font-size: 11px;
-                    color: #64748b;
-                    font-weight: 500;
-                    height: 100%;
-                    box-sizing: border-box;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                  ">
+                  [style.min-width]="'calc(var(--cell-width, 80px) * ' + m.weeks.length + ')'">
                   {{ m.label }} (S{{ m.startWeekNum }})
                 </div>
               }
@@ -871,24 +773,11 @@
           style="display: flex; align-items: center; justify-content: space-between; padding: 0 12px; gap: 8px">
           <span style="font-weight: 600; font-size: 13px">Jalons</span>
 
-          <div class="filter-group milestone-filter-group" style="position: relative">
+          <div class="filter-group milestone-filter-group">
             <div
               class="filter-pill"
-              (click)="toggleDropdown('jalon', $event)"
-              style="
-                min-width: auto;
-                padding: 2px 8px;
-                border-radius: 6px;
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                background: #f8fafc;
-                border: 1px solid #cbd5e1;
-                cursor: pointer;
-                min-height: 24px;
-                box-shadow: none;
-              ">
-              <span style="font-size: 11px; font-weight: 600; color: #475569">Filtrer</span>
+              (click)="toggleDropdown('jalon', $event)">
+              <span class="milestone-filter-title">Filtrer</span>
               <span class="chip-list" style="display: flex; gap: 2px; align-items: center">
                 @for (type of filterJalonTypes(); track type) {
                   <span
@@ -915,8 +804,6 @@
                       font-weight: 600;
                       padding: 1px 4px;
                       border-radius: 4px;
-                      background: #e2e8f0;
-                      color: #64748b;
                       margin: 0;
                       line-height: 1.1;
                     "
@@ -929,54 +816,13 @@
             @if (openJalonDropdown) {
               <div
                 class="filters-dropdown"
-                (click)="$event.stopPropagation()"
-                style="
-                  position: absolute;
-                  top: calc(100% + 4px);
-                  right: 0;
-                  min-width: 180px;
-                  z-index: 1200;
-                  background: white;
-                  border: 1px solid #cbd5e1;
-                  border-radius: 8px;
-                  box-shadow:
-                    0 10px 15px -3px rgba(0, 0, 0, 0.1),
-                    0 4px 6px -2px rgba(0, 0, 0, 0.05);
-                  padding: 6px;
-                  max-height: 250px;
-                  overflow-y: auto;
-                ">
-                <div
-                  class="dropdown-header"
-                  style="
-                    padding: 6px 8px;
-                    border-bottom: 1px solid #f1f5f9;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    background: #f8fafc;
-                    border-radius: 6px 6px 0 0;
-                    font-size: 10px;
-                    font-weight: 700;
-                    color: #475569;
-                    user-select: none;
-                    margin-bottom: 4px;
-                  ">
+                (click)="$event.stopPropagation()">
+                <div class="dropdown-header">
                   <span>{{ filterJalonTypes().length }} sélectionné(s)</span>
                   @if (filterJalonTypes().length > 0) {
                     <button
                       class="btn-clear"
-                      (click)="filterJalonTypes.set([]); applyFilters(); $event.stopPropagation()"
-                      style="
-                        background: transparent;
-                        border: none;
-                        color: #ef4444;
-                        cursor: pointer;
-                        font-size: 10px;
-                        padding: 0;
-                        font-family: inherit;
-                        font-weight: 600;
-                      ">
+                      (click)="filterJalonTypes.set([]); applyFilters(); $event.stopPropagation()">
                       Effacer
                     </button>
                   }
@@ -1010,7 +856,7 @@
                           flex-shrink: 0;
                           border: 1px solid rgba(0, 0, 0, 0.1);
                         "></div>
-                      <span class="item-label" style="font-size: 11px; color: #1e293b; font-weight: 600">{{
+                      <span class="item-label" style="font-size: 11px; font-weight: 600">{{
                         type
                       }}</span>
                     </label>
