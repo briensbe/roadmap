@@ -1,0 +1,125 @@
+<div
+  class="selection-toolbar"
+  [style.top.px]="position?.top"
+  [style.left.px]="position?.left"
+  [style.transform]="position?.transform"
+  [style.opacity]="visible ? 1 : 0">
+  <!-- Toolbar Tabs -->
+  @if (showProjectionTab) {
+    <div class="toolbar-tabs">
+      <button class="tab-btn" [class.active]="mode === 'classic'" (click)="setMode('classic')">Saisie</button>
+      <button class="tab-btn" [class.active]="mode === 'projection'" (click)="setMode('projection')">
+        Projection
+      </button>
+    </div>
+  }
+
+  <div class="selection-info">
+    @if (mode === 'classic') {
+      <span class="highlight">{{ totalDays | number: '1.1-1' }}j</span>
+      <span class="details"
+        >sur <span class="count">{{ selectedCount }}</span> semaine(s)</span
+      >
+    }
+    @if (mode === 'projection') {
+      <span class="highlight">{{ actualProjectedDays | number: '1.1-1' }}j</span>
+      <span class="details">
+        sur <span class="count">{{ projectedWeeks }}</span> semaine(s)
+        @if (projectionRangeText) {
+          <span class="projection-dates">({{ projectionRangeText }})</span>
+        }
+      </span>
+    }
+  </div>
+
+  <!-- Fixed height content area to prevent jumping -->
+  <div class="toolbar-main-content">
+    <!-- Classic Mode Inputs -->
+    @if (mode === 'classic') {
+      <div class="selection-input-row">
+        <div class="projection-field">
+          <label>Ressources</label>
+          <input
+            #bulkInput
+            type="number"
+            [ngModel]="value"
+            (ngModelChange)="onValueChange($event)"
+            [placeholder]="placeholder"
+            [step]="step"
+            [min]="min"
+            class="bulk-input"
+            (keydown.enter)="onApply()"
+            (focus)="$any($event.target).select()" />
+        </div>
+      </div>
+    }
+
+    <!-- Projection Mode Inputs -->
+    @if (mode === 'projection') {
+      <div class="projection-input-row">
+        <div class="projection-field">
+          <label>Ressources</label>
+          <input
+            #projResInput
+            type="number"
+            [(ngModel)]="projectionResources"
+            placeholder="Nb res."
+            step="1"
+            min="1"
+            class="bulk-input"
+            (focus)="$any($event.target).select()" />
+        </div>
+        <div class="projection-separator">et</div>
+        <div class="projection-field">
+          <label>Jours</label>
+          <input
+            #projDaysInput
+            type="number"
+            [(ngModel)]="projectionDays"
+            placeholder="Total jours"
+            step="1"
+            min="1"
+            class="bulk-input"
+            (keydown.enter)="onProject()"
+            (focus)="$any($event.target).select()" />
+        </div>
+      </div>
+    }
+  </div>
+
+  <div class="selection-actions">
+    <button class="btn btn-secondary btn-sm" (click)="onCancel()" [disabled]="isSaving">Annuler</button>
+    <!-- Classic Button -->
+    @if (mode === 'classic') {
+      <button
+        class="btn btn-primary btn-sm"
+        (click)="onApply()"
+        [disabled]="isSaving || value === null">
+        @if (isSaving) {
+          <span class="spinner-small"></span>
+        }
+        {{ isSaving ? savingLabel : applyLabel }}
+      </button>
+    }
+    <!-- Projection Button -->
+    @if (mode === 'projection') {
+      <button
+        class="btn btn-primary btn-sm btn-project"
+        (click)="onProject()"
+        [disabled]="isSaving || !projectionDays || projectionDays <= 0 || projectionResources <= 0">
+        @if (isSaving) {
+          <span class="spinner-small"></span>
+        }
+        {{ isSaving ? 'Calcul...' : 'Projeter' }}
+      </button>
+    }
+  </div>
+
+  <!-- Localized Loading Overlay -->
+  @if (isSaving) {
+    <div class="loading-overlay-local">
+      <div class="spinner-small"></div>
+      <span>{{ savingLabel }}...</span>
+    </div>
+  }
+</div>

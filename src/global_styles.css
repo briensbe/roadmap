@@ -1,6 +1,7 @@
 @import 'driver.js/dist/driver.css';
 
 :root {
+  color-scheme: light;
   /* Background colors */
   --bg-app: #f5f7fa;
   --bg-surface: #ffffff;
@@ -45,6 +46,7 @@
 }
 
 body.dark-mode {
+  color-scheme: dark;
   /* Background colors */
   --bg-app: #0f172a;        /* Slate 900 */
   --bg-surface: #1e293b;    /* Slate 800 */
@@ -406,6 +408,7 @@ textarea:focus {
   border-radius: 6px;
   background: var(--bg-input);
   color: var(--text-main);
+  color-scheme: inherit;
 }
 
 /* Year Popover Styles */

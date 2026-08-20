@@ -499,17 +499,13 @@
   cursor: not-allowed;
 }
 
-.source-toggle-btn.active {
-  background: var(--bg-surface);
-  color: var(--text-main);
-  box-shadow: var(--shadow-sm);
-}
-
+.source-toggle-btn.active,
 .source-toggle-btn.source-toggle-crewdayz.active {
   background: var(--color-primary);
   color: var(--text-inverse);
-  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.35);
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.35);
 }
+
 
 .saving-indicator {
   color: var(--text-muted);
