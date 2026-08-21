@@ -40,7 +40,13 @@
           Visualisation
         </button>
       </div>
-
+      @if (isSaving) {
+        <div class="saving-status-badge">
+          <lucide-icon [img]="RefreshCw" [size]="13" class="spin-icon"></lucide-icon>
+          <span>Enregistrement...</span>
+        </div>
+      }
+      
       <!-- Zoom direct pour le diagramme de Gantt (Visualisation) -->
       @if (planningMode() === 'visualisation') {
         <div class="gantt-zoom-controls">
@@ -2645,5 +2651,5 @@
     [visible]="showChiffresModal"
     [idProjet]="selectedProjetId"
     (close)="closeChiffresModal()"
-    (saved)="loadData()"></app-chiffres-modal>
+    (saved)="loadData({ showSkeleton: false })"></app-chiffres-modal>
 </div>

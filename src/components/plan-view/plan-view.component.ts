@@ -82,6 +82,7 @@ import {
   Copy,
   Check,
   Layers,
+  RefreshCw,
 } from 'lucide-angular';
 import * as XLSX from 'xlsx';
 import { getISOWeekYear } from 'date-fns';
@@ -140,6 +141,7 @@ import { driver } from 'driver.js';
       Copy,
       Check,
       Layers,
+      RefreshCw,
     }),
   ],
   exports: [LucideAngularModule],
@@ -213,6 +215,14 @@ interface FlatRow {
   parent: ParentRow;
 }
 
+export interface LoadDataOptions {
+  /**
+   * Indique si le skeleton loader doit être affiché lorsque le chargement prend plus de 250 ms.
+   * @default true
+   */
+  showSkeleton?: boolean;
+}
+
 @Component({
   selector: 'app-plan-view',
   standalone: true,
@@ -255,7 +265,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   selectedProjetId: string | null = null;
 
   async onMilestoneSaved() {
-    await this.loadData();
+    await this.loadData({ showSkeleton: false });
   }
 
   onOpenChiffresFromProject(idProjet: string | undefined) {
@@ -708,6 +718,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   Copy = Copy;
   Check = Check;
   Layers = Layers;
+  RefreshCw = RefreshCw;
 
   AlertTriangle = AlertTriangle;
   Info = Info;
@@ -891,7 +902,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.loadData();
+    this.loadData({ showSkeleton: true });
     this.generateWeeks();
 
     // Setup debounced search
@@ -1380,11 +1391,18 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     return row.uniqueId;
   }
 
-  async loadData() {
-    const timer = setTimeout(() => {
-      this.showSkeleton = true;
+  async loadData(options: LoadDataOptions = {}) {
+    const showSkeleton = options.showSkeleton ?? true;
+    let timer: any = null;
+    if (showSkeleton) {
+      timer = setTimeout(() => {
+        this.showSkeleton = true;
+        this.cdr.markForCheck();
+      }, 250);
+    } else {
+      this.isSaving = true;
       this.cdr.markForCheck();
-    }, 250);
+    }
 
     try {
       const [
@@ -1519,8 +1537,13 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
-      clearTimeout(timer);
-      this.showSkeleton = false;
+      if (timer) {
+        clearTimeout(timer);
+      }
+      if (this.showSkeleton) {
+        this.showSkeleton = false;
+      }
+      this.isSaving = false;
       this.cdr.markForCheck();
     }
   }
@@ -1786,7 +1809,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     } catch (error) {
       console.error('Error calculating rank:', error);
       // Fallback: reload to reset order if calculation failed
-      this.loadData();
+      this.loadData({ showSkeleton: false });
     }
   }
 
@@ -2458,7 +2481,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       this.cdr.markForCheck();
     } catch (error) {
       console.error('Error calculating rank:', error);
-      await this.loadData();
+      await this.loadData({ showSkeleton: false });
     }
   }
 
@@ -2544,7 +2567,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
         const equipeId = this.selectedIdToLink;
         await this.projetService.linkProjectToTeam(projetId, equipeId);
         await this.addAllTeamResourcesToProject(equipeId, projetId);
-        await this.loadData();
+        await this.loadData({ showSkeleton: false });
         this.closeLinkModal();
       } catch (error: any) {
         console.error('Error linking item:', error);
@@ -2596,7 +2619,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     }
 
-    await this.loadData();
+    await this.loadData({ showSkeleton: false });
     this.linkModalIsSaving = false;
 
     if (errors.length > 0) {
@@ -2698,14 +2721,14 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
             );
           }
         }
-        await this.loadData();
+        await this.loadData({ showSkeleton: false });
         this.closeLinkModal();
       } catch (error: any) {
         console.error('Error linking newly created project:', error);
         alert(`Le projet "${newProject.nom_projet}" a été créé, mais une erreur est survenue lors de son association : ${error.message || error}`);
       }
     } else {
-      await this.loadData();
+      await this.loadData({ showSkeleton: false });
     }
   }
 
@@ -2778,7 +2801,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
       await this.chargeService.createChargeWithoutDates(projetId, equipeId, roleId, personneId);
 
-      await this.loadData(); // Reload to refresh tree
+      await this.loadData({ showSkeleton: false }); // Reload to refresh tree
       this.closeAddResourceModal();
     } catch (error) {
       console.error('Error adding resource:', error);
@@ -3174,7 +3197,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       // 3 queries total instead of 2×N
       await this.chargeService.bulkMoveCharges(projetId, equipeId, moves, roleId, personneId);
 
-      await this.loadData();
+      await this.loadData({ showSkeleton: false });
       this.clearSelection();
     } catch (error) {
       console.error('Error executing move:', error);
@@ -3501,7 +3524,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       }
 
       // Reload data to refresh the view
-      await this.loadData();
+      await this.loadData({ showSkeleton: false });
       // calculateUsage is called within loadData
       this.clearSelection();
     } catch (error) {
@@ -3566,7 +3589,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
         );
       }
 
-      await this.loadData();
+      await this.loadData({ showSkeleton: false });
       this.clearSelection();
     } catch (error) {
       console.error('Error applying projection:', error);
@@ -4535,7 +4558,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
         }
 
         await this.chargeService.deleteChargesForResource(projetId, equipeId, roleId, personneId);
-        await this.loadData();
+        await this.loadData({ showSkeleton: false });
       } catch (error) {
         console.error('Error removing resource:', error);
         alert('Erreur lors de la suppression de la ressource.');
@@ -4582,7 +4605,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
           await this.chargeService.deleteChargesForProjectTeam(projetId, equipeId);
           await this.projetService.unlinkProjectFromTeam(projetId, equipeId);
         }
-        await this.loadData();
+        await this.loadData({ showSkeleton: false });
       } catch (error) {
         console.error('Error removing child:', error);
         alert(`Erreur lors de la suppression de l'association.`);

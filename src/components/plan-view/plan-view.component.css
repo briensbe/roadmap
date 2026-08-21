@@ -277,6 +277,39 @@
   white-space: nowrap;
 }
 
+.saving-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-sm);
+  pointer-events: none;
+  white-space: nowrap;
+  animation: badgeFadeIn 0.2s ease-out;
+}
+
+.saving-status-badge .spin-icon {
+  animation: spin 1s linear infinite;
+  color: var(--color-primary);
+}
+
+@keyframes badgeFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 .header-right {
   display: flex;
   align-items: center;
