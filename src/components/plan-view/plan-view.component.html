@@ -1596,7 +1596,7 @@
                           @if (planningMode() === 'saisie') {
                             <div class="weeks-container">
                               @for (week of displayedWeeks; track trackByWeek($index, week)) {
-                                <div class="week-cell resource-cell" [class.is-year-change]="isFirstWeekOfYear($index)"></div>
+                                <div class="week-cell team-cell" [class.is-year-change]="isFirstWeekOfYear($index)"></div>
                               }
                             </div>
                           }

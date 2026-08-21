@@ -458,7 +458,9 @@
 }
 
 .team-cell {
-  background: var(--bg-surface);
+  background: var(--bg-app);
+  cursor: default;
+  user-select: none;
 }
 
 .resource-cell {
