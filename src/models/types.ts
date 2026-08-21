@@ -184,3 +184,11 @@ export interface EquipeProjet {
   created_at?: string;
   updated_at?: string;
 }
+
+export interface LoadDataOptions {
+  /**
+   * Indique si le skeleton loader doit être affiché lorsque le chargement prend plus de 250 ms.
+   * @default true
+   */
+  showSkeleton?: boolean;
+}

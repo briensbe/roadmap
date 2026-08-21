@@ -4,7 +4,15 @@
     {{ activeTooltip }}
   </div>
   <div class="capacity-header">
-    <h1>Gestion de Capacité par Équipe</h1>
+    <div class="header-left">
+      <h1>Gestion de Capacité par Équipe</h1>
+      @if (isSaving) {
+        <div class="saving-status-badge">
+          <lucide-icon [img]="LoaderCircle" [size]="13" class="spin-icon"></lucide-icon>
+          <span>Enregistrement...</span>
+        </div>
+      }
+    </div>
     <div class="header-actions">
       <button class="btn btn-mapping-crewdayz btn-sm" (click)="openCrewdayzMappingModal()">
         <lucide-icon name="sliders" [size]="14"></lucide-icon>

@@ -31,6 +31,7 @@ import {
   Jalon,
   Service,
   PROJECT_STATUS_LIST,
+  LoadDataOptions,
 } from '../../models/types';
 import { CalendarService } from '../../services/calendar.service';
 import { PersonnesService } from '../../services/personnes.service';
@@ -82,7 +83,7 @@ import {
   Copy,
   Check,
   Layers,
-  RefreshCw,
+  LoaderCircle,
 } from 'lucide-angular';
 import * as XLSX from 'xlsx';
 import { getISOWeekYear } from 'date-fns';
@@ -141,7 +142,7 @@ import { driver } from 'driver.js';
       Copy,
       Check,
       Layers,
-      RefreshCw,
+      LoaderCircle,
     }),
   ],
   exports: [LucideAngularModule],
@@ -213,14 +214,6 @@ interface FlatRow {
   resource: ResourceRow;
   child: ChildRow;
   parent: ParentRow;
-}
-
-export interface LoadDataOptions {
-  /**
-   * Indique si le skeleton loader doit être affiché lorsque le chargement prend plus de 250 ms.
-   * @default true
-   */
-  showSkeleton?: boolean;
 }
 
 @Component({
@@ -718,7 +711,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   Copy = Copy;
   Check = Check;
   Layers = Layers;
-  RefreshCw = RefreshCw;
+  LoaderCircle = LoaderCircle;
 
   AlertTriangle = AlertTriangle;
   Info = Info;

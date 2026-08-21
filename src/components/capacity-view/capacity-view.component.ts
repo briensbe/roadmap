@@ -8,7 +8,7 @@ import { TeamService } from '../../services/team.service';
 import { CalendarService } from '../../services/calendar.service';
 import { RolesService } from '../../services/roles.service';
 import { CrewdayzIntegrationService } from '../../services/crewdayz-integration.service';
-import { Equipe, Role, Personne, Capacite, EquipeResource, RoleAttachment } from '../../models/types';
+import { Equipe, Role, Personne, Capacite, EquipeResource, RoleAttachment, LoadDataOptions } from '../../models/types';
 import { CapacitySourceConfig, CrewdayzTeamAvailability, RoadmapMappingRoleProfile } from '../../models/crewdayz.types';
 import {
   LucideAngularModule,
@@ -23,6 +23,7 @@ import {
   Sliders,
   Zap,
   Database,
+  LoaderCircle,
 } from 'lucide-angular';
 import { getISOWeekYear } from 'date-fns';
 import { storageSignal } from '../../utils/storage-signal';
@@ -36,7 +37,7 @@ import { textContains } from '../../utils/text.utils';
 
 @NgModule({
   imports: [
-    LucideAngularModule.pick({ ChevronDown, ChevronRight, Plus, User, Users, Contact, SquarePlus, SquareMinus, Sliders, Zap, Database }),
+    LucideAngularModule.pick({ ChevronDown, ChevronRight, Plus, User, Users, Contact, SquarePlus, SquareMinus, Sliders, Zap, Database, LoaderCircle }),
   ],
   exports: [LucideAngularModule],
 })
@@ -165,6 +166,8 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   Sliders = Sliders;
   Zap = Zap;
   Database = Database;
+  LoaderCircle = LoaderCircle;
+  isSaving: boolean = false;
 
   constructor(
     private teamService: TeamService,
@@ -189,7 +192,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
 
   async ngOnInit() {
     this.generateWeeks();
-    await this.loadData();
+    await this.loadData({ showSkeleton: true });
 
     this.ngZone.runOutsideAngular(() => {
       // Close popovers on scroll so they don't detach from their anchor badge
@@ -235,11 +238,18 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
     this.updateDisplayedYears();
   }
 
-  async loadData() {
-    const timer = setTimeout(() => {
-      this.showSkeleton = true;
+  async loadData(options: LoadDataOptions = {}) {
+    const showSkeleton = options.showSkeleton ?? true;
+    let timer: any = null;
+    if (showSkeleton) {
+      timer = setTimeout(() => {
+        this.showSkeleton = true;
+        this.cdr.markForCheck();
+      }, 250);
+    } else {
+      this.isSaving = true;
       this.cdr.markForCheck();
-    }, 250);
+    }
 
     try {
       const startDateStr = this.calendarService.formatWeekStart(this.displayedWeeks[0]);
@@ -318,8 +328,13 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
-      clearTimeout(timer);
-      this.showSkeleton = false;
+      if (timer) {
+        clearTimeout(timer);
+      }
+      if (this.showSkeleton) {
+        this.showSkeleton = false;
+      }
+      this.isSaving = false;
       this.cdr.markForCheck();
     }
   }
@@ -532,7 +547,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
       }
 
       this.showAddResourceModal = false;
-      await this.loadData();
+      await this.loadData({ showSkeleton: false });
     } catch (error: any) {
       console.error('Error adding resource:', error);
       // Display user-friendly error message
@@ -555,7 +570,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
         } else {
           await this.teamService.removePersonneFromEquipe(resource.id);
         }
-        await this.loadData();
+        await this.loadData({ showSkeleton: false });
       } catch (error) {
         console.error('Error removing resource:', error);
       }
@@ -842,6 +857,8 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
     if (this.selectedCells.length === 0 || value == null) return;
 
     this.bulkCapaciteValue = value;
+    this.isSaving = true;
+    this.cdr.markForCheck();
 
     try {
       for (const cell of this.selectedCells) {
@@ -861,11 +878,16 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
       this.clearSelection();
     } catch (error) {
       console.error('Error saving capacities:', error);
+    } finally {
+      this.isSaving = false;
+      this.cdr.markForCheck();
     }
   }
 
   async applyCapacityProjection(data: { resources: number; totalDays: number }) {
     if (this.selectedCells.length === 0) return;
+    this.isSaving = true;
+    this.cdr.markForCheck();
 
     try {
       // Find the earliest selected week to start from
@@ -904,6 +926,9 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
     } catch (error) {
       console.error('Error applying generic capacity projection:', error);
       alert("Erreur lors de l'application de la projection.");
+    } finally {
+      this.isSaving = false;
+      this.cdr.markForCheck();
     }
   }
 
@@ -1104,6 +1129,6 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   }
 
   async onCrewdayzMappingSaved() {
-    await this.loadData();
+    await this.loadData({ showSkeleton: false });
   }
 }
