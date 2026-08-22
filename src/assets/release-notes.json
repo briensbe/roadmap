@@ -1,5 +1,28 @@
 [
   {
+    "version": "2026.08.22",
+    "date": "2026-08-22",
+    "news": [
+      {
+        "title": "Mode Sombre / Dark Mode global (SIDE-89)",
+        "items": [
+          "Déploiement complet du thème sombre sur l'ensemble de l'application (Planification, Capacité, Imports Triskell, Dashboard, Projets, Paramètres, Organisation, Guide).",
+          "Gestion des préférences de thème (Clair / Sombre / Système) directement accessible depuis le profil utilisateur."
+        ]
+      },
+      {
+        "title": "Optimisation des skeletons & Témoin d'enregistrement",
+        "items": [
+          "Optimisation des skeletons de chargement : suppression des clignotements lors des modifications et enregistrements.",
+          "Ajout d'un badge animé discret 'Enregistrement...' pour confirmer la sauvegarde des modifications en arrière-plan.",
+          "Affichage d'un micro-spinner et d'un effet de pulsation directement à l'intérieur des cellules lors de la saisie de charges (effet déjà présent sur le drag and drop)"
+        ],
+        "imageUrl": "assets/release-notes/2026-08-21-badge-enregistrement.png",
+        "imageMaxHeight": 80
+      }
+    ]
+  },
+  {
     "version": "2026.07.30",
     "date": "2026-07-30",
     "news": [

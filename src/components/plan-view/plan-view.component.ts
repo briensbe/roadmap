@@ -656,6 +656,12 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   bulkChargeValue: number | null = null;
   isSaving = false;
+  isCommittingSelection = false;
+  projectionCommitting: {
+    resourceUniqueId: string;
+    startWeekIdx: number;
+    nbWeeks: number;
+  } | null = null;
 
   // Moving logic
   isMovingSelection = false;
@@ -3231,7 +3237,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Visual helpers for HTML
   getCellSelectionClasses(resource: ResourceRow, week: Date, weekIndex: number, child: ChildRow, parent: ParentRow) {
-    if (this.selectedCells.length === 0) return {};
+    if (this.selectedCells.length === 0 && !this.projectionCommitting) return {};
 
     const isSelected = this.isCellSelected(resource, week);
 
@@ -3246,13 +3252,28 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       return {};
     }
 
+    if (this.isProjectionCommitting(resource, weekIndex, child, parent)) {
+      return { selected: true, committing: true };
+    }
+
     if (!isSelected) return {};
 
     // Standard selection mode (not moving)
     return {
       selected: true,
+      committing: this.isCommittingSelection,
       'is-over-border': this.isOverSelectionBorder,
     };
+  }
+
+  isProjectionCommitting(resource: ResourceRow, weekIndex: number, child: ChildRow, parent: ParentRow): boolean {
+    if (!this.projectionCommitting) return false;
+    const currResId = this.getResourceUniqueId(resource, child, parent);
+    if (currResId !== this.projectionCommitting.resourceUniqueId) return false;
+    return (
+      weekIndex >= this.projectionCommitting.startWeekIdx &&
+      weekIndex < this.projectionCommitting.startWeekIdx + this.projectionCommitting.nbWeeks
+    );
   }
 
   isCellGhostSelected(resource: ResourceRow, weekIndex: number, child: ChildRow, parent: ParentRow): boolean {
@@ -3464,9 +3485,11 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.bulkChargeValue = null;
     this.dragStartCellValue = null;
     this.dragProjectionTooltipVisible = false;
-    // Reset move state
+    // Reset move & commit state
     this.isMovingSelection = false;
     this.isMoveCommitting = false;
+    this.isCommittingSelection = false;
+    this.projectionCommitting = null;
     this.isOverSelectionBorder = false;
     this.moveGhostOffset = 0;
   }
@@ -3475,7 +3498,9 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.selectedCells.length === 0 || value == null) return;
 
     this.bulkChargeValue = value;
+    this.isCommittingSelection = true;
     this.isSaving = true;
+    this.cdr.markForCheck();
     try {
       for (const cell of this.selectedCells) {
         const weekKey = this.formatWeekStart(cell.week);
@@ -3524,7 +3549,9 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       console.error('Error applying bulk charge:', error);
       alert("Erreur lors de l'application des charges.");
     } finally {
+      this.isCommittingSelection = false;
       this.isSaving = false;
+      this.cdr.markForCheck();
     }
   }
 
@@ -3544,6 +3571,20 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
       // Calculate how many weeks are needed (rounded up)
       const nbWeeks = Math.ceil(data.totalDays / (data.resources * daysPerWeek));
+
+      const resourceUniqueId = this.getResourceUniqueId(
+        resourceRow,
+        { id: firstCell.childId } as ChildRow,
+        { id: firstCell.parentId } as ParentRow,
+      );
+
+      this.projectionCommitting = {
+        resourceUniqueId,
+        startWeekIdx,
+        nbWeeks,
+      };
+      this.isCommittingSelection = true;
+      this.cdr.markForCheck();
 
       for (let i = 0; i < nbWeeks; i++) {
         const currentTargetIdx = startWeekIdx + i;
@@ -3588,7 +3629,10 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       console.error('Error applying projection:', error);
       alert("Erreur lors de l'application de la projection.");
     } finally {
+      this.projectionCommitting = null;
+      this.isCommittingSelection = false;
       this.isSaving = false;
+      this.cdr.markForCheck();
     }
   }
 

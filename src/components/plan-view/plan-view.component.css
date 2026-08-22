@@ -1954,7 +1954,9 @@
   box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.5);
 }
 
-.resource-detail-cell.ghost-selection.committing {
+.resource-detail-cell.committing,
+.resource-detail-cell.ghost-selection.committing,
+.resource-detail-cell.selected.committing {
   animation: ghostPulse 0.7s ease-in-out infinite;
 }
 
@@ -1968,7 +1970,9 @@
   }
 }
 
-.resource-detail-cell.ghost-selection.committing::after {
+.resource-detail-cell.committing::after,
+.resource-detail-cell.ghost-selection.committing::after,
+.resource-detail-cell.selected.committing::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -1979,7 +1983,9 @@
   pointer-events: none;
 }
 
-.resource-detail-cell.ghost-selection.committing .cell-content::after {
+.resource-detail-cell.committing .cell-content::after,
+.resource-detail-cell.ghost-selection.committing .cell-content::after,
+.resource-detail-cell.selected.committing .cell-content::after {
   content: '';
   display: block;
   width: 12px;
