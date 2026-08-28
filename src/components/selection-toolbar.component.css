@@ -193,11 +193,75 @@
 }
 
 .toolbar-main-content {
-  min-height: 80px;
+  min-height: 48px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   margin-bottom: 8px;
+}
+
+.btn-add-comment {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 5px;
+  background: transparent;
+  border: 1px dashed var(--border-subtle);
+  color: var(--text-secondary);
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.15s ease;
+  margin-top: 2px;
+}
+
+.btn-add-comment:hover {
+  background: var(--bg-hover);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.btn-add-comment .plus-icon {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.btn-add-comment .badge-opt {
+  font-size: 10.5px;
+  opacity: 0.8;
+  font-weight: 400;
+}
+
+.comment-field-wrapper {
+  animation: fadeIn 0.15s ease-in-out;
+}
+
+.field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.btn-remove-comment {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0 4px;
+  font-size: 11px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.btn-remove-comment:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
 }
 
 .toolbar-error-message {

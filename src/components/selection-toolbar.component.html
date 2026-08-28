@@ -97,16 +97,26 @@
                 (keydown.enter)="onApplyOverride()"
                 (focus)="$any($event.target).select()" />
             </div>
-            <div class="projection-field">
-              <label>Commentaire (opt.)</label>
-              <input
-                type="text"
-                [(ngModel)]="localComment"
-                (ngModelChange)="onCommentChange($event)"
-                placeholder="Justification..."
-                class="bulk-input comment-input"
-                (keydown.enter)="onApplyOverride()" />
-            </div>
+            @if (isCommentExpanded || (localComment && localComment.trim().length > 0)) {
+              <div class="projection-field comment-field-wrapper">
+                <div class="field-header">
+                  <label>Commentaire</label>
+                  <button type="button" class="btn-remove-comment" (click)="collapseComment()" title="Masquer le commentaire">✕</button>
+                </div>
+                <input
+                  #commentInput
+                  type="text"
+                  [(ngModel)]="localComment"
+                  (ngModelChange)="onCommentChange($event)"
+                  placeholder="Justification..."
+                  class="bulk-input comment-input"
+                  (keydown.enter)="onApplyOverride()" />
+              </div>
+            } @else {
+              <button type="button" class="btn-add-comment" (click)="expandComment()">
+                <span class="plus-icon">+</span> Ajouter un commentaire <span class="badge-opt">(facultatif)</span>
+              </button>
+            }
           </div>
         }
 
@@ -126,16 +136,26 @@
                 (keydown.enter)="onApplyDelta()"
                 (focus)="$any($event.target).select()" />
             </div>
-            <div class="projection-field">
-              <label>Commentaire (opt.)</label>
-              <input
-                type="text"
-                [(ngModel)]="localComment"
-                (ngModelChange)="onCommentChange($event)"
-                placeholder="Justification..."
-                class="bulk-input comment-input"
-                (keydown.enter)="onApplyDelta()" />
-            </div>
+            @if (isCommentExpanded || (localComment && localComment.trim().length > 0)) {
+              <div class="projection-field comment-field-wrapper">
+                <div class="field-header">
+                  <label>Commentaire</label>
+                  <button type="button" class="btn-remove-comment" (click)="collapseComment()" title="Masquer le commentaire">✕</button>
+                </div>
+                <input
+                  #commentInput
+                  type="text"
+                  [(ngModel)]="localComment"
+                  (ngModelChange)="onCommentChange($event)"
+                  placeholder="Justification..."
+                  class="bulk-input comment-input"
+                  (keydown.enter)="onApplyDelta()" />
+              </div>
+            } @else {
+              <button type="button" class="btn-add-comment" (click)="expandComment()">
+                <span class="plus-icon">+</span> Ajouter un commentaire <span class="badge-opt">(facultatif)</span>
+              </button>
+            }
           </div>
         }
       }
@@ -159,16 +179,26 @@
               (focus)="$any($event.target).select()" />
           </div>
           @if (showCommentField) {
-            <div class="projection-field">
-              <label>Commentaire (opt.)</label>
-              <input
-                type="text"
-                [(ngModel)]="localComment"
-                (ngModelChange)="onCommentChange($event)"
-                placeholder="Note / Justification..."
-                class="bulk-input comment-input"
-                (keydown.enter)="onApply()" />
-            </div>
+            @if (isCommentExpanded || (localComment && localComment.trim().length > 0)) {
+              <div class="projection-field comment-field-wrapper">
+                <div class="field-header">
+                  <label>Commentaire</label>
+                  <button type="button" class="btn-remove-comment" (click)="collapseComment()" title="Masquer le commentaire">✕</button>
+                </div>
+                <input
+                  #commentInput
+                  type="text"
+                  [(ngModel)]="localComment"
+                  (ngModelChange)="onCommentChange($event)"
+                  placeholder="Note / Justification..."
+                  class="bulk-input comment-input"
+                  (keydown.enter)="onApply()" />
+              </div>
+            } @else {
+              <button type="button" class="btn-add-comment" (click)="expandComment()">
+                <span class="plus-icon">+</span> Ajouter un commentaire <span class="badge-opt">(facultatif)</span>
+              </button>
+            }
           }
         </div>
       }

@@ -55,6 +55,7 @@ export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
   @ViewChild('overrideInput') overrideInput?: ElementRef<HTMLInputElement>;
   @ViewChild('deltaInput') deltaInput?: ElementRef<HTMLInputElement>;
   @ViewChild('projResInput') projResInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('commentInput') commentInput?: ElementRef<HTMLInputElement>;
 
   @Input() selectionStartDate: Date | null = null;
   @Input() daysPerWeek: number = 5;
@@ -67,6 +68,7 @@ export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
   mode: 'classic' | 'projection' = 'classic';
   crewdayzAction: 'override' | 'delta' = 'override';
   isConfirmingReset: boolean = false;
+  isCommentExpanded: boolean = false;
   localComment: string = '';
   projectionResources: number = 1;
   projectionDays: number | null = null;
@@ -127,14 +129,36 @@ export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
         this.crewdayzAction = this.initialAction ?? (this.deltaValue !== null && this.deltaValue !== undefined ? 'delta' : 'override');
       }
       this.localComment = this.comment || '';
+      this.isCommentExpanded = !!(this.localComment && this.localComment.trim().length > 0);
       this.focusActiveInput();
     }
     if (changes['comment']) {
       this.localComment = this.comment || '';
+      if (this.localComment && this.localComment.trim().length > 0) {
+        this.isCommentExpanded = true;
+      }
     }
     if (changes['initialAction'] && changes['initialAction'].currentValue) {
       this.crewdayzAction = changes['initialAction'].currentValue;
     }
+  }
+
+  expandComment() {
+    this.isCommentExpanded = true;
+    setTimeout(() => {
+      const el = this.commentInput?.nativeElement;
+      if (el) {
+        el.focus();
+        el.select();
+      }
+    }, 50);
+  }
+
+  collapseComment() {
+    this.localComment = '';
+    this.commentChange.emit('');
+    this.isCommentExpanded = false;
+    this.focusActiveInput();
   }
 
   ngOnDestroy() {
