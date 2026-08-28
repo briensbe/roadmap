@@ -13,7 +13,7 @@ L'application Roadmap Vision intègre les disponibilités d'équipes et de profi
 ## Decision
 
 Nous adoptons une architecture de résolution hybride de capacité avec stockage dédié des ajustements :
-1. La table `roadmap_capacites` est étendue avec deux champs numériques optionnels : `override_capacite` (forçage absolu) et `override_delta` (delta relatif $\pm\Delta$).
+1. La table `roadmap_capacites` est étendue avec des champs optionnels : `override_capacite` (forçage absolu), `override_delta` (delta relatif $\pm\Delta$) et `comment` (note explicative).
 2. Le champ `capacite` d'origine reste réservé à la saisie manuelle en mode de source `roadmap`.
 3. Une fonction de résolution unifiée détermine la capacité effective selon la source active de l'équipe :
    - Mode `roadmap` : utilise `capacite`.
