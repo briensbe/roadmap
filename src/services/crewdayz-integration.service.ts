@@ -329,4 +329,41 @@ export class CrewdayzIntegrationService implements OnDestroy {
     const config = configs.find((c) => c.equipe_id === equipeId);
     return config?.capacity_source ?? 'roadmap';
   }
+
+  /**
+   * Calcule la capacité effective pour une ressource et une semaine données,
+   * selon la source d'équipe active, les données Crewdayz calculées,
+   * et les personnalisations éventuelles (override_capacite, override_delta).
+   */
+  getEffectiveCapacity(
+    teamSource: CapacitySource,
+    roadmapCapacite: number,
+    crewdayzBase: number | null,
+    overrideCapacite?: number | null,
+    overrideDelta?: number | null
+  ): number {
+    if (teamSource === 'roadmap') {
+      return roadmapCapacite || 0;
+    }
+
+    // Source Crewdayz
+    // 1. Priorité au forçage absolu s'il existe
+    if (overrideCapacite !== null && overrideCapacite !== undefined) {
+      return overrideCapacite;
+    }
+
+    // 2. Si aucune disponibilité Crewdayz n'a pu être calculée (pas de mapping), fallback sur Roadmap
+    if (crewdayzBase === null) {
+      return roadmapCapacite || 0;
+    }
+
+    // 3. Application du delta s'il est défini
+    if (overrideDelta !== null && overrideDelta !== undefined && overrideDelta !== 0) {
+      return Math.max(0, Math.round((crewdayzBase + overrideDelta) * 100) / 100);
+    }
+
+    // 4. Valeur brute Crewdayz
+    return crewdayzBase;
+  }
 }
+

@@ -115,6 +115,9 @@ export interface Capacite {
   id?: string;
   semaine_debut: string;
   capacite: number;
+  override_capacite?: number | null;
+  override_delta?: number | null;
+  comment?: string | null;
   role_id?: string;
   personne_id?: string;
   societe_id?: string;

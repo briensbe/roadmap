@@ -356,6 +356,11 @@ textarea:focus {
   width: 310px;
 }
 
+.selection-toolbar.crewdayz-toolbar {
+  min-width: 380px;
+  width: 380px;
+}
+
 .selection-info {
   display: flex;
   align-items: baseline;

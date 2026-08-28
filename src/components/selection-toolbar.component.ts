@@ -38,11 +38,22 @@ export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
   @Input() value: number | null = null;
   @Output() valueChange = new EventEmitter<number | null>();
 
+  @Input() isCrewdayzMode: boolean = false;
+  @Input() showCommentField: boolean = false;
+  @Input() comment: string = '';
+  @Output() commentChange = new EventEmitter<string>();
+
   @Output() apply = new EventEmitter<number | null>();
+  @Output() applyWithComment = new EventEmitter<{ value: number | null; comment?: string }>();
+  @Output() applyOverride = new EventEmitter<{ value: number; comment?: string }>();
+  @Output() applyDelta = new EventEmitter<{ delta: number; comment?: string }>();
+  @Output() clearCustomizations = new EventEmitter<void>();
   @Output() project = new EventEmitter<{ resources: number; totalDays: number }>();
   @Output() cancel = new EventEmitter<void>();
 
   @ViewChild('bulkInput') bulkInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('overrideInput') overrideInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('deltaInput') deltaInput?: ElementRef<HTMLInputElement>;
   @ViewChild('projResInput') projResInput?: ElementRef<HTMLInputElement>;
 
   @Input() selectionStartDate: Date | null = null;
@@ -50,6 +61,11 @@ export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
   @Input() showProjectionTab: boolean = true;
 
   mode: 'classic' | 'projection' = 'classic';
+  crewdayzAction: 'override' | 'delta' = 'override';
+  isConfirmingReset: boolean = false;
+  overrideValue: number | null = null;
+  deltaValue: number | null = null;
+  localComment: string = '';
   projectionResources: number = 1;
   projectionDays: number | null = null;
 
@@ -84,7 +100,15 @@ export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['visible']?.currentValue === true) {
+      this.isConfirmingReset = false;
+      if (changes['value'] || this.overrideValue === null) {
+        this.overrideValue = this.value;
+      }
+      this.localComment = this.comment || '';
       this.focusActiveInput();
+    }
+    if (changes['comment']) {
+      this.localComment = this.comment || '';
     }
   }
 
@@ -98,19 +122,55 @@ export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
     this.focusActiveInput();
   }
 
+  setCrewdayzAction(action: 'override' | 'delta') {
+    this.isConfirmingReset = false;
+    this.crewdayzAction = action;
+    this.focusActiveInput();
+  }
+
+  promptReset() {
+    this.isConfirmingReset = true;
+  }
+
+  cancelReset() {
+    this.isConfirmingReset = false;
+    this.focusActiveInput();
+  }
+
+  onConfirmReset() {
+    this.isConfirmingReset = false;
+    this.clearCustomizations.emit();
+  }
+
   focusActiveInput() {
     setTimeout(() => {
-      if (this.mode === 'classic') {
-        const el = this.bulkInput?.nativeElement;
-        if (el) {
-          el.focus();
-          el.select();
+      if (this.isCrewdayzMode) {
+        if (this.crewdayzAction === 'override') {
+          const el = this.overrideInput?.nativeElement;
+          if (el) {
+            el.focus();
+            el.select();
+          }
+        } else if (this.crewdayzAction === 'delta') {
+          const el = this.deltaInput?.nativeElement;
+          if (el) {
+            el.focus();
+            el.select();
+          }
         }
       } else {
-        const el = this.projResInput?.nativeElement;
-        if (el) {
-          el.focus();
-          el.select();
+        if (this.mode === 'classic') {
+          const el = this.bulkInput?.nativeElement;
+          if (el) {
+            el.focus();
+            el.select();
+          }
+        } else {
+          const el = this.projResInput?.nativeElement;
+          if (el) {
+            el.focus();
+            el.select();
+          }
         }
       }
     }, 50);
@@ -121,8 +181,35 @@ export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
     this.valueSubject.next(val);
   }
 
+  onCommentChange(comm: string) {
+    this.localComment = comm;
+    this.commentChange.emit(comm);
+  }
+
   onApply() {
     this.apply.emit(this.value);
+  }
+
+  onApplyOverride() {
+    if (this.overrideValue !== null) {
+      this.applyOverride.emit({
+        value: this.overrideValue,
+        comment: this.localComment.trim() || undefined,
+      });
+    }
+  }
+
+  onApplyDelta() {
+    if (this.deltaValue !== null) {
+      this.applyDelta.emit({
+        delta: this.deltaValue,
+        comment: this.localComment.trim() || undefined,
+      });
+    }
+  }
+
+  onClearCustomizations() {
+    this.clearCustomizations.emit();
   }
 
   onProject() {

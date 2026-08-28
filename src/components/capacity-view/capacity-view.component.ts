@@ -43,6 +43,13 @@ import { textContains } from '../../utils/text.utils';
 })
 export class LucideIconsModule {}
 
+interface ResourceWeekData {
+  capacite: number;
+  override_capacite?: number | null;
+  override_delta?: number | null;
+  comment?: string | null;
+}
+
 interface ResourceRow {
   type: 'role' | 'personne';
   id: string;
@@ -50,6 +57,7 @@ interface ResourceRow {
   label: string;
   equipeId: string;
   weeks: Map<string, number>;
+  weekData?: Map<string, ResourceWeekData>;
   jours_par_semaine: number;
   color?: string;
 }
@@ -130,6 +138,12 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   toolbarVisible: boolean = false; // Controls opacity to prevent flash
 
   bulkCapaciteValue: number | null = null;
+  bulkComment: string = '';
+
+  get isSelectionCrewdayzMode(): boolean {
+    if (this.selectedCells.length === 0) return false;
+    return this.getSourceForTeam(this.selectedCells[0].resource.equipeId) === 'crewdayz';
+  }
 
   get selectionStartWeekDate(): Date | null {
     if (this.selectedCells.length === 0) return null;
@@ -301,10 +315,17 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
           const key = `${resource.id}_${resource.type}_${equipe.id}`;
           const capacites = capacitiesByResource.get(key) || [];
           const weeks = new Map<string, number>();
+          const weekData = new Map<string, ResourceWeekData>();
 
           capacites.forEach((cap) => {
             const weekStr = this.calendarService.formatWeekStart(new Date(cap.semaine_debut));
             weeks.set(weekStr, cap.capacite);
+            weekData.set(weekStr, {
+              capacite: cap.capacite,
+              override_capacite: cap.override_capacite,
+              override_delta: cap.override_delta,
+              comment: cap.comment,
+            });
           });
 
           return {
@@ -314,6 +335,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
             label: resource.type === 'role' ? resource.nom : `${resource.prenom} ${resource.nom}`,
             equipeId: equipe.id!,
             weeks,
+            weekData,
             jours_par_semaine: resource.jours_par_semaine,
             color: resource.color,
           };
@@ -512,8 +534,77 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   }
 
   getCapacite(resource: ResourceRow, week: Date): number {
+    return this.getEffectiveCapacity(resource, week);
+  }
+
+  getEffectiveCapacity(resource: ResourceRow, week: Date): number {
+    const source = this.getSourceForTeam(resource.equipeId);
     const weekStr = this.calendarService.formatWeekStart(week);
-    return resource.weeks.get(weekStr) || 0;
+    const roadmapCap = resource.weeks.get(weekStr) || 0;
+    const crewdayzBase = this.getCrewdayzDispo(resource, week);
+    const custom = resource.weekData?.get(weekStr);
+
+    return this.crewdayzService.getEffectiveCapacity(
+      source,
+      roadmapCap,
+      crewdayzBase,
+      custom?.override_capacite,
+      custom?.override_delta
+    );
+  }
+
+  getCustomization(resource: ResourceRow, week: Date): ResourceWeekData | undefined {
+    const weekStr = this.calendarService.formatWeekStart(week);
+    return resource.weekData?.get(weekStr);
+  }
+
+  hasOverride(resource: ResourceRow, week: Date): boolean {
+    if (this.getSourceForTeam(resource.equipeId) !== 'crewdayz') return false;
+    const custom = this.getCustomization(resource, week);
+    return custom?.override_capacite !== null && custom?.override_capacite !== undefined;
+  }
+
+  hasDelta(resource: ResourceRow, week: Date): boolean {
+    if (this.getSourceForTeam(resource.equipeId) !== 'crewdayz') return false;
+    const custom = this.getCustomization(resource, week);
+    return custom?.override_delta !== null && custom?.override_delta !== undefined && custom.override_delta !== 0;
+  }
+
+  getDelta(resource: ResourceRow, week: Date): number | null {
+    const custom = this.getCustomization(resource, week);
+    return custom?.override_delta ?? null;
+  }
+
+  getComment(resource: ResourceRow, week: Date): string | null {
+    const custom = this.getCustomization(resource, week);
+    return custom?.comment ?? null;
+  }
+
+  getCellTooltip(resource: ResourceRow, week: Date): string {
+    const source = this.getSourceForTeam(resource.equipeId);
+    const custom = this.getCustomization(resource, week);
+    const eff = this.getEffectiveCapacity(resource, week);
+    const comment = custom?.comment;
+
+    let text = '';
+    if (source === 'crewdayz') {
+      const base = this.getCrewdayzDispo(resource, week);
+      if (custom?.override_capacite !== null && custom?.override_capacite !== undefined) {
+        text = `Capacité forcée : ${custom.override_capacite} ETP (Base Crewdayz : ${base ?? 0} ETP)`;
+      } else if (custom?.override_delta !== null && custom?.override_delta !== undefined && custom.override_delta !== 0) {
+        const sign = custom.override_delta > 0 ? '+' : '';
+        text = `Base Crewdayz : ${base ?? 0} ETP | Delta : ${sign}${custom.override_delta} ETP → Total : ${eff} ETP`;
+      } else {
+        text = `Disponibilité Crewdayz : ${base ?? 0} ETP`;
+      }
+    } else {
+      text = `Capacité Roadmap : ${eff} ETP`;
+    }
+
+    if (comment) {
+      text += `\n💬 Note : ${comment}`;
+    }
+    return text;
   }
 
   toggleTeam(teamRow: TeamRow) {
@@ -686,13 +777,17 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
     if (this.selectedCells.length > 0) {
       this.isSelectionFinished = true;
 
-      // If a single cell is selected, show its existing value
+      // If a single cell is selected, show its existing value & comment
       if (this.selectedCells.length === 1) {
         const cell = this.selectedCells[0];
+        const weekStr = this.calendarService.formatWeekStart(cell.week);
+        const custom = cell.resource.weekData?.get(weekStr);
         const val = this.getCapacite(cell.resource, cell.week);
         this.bulkCapaciteValue = val > 0 ? val : null;
+        this.bulkComment = custom?.comment || '';
       } else {
         this.bulkCapaciteValue = null;
+        this.bulkComment = '';
       }
 
       this.updateToolbarPosition();
@@ -850,13 +945,14 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
     this.dragStartWeekIndex = -1;
     this.dragEndWeekIndex = -1;
     this.bulkCapaciteValue = null;
+    this.bulkComment = '';
   }
 
-  async applyBulkCapacite(value: number | null) {
-    // Autorise 0, bloque seulement null et undefined
+  async applyBulkCapacite(value: number | null, comment?: string) {
     if (this.selectedCells.length === 0 || value == null) return;
 
-    this.bulkCapaciteValue = value;
+    const targetValue = value;
+    const targetComment = comment;
     this.isSaving = true;
     this.cdr.markForCheck();
 
@@ -868,16 +964,149 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
           cell.resource.type,
           cell.resource.equipeId,
           weekStr,
-          this.bulkCapaciteValue,
+          targetValue,
+          {
+            comment: targetComment !== undefined ? targetComment : cell.resource.weekData?.get(weekStr)?.comment,
+          }
         );
 
         // Update local data
-        cell.resource.weeks.set(weekStr, this.bulkCapaciteValue);
+        cell.resource.weeks.set(weekStr, targetValue);
+        if (!cell.resource.weekData) cell.resource.weekData = new Map();
+        const existing = cell.resource.weekData.get(weekStr) || { capacite: 0 };
+        cell.resource.weekData.set(weekStr, {
+          ...existing,
+          capacite: targetValue,
+          comment: targetComment !== undefined ? targetComment : existing.comment,
+        });
       }
 
       this.clearSelection();
     } catch (error) {
       console.error('Error saving capacities:', error);
+    } finally {
+      this.isSaving = false;
+      this.cdr.markForCheck();
+    }
+  }
+
+  async applyBulkOverride(event: { value: number; comment?: string }) {
+    if (this.selectedCells.length === 0) return;
+    this.isSaving = true;
+    this.cdr.markForCheck();
+
+    try {
+      for (const cell of this.selectedCells) {
+        const weekStr = this.calendarService.formatWeekStart(cell.week);
+        await this.teamService.saveCapacite(
+          cell.resource.id,
+          cell.resource.type,
+          cell.resource.equipeId,
+          weekStr,
+          cell.resource.weeks.get(weekStr) || 0,
+          {
+            override_capacite: event.value,
+            override_delta: null,
+            comment: event.comment ?? null,
+          }
+        );
+
+        if (!cell.resource.weekData) cell.resource.weekData = new Map();
+        const existing = cell.resource.weekData.get(weekStr) || { capacite: cell.resource.weeks.get(weekStr) || 0 };
+        cell.resource.weekData.set(weekStr, {
+          ...existing,
+          override_capacite: event.value,
+          override_delta: null,
+          comment: event.comment ?? null,
+        });
+      }
+
+      this.clearSelection();
+    } catch (error) {
+      console.error('Error saving override capacity:', error);
+    } finally {
+      this.isSaving = false;
+      this.cdr.markForCheck();
+    }
+  }
+
+  async applyBulkDelta(event: { delta: number; comment?: string }) {
+    if (this.selectedCells.length === 0) return;
+    this.isSaving = true;
+    this.cdr.markForCheck();
+
+    try {
+      for (const cell of this.selectedCells) {
+        const weekStr = this.calendarService.formatWeekStart(cell.week);
+        await this.teamService.saveCapacite(
+          cell.resource.id,
+          cell.resource.type,
+          cell.resource.equipeId,
+          weekStr,
+          cell.resource.weeks.get(weekStr) || 0,
+          {
+            override_capacite: null,
+            override_delta: event.delta,
+            comment: event.comment ?? null,
+          }
+        );
+
+        if (!cell.resource.weekData) cell.resource.weekData = new Map();
+        const existing = cell.resource.weekData.get(weekStr) || { capacite: cell.resource.weeks.get(weekStr) || 0 };
+        cell.resource.weekData.set(weekStr, {
+          ...existing,
+          override_capacite: null,
+          override_delta: event.delta,
+          comment: event.comment ?? null,
+        });
+      }
+
+      this.clearSelection();
+    } catch (error) {
+      console.error('Error saving delta capacity:', error);
+    } finally {
+      this.isSaving = false;
+      this.cdr.markForCheck();
+    }
+  }
+
+  async applyClearCustomizations() {
+    if (this.selectedCells.length === 0) return;
+    this.isSaving = true;
+    this.cdr.markForCheck();
+
+    try {
+      for (const cell of this.selectedCells) {
+        const weekStr = this.calendarService.formatWeekStart(cell.week);
+        await this.teamService.saveCapacite(
+          cell.resource.id,
+          cell.resource.type,
+          cell.resource.equipeId,
+          weekStr,
+          cell.resource.weeks.get(weekStr) || 0,
+          {
+            override_capacite: null,
+            override_delta: null,
+            comment: null,
+          }
+        );
+
+        if (cell.resource.weekData) {
+          const existing = cell.resource.weekData.get(weekStr);
+          if (existing) {
+            cell.resource.weekData.set(weekStr, {
+              ...existing,
+              override_capacite: null,
+              override_delta: null,
+              comment: null,
+            });
+          }
+        }
+      }
+
+      this.clearSelection();
+    } catch (error) {
+      console.error('Error clearing customizations:', error);
     } finally {
       this.isSaving = false;
       this.cdr.markForCheck();
@@ -996,7 +1225,9 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
 
   getResourceTotalPlannedDays(resource: ResourceRow): number {
     let total = 0;
-    resource.weeks.forEach((val, weekStr) => {
+    this.displayedWeeks.forEach((week) => {
+      const weekStr = this.calendarService.formatWeekStart(week);
+      const val = this.getEffectiveCapacity(resource, week);
       if (this.selectedCapacityYear === 'today') {
         const todayWeekStart = this.calendarService.getWeekStart(new Date());
         const todayWeekStartStr = this.formatLocalDate(todayWeekStart);

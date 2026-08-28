@@ -327,20 +327,39 @@
                         class="week-cell resource-cell"
                         [class.current-week]="isCurrentWeek(week)"
                         [class.selected]="isCellSelected(resource, week)"
-                        [class.has-capacity]="getCapacite(resource, week) > 0 || getCrewdayzDispo(resource, week) !== null"
+                        [class.has-capacity]="getEffectiveCapacity(resource, week) > 0"
+                        [class.is-crewdayz-cell]="getSourceForTeam(resource.equipeId) === 'crewdayz'"
+                        [class.has-override]="hasOverride(resource, week)"
+                        [class.has-delta]="hasDelta(resource, week)"
+                        [class.has-comment]="!!getComment(resource, week)"
                         [class.is-year-change]="isFirstWeekOfYear(i)"
-                        [attr.data-week-index]="i">
-                        @if (getCapacite(resource, week) > 0 || getCrewdayzDispo(resource, week) !== null) {
+                        [attr.data-week-index]="i"
+                        (mouseenter)="showTooltip($event, getCellTooltip(resource, week))"
+                        (mouseleave)="hideTooltip()">
+                        @if (getEffectiveCapacity(resource, week) > 0) {
                           <div class="cell-content">
-                            <div class="capacity-value">{{ getCapacite(resource, week) }}</div>
-                            @if (getCrewdayzDispo(resource, week) !== null) {
-                              <div class="crewdayz-dispo-pill" title="Disponibilité calculée depuis Crewdayz (unités ETP)">
-                                {{ getCrewdayzDispo(resource, week) }}
+                            <div class="capacity-value">
+                              {{ getEffectiveCapacity(resource, week) }}
+                              @if (hasOverride(resource, week)) {
+                                <span class="override-indicator" title="Capacité forcée manuellement">✏️</span>
+                              }
+                            </div>
+                            @if (hasDelta(resource, week)) {
+                              <div
+                                class="delta-pill"
+                                [class.delta-pos]="getDelta(resource, week)! > 0"
+                                [class.delta-neg]="getDelta(resource, week)! < 0">
+                                {{ getDelta(resource, week)! > 0 ? '+' : '' }}{{ getDelta(resource, week) }}
+                              </div>
+                            }
+                            @if (getComment(resource, week)) {
+                              <div class="cell-comment-badge" title="Note présente">
+                                <span class="comment-dot"></span>
                               </div>
                             }
                             @if (showDaysInCells) {
                               <div class="days-value">
-                                {{ getCapacite(resource, week) * resource.jours_par_semaine | number: '1.1-1' }}j
+                                {{ getEffectiveCapacity(resource, week) * resource.jours_par_semaine | number: '1.1-1' }}j
                               </div>
                             }
                           </div>
@@ -369,10 +388,16 @@
         [totalDays]="totalSelectedDays"
         [selectionStartDate]="selectionStartWeekDate"
         [daysPerWeek]="selectionDaysPerWeek"
-        [(value)]="bulkCapaciteValue"
+        [isCrewdayzMode]="isSelectionCrewdayzMode"
+        [showCommentField]="true"
         [showProjectionTab]="false"
+        [(value)]="bulkCapaciteValue"
+        [(comment)]="bulkComment"
         placeholder="Capacité (unités)"
-        (apply)="applyBulkCapacite($event)"
+        (apply)="applyBulkCapacite($event, bulkComment)"
+        (applyOverride)="applyBulkOverride($event)"
+        (applyDelta)="applyBulkDelta($event)"
+        (clearCustomizations)="applyClearCustomizations()"
         (project)="applyCapacityProjection($event)"
         (cancel)="clearSelection()">
       </app-selection-toolbar>

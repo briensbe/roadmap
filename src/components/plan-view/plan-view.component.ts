@@ -1470,15 +1470,17 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       // Index des capacités : source hybride par équipe
       // 1️⃣ Indexer TOUTES les capacités roadmap d'abord (base de données par défaut)
       this.capacityIndex.clear();
+      const capacityMap = new Map<string, Capacite>();
       this.allCapacities.forEach((c) => {
         const weekKey = c.semaine_debut.split('T')[0];
         const rId = c.role_id || c.personne_id;
         const type = c.role_id ? 'role' : 'personne';
         const key = `${c.equipe_id}_${type}_${rId}_${weekKey}`;
+        capacityMap.set(key, c);
         this.capacityIndex.set(key, c.capacite);
       });
 
-      // 2️⃣ Pour les équipes en source 'crewdayz', écraser avec les valeurs calculées
+      // 2️⃣ Pour les équipes en source 'crewdayz', calculer la capacité effective (Crewdayz + override/delta)
       if (crewdayzTeamIds.size > 0) {
         for (const equipe of equipes) {
           if (!crewdayzTeamIds.has(equipe.id!)) continue;
@@ -1494,8 +1496,10 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
             // Rôles
             for (const att of teamRoleAtts) {
               if (!att.id) continue;
-              // attachmentOrTeamId = att.id (uniqueId du rôle dans l'équipe)
-              const crewdayzValue = this.crewdayzService.calculateAvailableCount(
+              const key = `${equipe.id!}_role_${att.role_id}_${weekStr}`;
+              const custom = capacityMap.get(key);
+
+              const crewdayzBase = this.crewdayzService.calculateAvailableCount(
                 weekStr,
                 att.id as string,
                 null,
@@ -1503,16 +1507,24 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.crewdayzAvailabilities,
                 this.crewdayzMappings
               );
-              if (crewdayzValue !== null) {
-                const key = `${equipe.id!}_role_${att.role_id}_${weekStr}`;
-                this.capacityIndex.set(key, crewdayzValue);
-              }
-              // else : fallback → valeur roadmap déjà indexée reste en place
+
+              const effectiveCap = this.crewdayzService.getEffectiveCapacity(
+                'crewdayz',
+                custom?.capacite || 0,
+                crewdayzBase,
+                custom?.override_capacite,
+                custom?.override_delta
+              );
+
+              this.capacityIndex.set(key, effectiveCap);
             }
 
             // Personnes
             for (const p of teamPersonnes) {
-              const crewdayzValue = this.crewdayzService.calculateAvailableCount(
+              const key = `${equipe.id!}_personne_${p.id!}_${weekStr}`;
+              const custom = capacityMap.get(key);
+
+              const crewdayzBase = this.crewdayzService.calculateAvailableCount(
                 weekStr,
                 equipe.id!,
                 p.id!,
@@ -1520,10 +1532,16 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.crewdayzAvailabilities,
                 this.crewdayzMappings
               );
-              if (crewdayzValue !== null) {
-                const key = `${equipe.id!}_personne_${p.id!}_${weekStr}`;
-                this.capacityIndex.set(key, crewdayzValue);
-              }
+
+              const effectiveCap = this.crewdayzService.getEffectiveCapacity(
+                'crewdayz',
+                custom?.capacite || 0,
+                crewdayzBase,
+                custom?.override_capacite,
+                custom?.override_delta
+              );
+
+              this.capacityIndex.set(key, effectiveCap);
             }
           }
         }

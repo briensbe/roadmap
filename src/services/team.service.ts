@@ -240,12 +240,23 @@ export class TeamService {
     equipeId: string,
     semaineDebut: string,
     capacite: number,
+    options?: {
+      override_capacite?: number | null;
+      override_delta?: number | null;
+      comment?: string | null;
+    }
   ): Promise<void> {
     const capaciteData: any = {
       semaine_debut: semaineDebut,
       capacite: capacite,
       equipe_id: equipeId,
     };
+
+    if (options) {
+      if (options.override_capacite !== undefined) capaciteData.override_capacite = options.override_capacite;
+      if (options.override_delta !== undefined) capaciteData.override_delta = options.override_delta;
+      if (options.comment !== undefined) capaciteData.comment = options.comment;
+    }
 
     if (type === 'role') {
       capaciteData.role_id = resourceId;
@@ -254,30 +265,50 @@ export class TeamService {
     }
 
     // Check if capacity already exists for this week
-    const query = this.supabase.client
+    let query = this.supabase.client
       .from(DB_TABLES.CAPACITES)
       .select('id')
       .eq('semaine_debut', semaineDebut)
       .eq('equipe_id', equipeId);
 
     if (type === 'role') {
-      query.eq('role_id', resourceId);
+      query = query.eq('role_id', resourceId);
     } else {
-      query.eq('personne_id', resourceId);
+      query = query.eq('personne_id', resourceId);
     }
 
-    const { data: existing } = await query.single();
+    const { data: existingList, error: queryError } = await query;
+    if (queryError) throw queryError;
 
-    if (existing) {
+    if (existingList && existingList.length > 0) {
       // Update existing
-      const { error } = await this.supabase.client.from(DB_TABLES.CAPACITES).update({ capacite }).eq('id', existing.id);
+      const updatePayload: any = { capacite };
+      if (options) {
+        if (options.override_capacite !== undefined) updatePayload.override_capacite = options.override_capacite;
+        if (options.override_delta !== undefined) updatePayload.override_delta = options.override_delta;
+        if (options.comment !== undefined) updatePayload.comment = options.comment;
+      }
 
-      if (error) throw error;
+      const ids = existingList.map((row) => row.id);
+      const { error: updateError } = await this.supabase.client
+        .from(DB_TABLES.CAPACITES)
+        .update(updatePayload)
+        .eq('id', ids[0]);
+
+      if (updateError) throw updateError;
+
+      // Nettoyer d'éventuels doublons historiques pour garder la base saine
+      if (ids.length > 1) {
+        await this.supabase.client
+          .from(DB_TABLES.CAPACITES)
+          .delete()
+          .in('id', ids.slice(1));
+      }
     } else {
       // Insert new
-      const { error } = await this.supabase.client.from(DB_TABLES.CAPACITES).insert(capaciteData);
+      const { error: insertError } = await this.supabase.client.from(DB_TABLES.CAPACITES).insert(capaciteData);
 
-      if (error) throw error;
+      if (insertError) throw insertError;
     }
     this.clearCache();
   }

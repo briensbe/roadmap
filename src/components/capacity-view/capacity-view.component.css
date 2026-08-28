@@ -1074,3 +1074,56 @@
   border-color: var(--border-focus);
   outline: none;
 }
+
+/* Crewdayz Cell & Customization Styling */
+.is-crewdayz-cell {
+  position: relative;
+}
+
+.is-crewdayz-cell .capacity-value {
+  color: #0284c7;
+  font-weight: 700;
+}
+
+.override-indicator {
+  font-size: 10px;
+  margin-left: 2px;
+  vertical-align: middle;
+  opacity: 0.85;
+}
+
+.delta-pill {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin-top: 2px;
+  white-space: nowrap;
+  display: inline-block;
+  line-height: 1.2;
+}
+
+.delta-pill.delta-pos {
+  color: #059669;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.delta-pill.delta-neg {
+  color: #d97706;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.cell-comment-badge {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #3b82f6;
+  box-shadow: 0 0 2px rgba(59, 130, 246, 0.5);
+  pointer-events: none;
+}
+

@@ -1,11 +1,22 @@
 <div
   class="selection-toolbar"
+  [class.crewdayz-toolbar]="isCrewdayzMode"
   [style.top.px]="position?.top"
   [style.left.px]="position?.left"
   [style.transform]="position?.transform"
   [style.opacity]="visible ? 1 : 0">
-  <!-- Toolbar Tabs -->
-  @if (showProjectionTab) {
+  <!-- Toolbar Tabs in Crewdayz Mode -->
+  @if (isCrewdayzMode) {
+    <div class="toolbar-tabs">
+      <button class="tab-btn" [class.active]="!isConfirmingReset && crewdayzAction === 'override'" (click)="setCrewdayzAction('override')">
+        Définir une valeur
+      </button>
+      <button class="tab-btn" [class.active]="!isConfirmingReset && crewdayzAction === 'delta'" (click)="setCrewdayzAction('delta')">
+        Ajouter un delta
+      </button>
+    </div>
+  } @else if (showProjectionTab) {
+    <!-- Standard Tabs (Classic / Projection) in Roadmap / Planning Mode -->
     <div class="toolbar-tabs">
       <button class="tab-btn" [class.active]="mode === 'classic'" (click)="setMode('classic')">Saisie</button>
       <button class="tab-btn" [class.active]="mode === 'projection'" (click)="setMode('projection')">
@@ -15,13 +26,13 @@
   }
 
   <div class="selection-info">
-    @if (mode === 'classic') {
+    @if (!isCrewdayzMode && mode === 'classic') {
       <span class="highlight">{{ totalDays | number: '1.1-1' }}j</span>
       <span class="details"
         >sur <span class="count">{{ selectedCount }}</span> semaine(s)</span
       >
     }
-    @if (mode === 'projection') {
+    @if (!isCrewdayzMode && mode === 'projection') {
       <span class="highlight">{{ actualProjectedDays | number: '1.1-1' }}j</span>
       <span class="details">
         sur <span class="count">{{ projectedWeeks }}</span> semaine(s)
@@ -30,88 +41,224 @@
         }
       </span>
     }
+    @if (isCrewdayzMode) {
+      <span class="details">
+        <span class="count">{{ selectedCount }}</span> semaine(s) sélectionnée(s) (Source Crewdayz)
+      </span>
+    }
   </div>
 
-  <!-- Fixed height content area to prevent jumping -->
+  <!-- Content area -->
   <div class="toolbar-main-content">
-    <!-- Classic Mode Inputs -->
-    @if (mode === 'classic') {
-      <div class="selection-input-row">
-        <div class="projection-field">
-          <label>Ressources</label>
-          <input
-            #bulkInput
-            type="number"
-            [ngModel]="value"
-            (ngModelChange)="onValueChange($event)"
-            [placeholder]="placeholder"
-            [step]="step"
-            [min]="min"
-            class="bulk-input"
-            (keydown.enter)="onApply()"
-            (focus)="$any($event.target).select()" />
+    @if (isCrewdayzMode) {
+      @if (isConfirmingReset) {
+        <div class="clear-custom-notice">
+          <div class="clear-notice-header">
+            <span class="notice-icon">⚠️</span>
+            <strong>Rétablir les disponibilités directes</strong>
+          </div>
+          <p class="notice-desc">
+            Cette action supprime les forçages de valeur, les deltas et les commentaires pour rétablir les disponibilités calculées Crewdayz sur la sélection.
+          </p>
         </div>
-      </div>
-    }
+      } @else {
+        <!-- Crewdayz Override Mode -->
+        @if (crewdayzAction === 'override') {
+          <div class="selection-fields-vertical">
+            <div class="projection-field">
+              <label>Valeur forcée (ETP)</label>
+              <input
+                #overrideInput
+                type="number"
+                [(ngModel)]="overrideValue"
+                placeholder="ex: 1.5"
+                step="0.1"
+                min="0"
+                class="bulk-input"
+                (keydown.enter)="onApplyOverride()"
+                (focus)="$any($event.target).select()" />
+            </div>
+            <div class="projection-field">
+              <label>Commentaire (opt.)</label>
+              <input
+                type="text"
+                [(ngModel)]="localComment"
+                (ngModelChange)="onCommentChange($event)"
+                placeholder="Justification..."
+                class="bulk-input comment-input"
+                (keydown.enter)="onApplyOverride()" />
+            </div>
+          </div>
+        }
 
-    <!-- Projection Mode Inputs -->
-    @if (mode === 'projection') {
-      <div class="projection-input-row">
-        <div class="projection-field">
-          <label>Ressources</label>
-          <input
-            #projResInput
-            type="number"
-            [(ngModel)]="projectionResources"
-            placeholder="Nb res."
-            step="1"
-            min="1"
-            class="bulk-input"
-            (focus)="$any($event.target).select()" />
+        <!-- Crewdayz Delta Mode -->
+        @if (crewdayzAction === 'delta') {
+          <div class="selection-fields-vertical">
+            <div class="projection-field">
+              <label>Delta (± ETP)</label>
+              <input
+                #deltaInput
+                type="number"
+                [(ngModel)]="deltaValue"
+                placeholder="ex: +0.5 ou -0.2"
+                step="0.1"
+                class="bulk-input"
+                (keydown.enter)="onApplyDelta()"
+                (focus)="$any($event.target).select()" />
+            </div>
+            <div class="projection-field">
+              <label>Commentaire (opt.)</label>
+              <input
+                type="text"
+                [(ngModel)]="localComment"
+                (ngModelChange)="onCommentChange($event)"
+                placeholder="Justification..."
+                class="bulk-input comment-input"
+                (keydown.enter)="onApplyDelta()" />
+            </div>
+          </div>
+        }
+      }
+    } @else {
+      <!-- Classic Mode Inputs -->
+      @if (mode === 'classic') {
+        <div class="selection-fields-vertical">
+          <div class="projection-field">
+            <label>Ressources</label>
+            <input
+              #bulkInput
+              type="number"
+              [ngModel]="value"
+              (ngModelChange)="onValueChange($event)"
+              [placeholder]="placeholder"
+              [step]="step"
+              [min]="min"
+              class="bulk-input"
+              (keydown.enter)="onApply()"
+              (focus)="$any($event.target).select()" />
+          </div>
+          @if (showCommentField) {
+            <div class="projection-field">
+              <label>Commentaire (opt.)</label>
+              <input
+                type="text"
+                [(ngModel)]="localComment"
+                (ngModelChange)="onCommentChange($event)"
+                placeholder="Note / Justification..."
+                class="bulk-input comment-input"
+                (keydown.enter)="onApply()" />
+            </div>
+          }
         </div>
-        <div class="projection-separator">et</div>
-        <div class="projection-field">
-          <label>Jours</label>
-          <input
-            #projDaysInput
-            type="number"
-            [(ngModel)]="projectionDays"
-            placeholder="Total jours"
-            step="1"
-            min="1"
-            class="bulk-input"
-            (keydown.enter)="onProject()"
-            (focus)="$any($event.target).select()" />
+      }
+
+      <!-- Projection Mode Inputs -->
+      @if (mode === 'projection') {
+        <div class="projection-input-row">
+          <div class="projection-field">
+            <label>Ressources</label>
+            <input
+              #projResInput
+              type="number"
+              [(ngModel)]="projectionResources"
+              placeholder="Nb res."
+              step="1"
+              min="1"
+              class="bulk-input"
+              (focus)="$any($event.target).select()" />
+          </div>
+          <div class="projection-separator">et</div>
+          <div class="projection-field">
+            <label>Jours</label>
+            <input
+              #projDaysInput
+              type="number"
+              [(ngModel)]="projectionDays"
+              placeholder="Total jours"
+              step="1"
+              min="1"
+              class="bulk-input"
+              (keydown.enter)="onProject()"
+              (focus)="$any($event.target).select()" />
+          </div>
         </div>
-      </div>
+      }
     }
   </div>
 
   <div class="selection-actions">
-    <button class="btn btn-secondary btn-sm" (click)="onCancel()" [disabled]="isSaving">Annuler</button>
-    <!-- Classic Button -->
-    @if (mode === 'classic') {
-      <button
-        class="btn btn-primary btn-sm"
-        (click)="onApply()"
-        [disabled]="isSaving || value === null">
-        @if (isSaving) {
-          <span class="spinner-small"></span>
+    @if (isCrewdayzMode) {
+      @if (isConfirmingReset) {
+        <button class="btn btn-secondary btn-sm" (click)="cancelReset()" [disabled]="isSaving">Retour</button>
+        <div class="action-spacer"></div>
+        <button
+          class="btn btn-danger btn-sm"
+          (click)="onConfirmReset()"
+          [disabled]="isSaving">
+          @if (isSaving) {
+            <span class="spinner-small"></span>
+          }
+          Confirmer
+        </button>
+      } @else {
+        <button
+          class="btn btn-sm btn-reset-action"
+          (click)="promptReset()"
+          [disabled]="isSaving"
+          title="Rétablir les disponibilités directes Crewdayz (supprime les forçages, deltas et commentaires)">
+          Réinitialiser
+        </button>
+        <div class="action-spacer"></div>
+        <button class="btn btn-secondary btn-sm" (click)="onCancel()" [disabled]="isSaving">Annuler</button>
+
+        @if (crewdayzAction === 'override') {
+          <button
+            class="btn btn-primary btn-sm"
+            (click)="onApplyOverride()"
+            [disabled]="isSaving || overrideValue === null">
+            @if (isSaving) {
+              <span class="spinner-small"></span>
+            }
+            {{ isSaving ? savingLabel : applyLabel }}
+          </button>
         }
-        {{ isSaving ? savingLabel : applyLabel }}
-      </button>
-    }
-    <!-- Projection Button -->
-    @if (mode === 'projection') {
-      <button
-        class="btn btn-primary btn-sm btn-project"
-        (click)="onProject()"
-        [disabled]="isSaving || !projectionDays || projectionDays <= 0 || projectionResources <= 0">
-        @if (isSaving) {
-          <span class="spinner-small"></span>
+        @if (crewdayzAction === 'delta') {
+          <button
+            class="btn btn-primary btn-sm"
+            (click)="onApplyDelta()"
+            [disabled]="isSaving || deltaValue === null">
+            @if (isSaving) {
+              <span class="spinner-small"></span>
+            }
+            {{ isSaving ? savingLabel : applyLabel }}
+          </button>
         }
-        {{ isSaving ? 'Calcul...' : 'Projeter' }}
-      </button>
+      }
+    } @else {
+      <!-- Classic / Projection Buttons -->
+      <button class="btn btn-secondary btn-sm" (click)="onCancel()" [disabled]="isSaving">Annuler</button>
+      @if (mode === 'classic') {
+        <button
+          class="btn btn-primary btn-sm"
+          (click)="onApply()"
+          [disabled]="isSaving || value === null">
+          @if (isSaving) {
+            <span class="spinner-small"></span>
+          }
+          {{ isSaving ? savingLabel : applyLabel }}
+        </button>
+      }
+      @if (mode === 'projection') {
+        <button
+          class="btn btn-primary btn-sm btn-project"
+          (click)="onProject()"
+          [disabled]="isSaving || !projectionDays || projectionDays <= 0 || projectionResources <= 0">
+          @if (isSaving) {
+            <span class="spinner-small"></span>
+          }
+          {{ isSaving ? 'Calcul...' : 'Projeter' }}
+        </button>
+      }
     }
   </div>
 
@@ -123,3 +270,4 @@
     </div>
   }
 </div>
+
