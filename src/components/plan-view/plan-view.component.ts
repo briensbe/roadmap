@@ -161,6 +161,7 @@ interface ResourceCellData {
   isZero: boolean;
   isNegative: boolean;
   hasCapRecord: boolean;
+  comment?: string | null;
 }
 
 interface ResourceRow {
@@ -170,6 +171,7 @@ interface ResourceRow {
   type: 'role' | 'personne';
   jours_par_semaine: number;
   charges: Map<string, number>; // week string -> amount
+  comments?: Map<string, string>; // week string -> comment
   color?: string;
   resourceId?: string; // Always the role or personne id
   projectId?: string; // Always the project id
@@ -655,6 +657,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   bulkChargeValue: number | null = null;
+  bulkComment: string = '';
   isSaving = false;
   isCommittingSelection = false;
   projectionCommitting: {
@@ -1669,6 +1672,8 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
         isRelevant = personne ? personne.equipe_id === teamId : false;
       }
 
+      const comment = resource.comments?.get(weekKey) || null;
+
       resource.cellData.push({
         value,
         availability,
@@ -1677,8 +1682,23 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
         isZero: availability === 0,
         isNegative: availability < 0,
         hasCapRecord: hasCapRecord,
+        comment,
       });
     }
+  }
+
+  getCellTooltip(resource: ResourceRow, week: Date, cell?: ResourceCellData): string {
+    const weekKey = this.formatWeekStart(week);
+    const val = resource.charges?.get(weekKey) || 0;
+    const comment = cell?.comment ?? resource.comments?.get(weekKey);
+    let text = `${resource.label} : ${val} ETP (${Math.round(val * (resource.jours_par_semaine || 5) * 10) / 10}j)`;
+    if (cell && cell.showAvailability && cell.hasCapRecord) {
+      text += ` | Dispo : ${cell.availability > 0 ? '+' : ''}${cell.availability} ETP`;
+    }
+    if (comment) {
+      text += `\n💬 Note : ${comment}`;
+    }
+    return text;
   }
 
   private shouldShowAvailabilityInternal(resource: ResourceRow, week: Date, teamId: string): boolean {
@@ -1904,6 +1924,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
                 type: resourceType,
                 jours_par_semaine: joursParSemaine,
                 charges: new Map<string, number>(),
+                comments: new Map<string, string>(),
                 color: resourceColor,
                 resourceId: charge.role_id || charge.personne_id || '',
                 projectId: project.id,
@@ -1917,6 +1938,9 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
               const weekKey = charge.semaine_debut.split('T')[0];
               const val = resource.charges.get(weekKey) || 0;
               resource.charges.set(weekKey, val + charge.unite_ressource);
+              if (charge.comment) {
+                resource.comments?.set(weekKey, charge.comment);
+              }
 
               // Add to team total
               const teamVal = teamCharges.get(weekKey) || 0;
@@ -2038,6 +2062,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
                 type: resourceType,
                 jours_par_semaine: joursParSemaine,
                 charges: new Map<string, number>(),
+                comments: new Map<string, string>(),
                 color: resourceColor,
                 resourceId: charge.role_id || charge.personne_id || '',
                 projectId: projectId,
@@ -2051,6 +2076,9 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
               const weekKey = charge.semaine_debut.split('T')[0];
               const val = resource.charges.get(weekKey) || 0;
               resource.charges.set(weekKey, val + charge.unite_ressource);
+              if (charge.comment) {
+                resource.comments?.set(weekKey, charge.comment);
+              }
 
               // Add to project total
               const projVal = projectCharges.get(weekKey) || 0;
@@ -2119,6 +2147,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
             jours_par_semaine: number;
             color?: string;
             charges: Map<string, number>;
+            comments: Map<string, string>;
             projectDetailedMap: Map<string, ResourceRow>;
           }
         >();
@@ -2137,6 +2166,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
                 jours_par_semaine: role.jours_par_semaine,
                 color: role.color,
                 charges: new Map(),
+                comments: new Map(),
                 projectDetailedMap: new Map(),
               });
             }
@@ -2152,6 +2182,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
               jours_par_semaine: p.jours_par_semaine,
               color: p.color,
               charges: new Map(),
+              comments: new Map(),
               projectDetailedMap: new Map(),
             });
           });
@@ -2191,6 +2222,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
               jours_par_semaine: rJours,
               color: rColor,
               charges: new Map(),
+              comments: new Map(),
               projectDetailedMap: new Map(),
             });
           }
@@ -2211,6 +2243,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
               type: res.type,
               jours_par_semaine: res.jours_par_semaine,
               charges: new Map(),
+              comments: new Map(),
               color: project?.color,
               resourceId: rKey.split('_')[1],
               projectId: pId,
@@ -2221,6 +2254,9 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
             // Aggregate in resource overview
             const cur = res.charges.get(weekKey) || 0;
             res.charges.set(weekKey, cur + charge.unite_ressource);
+            if (charge.comment) {
+              res.comments.set(weekKey, charge.comment);
+            }
 
             // Parent total
             const pCur = parentTotal.get(weekKey) || 0;
@@ -2229,6 +2265,9 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
             const detRow = res.projectDetailedMap.get(pId)!;
             const detCur = detRow.charges.get(weekKey) || 0;
             detRow.charges.set(weekKey, detCur + charge.unite_ressource);
+            if (charge.comment) {
+              detRow.comments?.set(weekKey, charge.comment);
+            }
           }
         });
 
@@ -3160,10 +3199,15 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
         // ou pour une sélection à cellule unique (remplie ou vide) afin de ré-actualiser l'input.
         if (this.shouldShowProjectionTooltip()) {
           this.bulkChargeValue = this.dragStartCellValue;
+          this.bulkComment = '';
         } else if (this.selectedCells.length === 1) {
           this.bulkChargeValue = this.dragStartCellValue;
+          const firstCell = this.selectedCells[0];
+          const weekKey = this.formatWeekStart(firstCell.week);
+          this.bulkComment = firstCell.resource.comments?.get(weekKey) || '';
         } else {
           this.bulkChargeValue = null;
+          this.bulkComment = '';
         }
 
         this.updateToolbarPosition();
@@ -3501,6 +3545,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.dragStartWeekIndex = -1;
     this.dragEndWeekIndex = -1;
     this.bulkChargeValue = null;
+    this.bulkComment = '';
     this.dragStartCellValue = null;
     this.dragProjectionTooltipVisible = false;
     // Reset move & commit state
@@ -3512,10 +3557,11 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.moveGhostOffset = 0;
   }
 
-  async applyBulkCharge(value: number | null) {
+  async applyBulkCharge(value: number | null, comment?: string) {
     if (this.selectedCells.length === 0 || value == null) return;
 
     this.bulkChargeValue = value;
+    const targetComment = comment !== undefined ? comment : this.bulkComment;
     this.isCommittingSelection = true;
     this.isSaving = true;
     this.cdr.markForCheck();
@@ -3556,6 +3602,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
           this.bulkChargeValue,
           roleId,
           personneId,
+          targetComment !== undefined ? targetComment : cell.resource.comments?.get(weekKey),
         );
       }
 

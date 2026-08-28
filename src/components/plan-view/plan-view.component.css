@@ -3718,3 +3718,16 @@ input:checked + .slider:before {
   border-radius: 6px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
+
+.cell-comment-badge {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-primary, #3b82f6);
+  box-shadow: 0 0 2px rgba(59, 130, 246, 0.5);
+  pointer-events: none;
+  z-index: 2;
+}

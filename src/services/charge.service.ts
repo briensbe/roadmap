@@ -108,6 +108,7 @@ export class ChargeService {
     uniteRessource: number,
     roleId?: string,
     personneId?: string,
+    comment?: string | null,
   ): Promise<Charge> {
     // First, try to find an existing charge with the same parameters
     let query = this.supabase.client
@@ -147,12 +148,19 @@ export class ChargeService {
     if (personneId) {
       chargeData.personne_id = personneId;
     }
+    if (comment !== undefined) {
+      chargeData.comment = comment && comment.trim().length > 0 ? comment.trim() : null;
+    }
 
     if (existingCharges && existingCharges.length > 0) {
       // Update existing charge
+      const updateData: any = { unite_ressource: uniteRessource };
+      if (comment !== undefined) {
+        updateData.comment = comment && comment.trim().length > 0 ? comment.trim() : null;
+      }
       const { data, error } = await this.supabase.client
         .from(DB_TABLES.CHARGES)
-        .update({ unite_ressource: uniteRessource })
+        .update(updateData)
         .eq('id', existingCharges[0].id)
         .select()
         .maybeSingle(); // Renvoie null proprement si rien n'est trouvé
