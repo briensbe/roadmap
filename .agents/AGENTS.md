@@ -18,3 +18,7 @@
 - **Règle :** Utiliser systématiquement `pnpm` plutôt que `npm` pour les commandes et scripts de ce projet.
 - **Action :** Pour compiler et vérifier le projet, exécuter obligatoirement `pnpm build` (ou `pnpm run build`) au lieu de `npm run build`.
 
+## Documentation & Artefacts Markdown (OpenSpec, ADRs)
+- **Règle :** Dans tous les fichiers Markdown générés ou modifiés (spécifications, propositions, designs, ADRs, tasks, docs), ne JAMAIS insérer de chemins de fichiers absolus (ex: `file:///c:/...` ou `C:\...`).
+- **Action :** Utiliser systématiquement des chemins relatifs par rapport au fichier courant ou à la racine du projet (ex: `src/...` ou `../../../src/...`).
+
