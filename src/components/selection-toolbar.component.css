@@ -42,6 +42,43 @@
   width: 380px !important;
 }
 
+.crewdayz-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
+}
+
+.crewdayz-days-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.crewdayz-base-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 11.5px;
+  margin-left: auto;
+}
+
+.crewdayz-base-pill .base-label {
+  color: var(--text-secondary);
+}
+
+.crewdayz-base-pill .base-value {
+  color: #0284c7;
+  font-weight: 600;
+}
+
+
+
 .toolbar-tabs {
   display: flex;
   background: var(--bg-hover);
@@ -161,6 +198,26 @@
   flex-direction: column;
   justify-content: center;
   margin-bottom: 8px;
+}
+
+.toolbar-error-message {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #dc2626;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+  animation: fadeIn 0.15s ease-in-out;
+}
+
+.toolbar-error-message .error-icon {
+  font-size: 13px;
+  flex-shrink: 0;
 }
 
 .selection-actions {

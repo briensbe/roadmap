@@ -20,7 +20,7 @@ Nous adoptons une architecture de résolution hybride de capacité avec stockage
    - Mode `crewdayz` :
      - Si `override_capacite` est non nul $\rightarrow$ `override_capacite`.
      - Sinon si `override_delta` est non nul $\rightarrow \max(0, \text{Crewdayz} + \text{override\_delta})$.
-     - Sinon $\rightarrow \text{Crewdayz}$ (avec fallback sur `capacite` si absence de mapping).
+     - Sinon $\rightarrow \text{Crewdayz}$ (0 si ressource non mappée, aucun fallback sur `capacite` Roadmap).
 4. Cette règle de calcul est appliquée de manière identique dans la vue Capacité et dans l'index de planification de la vue Planification.
 
 ## Consequences

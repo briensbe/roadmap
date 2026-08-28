@@ -5,6 +5,47 @@
   [style.left.px]="position?.left"
   [style.transform]="position?.transform"
   [style.opacity]="visible ? 1 : 0">
+  <!-- Estimations Header (Selection Info) -->
+  <div class="selection-info">
+    @if (!isCrewdayzMode && mode === 'classic') {
+      <span class="highlight">{{ totalDays | number: '1.1-1' }}j</span>
+      <span class="details"
+        >sur <span class="count">{{ selectedCount }}</span> semaine(s)</span
+      >
+    }
+    @if (!isCrewdayzMode && mode === 'projection') {
+      <span class="highlight">{{ actualProjectedDays | number: '1.1-1' }}j</span>
+      <span class="details">
+        sur <span class="count">{{ projectedWeeks }}</span> semaine(s)
+        @if (projectionRangeText) {
+          <span class="projection-dates">({{ projectionRangeText }})</span>
+        }
+      </span>
+    }
+    @if (isCrewdayzMode) {
+      <div class="crewdayz-info-row">
+        <div class="crewdayz-days-summary">
+          <span class="highlight">{{ effectiveCrewdayzDays | number: '1.1-1' }}j</span>
+          <span class="details"
+            >sur <span class="count">{{ selectedCount }}</span> semaine(s)</span
+          >
+        </div>
+        @if (selectedCount === 1) {
+          <div class="crewdayz-base-pill" title="Disponibilité brute issue de Crewdayz">
+            <span class="base-label">Base :</span>
+            <span class="base-value">
+              @if (crewdayzBaseValue !== null) {
+                <strong>{{ crewdayzBaseValue }} ETP</strong> ({{ crewdayzBaseValue * daysPerWeek | number: '1.1-1' }}j)
+              } @else {
+                <em class="text-muted">non mappé (0j)</em>
+              }
+            </span>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
   <!-- Toolbar Tabs in Crewdayz Mode -->
   @if (isCrewdayzMode) {
     <div class="toolbar-tabs">
@@ -24,29 +65,6 @@
       </button>
     </div>
   }
-
-  <div class="selection-info">
-    @if (!isCrewdayzMode && mode === 'classic') {
-      <span class="highlight">{{ totalDays | number: '1.1-1' }}j</span>
-      <span class="details"
-        >sur <span class="count">{{ selectedCount }}</span> semaine(s)</span
-      >
-    }
-    @if (!isCrewdayzMode && mode === 'projection') {
-      <span class="highlight">{{ actualProjectedDays | number: '1.1-1' }}j</span>
-      <span class="details">
-        sur <span class="count">{{ projectedWeeks }}</span> semaine(s)
-        @if (projectionRangeText) {
-          <span class="projection-dates">({{ projectionRangeText }})</span>
-        }
-      </span>
-    }
-    @if (isCrewdayzMode) {
-      <span class="details">
-        <span class="count">{{ selectedCount }}</span> semaine(s) sélectionnée(s) (Source Crewdayz)
-      </span>
-    }
-  </div>
 
   <!-- Content area -->
   <div class="toolbar-main-content">
@@ -71,6 +89,7 @@
                 #overrideInput
                 type="number"
                 [(ngModel)]="overrideValue"
+                (input)="clearError()"
                 placeholder="ex: 1.5"
                 step="0.1"
                 min="0"
@@ -100,6 +119,7 @@
                 #deltaInput
                 type="number"
                 [(ngModel)]="deltaValue"
+                (input)="clearError()"
                 placeholder="ex: +0.5 ou -0.2"
                 step="0.1"
                 class="bulk-input"
@@ -130,6 +150,7 @@
               type="number"
               [ngModel]="value"
               (ngModelChange)="onValueChange($event)"
+              (input)="clearError()"
               [placeholder]="placeholder"
               [step]="step"
               [min]="min"
@@ -161,6 +182,7 @@
               #projResInput
               type="number"
               [(ngModel)]="projectionResources"
+              (input)="clearError()"
               placeholder="Nb res."
               step="1"
               min="1"
@@ -174,6 +196,7 @@
               #projDaysInput
               type="number"
               [(ngModel)]="projectionDays"
+              (input)="clearError()"
               placeholder="Total jours"
               step="1"
               min="1"
@@ -185,6 +208,13 @@
       }
     }
   </div>
+
+  @if (errorMessage) {
+    <div class="toolbar-error-message">
+      <span class="error-icon">⚠️</span>
+      <span>{{ errorMessage }}</span>
+    </div>
+  }
 
   <div class="selection-actions">
     @if (isCrewdayzMode) {
@@ -215,7 +245,7 @@
           <button
             class="btn btn-primary btn-sm"
             (click)="onApplyOverride()"
-            [disabled]="isSaving || overrideValue === null">
+            [disabled]="isSaving">
             @if (isSaving) {
               <span class="spinner-small"></span>
             }
@@ -226,7 +256,7 @@
           <button
             class="btn btn-primary btn-sm"
             (click)="onApplyDelta()"
-            [disabled]="isSaving || deltaValue === null">
+            [disabled]="isSaving">
             @if (isSaving) {
               <span class="spinner-small"></span>
             }
@@ -241,7 +271,7 @@
         <button
           class="btn btn-primary btn-sm"
           (click)="onApply()"
-          [disabled]="isSaving || value === null">
+          [disabled]="isSaving">
           @if (isSaving) {
             <span class="spinner-small"></span>
           }
@@ -252,7 +282,7 @@
         <button
           class="btn btn-primary btn-sm btn-project"
           (click)="onProject()"
-          [disabled]="isSaving || !projectionDays || projectionDays <= 0 || projectionResources <= 0">
+          [disabled]="isSaving">
           @if (isSaving) {
             <span class="spinner-small"></span>
           }

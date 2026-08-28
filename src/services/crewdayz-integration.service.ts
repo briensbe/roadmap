@@ -352,18 +352,16 @@ export class CrewdayzIntegrationService implements OnDestroy {
       return overrideCapacite;
     }
 
-    // 2. Si aucune disponibilité Crewdayz n'a pu être calculée (pas de mapping), fallback sur Roadmap
-    if (crewdayzBase === null) {
-      return roadmapCapacite || 0;
-    }
+    // 2. Base Crewdayz (0 si ressource non mappée ou sans disponibilité)
+    const base = crewdayzBase ?? 0;
 
     // 3. Application du delta s'il est défini
     if (overrideDelta !== null && overrideDelta !== undefined && overrideDelta !== 0) {
-      return Math.max(0, Math.round((crewdayzBase + overrideDelta) * 100) / 100);
+      return Math.max(0, Math.round((base + overrideDelta) * 100) / 100);
     }
 
-    // 4. Valeur brute Crewdayz
-    return crewdayzBase;
+    // 4. Valeur brute Crewdayz (ou 0 si non mappé)
+    return base;
   }
 }
 

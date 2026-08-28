@@ -59,12 +59,14 @@ export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
   @Input() selectionStartDate: Date | null = null;
   @Input() daysPerWeek: number = 5;
   @Input() showProjectionTab: boolean = true;
+  @Input() crewdayzBaseValue: number | null = null;
+  @Input() initialAction: 'override' | 'delta' = 'override';
+  @Input() overrideValue: number | null = null;
+  @Input() deltaValue: number | null = null;
 
   mode: 'classic' | 'projection' = 'classic';
   crewdayzAction: 'override' | 'delta' = 'override';
   isConfirmingReset: boolean = false;
-  overrideValue: number | null = null;
-  deltaValue: number | null = null;
   localComment: string = '';
   projectionResources: number = 1;
   projectionDays: number | null = null;
@@ -76,6 +78,26 @@ export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
 
   get actualProjectedDays(): number {
     return this.projectedWeeks * (this.projectionResources || 0) * this.daysPerWeek;
+  }
+
+  get effectiveCrewdayzDays(): number {
+    if (this.crewdayzAction === 'override') {
+      if (this.overrideValue !== null && this.overrideValue !== undefined) {
+        return Math.round(this.selectedCount * this.overrideValue * this.daysPerWeek * 10) / 10;
+      }
+    } else if (this.crewdayzAction === 'delta') {
+      if (this.deltaValue !== null && this.deltaValue !== undefined) {
+        if (this.selectedCount === 1) {
+          const base = this.crewdayzBaseValue ?? 0;
+          const eff = Math.max(0, base + this.deltaValue);
+          return Math.round(eff * this.daysPerWeek * 10) / 10;
+        } else {
+          const eff = Math.max(0, this.totalDays + this.deltaValue * this.daysPerWeek * this.selectedCount);
+          return Math.round(eff * 10) / 10;
+        }
+      }
+    }
+    return Math.round(this.totalDays * 10) / 10;
   }
 
   get projectionRangeText(): string {
@@ -101,14 +123,17 @@ export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
   ngOnChanges(changes: SimpleChanges) {
     if (changes['visible']?.currentValue === true) {
       this.isConfirmingReset = false;
-      if (changes['value'] || this.overrideValue === null) {
-        this.overrideValue = this.value;
+      if (this.isCrewdayzMode) {
+        this.crewdayzAction = this.initialAction ?? (this.deltaValue !== null && this.deltaValue !== undefined ? 'delta' : 'override');
       }
       this.localComment = this.comment || '';
       this.focusActiveInput();
     }
     if (changes['comment']) {
       this.localComment = this.comment || '';
+    }
+    if (changes['initialAction'] && changes['initialAction'].currentValue) {
+      this.crewdayzAction = changes['initialAction'].currentValue;
     }
   }
 
@@ -117,29 +142,40 @@ export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  errorMessage: string | null = null;
+
   setMode(newMode: 'classic' | 'projection') {
+    this.errorMessage = null;
     this.mode = newMode;
     this.focusActiveInput();
   }
 
   setCrewdayzAction(action: 'override' | 'delta') {
+    this.errorMessage = null;
     this.isConfirmingReset = false;
     this.crewdayzAction = action;
     this.focusActiveInput();
   }
 
   promptReset() {
+    this.errorMessage = null;
     this.isConfirmingReset = true;
   }
 
   cancelReset() {
+    this.errorMessage = null;
     this.isConfirmingReset = false;
     this.focusActiveInput();
   }
 
   onConfirmReset() {
+    this.errorMessage = null;
     this.isConfirmingReset = false;
     this.clearCustomizations.emit();
+  }
+
+  clearError() {
+    this.errorMessage = null;
   }
 
   focusActiveInput() {
@@ -177,6 +213,7 @@ export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
   }
 
   onValueChange(val: number | null) {
+    this.errorMessage = null;
     this.value = val; // Synchronous update
     this.valueSubject.next(val);
   }
@@ -187,41 +224,84 @@ export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
   }
 
   onApply() {
+    if (this.value === null || this.value === undefined || isNaN(this.value)) {
+      this.errorMessage = 'Veuillez saisir une valeur de capacité.';
+      this.focusActiveInput();
+      return;
+    }
+    if (this.value < 0) {
+      this.errorMessage = 'La capacité ne peut pas être négative.';
+      this.focusActiveInput();
+      return;
+    }
+    this.errorMessage = null;
     this.apply.emit(this.value);
   }
 
   onApplyOverride() {
-    if (this.overrideValue !== null) {
-      this.applyOverride.emit({
-        value: this.overrideValue,
-        comment: this.localComment.trim() || undefined,
-      });
+    if (this.overrideValue === null || this.overrideValue === undefined || isNaN(this.overrideValue)) {
+      this.errorMessage = 'Veuillez saisir une valeur.';
+      this.focusActiveInput();
+      return;
     }
+    if (this.overrideValue < 0) {
+      this.errorMessage = 'La valeur forcée ne peut pas être négative.';
+      this.focusActiveInput();
+      return;
+    }
+    this.errorMessage = null;
+    this.applyOverride.emit({
+      value: this.overrideValue,
+      comment: this.localComment.trim() || undefined,
+    });
   }
 
   onApplyDelta() {
-    if (this.deltaValue !== null) {
-      this.applyDelta.emit({
-        delta: this.deltaValue,
-        comment: this.localComment.trim() || undefined,
-      });
+    if (this.deltaValue === null || this.deltaValue === undefined || isNaN(this.deltaValue)) {
+      this.errorMessage = 'Veuillez saisir un delta (ex : +0.5 ou -0.2).';
+      this.focusActiveInput();
+      return;
     }
+    if (this.deltaValue < 0 && this.crewdayzBaseValue !== null) {
+      if (Math.round((this.crewdayzBaseValue + this.deltaValue) * 100) / 100 < 0) {
+        this.errorMessage =
+          this.selectedCount === 1
+            ? `Le delta négatif (${this.deltaValue}) ne peut pas dépasser la base disponible (${this.crewdayzBaseValue} ETP).`
+            : `Le delta négatif (${this.deltaValue}) ne peut pas dépasser la base minimale sélectionnée (${this.crewdayzBaseValue} ETP).`;
+        this.focusActiveInput();
+        return;
+      }
+    }
+    this.errorMessage = null;
+    this.applyDelta.emit({
+      delta: this.deltaValue,
+      comment: this.localComment.trim() || undefined,
+    });
   }
 
   onClearCustomizations() {
+    this.errorMessage = null;
     this.clearCustomizations.emit();
   }
 
   onProject() {
-    if (this.projectionDays && this.projectionDays > 0 && this.projectionResources > 0) {
-      this.project.emit({
-        resources: this.projectionResources,
-        totalDays: this.projectionDays,
-      });
+    if (!this.projectionResources || this.projectionResources <= 0) {
+      this.errorMessage = 'Veuillez saisir un nombre de ressources supérieur à 0.';
+      return;
     }
+    if (!this.projectionDays || this.projectionDays <= 0) {
+      this.errorMessage = 'Veuillez renseigner un nombre total de jours supérieur à 0.';
+      return;
+    }
+    this.errorMessage = null;
+    this.project.emit({
+      resources: this.projectionResources,
+      totalDays: this.projectionDays,
+    });
   }
 
   onCancel() {
+    this.errorMessage = null;
     this.cancel.emit();
   }
 }

@@ -1080,9 +1080,23 @@
   position: relative;
 }
 
+.resource-cell.has-capacity.is-crewdayz-cell {
+  background: rgba(2, 132, 199, 0.12);
+  color: #0284c7;
+}
+
+.resource-cell.has-capacity.is-crewdayz-cell.selected {
+  background: rgba(2, 132, 199, 0.28);
+  border: 2px solid #0284c7;
+}
+
 .is-crewdayz-cell .capacity-value {
   color: #0284c7;
   font-weight: 700;
+}
+
+.is-crewdayz-cell .days-value {
+  color: #0369a1;
 }
 
 .override-indicator {

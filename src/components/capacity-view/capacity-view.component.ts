@@ -138,6 +138,10 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   toolbarVisible: boolean = false; // Controls opacity to prevent flash
 
   bulkCapaciteValue: number | null = null;
+  bulkOverrideValue: number | null = null;
+  bulkDeltaValue: number | null = null;
+  bulkCrewdayzBase: number | null = null;
+  bulkInitialAction: 'override' | 'delta' = 'override';
   bulkComment: string = '';
 
   get isSelectionCrewdayzMode(): boolean {
@@ -567,7 +571,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   hasDelta(resource: ResourceRow, week: Date): boolean {
     if (this.getSourceForTeam(resource.equipeId) !== 'crewdayz') return false;
     const custom = this.getCustomization(resource, week);
-    return custom?.override_delta !== null && custom?.override_delta !== undefined && custom.override_delta !== 0;
+    return custom?.override_delta !== null && custom?.override_delta !== undefined;
   }
 
   getDelta(resource: ResourceRow, week: Date): number | null {
@@ -591,7 +595,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
       const base = this.getCrewdayzDispo(resource, week);
       if (custom?.override_capacite !== null && custom?.override_capacite !== undefined) {
         text = `Capacité forcée : ${custom.override_capacite} ETP (Base Crewdayz : ${base ?? 0} ETP)`;
-      } else if (custom?.override_delta !== null && custom?.override_delta !== undefined && custom.override_delta !== 0) {
+      } else if (custom?.override_delta !== null && custom?.override_delta !== undefined) {
         const sign = custom.override_delta > 0 ? '+' : '';
         text = `Base Crewdayz : ${base ?? 0} ETP | Delta : ${sign}${custom.override_delta} ETP → Total : ${eff} ETP`;
       } else {
@@ -738,6 +742,11 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
     this.isSelectionFinished = false;
     this.dragStartResource = resource;
     this.bulkCapaciteValue = null;
+    this.bulkOverrideValue = null;
+    this.bulkDeltaValue = null;
+    this.bulkCrewdayzBase = null;
+    this.bulkInitialAction = 'override';
+    this.bulkComment = '';
 
     const target = event.target as HTMLElement;
     const cell = target.closest('.week-cell');
@@ -782,11 +791,39 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
         const cell = this.selectedCells[0];
         const weekStr = this.calendarService.formatWeekStart(cell.week);
         const custom = cell.resource.weekData?.get(weekStr);
-        const val = this.getCapacite(cell.resource, cell.week);
-        this.bulkCapaciteValue = val > 0 ? val : null;
+        const isCrewdayz = this.getSourceForTeam(cell.resource.equipeId) === 'crewdayz';
+
+        if (isCrewdayz) {
+          this.bulkCrewdayzBase = this.getCrewdayzDispo(cell.resource, cell.week);
+          this.bulkOverrideValue = custom?.override_capacite !== undefined && custom?.override_capacite !== null ? custom.override_capacite : null;
+          this.bulkDeltaValue = custom?.override_delta !== undefined && custom?.override_delta !== null ? custom.override_delta : null;
+          this.bulkInitialAction =
+            custom?.override_delta !== null && custom?.override_delta !== undefined
+              ? 'delta'
+              : 'override';
+          this.bulkCapaciteValue = null;
+        } else {
+          const val = cell.resource.weeks.get(weekStr) || 0;
+          this.bulkCapaciteValue = val > 0 ? val : null;
+          this.bulkCrewdayzBase = null;
+          this.bulkOverrideValue = null;
+          this.bulkDeltaValue = null;
+          this.bulkInitialAction = 'override';
+        }
+
         this.bulkComment = custom?.comment || '';
       } else {
+        const isCrewdayz = this.isSelectionCrewdayzMode;
+        if (isCrewdayz) {
+          const bases = this.selectedCells.map((c) => this.getCrewdayzDispo(c.resource, c.week) ?? 0);
+          this.bulkCrewdayzBase = bases.length > 0 ? Math.min(...bases) : 0;
+        } else {
+          this.bulkCrewdayzBase = null;
+        }
         this.bulkCapaciteValue = null;
+        this.bulkOverrideValue = null;
+        this.bulkDeltaValue = null;
+        this.bulkInitialAction = 'override';
         this.bulkComment = '';
       }
 
@@ -945,6 +982,10 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
     this.dragStartWeekIndex = -1;
     this.dragEndWeekIndex = -1;
     this.bulkCapaciteValue = null;
+    this.bulkOverrideValue = null;
+    this.bulkDeltaValue = null;
+    this.bulkCrewdayzBase = null;
+    this.bulkInitialAction = 'override';
     this.bulkComment = '';
   }
 
@@ -1165,10 +1206,9 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   get totalSelectedDays(): number {
     let total = 0;
     for (const cell of this.selectedCells) {
-      // Prioritize the bulk input value if it has been set by the user
       const cap =
         this.bulkCapaciteValue !== null ? this.bulkCapaciteValue : this.getCapacite(cell.resource, cell.week) || 0;
-      const jours = cell.resource.jours_par_semaine || 0;
+      const jours = cell.resource.jours_par_semaine || 5;
       total += cap * jours;
     }
     return total;

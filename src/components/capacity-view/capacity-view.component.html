@@ -268,7 +268,11 @@
               </div>
               <div class="weeks-cells-container">
                 @for (week of displayedWeeks; track week; let i = $index) {
-                  <div class="week-cell team-cell" [class.current-week]="isCurrentWeek(week)" [class.is-year-change]="isFirstWeekOfYear(i)">
+                  <div
+                    class="week-cell team-cell"
+                    [class.current-week]="isCurrentWeek(week)"
+                    [class.is-year-change]="isFirstWeekOfYear(i)"
+                    [class.is-crewdayz-cell]="getSourceForTeam(teamRow.equipe.id!) === 'crewdayz'">
                     @if (getTeamTotalCapacity(teamRow, week) > 0) {
                       <div class="team-summary">
                         <div class="capacity-value">
@@ -389,6 +393,10 @@
         [selectionStartDate]="selectionStartWeekDate"
         [daysPerWeek]="selectionDaysPerWeek"
         [isCrewdayzMode]="isSelectionCrewdayzMode"
+        [crewdayzBaseValue]="bulkCrewdayzBase"
+        [initialAction]="bulkInitialAction"
+        [overrideValue]="bulkOverrideValue"
+        [deltaValue]="bulkDeltaValue"
         [showCommentField]="true"
         [showProjectionTab]="false"
         [(value)]="bulkCapaciteValue"
