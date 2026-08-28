@@ -1,5 +1,25 @@
 [
   {
+    "version": "2026.08.28",
+    "date": "2026-08-28",
+    "news": [
+      {
+        "title": "Surcharges & Personnalisation des Capacités (SIDE-79)",
+        "items": [
+          "Modèle hybride Crewdayz & Roadmap : possibilité d'ajuster individuellement ou par lot les capacités calculées d'une équipe en mode Crewdayz via un forçage absolu (Override) ou un ajustement relatif (Delta ± ETP)."
+        ],
+        "imageUrl": "assets/release-notes/2026-08-28-override-and-comment-cells-overall3.png",
+        "imageMaxHeight": 150
+      },
+      {
+        "title": "Commentaires possibles (Capacité et Planification)",
+        "items": [
+          "Saisie de commentaires optionnels : possibilité d'associer une note explicative à chaque modification de capacité (mode Roadmap ou Crewdayz) ainsi qu'aux charges de planification."
+        ]
+      }
+    ]
+  },
+  {
     "version": "2026.08.22",
     "date": "2026-08-22",
     "news": [
