@@ -432,6 +432,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     | 'chiffre_revise'
     | 'chiffre_previsionnel'
     | 'chiffre_consomme'
+    | 'chiffre_restant'
   >('plan-view-filter-size-criterion', 'charges_all');
   filterSizeOperator = storageSignal<'gte' | 'lte'>('plan-view-filter-size-operator', 'gte');
   filterSizeValue = storageSignal<number | null>('plan-view-filter-size-value', null);
@@ -4094,6 +4095,9 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       case 'chiffre_consomme':
         critLabel = 'Chiffre Conso.';
         break;
+      case 'chiffre_restant':
+        critLabel = 'Chiffre Rest.';
+        break;
     }
 
     const opLabel = this.filterSizeOperator() === 'gte' ? '≥' : '≤';
@@ -4131,70 +4135,126 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     return `${year}-${month}-${day}`;
   }
 
-  getProjectResourceTotal(project: Projet, period: 'today' | 'all' | '2025' | '2026'): number {
-    const resourceTotals = new Map<string, number>();
+  getPlannedDaysForResource(resource: ResourceRow, period: 'today' | 'all' | '2025' | '2026'): number {
+    let total = 0;
     const todayWeekStart = this.calendarService.getWeekStart(new Date());
     const todayWeekStartStr = this.formatLocalDate(todayWeekStart);
 
-    for (const charge of this.allCharges) {
-      if (charge.projet_id !== project.id || !charge.semaine_debut) continue;
-
-      const chargeWeekStr = charge.semaine_debut.split('T')[0];
+    resource.charges.forEach((val, weekStr) => {
       let match = false;
       if (period === 'today') {
-        match = chargeWeekStr >= todayWeekStartStr;
+        match = weekStr >= todayWeekStartStr;
       } else if (period === 'all') {
         match = true;
       } else {
-        const [y, m, d] = chargeWeekStr.split('-').map(Number);
+        const [y, m, d] = weekStr.split('-').map(Number);
         const date = new Date(y, m - 1, d);
         const isoYear = getISOWeekYear(date).toString();
         match = isoYear === period;
       }
 
       if (match) {
-        let resourceKey = '';
-        let jours = 5;
-        if (charge.role_id) {
-          resourceKey = `role_${charge.role_id}`;
-          const role = this.availableRoles.find((r) => r.id === charge.role_id);
-          jours = role?.jours_par_semaine || 5;
-        } else if (charge.personne_id) {
-          resourceKey = `personne_${charge.personne_id}`;
-          const pers = this.availablePersonnes.find((p) => p.id === charge.personne_id);
-          jours = pers?.jours_par_semaine || 5;
-        } else {
-          continue;
-        }
-
-        const currentSum = resourceTotals.get(resourceKey) || 0;
-        const val = (charge.unite_ressource || 0) * jours;
-        resourceTotals.set(resourceKey, currentSum + val);
-      }
-    }
-
-    // Find the maximum of all resource totals
-    let maxTotal = 0;
-    resourceTotals.forEach((total) => {
-      if (total > maxTotal) {
-        maxTotal = total;
+        total += (val || 0) * (resource.jours_par_semaine || 5);
       }
     });
 
-    return maxTotal;
+    return total;
   }
 
-  getProjectChiffresTotal(project: Projet, category: 'initial' | 'revise' | 'previsionnel' | 'consomme'): number {
-    const idProjet = project.id;
-    if (!idProjet) return 0;
+  getPlannedDaysForChildInTeam(child: ChildRow, period: 'today' | 'all' | '2025' | '2026'): number {
+    let total = 0;
+    for (const res of child.resources) {
+      total += this.getPlannedDaysForResource(res, period);
+    }
+    return total;
+  }
 
-    let sum = 0;
-    for (const c of this.allChiffres) {
-      if (c.id_projet === idProjet) {
-        sum += c[category] || 0;
+  getPlannedDaysForProjectParent(parent: ParentRow, period: 'today' | 'all' | '2025' | '2026'): number {
+    let total = 0;
+    for (const teamChild of parent.children) {
+      if (this.filterEquipeIds().length > 0 && !this.filterEquipeIds().includes(teamChild.id)) {
+        continue;
+      }
+      for (const res of teamChild.resources) {
+        total += this.getPlannedDaysForResource(res, period);
       }
     }
-    return sum;
+    return total;
+  }
+
+  getChiffreValueForTeamProject(
+    teamId: string,
+    projectId: string,
+    category: 'initial' | 'revise' | 'previsionnel' | 'consomme' | 'restant',
+  ): number | null {
+    const serviceIds = new Set<string>();
+    const team = this.allEquipes.find((e) => e.id === teamId);
+    if (team?.service_id) serviceIds.add(team.service_id);
+    for (const att of this.allRoleAttachments) {
+      if (att.equipe_id === teamId && att.service_id) serviceIds.add(att.service_id);
+    }
+    for (const pers of this.availablePersonnes) {
+      if (pers.equipe_id === teamId && pers.service_id) serviceIds.add(pers.service_id);
+    }
+
+    if (serviceIds.size === 0) return null;
+
+    let total = 0;
+    let found = false;
+    for (const sId of serviceIds) {
+      const c = this.allChiffres.find((ch) => ch.id_projet === projectId && ch.id_service === sId);
+      if (c) {
+        found = true;
+        if (category === 'restant') {
+          total += (c.previsionnel ?? 0) - (c.consomme ?? 0);
+        } else {
+          total += (c as any)[category] ?? 0;
+        }
+      }
+    }
+    return found ? total : null;
+  }
+
+  getChiffreValueForProjectParent(
+    parent: ParentRow,
+    category: 'initial' | 'revise' | 'previsionnel' | 'consomme' | 'restant',
+  ): number | null {
+    const serviceIds = new Set<string>();
+    for (const child of parent.children) {
+      if (this.filterEquipeIds().length > 0 && !this.filterEquipeIds().includes(child.id)) {
+        continue;
+      }
+      const team = this.allEquipes.find((e) => e.id === child.id);
+      if (team?.service_id) serviceIds.add(team.service_id);
+      for (const att of this.allRoleAttachments) {
+        if (att.equipe_id === child.id && att.service_id) serviceIds.add(att.service_id);
+      }
+      for (const pers of this.availablePersonnes) {
+        if (pers.equipe_id === child.id && pers.service_id) serviceIds.add(pers.service_id);
+      }
+    }
+
+    if (serviceIds.size === 0) return null;
+
+    let total = 0;
+    let found = false;
+    for (const sId of serviceIds) {
+      const c = this.allChiffres.find((ch) => ch.id_projet === parent.id && ch.id_service === sId);
+      if (c) {
+        found = true;
+        if (category === 'restant') {
+          total += (c.previsionnel ?? 0) - (c.consomme ?? 0);
+        } else {
+          total += (c as any)[category] ?? 0;
+        }
+      }
+    }
+    return found ? total : null;
+  }
+
+  checkSizeMatch(val: number | null, operator: 'gte' | 'lte', targetValue: number): boolean {
+    if (val === null) return false;
+    return operator === 'gte' ? val >= targetValue : val <= targetValue;
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -4217,26 +4277,6 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     const sizeCriterion = this.filterSizeCriterion();
     const sizeOperator = this.filterSizeOperator();
     const sizeValue = this.filterSizeValue() ?? 0;
-
-    let matchingLargeProjectIds: Set<string> | null = null;
-    if (sizeEnabled) {
-      matchingLargeProjectIds = new Set<string>();
-      for (const p of this.allProjects) {
-        let val = 0;
-        if (sizeCriterion.startsWith('charges_')) {
-          const period = sizeCriterion.substring(8) as 'today' | 'all' | '2025' | '2026';
-          val = this.getProjectResourceTotal(p, period);
-        } else if (sizeCriterion.startsWith('chiffre_')) {
-          const category = sizeCriterion.substring(8) as 'initial' | 'revise' | 'previsionnel' | 'consomme';
-          val = this.getProjectChiffresTotal(p, category);
-        }
-
-        const matches = sizeOperator === 'gte' ? val >= sizeValue : val <= sizeValue;
-        if (matches) {
-          matchingLargeProjectIds.add(p.id!);
-        }
-      }
-    }
 
     const hasSpecificFilter =
       this.filterEquipeIds().length > 0 ||
@@ -4355,8 +4395,18 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
       // Period & Size filters – parent level
       const parentPassesPeriod = !periodEnabled || this.hasChargesInPeriod(parent.totalCharges, periodStart, periodEnd);
-      const parentPassesLargeProject =
-        !sizeEnabled || this.viewMode() !== 'project' || matchingLargeProjectIds!.has(parent.id);
+      let parentPassesLargeProject = true;
+      if (sizeEnabled && this.viewMode() === 'project') {
+        let val: number | null = null;
+        if (sizeCriterion.startsWith('charges_')) {
+          const period = sizeCriterion.substring(8) as 'today' | 'all' | '2025' | '2026';
+          val = this.getPlannedDaysForProjectParent(parent, period);
+        } else if (sizeCriterion.startsWith('chiffre_')) {
+          const category = sizeCriterion.substring(8) as 'initial' | 'revise' | 'previsionnel' | 'consomme' | 'restant';
+          val = this.getChiffreValueForProjectParent(parent, category);
+        }
+        parentPassesLargeProject = this.checkSizeMatch(val, sizeOperator, sizeValue);
+      }
 
       if (!parentPassesPeriod || !parentPassesLargeProject) continue;
 
@@ -4390,7 +4440,15 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
         let childPassesLargeProject = true;
         if (sizeEnabled && this.viewMode() === 'team') {
-          childPassesLargeProject = matchingLargeProjectIds!.has(child.id);
+          let val: number | null = null;
+          if (sizeCriterion.startsWith('charges_')) {
+            const period = sizeCriterion.substring(8) as 'today' | 'all' | '2025' | '2026';
+            val = this.getPlannedDaysForChildInTeam(child, period);
+          } else if (sizeCriterion.startsWith('chiffre_')) {
+            const category = sizeCriterion.substring(8) as 'initial' | 'revise' | 'previsionnel' | 'consomme' | 'restant';
+            val = this.getChiffreValueForTeamProject(parent.id, child.id, category);
+          }
+          childPassesLargeProject = this.checkSizeMatch(val, sizeOperator, sizeValue);
         }
 
         if (this.viewMode() === 'team' && (!childPassesStatut || !childPassesLargeProject)) continue;
@@ -4406,6 +4464,32 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
         let grandchildrenMatch = child.resources;
         if (hasSpecificFilter || needsSearchFilter) {
           grandchildrenMatch = child.resources.filter((gr) => {
+            let passesLargeProject = true;
+            if (sizeEnabled) {
+              let teamId = '';
+              let projectId = '';
+              if (isResourceMode) {
+                teamId = parent.id.split('_')[0];
+                projectId = gr.projectId || gr.id;
+              } else if (this.viewMode() === 'project') {
+                teamId = child.id;
+                projectId = parent.id;
+              } else {
+                teamId = parent.id;
+                projectId = child.id;
+              }
+
+              let val: number | null = null;
+              if (sizeCriterion.startsWith('charges_')) {
+                const period = sizeCriterion.substring(8) as 'today' | 'all' | '2025' | '2026';
+                val = this.getPlannedDaysForResource(gr, period);
+              } else if (sizeCriterion.startsWith('chiffre_')) {
+                const category = sizeCriterion.substring(8) as 'initial' | 'revise' | 'previsionnel' | 'consomme' | 'restant';
+                val = this.getChiffreValueForMode(teamId, projectId, gr.resourceId, gr.type, category);
+              }
+              passesLargeProject = this.checkSizeMatch(val, sizeOperator, sizeValue);
+            }
+
             let passesIdFilter = true;
             if (
               this.filterResourceIds().length ||
@@ -4417,13 +4501,12 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
                 const project = this.allProjects.find((p) => p.id === gr.projectId);
                 const passesStatut =
                   this.filterStatusIds().length === 0 || (!!project && this.filterStatusIds().includes(project.statut));
-                const passesLargeProject = !sizeEnabled || (!!project && matchingLargeProjectIds!.has(gr.projectId!));
                 passesIdFilter =
                   (this.filterProjetIds().length === 0 || this.filterProjetIds().includes(gr.projectId!)) &&
                   passesStatut &&
                   passesLargeProject;
               } else {
-                passesIdFilter =
+                const passesResourceFilter =
                   this.filterResourceIds().length === 0 ||
                   this.filterResourceIds().some((sel) => {
                     const [t, id] = sel.split(':');
@@ -4432,6 +4515,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
                       (t === 'personne' && gr.type === 'personne' && gr.id === id)
                     );
                   });
+                passesIdFilter = passesResourceFilter && passesLargeProject;
               }
             }
 
@@ -4475,8 +4559,8 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
         }
 
         const hasGrandchildFilter = isResourceMode
-          ? this.filterProjetIds().length > 0 || this.filterStatusIds().length > 0 || periodEnabled
-          : this.filterResourceIds().length > 0;
+          ? this.filterProjetIds().length > 0 || this.filterStatusIds().length > 0 || periodEnabled || sizeEnabled
+          : this.filterResourceIds().length > 0 || periodEnabled || sizeEnabled;
         const hasGrandchildrenMatch = hasGrandchildFilter ? grandchildrenMatch.length > 0 : true;
 
         const childMatches = cMatchesSelf || gMatchesAny;
