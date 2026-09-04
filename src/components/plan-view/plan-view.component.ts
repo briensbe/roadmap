@@ -3702,12 +3702,25 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  private lastMouseDownTarget: HTMLElement | null = null;
+
+  @HostListener('document:mousedown', ['$event'])
+  onDocumentMouseDown(event: MouseEvent) {
+    this.lastMouseDownTarget = event.target as HTMLElement;
+  }
+
   // --- Filter helpers ---
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: Event) {
     const target = event.target as HTMLElement;
+    const mouseDownTarget = this.lastMouseDownTarget;
+
+    const isInsideFilters =
+      !!(target?.closest('.filters-bar') || mouseDownTarget?.closest('.filters-bar')) ||
+      !!(target?.closest('.milestone-filter-group') || mouseDownTarget?.closest('.milestone-filter-group'));
+
     // Close filter dropdowns if clicking outside filters-bar and milestone-filter-group
-    if (!target.closest('.filters-bar') && !target.closest('.milestone-filter-group')) {
+    if (!isInsideFilters) {
       this.openEquipeDropdown = false;
       this.openProjetDropdown = false;
       this.openResourceDropdown = false;
@@ -3718,17 +3731,26 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       this.filterProjetSearch.set('');
     }
     // Close actions menu if clicking outside
-    if (!target.closest('.actions-menu-wrapper')) {
+    const isInsideActions =
+      !!(target?.closest('.actions-menu-wrapper') || mouseDownTarget?.closest('.actions-menu-wrapper'));
+    if (!isInsideActions) {
       this.showActionsMenu = false;
     }
     // Close view mode popover if clicking outside
-    if (!target.closest('.view-mode-popover-wrapper')) {
+    const isInsideView =
+      !!(target?.closest('.view-mode-popover-wrapper') || mouseDownTarget?.closest('.view-mode-popover-wrapper'));
+    if (!isInsideView) {
       this.openViewDropdown = false;
     }
     // Close line menu if clicking outside
-    if (!target.closest('.line-menu-wrapper') && !target.closest('.line-menu-trigger')) {
+    const isInsideLineMenu =
+      !!(target?.closest('.line-menu-wrapper') || mouseDownTarget?.closest('.line-menu-wrapper')) ||
+      !!(target?.closest('.line-menu-trigger') || mouseDownTarget?.closest('.line-menu-trigger'));
+    if (!isInsideLineMenu) {
       this.activeLineMenuId = null;
     }
+
+    this.lastMouseDownTarget = null;
     this.cdr.markForCheck();
   }
 
