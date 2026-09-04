@@ -544,6 +544,10 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   private searchSubject = new Subject<string>();
   private searchSubscription?: Subscription;
 
+  // Size filter debounce
+  private sizeValueSubject = new Subject<number | null>();
+  private sizeValueSubscription?: Subscription;
+
   // Link Modal State
   showLinkModal = false;
   selectedParentRow: ParentRow | null = null;
@@ -915,6 +919,15 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       this.cdr.markForCheck();
     });
 
+    // Setup debounced size filter value
+    this.sizeValueSubscription = this.sizeValueSubject
+      .pipe(debounceTime(300), distinctUntilChanged())
+      .subscribe((val) => {
+        this.filterSizeValue.set(val);
+        this.applyFilters();
+        this.cdr.markForCheck();
+      });
+
     this.ngZone.runOutsideAngular(() => {
       const mouseListener = (event: MouseEvent) => this.onGlobalMouseMove(event);
       window.addEventListener('mousemove', mouseListener);
@@ -1103,6 +1116,9 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     if (this.searchSubscription) {
       this.searchSubscription.unsubscribe();
+    }
+    if (this.sizeValueSubscription) {
+      this.sizeValueSubscription.unsubscribe();
     }
   }
 
@@ -4145,9 +4161,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onSizeValueChange(val: number | null) {
-    this.filterSizeValue.set(val);
-    this.applyFilters();
-    this.cdr.markForCheck();
+    this.sizeValueSubject.next(val);
   }
 
   formatLocalDate(d: Date): string {
