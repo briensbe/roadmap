@@ -1,5 +1,18 @@
 [
   {
+    "version": "2026.09.04",
+    "date": "2026-09-04",
+    "news": [
+      {
+        "title": "Correction du filtre « Taille Projet » et ajout du critère « Restant »",
+        "items": [
+          "Correction du calcul contextuel : chaque ligne projet est désormais évaluée sur ses valeurs réelles ",
+          "Ajout du critère « Restant » (Triskell)"
+        ]
+      }
+    ]
+  },
+  {
     "version": "2026.08.28",
     "date": "2026-08-28",
     "news": [
