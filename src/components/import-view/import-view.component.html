@@ -937,9 +937,15 @@
 
                   <!-- Service count (Col 2) -->
                   <td>
-                    <span class="services-count-text">
-                      {{ project.services.length }} service(s)
-                    </span>
+                    @if (project.services.length === 1) {
+                      <span class="service-badge" [ngStyle]="getServiceColorStyle(project.services[0].service_name)">
+                        {{ project.services[0].service_name }}
+                      </span>
+                    } @else {
+                      <span class="services-count-text">
+                        {{ project.services.length }} service(s)
+                      </span>
+                    }
                   </td>
 
                   <!-- JH Figures Totals (Col 4-7) -->
@@ -959,15 +965,33 @@
                   <!-- Diagnostic summary badge (Col 8) -->
                   <td class="diagnostic-cell">
                     <div class="project-diagnostics-summary">
-                      @if (project.hasConsumedAnomaly) {
-                        <span class="badge-diag badge-diag-danger" title="Au moins un service dépasse son prévisionnel">
-                          <lucide-icon [img]="AlertOctagon" [size]="12"></lucide-icon> Dépassement
-                        </span>
-                      }
-                      @if (project.hasRevisionAnomaly) {
-                        <span class="badge-diag badge-diag-warning" title="Au moins un service a un écart révision / prévisionnel">
-                          <lucide-icon [img]="AlertTriangle" [size]="12"></lucide-icon> Écart Rév.
-                        </span>
+                      @if (project.services.length === 1) {
+                        @if (project.services[0].hasConsumedAnomaly) {
+                          <div class="anomaly-diag diag-danger" [title]="'Consommé (' + project.services[0].consomme_jh + ' JH) dépasse le prévisionnel (' + project.services[0].previsionnel_jh + ' JH)'">
+                            <lucide-icon [img]="AlertOctagon" [size]="14"></lucide-icon>
+                            <span>Dépassement (+{{ project.services[0].consumedGap | number: '1.1-2' }} JH)</span>
+                          </div>
+                        }
+                        @if (project.services[0].hasRevisionAnomaly) {
+                          <div class="anomaly-diag diag-warning" [title]="'Prévisionnel (' + project.services[0].previsionnel_jh + ' JH) ≠ Révisé (' + project.services[0].revised_jh + ' JH)'">
+                            <lucide-icon [img]="project.services[0].revisionGap > 0 ? TrendingUp : TrendingDown" [size]="14"></lucide-icon>
+                            <span>Écart Révision ({{ project.services[0].revisionGap > 0 ? '+' : '' }}{{ project.services[0].revisionGap | number: '1.1-2' }} JH)</span>
+                          </div>
+                        }
+                        @if (!project.services[0].hasConsumedAnomaly && !project.services[0].hasRevisionAnomaly) {
+                          <span class="text-muted-compliance">✓ Conforme</span>
+                        }
+                      } @else {
+                        @if (project.hasConsumedAnomaly) {
+                          <span class="badge-diag badge-diag-danger" title="Au moins un service dépasse son prévisionnel">
+                            <lucide-icon [img]="AlertOctagon" [size]="12"></lucide-icon> Dépassement
+                          </span>
+                        }
+                        @if (project.hasRevisionAnomaly) {
+                          <span class="badge-diag badge-diag-warning" title="Au moins un service a un écart révision / prévisionnel">
+                            <lucide-icon [img]="AlertTriangle" [size]="12"></lucide-icon> Écart Rév.
+                          </span>
+                        }
                       }
                     </div>
                   </td>
