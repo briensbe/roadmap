@@ -22,6 +22,13 @@
         "items": [
           "Ajout d'un modèle d'environnement documenté (environment.example.ts) pour guider le paramétrage des instances locales et de production"
         ]
+      },
+      {
+        "title": "Améliorations diverses",
+        "items": [
+          "Amélioration formulaire de mise à jour du mot de passe et du profil",
+          "Amélioration darkmode pour les filtres Jalons"
+        ]
       }
     ]
   },
