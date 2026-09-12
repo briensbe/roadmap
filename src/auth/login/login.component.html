@@ -19,7 +19,8 @@
     <div class="password-container">
       <input
         [type]="showPassword() ? 'text' : 'password'"
-        [(ngModel)]="password"
+        [ngModel]="password()"
+        (ngModelChange)="password.set($event)"
         name="password"
         placeholder="Password"
         required
@@ -28,19 +29,27 @@
         <lucide-icon [img]="showPassword() ? EyeOff : Eye" size="20"></lucide-icon>
       </button>
     </div>
-    <button type="submit" [disabled]="loading">
-      {{ loading ? 'Loading...' : 'Sign In' }}
+    <button type="submit" [disabled]="loading()">
+      {{ loading() ? 'Loading...' : 'Sign In' }}
     </button>
   </form>
 
-  <div class="divider">
-    <span>or</span>
-  </div>
+  @if (errorMessage()) {
+    <div class="message error">
+      {{ errorMessage() }}
+    </div>
+  }
 
-  <button type="button" class="google-btn" (click)="signInWithGoogle()" [disabled]="loading">
-    <img src="assets/google-logo.svg" alt="Google logo" />
-    Sign in with Google
-  </button>
+  @if (showGoogleAuth()) {
+    <div class="divider">
+      <span>or</span>
+    </div>
+
+    <button type="button" class="google-btn" (click)="signInWithGoogle()" [disabled]="loading()">
+      <img src="assets/google-logo.svg" alt="Google logo" />
+      Sign in with Google
+    </button>
+  }
   <p>Don't have an account? <a (click)="navigateToSignup()">Sign Up</a></p>
   <p>Forgot your password ? <a (click)="navigateToForgot()">Send me a link</a></p>
 </div>
