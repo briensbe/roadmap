@@ -16,6 +16,12 @@
           "Possibilité d'activer ou désactiver l'authentification Google OAuth via la configuration d'environnement.",
           "Raccourci d'accès rapide (\"à la confluence\" et confettis.)"
         ]
+      },
+      {
+        "title": "Fichier modèle d'environnement",
+        "items": [
+          "Ajout d'un modèle d'environnement documenté (environment.example.ts) pour guider le paramétrage des instances locales et de production"
+        ]
       }
     ]
   },
