@@ -1,5 +1,31 @@
 [
   {
+    "version": "2026.09.12",
+    "date": "2026-09-12",
+    "news": [
+      {
+        "title": "Restriction du domaine e-mail à l'inscription",
+        "items": [
+          "Contrôle strict du ou des domaines d'adresses e-mail autorisés à la création de compte via la configuration d'environnement.",
+          "Placeholder d'e-mail dynamique adapté aux domaines configurés dans les formulaires d'inscription, de connexion et de mot de passe oublié."
+        ]
+      },
+      {
+        "title": "Gestion de l'authentification & Expérience de connexion",
+        "items": [
+          "Possibilité d'activer ou désactiver l'authentification Google OAuth via la configuration d'environnement.",
+          "Raccourci d'accès rapide (\"à la confluence\" et confettis.)"
+        ]
+      },
+      {
+        "title": "Fichier modèle d'environnement",
+        "items": [
+          "Ajout d'un modèle d'environnement documenté (environment.example.ts) pour guider le paramétrage des instances locales et de production"
+        ]
+      }
+    ]
+  },
+  {
     "version": "2026.09.04",
     "date": "2026-09-04",
     "news": [
