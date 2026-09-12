@@ -785,20 +785,22 @@
               class="filter-pill"
               (click)="toggleDropdown('jalon', $event)">
               <span class="milestone-filter-title">Filtrer</span>
-              <span class="chip-list" style="display: flex; gap: 2px; align-items: center">
+              <span class="chip-list" style="display: flex; gap: 3px; align-items: center; flex-wrap: wrap">
                 @for (type of filterJalonTypes(); track type) {
                   <span
                     class="chip"
                     [style.background-color]="getJalonColor(type)"
                     [style.color]="getJalonTextColor(type)"
+                    [style.border-color]="getJalonBorderColor(type)"
                     style="
-                      font-size: 9px;
+                      font-size: 10px;
                       font-weight: 700;
-                      padding: 1px 4px;
+                      padding: 1px 6px;
                       border-radius: 4px;
-                      border: 1px solid rgba(0, 0, 0, 0.05);
+                      border: 1px solid;
                       margin: 0;
                       line-height: 1.1;
+                      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
                     "
                     >{{ type }}</span
                   >
@@ -834,7 +836,7 @@
                     </button>
                   }
                 </div>
-                <div class="dropdown-list" style="display: flex; flex-direction: column; gap: 2px">
+                <div class="dropdown-list" style="display: flex; flex-direction: column; gap: 3px">
                   @for (type of uniqueJalonTypes; track type) {
                     <label
                       class="dropdown-item"
@@ -855,15 +857,15 @@
                         style="margin: 0; cursor: pointer; width: 14px; height: 14px" />
                       <div
                         class="item-color-badge"
-                        [style.background-color]="getJalonColor(type)"
+                        [style.background-color]="getJalonBadgeColor(type)"
                         style="
-                          width: 10px;
-                          height: 10px;
-                          border-radius: 2px;
+                          width: 12px;
+                          height: 12px;
+                          border-radius: 3px;
                           flex-shrink: 0;
-                          border: 1px solid rgba(0, 0, 0, 0.1);
+                          box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
                         "></div>
-                      <span class="item-label" style="font-size: 11px; font-weight: 600">{{
+                      <span class="item-label" style="font-size: 12px; font-weight: 600">{{
                         type
                       }}</span>
                     </label>
@@ -884,6 +886,7 @@
                       class="jalon-item"
                       [style.background-color]="getJalonColor(jalon.event_type)"
                       [style.color]="getJalonTextColor(jalon.event_type)"
+                      [style.border-color]="getJalonBorderColor(jalon.event_type)"
                       [title]="jalon.event_date"
                       (click)="openMilestoneModal(jalon, $event)">
                       {{ jalon.title || '★' }}
@@ -921,6 +924,7 @@
                   [style.left.%]="getJalonLeftPercentage(jalon)"
                   [style.background-color]="getJalonColor(jalon.event_type)"
                   [style.color]="getJalonTextColor(jalon.event_type)"
+                  [style.border-color]="getJalonBorderColor(jalon.event_type)"
                   [title]="jalon.title + ' - ' + jalon.event_date"
                   (click)="openMilestoneModal(jalon, $event)"
                   style="position: absolute; transform: translateX(-50%); top: 50%; margin-top: -11px">

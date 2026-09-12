@@ -21,6 +21,7 @@ import { ProjetService } from '../../services/projet.service';
 import { ChargeService } from '../../services/charge.service';
 import { RolesService } from '../../services/roles.service';
 import { JalonService } from '../../services/jalon.service';
+import { ThemeService } from '../../services/theme.service';
 import {
   Equipe,
   Projet,
@@ -744,6 +745,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     private chiffresService: ChiffresService,
     private resourceService: ResourceService,
     private crewdayzService: CrewdayzIntegrationService,
+    private themeService: ThemeService,
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone,
   ) {}
@@ -1743,39 +1745,79 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  getJalonColor(type: string): string {
+  getJalonBadgeColor(type: string): string {
+    const isDark = this.themeService.isDarkMode();
     switch (type?.toLowerCase()) {
       case 'livraison':
       case 'lv':
-        return '#d1fae5'; // Green
+        return isDark ? '#10b981' : '#059669';
       case 'maintenance':
       case 'lvm':
-        return '#f3e8ff'; // Purple
+        return isDark ? '#c084fc' : '#9333ea';
       case 'mep':
-        return '#dbeafe'; // Blue
+        return isDark ? '#60a5fa' : '#2563eb';
       case 'sprint':
       case 'sp':
-        return '#fef3c7'; // Amber
+        return isDark ? '#fbbf24' : '#d97706';
       default:
-        return '#f3f4f6'; // Gray
+        return isDark ? '#94a3b8' : '#6b7280';
+    }
+  }
+
+  getJalonColor(type: string): string {
+    const isDark = this.themeService.isDarkMode();
+    switch (type?.toLowerCase()) {
+      case 'livraison':
+      case 'lv':
+        return isDark ? '#064e3b' : '#d1fae5'; // Dark emerald vs light emerald
+      case 'maintenance':
+      case 'lvm':
+        return isDark ? '#581c87' : '#f3e8ff'; // Dark purple vs light purple
+      case 'mep':
+        return isDark ? '#1e3a8a' : '#dbeafe'; // Dark blue vs light blue
+      case 'sprint':
+      case 'sp':
+        return isDark ? '#78350f' : '#fef3c7'; // Dark amber vs light amber
+      default:
+        return isDark ? '#334155' : '#f3f4f6'; // Slate 700 vs gray 100
     }
   }
 
   getJalonTextColor(type: string): string {
+    const isDark = this.themeService.isDarkMode();
     switch (type?.toLowerCase()) {
       case 'livraison':
       case 'lv':
-        return '#065f46';
+        return isDark ? '#a7f3d0' : '#065f46';
       case 'maintenance':
       case 'lvm':
-        return '#6b21a8';
+        return isDark ? '#f3e8ff' : '#6b21a8';
       case 'mep':
-        return '#1e40af';
+        return isDark ? '#bfdbfe' : '#1e40af';
       case 'sprint':
       case 'sp':
-        return '#92400e';
+        return isDark ? '#fef3c7' : '#92400e';
       default:
-        return '#4b5563';
+        return isDark ? '#f1f5f9' : '#374151';
+    }
+  }
+
+  getJalonBorderColor(type: string): string {
+    const isDark = this.themeService.isDarkMode();
+    switch (type?.toLowerCase()) {
+      case 'livraison':
+      case 'lv':
+        return isDark ? '#10b981' : '#34d399';
+      case 'maintenance':
+      case 'lvm':
+        return isDark ? '#a855f7' : '#c084fc';
+      case 'mep':
+        return isDark ? '#3b82f6' : '#60a5fa';
+      case 'sprint':
+      case 'sp':
+        return isDark ? '#f59e0b' : '#fbbf24';
+      default:
+        return isDark ? '#64748b' : '#cbd5e1';
     }
   }
 
