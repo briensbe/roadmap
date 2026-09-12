@@ -1,17 +1,41 @@
 <div class="container">
   <h2>Profil Utilisateur</h2>
-  <p>Session authentifiée avec succès 🎉</p>
-  <button class="btn btn-primary" (click)="toggleUserInfo()" [disabled]="loading">
-    {{ loading ? 'Chargement...' : showInfo ? 'Masquer les informations' : 'Afficher les informations personnelles' }}
-  </button>
+  <p class="welcome-msg">Session authentifiée avec succès 🎉</p>
 
-  @if (showInfo && user()) {
-    <div class="user-info">
-      <p>ID Utilisateur : {{ user()?.id }}</p>
-      <p>Email : {{ user()?.email }}</p>
-      <p>Nom d'affichage : {{ user()?.user_metadata?.['displayName'] }}</p>
+  <div class="profile-info-section">
+    <div class="info-row">
+      <lucide-icon [img]="User" class="info-icon" size="20"></lucide-icon>
+      <div class="info-details">
+        <span class="info-label">Nom d'affichage</span>
+        <span class="info-value">{{ user()?.user_metadata?.['displayName'] || 'Non défini' }}</span>
+      </div>
     </div>
-  }
+
+    <div class="info-row">
+      <lucide-icon [img]="Mail" class="info-icon" size="20"></lucide-icon>
+      <div class="info-details">
+        <span class="info-label">Adresse Email</span>
+        <span class="info-value">{{ user()?.email || 'Non défini' }}</span>
+      </div>
+    </div>
+
+    <div class="info-row">
+      <lucide-icon [img]="isGoogleUser() ? Globe : Lock" class="info-icon" size="20"></lucide-icon>
+      <div class="info-details">
+        <span class="info-label">Méthode d'authentification</span>
+        <div class="provider-badge-container">
+          <span class="provider-badge" [class.provider-google]="isGoogleUser()" [class.provider-email]="!isGoogleUser()">
+            {{ authProviderLabel() }}
+          </span>
+        </div>
+        @if (isGoogleUser()) {
+          <span class="auth-hint">
+            Authentifié via Google. Votre mot de passe et votre sécurité sont gérés directement depuis votre compte Google.
+          </span>
+        }
+      </div>
+    </div>
+  </div>
 
   <div class="theme-selector">
     <label>Préférence de Thème :</label>
@@ -31,7 +55,17 @@
     </div>
   </div>
 
-  <button class="btn btn-secondary" (click)="updatePassword()">Modifier le mot de passe</button>
+  <div class="profile-actions">
+    @if (!isGoogleUser()) {
+      <button class="btn btn-secondary" (click)="updatePassword()">
+        <lucide-icon [img]="KeyRound" size="18"></lucide-icon>
+        Modifier le mot de passe
+      </button>
+    }
 
-  <button class="btn btn-danger" (click)="signOut()">Se déconnecter</button>
+    <button class="btn btn-danger" (click)="signOut()">
+      <lucide-icon [img]="LogOut" size="18"></lucide-icon>
+      Se déconnecter
+    </button>
+  </div>
 </div>
