@@ -8,7 +8,14 @@
     </div>
   }
   <form (ngSubmit)="signInWithEmail()">
-    <input type="email" [(ngModel)]="email" name="email" placeholder="Email" required autocomplete="email" />
+    <input
+      type="email"
+      [ngModel]="email()"
+      (ngModelChange)="email.set($event)"
+      name="email"
+      [placeholder]="emailPlaceholder()"
+      required
+      autocomplete="email" />
     <div class="password-container">
       <input
         [type]="showPassword() ? 'text' : 'password'"

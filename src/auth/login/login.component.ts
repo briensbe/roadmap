@@ -1,8 +1,10 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { SupabaseService } from '../../services/supabase.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, Eye, EyeOff, Info } from 'lucide-angular';
+import { environment } from '../../environments/environment';
+import { getEmailPlaceholder } from '../../utils/email-validator';
 
 @Component({
   selector: 'app-login',
@@ -16,6 +18,8 @@ export class LoginComponent implements OnInit {
   showPassword = signal(false);
   sessionExpired = signal(false);
   loading = false;
+
+  emailPlaceholder = computed(() => getEmailPlaceholder(environment.allowedEmailDomains));
 
   // Expose icons for template usage via [img]
   readonly Eye = Eye;

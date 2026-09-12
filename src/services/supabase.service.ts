@@ -3,6 +3,7 @@ import { AuthTokenResponse, createClient, SupabaseClient, UserResponse, User } f
 import { BehaviorSubject } from 'rxjs';
 import { LoginPayload, SignupPayload } from '../auth/types/user.type';
 import { environment } from '../environments/environment';
+import { validateSignupEmail } from '../utils/email-validator';
 
 const sessionStorageUserKey = 'roadmapUser'; // A changer si on change d'application (car j'avais repris un ancien nom)
 @Injectable({
@@ -144,6 +145,18 @@ export class SupabaseService {
    * Inscription d'un nouvel utilisateur
    */
   async signUpWithEmail(payload: SignupPayload) {
+    const validation = validateSignupEmail(payload.email, environment.allowedEmailDomains);
+    if (!validation.isValid) {
+      return {
+        data: { user: null, session: null },
+        error: {
+          name: 'AuthApiError',
+          message: validation.errorMessage || 'Domaine email non autorisé.',
+          status: 400,
+        } as any,
+      };
+    }
+
     // Récupère l'URL de base de l'app (inclut le repo path)
     // const baseUrl = document.querySelector("base")?.href || window.location.origin;
     // console.log("1- signup baseUrl = " + baseUrl);
