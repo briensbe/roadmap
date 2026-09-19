@@ -1,3 +1,6 @@
 [submodule "openspec"]
 	path = openspec
 	url = git@github.com:briensbe/roadmap-openspec.git
+[submodule "supabase-shared"]
+	path = supabase-shared
+	url = git@github.com:briensbe/supabase-roadmap-shared.git
