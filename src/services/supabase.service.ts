@@ -1,4 +1,5 @@
-import { Injectable, signal } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { AuthTokenResponse, createClient, SupabaseClient, UserResponse, User } from '@supabase/supabase-js';
 import { BehaviorSubject } from 'rxjs';
 import { LoginPayload, SignupPayload } from '../auth/types/user.type';
@@ -10,8 +11,10 @@ const sessionStorageUserKey = 'roadmapUser'; // A changer si on change d'applica
   providedIn: 'root',
 })
 export class SupabaseService {
+  private readonly router = inject(Router);
   private supabase: SupabaseClient;
   private _user = signal<User | null>(null);
+  private _isPasswordRecovery = signal(false);
   private _isLocalLogout = false;
   private initializationPromise: Promise<void>;
 
@@ -24,6 +27,11 @@ export class SupabaseService {
    * Signal réactif pour l'utilisateur actuellement connecté
    */
   public user = this._user.asReadonly();
+
+  /**
+   * Signal réactif indiquant si la session provient d'un lien de récupération de mot de passe
+   */
+  public isPasswordRecovery = this._isPasswordRecovery.asReadonly();
 
   /**
    * Indique si l'utilisateur vient de se déconnecter manuellement depuis cet onglet.
@@ -82,6 +90,9 @@ export class SupabaseService {
           console.log('PKCE flow: session successfully established.');
         }
 
+        const isUpdatePasswordUrl =
+          url.pathname.includes('update-password') || url.hash.includes('update-password');
+
         // Nettoyage de l'URL pour éviter de re-traiter le code au rafraîchissement
         if (url.searchParams.has('code')) {
           url.searchParams.delete('code');
@@ -100,6 +111,11 @@ export class SupabaseService {
 
         const newUrl = url.pathname + url.search + cleanHash;
         window.history.replaceState({}, document.title, newUrl);
+
+        if (isUpdatePasswordUrl) {
+          this._isPasswordRecovery.set(true);
+          setTimeout(() => this.router.navigate(['/update-password']), 50);
+        }
       }
     } catch (err) {
       console.error('Error handling redirect code:', err);
@@ -215,6 +231,7 @@ export class SupabaseService {
 
     // On vide immédiatement le cache local avant même l'appel réseau
     this._user.set(null);
+    this._isPasswordRecovery.set(false);
     this.authState$.next(null);
 
     try {
@@ -233,24 +250,12 @@ export class SupabaseService {
    */
   async resetPasswordForEmail(email: string): Promise<void> {
     try {
-      // Récupère l'URL de base de l'app (inclut le repo path)
-      // const baseUrl = document.querySelector("base")?.href || window.location.origin;
-
-      // console.log("baseUrl = " + baseUrl);
-      // console.log("$baseUrl ... = " + `${baseUrl}update-password`);
-      // console.log("baseUrl ... = )" + baseUrl + "update-password");
-
       const authRedirectUrl = environment.authRedirectUrl;
       console.log('authRedirectUrl = ' + authRedirectUrl);
 
       const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
-        // redirectTo: `${baseUrl}update-password`,
         redirectTo: authRedirectUrl + '/update-password',
       });
-
-      // const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
-      //   redirectTo: `${window.location.origin}/update-password`,
-      // });
 
       if (error) throw error;
     } catch (err: any) {
@@ -278,6 +283,7 @@ export class SupabaseService {
       password: newPassword,
     });
     if (response.error) throw new Error(response.error.message);
+    this._isPasswordRecovery.set(false);
     return response;
   }
 
@@ -288,6 +294,13 @@ export class SupabaseService {
 
   private initializeAuthListener() {
     this.supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        this._isPasswordRecovery.set(true);
+        this.router.navigate(['/update-password']);
+      } else if (event === 'SIGNED_OUT') {
+        this._isPasswordRecovery.set(false);
+      }
+
       this.authState$.next({ event, session });
       this._user.set(session?.user ?? null);
 

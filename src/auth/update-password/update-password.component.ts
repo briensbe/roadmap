@@ -1,7 +1,7 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { SupabaseService } from '../../services/supabase.service';
 import { LucideAngularModule, Eye, EyeOff, Lock, CheckCircle, ArrowLeft } from 'lucide-angular';
 
@@ -20,6 +20,7 @@ export class UpdatePasswordComponent implements OnInit {
   showNewPassword = signal(false);
   showConfirmPassword = signal(false);
   isRecovery = signal(false);
+  mode = signal<string | null>(null);
   message = signal<string | null>(null);
   error = signal<string | null>(null);
   loading = false;
@@ -34,10 +35,20 @@ export class UpdatePasswordComponent implements OnInit {
 
   protected readonly supabaseService = inject(SupabaseService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
-  readonly requiresCurrentPassword = computed(() => !this.isRecovery() && !!this.supabaseService.user());
+  readonly requiresCurrentPassword = computed(() => {
+    return (
+      this.mode() === 'change' &&
+      !this.isRecovery() &&
+      !this.supabaseService.isPasswordRecovery() &&
+      !!this.supabaseService.user()
+    );
+  });
 
   async ngOnInit() {
+    this.mode.set(this.route.snapshot.queryParamMap.get('mode'));
+
     if (typeof window !== 'undefined') {
       const hash = window.location.hash || '';
       const search = window.location.search || '';

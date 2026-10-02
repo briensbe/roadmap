@@ -19,6 +19,7 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'signup', component: SignupComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
+  { path: 'update-password', component: UpdatePasswordComponent },
   {
     path: '',
     canActivate: [AuthGuard],
@@ -53,7 +54,6 @@ export const routes: Routes = [
       },
       { path: 'profile', component: ProfileComponent },
       { path: 'guide', component: GuideComponent },
-      { path: 'update-password', component: UpdatePasswordComponent },
     ],
   },
   { path: '**', redirectTo: 'login' },
