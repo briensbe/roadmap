@@ -1,14 +1,11 @@
-import { Component, OnInit, inject, effect } from '@angular/core';
+import { Component, OnInit, inject, effect, provideAppInitializer } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideRouter, RouterOutlet, Router, withHashLocation } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { SidebarNavigationComponent } from './components/sidebar-navigation.component';
-import { SidebarService } from './services/sidebar.service';
-import { routes } from '../src/app.routes';
+import { routes } from './app.routes';
 import { provideAngularQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { provideHttpClient } from '@angular/common/http';
-import { ReleaseNotesComponent } from './components/release-notes.component';
 import { MatrixEasterEggComponent } from './components/matrix-easter-egg.component';
 import { EasterEggService } from './services/easter-egg.service';
 import { SupabaseService } from './services/supabase.service';
@@ -22,59 +19,26 @@ import { ToastContainerComponent } from './components/toast-container.component'
   imports: [
     CommonModule,
     RouterOutlet,
-    SidebarNavigationComponent,
-    ReleaseNotesComponent,
     MatrixEasterEggComponent,
     ToastContainerComponent,
   ],
   template: `
-    <div class="app-layout">
-      <app-sidebar-navigation></app-sidebar-navigation>
-      <main class="main-content" [class.sidebar-collapsed]="sidebarCollapsed">
-        <router-outlet></router-outlet>
-      </main>
-      <app-release-notes></app-release-notes>
-      @if (showEasterEgg) {
-        <app-matrix-easter-egg (close)="showEasterEgg = false"></app-matrix-easter-egg>
-      }
-      <app-toast-container></app-toast-container>
-    </div>
+    <router-outlet></router-outlet>
+    @if (showEasterEgg) {
+      <app-matrix-easter-egg (close)="showEasterEgg = false"></app-matrix-easter-egg>
+    }
+    <app-toast-container></app-toast-container>
   `,
-  styles: [
-    `
-      .app-layout {
-        display: flex;
-        min-height: 100vh;
-        overflow-x: hidden;
-        background-color: var(--bg-app);
-      }
-
-      .main-content {
-        flex: 1;
-        margin-left: 256px;
-        transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        overflow-x: hidden;
-        background-color: var(--bg-app);
-      }
-
-      .main-content.sidebar-collapsed {
-        margin-left: 80px;
-      }
-    `,
-  ],
+  styles: [],
 })
 export class App implements OnInit {
-  sidebarCollapsed = false;
   showEasterEgg = false;
 
-  private readonly sidebarService = inject(SidebarService);
   private readonly easterEggService = inject(EasterEggService);
   private readonly supabaseService = inject(SupabaseService);
   private readonly router = inject(Router);
   private readonly queryClient = inject(QueryClient);
   private readonly jiraCollectorService = inject(JiraCollectorService);
-  // Ensure ThemeService is initialized early
-  private readonly themeService = inject(ThemeService);
 
   constructor() {
     // Watch for authentication changes globally
@@ -85,7 +49,7 @@ export class App implements OnInit {
         this.queryClient.clear();
 
         const currentUrl = this.router.url;
-        const publicRoutes = ['/login', '/signup', '/forgot-password', '/update-password'];
+        const publicRoutes = ['/login', '/signup', '/forgot-password', '/reset-password'];
         const isPublic = publicRoutes.some((route) => currentUrl.includes(route));
 
         // Redirect to login only if on a protected route
@@ -103,10 +67,6 @@ export class App implements OnInit {
   }
 
   ngOnInit(): void {
-    this.sidebarService.collapsed$.subscribe((collapsed) => {
-      this.sidebarCollapsed = collapsed;
-    });
-
     this.easterEggService.trigger$.subscribe(() => {
       this.showEasterEgg = true;
     });
@@ -118,6 +78,9 @@ bootstrapApplication(App, {
     provideAnimations(),
     provideHttpClient(),
     provideRouter(routes, withHashLocation()),
+    provideAppInitializer(() => {
+      inject(ThemeService);
+    }),
     provideAngularQuery(
       new QueryClient({
         defaultOptions: {

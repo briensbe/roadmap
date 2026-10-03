@@ -15,6 +15,7 @@ import { AuthGuard } from './guards/auth.guard';
 import { ProfileComponent } from './auth/profile/profile.component';
 import { UpdatePasswordComponent } from './auth/update-password/update-password.component';
 import { GuideComponent } from './components/guide/guide.component';
+import { MainLayoutComponent } from './components/layout/main-layout/main-layout.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -23,6 +24,7 @@ export const routes: Routes = [
   { path: 'reset-password', component: ResetPasswordComponent },
   {
     path: '',
+    component: MainLayoutComponent,
     canActivate: [AuthGuard],
     children: [
       { path: '', redirectTo: '/planification', pathMatch: 'full' },

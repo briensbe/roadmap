@@ -1,0 +1,7 @@
+<div class="app-layout">
+  <app-sidebar-navigation></app-sidebar-navigation>
+  <main class="main-content" [class.sidebar-collapsed]="sidebarCollapsed">
+    <router-outlet></router-outlet>
+  </main>
+  <app-release-notes></app-release-notes>
+</div>
