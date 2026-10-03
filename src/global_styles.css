@@ -102,7 +102,6 @@ body {
   line-height: 1.5;
   color: var(--text-body);
   background: var(--bg-app);
-  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 h1,

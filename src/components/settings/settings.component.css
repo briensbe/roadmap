@@ -4,7 +4,6 @@
   background: var(--bg-app);
   min-height: 100vh;
   margin-left: 32px;
-  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .settings-header {

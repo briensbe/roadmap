@@ -22,3 +22,12 @@
 - **Règle :** Dans tous les fichiers Markdown générés ou modifiés (spécifications, propositions, designs, ADRs, tasks, docs), ne JAMAIS insérer de chemins de fichiers absolus (ex: `file:///c:/...` ou `C:\...`).
 - **Action :** Utiliser systématiquement des chemins relatifs par rapport au fichier courant ou à la racine du projet (ex: `src/...` ou `../../../src/...`).
 
+### Règles de recherche et d'exploration de fichiers
+- Utilise systématiquement `rg` (ripgrep) pour rechercher du texte ou lister les fichiers d'un dossier.
+- N'utilise JAMAIS les cmdlets PowerShell d'exploration ou de recherche (`Get-ChildItem`, `Select-String`, `dir`, `ls`, `gci`).
+- Syntaxes courantes :
+  - Lister les fichiers d'un dossier : `rg --files <chemin>`
+  - Chercher du texte dans les fichiers : `rg "<motif>" <chemin>`
+  - Filtrer par extensions de fichier : `rg -g "*.{ts,html}" "<motif>" <chemin>`
+- Privilégie systématiquement les commandes atomiques SANS pipe (`|`), sans redirection ni chaînage (`&&`, `;`) pour respecter l'Allowlist du terminal.
+- Si `rg` n'est pas disponible, demande confirmation avant d'utiliser une alternative.

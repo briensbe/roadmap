@@ -25,7 +25,7 @@
   box-shadow: var(--shadow-modal, 0 10px 25px rgba(0, 0, 0, 0.2));
   border: 1px solid var(--border-subtle, #e5e7eb);
   animation: slideUp 0.3s ease-out;
-  transition: max-width 0.3s ease, background-color 0.2s ease, color 0.2s ease;
+  transition: max-width 0.3s ease;
 }
 
 .release-notes-card.history-mode {

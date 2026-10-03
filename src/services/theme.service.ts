@@ -43,6 +43,7 @@ export class ThemeService {
     effect(() => {
       const isDark = this.effectiveTheme() === 'dark';
       if (typeof document !== 'undefined') {
+        const enableTransitions = this.disableTransitionsTemporarily();
         if (isDark) {
           document.body.classList.add('dark-mode');
           document.documentElement.classList.add('dark-mode');
@@ -50,6 +51,7 @@ export class ThemeService {
           document.body.classList.remove('dark-mode');
           document.documentElement.classList.remove('dark-mode');
         }
+        enableTransitions();
       }
     });
 
@@ -104,4 +106,42 @@ export class ThemeService {
     }
     return 'system';
   }
+
+  /**
+   * Temporarily disables all CSS transitions during theme switch
+   * to avoid visual tearing and staggered component updates.
+   */
+  private disableTransitionsTemporarily(): () => void {
+    if (typeof document === 'undefined') return () => {};
+
+    const css = document.createElement('style');
+    css.setAttribute('type', 'text/css');
+    css.appendChild(
+      document.createTextNode(
+        `*, *::before, *::after {
+          -webkit-transition: none !important;
+          -moz-transition: none !important;
+          -o-transition: none !important;
+          -ms-transition: none !important;
+          transition: none !important;
+        }`
+      )
+    );
+    document.head.appendChild(css);
+
+    return () => {
+      // Force a synchronous reflow so all DOM changes take effect with transitions disabled
+      (() => window.getComputedStyle(document.body).opacity)();
+
+      // Restore transitions on the next animation frames
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (css.parentNode) {
+            document.head.removeChild(css);
+          }
+        });
+      });
+    };
+  }
 }
+
