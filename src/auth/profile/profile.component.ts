@@ -91,7 +91,7 @@ export class ProfileComponent {
   }
 
   async updatePassword(): Promise<void> {
-    this.router.navigate(['/update-password'], { queryParams: { mode: 'change' } });
+    this.router.navigate(['/update-password']);
   }
 
   setTheme(theme: ThemePreference): void {

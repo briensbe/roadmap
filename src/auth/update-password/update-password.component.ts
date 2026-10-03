@@ -1,7 +1,7 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { SupabaseService } from '../../services/supabase.service';
 import { LucideAngularModule, Eye, EyeOff, Lock, CheckCircle, ArrowLeft } from 'lucide-angular';
 
@@ -12,21 +12,18 @@ import { LucideAngularModule, Eye, EyeOff, Lock, CheckCircle, ArrowLeft } from '
   templateUrl: './update-password.component.html',
   styleUrl: './update-password.component.css',
 })
-export class UpdatePasswordComponent implements OnInit {
+export class UpdatePasswordComponent {
   currentPassword = signal('');
   newPassword = signal('');
   confirmPassword = signal('');
   showCurrentPassword = signal(false);
   showNewPassword = signal(false);
   showConfirmPassword = signal(false);
-  isRecovery = signal(false);
-  mode = signal<string | null>(null);
-  message = signal<string | null>(null);
   error = signal<string | null>(null);
-  loading = false;
-  success = false;
+  loading = signal(false);
+  success = signal(false);
 
-  // expose icons for template [img] binding
+  // Exposer les icônes pour le template
   readonly Eye = Eye;
   readonly EyeOff = EyeOff;
   readonly Lock = Lock;
@@ -35,34 +32,6 @@ export class UpdatePasswordComponent implements OnInit {
 
   protected readonly supabaseService = inject(SupabaseService);
   private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
-
-  readonly requiresCurrentPassword = computed(() => {
-    return (
-      this.mode() === 'change' &&
-      !this.isRecovery() &&
-      !this.supabaseService.isPasswordRecovery() &&
-      !!this.supabaseService.user()
-    );
-  });
-
-  async ngOnInit() {
-    this.mode.set(this.route.snapshot.queryParamMap.get('mode'));
-
-    if (typeof window !== 'undefined') {
-      const hash = window.location.hash || '';
-      const search = window.location.search || '';
-      if (hash.includes('type=recovery') || search.includes('type=recovery')) {
-        this.isRecovery.set(true);
-      }
-    }
-
-    // Vérifier qu'il y a bien une session active (token de reset ou utilisateur connecté)
-    const { data } = await this.supabaseService.getSession();
-    if (!data.session && !this.supabaseService.user()) {
-      this.error.set('Session invalide ou expirée. Veuillez demander un nouveau lien de réinitialisation.');
-    }
-  }
 
   toggleCurrentPasswordVisibility() {
     this.showCurrentPassword.update((value) => !value);
@@ -93,20 +62,17 @@ export class UpdatePasswordComponent implements OnInit {
 
   async onSubmit() {
     this.error.set(null);
-    this.message.set(null);
 
-    if (this.requiresCurrentPassword()) {
-      if (!this.currentPassword()) {
-        this.error.set('Veuillez saisir votre mot de passe actuel.');
-        return;
-      }
-      if (this.currentPassword() === this.newPassword()) {
-        this.error.set('Le nouveau mot de passe doit être différent du mot de passe actuel.');
-        return;
-      }
+    if (!this.currentPassword()) {
+      this.error.set('Veuillez saisir votre mot de passe actuel.');
+      return;
     }
 
-    // Validation
+    if (this.currentPassword() === this.newPassword()) {
+      this.error.set('Le nouveau mot de passe doit être différent du mot de passe actuel.');
+      return;
+    }
+
     if (this.newPassword().length < 6) {
       this.error.set('Le nouveau mot de passe doit contenir au moins 6 caractères.');
       return;
@@ -117,23 +83,21 @@ export class UpdatePasswordComponent implements OnInit {
       return;
     }
 
-    this.loading = true;
+    this.loading.set(true);
 
     try {
-      // Si l'utilisateur est connecté et effectue un changement volontaire, vérifier l'ancien mot de passe
-      if (this.requiresCurrentPassword()) {
-        const userEmail = this.supabaseService.user()?.email;
-        if (userEmail) {
-          const { error: authError } = await this.supabaseService.signInWithEmail({
-            email: userEmail,
-            password: this.currentPassword(),
-          });
+      // Vérifier la validité du mot de passe actuel
+      const userEmail = this.supabaseService.user()?.email;
+      if (userEmail) {
+        const { error: authError } = await this.supabaseService.signInWithEmail({
+          email: userEmail,
+          password: this.currentPassword(),
+        });
 
-          if (authError) {
-            this.error.set('Le mot de passe actuel est incorrect.');
-            this.loading = false;
-            return;
-          }
+        if (authError) {
+          this.error.set('Le mot de passe actuel est incorrect.');
+          this.loading.set(false);
+          return;
         }
       }
 
@@ -142,13 +106,12 @@ export class UpdatePasswordComponent implements OnInit {
       if (error) {
         this.error.set(this.formatErrorMessage(error));
       } else {
-        this.message.set('Mot de passe mis à jour avec succès !');
-        this.success = true;
+        this.success.set(true);
       }
     } catch (err: any) {
       this.error.set(this.formatErrorMessage(err));
     } finally {
-      this.loading = false;
+      this.loading.set(false);
     }
   }
 
@@ -168,8 +131,5 @@ export class UpdatePasswordComponent implements OnInit {
 
   goToProfile() {
     this.router.navigate(['/profile']);
-  }
-  goToLogin() {
-    this.router.navigate(['/login']);
   }
 }

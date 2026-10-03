@@ -1,6 +1,6 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { AuthTokenResponse, createClient, SupabaseClient, UserResponse, User } from '@supabase/supabase-js';
+import { AuthResponse, AuthTokenResponse, createClient, SupabaseClient, UserResponse, User } from '@supabase/supabase-js';
 import { BehaviorSubject } from 'rxjs';
 import { LoginPayload, SignupPayload } from '../auth/types/user.type';
 import { environment } from '../environments/environment';
@@ -90,8 +90,11 @@ export class SupabaseService {
           console.log('PKCE flow: session successfully established.');
         }
 
-        const isUpdatePasswordUrl =
-          url.pathname.includes('update-password') || url.hash.includes('update-password');
+        const isRecoveryUrl =
+          url.pathname.includes('reset-password') ||
+          url.hash.includes('reset-password') ||
+          url.pathname.includes('update-password') ||
+          url.hash.includes('update-password');
 
         // Nettoyage de l'URL pour éviter de re-traiter le code au rafraîchissement
         if (url.searchParams.has('code')) {
@@ -112,9 +115,9 @@ export class SupabaseService {
         const newUrl = url.pathname + url.search + cleanHash;
         window.history.replaceState({}, document.title, newUrl);
 
-        if (isUpdatePasswordUrl) {
+        if (isRecoveryUrl) {
           this._isPasswordRecovery.set(true);
-          setTimeout(() => this.router.navigate(['/update-password']), 50);
+          setTimeout(() => this.router.navigate(['/reset-password']), 50);
         }
       }
     } catch (err) {
@@ -244,23 +247,61 @@ export class SupabaseService {
   }
 
   /**
-   * Envoie un email de réinitialisation de mot de passe
-   * @param email Adresse email de l'utilisateur
-   * @returns Promise<void> (rejette avec une erreur en cas d'échec)
+   * Envoie un email de réinitialisation de mot de passe contenant un code OTP
    */
   async resetPasswordForEmail(email: string): Promise<void> {
     try {
-      const authRedirectUrl = environment.authRedirectUrl;
-      console.log('authRedirectUrl = ' + authRedirectUrl);
-
-      const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: authRedirectUrl + '/update-password',
-      });
+      const { error } = await this.supabase.auth.resetPasswordForEmail(email);
 
       if (error) throw error;
     } catch (err: any) {
       // on renvoie l'erreur pour que le composant l'affiche proprement
       throw new Error(err.message || 'Erreur lors de l’envoi du mail de réinitialisation.');
+    }
+  }
+
+  /**
+   * Vérifie le code OTP à 6 chiffres reçu par e-mail pour la récupération de mot de passe et établit la session
+   */
+  async verifyRecoveryOtp(email: string, token: string): Promise<AuthResponse> {
+    const response = await this.supabase.auth.verifyOtp({
+      email: email.trim(),
+      token: token.trim(),
+      type: 'recovery',
+    });
+
+    if (response.error) {
+      throw new Error('Code de confirmation invalide ou expiré.');
+    }
+
+    if (response.data?.session?.user) {
+      this._user.set(response.data.session.user);
+      this._isPasswordRecovery.set(true);
+    }
+
+    return response;
+  }
+
+  /**
+   * Réinitialise le mot de passe utilisateur avec le code OTP à 6 chiffres
+   */
+  async resetPasswordWithOtp(email: string, token: string, newPassword: string): Promise<void> {
+    try {
+      // 1. Vérification du code OTP et établissement de la session
+      await this.verifyRecoveryOtp(email, token);
+
+      // 2. Mise à jour du mot de passe
+      const { error: updateError } = await this.supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      this._isPasswordRecovery.set(false);
+    } catch (err: any) {
+      throw new Error(err.message || 'Erreur lors de la réinitialisation du mot de passe.');
     }
   }
 
@@ -296,7 +337,7 @@ export class SupabaseService {
     this.supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
         this._isPasswordRecovery.set(true);
-        this.router.navigate(['/update-password']);
+        this.router.navigate(['/reset-password']);
       } else if (event === 'SIGNED_OUT') {
         this._isPasswordRecovery.set(false);
       }

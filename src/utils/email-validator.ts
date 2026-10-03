@@ -111,3 +111,28 @@ export function getEmailPlaceholder(
   }
   return defaultFallback;
 }
+
+/**
+ * Masque partiellement une adresse e-mail pour préserver la confidentialité (ex: jo***e@domaine.com).
+ */
+export function maskEmail(email: string): string {
+  if (!email || typeof email !== 'string') {
+    return '';
+  }
+  const cleanEmail = email.trim();
+  const atIndex = cleanEmail.indexOf('@');
+  if (atIndex <= 0) {
+    return cleanEmail;
+  }
+  const localPart = cleanEmail.substring(0, atIndex);
+  const domainPart = cleanEmail.substring(atIndex);
+
+  if (localPart.length <= 2) {
+    return `${localPart[0]}*${domainPart}`;
+  }
+  if (localPart.length <= 4) {
+    return `${localPart[0]}**${localPart[localPart.length - 1]}${domainPart}`;
+  }
+  return `${localPart.substring(0, 2)}***${localPart.substring(localPart.length - 1)}${domainPart}`;
+}
+

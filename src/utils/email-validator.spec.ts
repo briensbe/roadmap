@@ -4,6 +4,7 @@ import {
   isEmailDomainAllowed,
   validateSignupEmail,
   getEmailPlaceholder,
+  maskEmail,
 } from './email-validator';
 
 describe('EmailValidator Utility', () => {
@@ -107,4 +108,28 @@ describe('EmailValidator Utility', () => {
       expect(getEmailPlaceholder([], 'nom', 'nom@entreprise.com')).toBe('nom@entreprise.com');
     });
   });
+
+  describe('maskEmail', () => {
+    it('should return empty string for null or empty input', () => {
+      expect(maskEmail('')).toBe('');
+      expect(maskEmail(null as any)).toBe('');
+    });
+
+    it('should return input as is if no @ is found', () => {
+      expect(maskEmail('invalid-email')).toBe('invalid-email');
+    });
+
+    it('should mask short local parts properly', () => {
+      expect(maskEmail('a@test.com')).toBe('a*@test.com');
+      expect(maskEmail('ab@test.com')).toBe('a*@test.com');
+      expect(maskEmail('abc@test.com')).toBe('a**c@test.com');
+      expect(maskEmail('abcd@test.com')).toBe('a**d@test.com');
+    });
+
+    it('should mask longer local parts properly', () => {
+      expect(maskEmail('john.doe@example.com')).toBe('jo***e@example.com');
+      expect(maskEmail('jean.dupont@soprasteria.com')).toBe('je***t@soprasteria.com');
+    });
+  });
 });
+
