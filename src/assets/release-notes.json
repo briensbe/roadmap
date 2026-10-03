@@ -1,5 +1,26 @@
 [
   {
+    "version": "2026.10.03",
+    "date": "2026-10-03",
+    "news": [
+      {
+        "title": "Réinitialisation de mot de passe par code OTP à 6 chiffres",
+        "items": [
+          "Nouveau parcours sécurisé de réinitialisation de mot de passe via l'envoi d'un code de vérification OTP à 6 chiffres envoyé par e-mail.",
+          "Interface dédiée avec saisie intuitive à 6 chiffres (gestion du copier-coller, focus automatique) et contrôle de robustesse du nouveau mot de passe en temps réel."
+        ]
+      },
+      {
+        "title": "Navigation & Structure de l'application",
+        "items": [
+          "Introduction d'un layout principal (MainLayout) isolant l'espace connecté.",
+          "Masquage complet de la barre latérale de navigation sur l'ensemble des pages publiques d'authentification.",
+          "Suppression de l'effet de bascule progressive des composants lors du changement de thème."
+        ]
+      }
+    ]
+  },
+  {
     "version": "2026.09.12",
     "date": "2026-09-12",
     "news": [

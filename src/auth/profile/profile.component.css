@@ -30,14 +30,6 @@
   text-align: left;
 }
 
-/* Style du message de bienvenue */
-.container p:first-of-type {
-  font-size: 1rem;
-  margin-bottom: 1.5rem;
-  color: var(--color-success);
-  font-weight: 500;
-}
-
 /* Style des paragraphes d'information utilisateur */
 .container p:not(:first-of-type) {
   font-weight: 500;
