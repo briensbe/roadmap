@@ -358,7 +358,7 @@ export class ImportViewComponent implements OnInit {
         hasConsumedAnomaly,
         hasRevisionAnomaly,
         consumedGap: (row.consomme_jh || 0) - (row.previsionnel_jh || 0),
-        revisionGap: (row.revised_jh || 0) - (row.previsionnel_jh || 0),
+        revisionGap: (row.previsionnel_jh || 0) - (row.revised_jh || 0),
       });
     }
 
@@ -634,7 +634,7 @@ export class ImportViewComponent implements OnInit {
         }
         if (srv.hasRevisionAnomaly) {
           const sign = srv.revisionGap > 0 ? '+' : '';
-          text += ` 🔄 Écart révision de ${sign}${srv.revisionGap.toFixed(1)} JH (Révisé : ${(srv.revised_jh ?? 0).toFixed(1)} JH vs Prév : ${(srv.previsionnel_jh ?? 0).toFixed(1)} JH)\n`;
+          text += ` 🔄 Écart révision de ${sign}${srv.revisionGap.toFixed(1)} JH (Prév : ${(srv.previsionnel_jh ?? 0).toFixed(1)} JH vs Révisé : ${(srv.revised_jh ?? 0).toFixed(1)} JH)\n`;
         }
       });
       text += `\n`;
@@ -665,7 +665,7 @@ export class ImportViewComponent implements OnInit {
           }
           if (srv.hasRevisionAnomaly) {
             const sign = srv.revisionGap > 0 ? '+' : '';
-            text += `  - [${srv.service_name}] 🔄 Écart Révision : ${sign}${srv.revisionGap.toFixed(1)} JH (Révisé : ${(srv.revised_jh ?? 0).toFixed(1)} JH vs Prév : ${(srv.previsionnel_jh ?? 0).toFixed(1)} JH)\n`;
+            text += `  - [${srv.service_name}] 🔄 Écart Révision : ${sign}${srv.revisionGap.toFixed(1)} JH (Prév : ${(srv.previsionnel_jh ?? 0).toFixed(1)} JH vs Révisé : ${(srv.revised_jh ?? 0).toFixed(1)} JH)\n`;
           }
         });
       });
