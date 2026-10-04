@@ -17,6 +17,13 @@
           "Masquage complet de la barre latérale de navigation sur l'ensemble des pages publiques d'authentification.",
           "Suppression de l'effet de bascule progressive des composants lors du changement de thème."
         ]
+      },
+      {
+        "title": "Anomalies des Imports Triskell & Suivi budgétaire",
+        "items": [
+          "Correction du sens des écarts de révision : calcul désormais basé sur Prévisionnel - Révisé pour restituer fidèlement les écarts « à la hausse » (dépassement du budget révisé) et « à la baisse » (consommation sous le budget révisé) dans les filtres, badges et exports.",
+          "Affichage direct des diagnostics mono-service : visualisation directe du service concerné, des chiffres détaillés et du badge de diagnostic sur la ligne projet sans nécessiter de la déplier lorsqu'un projet ne comporte qu'un seul service."
+        ]
       }
     ]
   },
