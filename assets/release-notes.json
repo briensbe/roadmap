@@ -1,5 +1,19 @@
 [
   {
+    "version": "2026.10.21",
+    "date": "2026-10-21",
+    "news": [
+      {
+        "title": "Réordonnancement des projets avec filtres actifs",
+        "items": [
+          "Possibilité désormais de réordonner les projets même lorsqu'un filtre est actif, dans la vue Planification en vue \"Par Projets\""
+        ],
+        "imageUrl": "assets/release-notes/2026-10-21-vue-par-projets.png",
+        "imageMaxHeight": 250
+      }
+    ]
+  },
+  {
     "version": "2026.10.03",
     "date": "2026-10-03",
     "news": [
