@@ -205,53 +205,6 @@
   white-space: nowrap;
 }
 
-.reorder-notification-overlay {
-  position: fixed;
-  top: 24px;
-  left: 50%;
-  transform: translateX(-50%) translateY(-20px);
-  z-index: 11000;
-  opacity: 0;
-  pointer-events: none;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.reorder-notification-overlay.visible {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-  pointer-events: auto;
-}
-
-.reorder-notification-toast {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: var(--bg-surface);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--color-warning);
-  padding: 12px 20px;
-  border-radius: 14px;
-  box-shadow: var(--shadow-modal);
-  color: var(--color-warning);
-  font-weight: 600;
-  font-size: 14px;
-  max-width: 600px;
-  text-align: center;
-}
-
-.notif-icon {
-  color: var(--color-warning);
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.notif-text {
-  letter-spacing: -0.2px;
-  line-height: 1.4;
-}
-
 .capacity-header {
   display: flex;
   justify-content: space-between;

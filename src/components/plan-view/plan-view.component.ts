@@ -438,20 +438,6 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   filterSizeOperator = storageSignal<'gte' | 'lte'>('plan-view-filter-size-operator', 'gte');
   filterSizeValue = storageSignal<number | null>('plan-view-filter-size-value', null);
 
-  isAnyFilterActiveExceptTeam = computed(() => {
-    const hasSearch = this.globalSearch().trim().length > 0;
-    const hasProjectFilter = this.filterProjetIds().length > 0 || this.filterProjetSearch().trim().length > 0;
-    const hasStatusFilter = this.filterStatusIds().length > 0;
-    const hasResourceFilter = this.filterResourceIds().length > 0;
-    const hasWeekFilter = this.weekFilters().length > 0;
-    const hasPeriod = this.filterPeriodEnabled();
-    const hasSize = this.filterSizeEnabled() && this.filterSizeValue() !== null;
-
-    return (
-      hasSearch || hasProjectFilter || hasStatusFilter || hasResourceFilter || hasWeekFilter || hasPeriod || hasSize
-    );
-  });
-
   activeFiltersCount = computed(() => {
     let count = 0;
     if (this.globalSearch().trim()) count++;
@@ -505,19 +491,6 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.weekFilters.set([]);
     this.applyFilters();
     this.cdr.markForCheck();
-  }
-
-  reorderMessage = signal<string | null>(null);
-  private reorderMessageTimeout?: any;
-
-  showReorderMessage(msg: string) {
-    if (this.reorderMessageTimeout) clearTimeout(this.reorderMessageTimeout);
-    this.reorderMessage.set(msg);
-    this.cdr.markForCheck();
-    this.reorderMessageTimeout = setTimeout(() => {
-      this.reorderMessage.set(null);
-      this.cdr.markForCheck();
-    }, 4000);
   }
 
   readonly PROJECT_STATUSES = PROJECT_STATUS_LIST;
@@ -1882,31 +1855,11 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   async drop(event: CdkDragDrop<any[]>) {
     if (this.viewMode() !== 'project' || this.displayFormat() !== 'tree') return;
-
-    if (this.isAnyFilterActiveExceptTeam()) {
-      this.showReorderMessage("Le réordonnancement est désactivé lorsqu'un filtre est actif (hors filtre équipe)");
-      return;
-    }
+    if (event.previousIndex === event.currentIndex) return;
 
     // Move in UI first for responsiveness
     moveItemInArray(this.rows, event.previousIndex, event.currentIndex);
-
-    const movedItem = this.rows[event.currentIndex];
-    if (!movedItem.originalProject) return;
-
-    try {
-      // Calculate new rank using utility function
-      const rankStr = calculateNewRank(this.rows, event.currentIndex, (row) => row.originalProject?.rank);
-
-      movedItem.originalProject.rank = rankStr;
-
-      // Update in database
-      await this.projetService.updateProjet(movedItem.id, { rank: rankStr });
-    } catch (error) {
-      console.error('Error calculating rank:', error);
-      // Fallback: reload to reset order if calculation failed
-      this.loadData({ showSkeleton: false });
-    }
+    await this.updateRankAfterMove(event.currentIndex);
   }
 
   buildTree() {
@@ -2559,10 +2512,6 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   async moveToTop(row: ParentRow) {
     if (this.viewMode() !== 'project') return;
 
-    if (this.isAnyFilterActiveExceptTeam()) {
-      this.showReorderMessage("Le réordonnancement est désactivé lorsqu'un filtre est actif (hors filtre équipe)");
-      return;
-    }
     const currentIndex = this.rows.indexOf(row);
     if (currentIndex <= 0) return;
 
@@ -2573,10 +2522,6 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   async moveToBottom(row: ParentRow) {
     if (this.viewMode() !== 'project') return;
 
-    if (this.isAnyFilterActiveExceptTeam()) {
-      this.showReorderMessage("Le réordonnancement est désactivé lorsqu'un filtre est actif (hors filtre équipe)");
-      return;
-    }
     const currentIndex = this.rows.indexOf(row);
     if (currentIndex === -1 || currentIndex === this.rows.length - 1) return;
 
@@ -2586,12 +2531,18 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private async updateRankAfterMove(index: number) {
     const movedItem = this.rows[index];
-    if (!movedItem.originalProject) return;
+    if (!movedItem?.originalProject) return;
 
     try {
       const rankStr = calculateNewRank(this.rows, index, (row) => row.originalProject?.rank);
 
       movedItem.originalProject.rank = rankStr;
+      this.rowsAll = sortByRank(
+        this.rowsAll,
+        (row) => row.originalProject?.rank,
+        (a, b) => a.label.localeCompare(b.label),
+      );
+      this.cdr.markForCheck();
       await this.projetService.updateProjet(movedItem.id, { rank: rankStr });
       this.cdr.markForCheck();
     } catch (error) {

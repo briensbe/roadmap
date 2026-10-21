@@ -18,14 +18,6 @@
       {{ selectedCells.length }}sem × {{ dragStartCellValue }}res × {{ selectionDaysPerWeek }}j
     </div>
   </div>
-
-  <!-- Reorder Warning Notification -->
-  <div class="reorder-notification-overlay" [class.visible]="reorderMessage()">
-    <div class="reorder-notification-toast">
-      <lucide-icon [img]="AlertTriangle" [size]="18" class="notif-icon"></lucide-icon>
-      <span class="notif-text">{{ reorderMessage() }}</span>
-    </div>
-  </div>
   <div class="capacity-header">
     <div class="header-left">
       <h1>Vue Planification</h1>
