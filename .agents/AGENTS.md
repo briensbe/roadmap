@@ -31,3 +31,20 @@
   - Filtrer par extensions de fichier : `rg -g "*.{ts,html}" "<motif>" <chemin>`
 - Privilégie systématiquement les commandes atomiques SANS pipe (`|`), sans redirection ni chaînage (`&&`, `;`) pour respecter l'Allowlist du terminal.
 - Si `rg` n'est pas disponible, demande confirmation avant d'utiliser une alternative.
+
+# Directives de Développement - Architecture & Qualité (SOLID)
+
+## 1. Limite stricte de taille des fichiers
+- **Taille maximale absolue par fichier `.ts` : 300 lignes.**
+- Si un fichier approche ou dépasse cette limite, l'agent **doit** le refactoriser en extrayant la logique dans de nouveaux modules (composants, services, helpers, stores).
+
+## 2. Application des principes SOLID
+- **SRP (Responsabilité Unique) :** Un fichier / une classe / un composant ne doit avoir qu'une seule raison d'être. Séparer strictement la couche UI, la gestion d'état (store/service) et la logique métier pure.
+- **OCP (Open Close Principle) / DIP (Dependency Inversion Principle) :** Utiliser systématiquement des interfaces et l'injection de dépendances pour les services. Ne pas lier directement un composant à une implémentation concrète d'API ou de stockage.
+- **ISP (Interface Segregation Principle) :** Diviser les grosses interfaces d'objets en sous-interfaces ciblées selon l'utilisation réelle.
+
+## 3. Workflow de refactoring obligatoire
+Lorsqu'une modification risque d'alourdir un fichier existant :
+1. Proposer un plan de découpage avant d'écrire le code.
+2. Créer les nouveaux fichiers modulaires.
+3. Déplacer le code existant de manière propre sans régresser.
