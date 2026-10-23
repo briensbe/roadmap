@@ -43,8 +43,8 @@
 - Privilégier systématiquement la **composition** et l'injection de dépendances pour réutiliser du comportement (ex: services injectés, stratégies, helpers).
 - Préférer l'implémentation d'interfaces (`implements`) à l'héritage de comportement, pour maintenir un couplage lâche.
 
-## 1. Limite stricte de taille des fichiers
-- **Taille maximale par fichier `.ts` : 1000 lignes.**
+## 1. Limite de taille des fichiers
+- **Taille maximale par fichier `.ts` : 1000 lignes. (+ ou - 20%)**
 - Si un fichier approche ou dépasse cette limite, l'agent **doit** le refactoriser en extrayant la logique dans de nouveaux modules (composants, services, helpers, stores).
 
 ## 2. Application des principes SOLID

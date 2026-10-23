@@ -321,16 +321,9 @@ describe('PlanViewComponent - Vue Par Service', () => {
     expect(component.getChiffreValueForServiceProject('srv-arch', 'proj-1', 'previsionnel')).toBeNull();
   });
 
-  it('should block cell selection onMouseDown in service view and clear selection when switching to service view', () => {
+  it('should clear selection when switching to service view', () => {
+    component.selectedCells = [{ resource: {} as any, week: new Date(), childId: 'c1', parentId: 'p1' }];
     component.switchViewMode('service');
-    const devRow = component.rows.find((r) => r.id === 'srv-dev')!;
-    const dummyChild = devRow.children[0];
-    const projRow = dummyChild.resources[0];
-
-    const fakeEvent = new MouseEvent('mousedown');
-    component.onMouseDown(fakeEvent, projRow, dummyChild, devRow);
-
-    expect(component.isDragging).toBeFalse();
     expect(component.selectedCells.length).toBe(0);
   });
 });

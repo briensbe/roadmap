@@ -22,6 +22,7 @@ import { ProjectModalComponent } from '../project-modal.component';
 import { MilestoneModalComponent } from '../milestones/milestone-modal.component';
 import { ConfirmModalComponent } from '../confirm-modal.component';
 import { ChiffresModalComponent } from '../chiffres/chiffres-modal.component';
+import { ServiceSelectionModalComponent } from './service-selection-modal.component';
 import * as M from './plan-view.models';
 import * as Projection from './plan-projection.engine';
 import { PlanGridInteractionController, generateWeeksTimeline } from './plan-grid-interaction.controller';
@@ -42,6 +43,7 @@ export { LucideIconsModule } from './plan-view.models';
     ProjectModalComponent,
     DragDropModule,
     ChiffresModalComponent,
+    ServiceSelectionModalComponent,
   ],
   templateUrl: './plan-view.component.html',
   styleUrl: './plan-view.component.css',

@@ -132,6 +132,7 @@ export interface ParentRow {
   totalCharges: Map<string, number>;
   originalProject?: Projet;
   metrics?: Map<string, ParentMetricItem>;
+  summaryResource?: ResourceRow;
 }
 
 export interface FlatRow {

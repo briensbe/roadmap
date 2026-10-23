@@ -1065,7 +1065,11 @@
                 (cdkDragStarted)="hideTooltip()"
                 class="project-draggable-group">
                 <!-- Parent Row -->
-                <div class="calendar-row" [style.z-index]="activeLineMenuId === 'parent-' + row.id ? 1700 : null">
+                <div
+                  class="calendar-row"
+                  [attr.data-resource-id]="viewMode() === 'service' && row.summaryResource && row.children[0] ? getResourceUniqueId(row.summaryResource, row.children[0], row) : null"
+                  (mousedown)="viewMode() === 'service' && row.summaryResource && row.children[0] ? onMouseDown($event, row.summaryResource, row.children[0], row) : null"
+                  [style.z-index]="activeLineMenuId === 'parent-' + row.id ? 1700 : null">
                   <div
                     class="label-cell row-label-parent"
                     [style.width.px]="labelColumnWidth()"
@@ -1180,6 +1184,8 @@
                       @for (week of displayedWeeks; track trackByWeek($index, week)) {
                         <div
                           class="week-cell team-cell"
+                          [attr.data-week-index]="$index"
+                          [ngClass]="viewMode() === 'service' && row.summaryResource && row.children[0] ? getCellSelectionClasses(row.summaryResource, week, $index, row.children[0], row) : null"
                           [class.is-year-change]="isFirstWeekOfYear($index)"
                           [class.team-cell-positive]="
                             (viewMode() === 'resource' || viewMode() === 'service' || viewMode() === 'team') &&
@@ -2308,7 +2314,7 @@
         }
       </div>
     </div>
-    @if (selectedCells.length > 0 && isSelectionFinished && !isMovingSelection && !isSaving) {
+    @if (selectedCells.length > 0 && isSelectionFinished && !isMovingSelection && !isSaving && viewMode() !== 'service') {
       <app-selection-toolbar
         [position]="toolbarPosition"
         [visible]="toolbarVisible"
@@ -2757,4 +2763,13 @@
     [idProjet]="selectedProjetId"
     (close)="closeChiffresModal()"
     (saved)="loadData({ showSkeleton: false })"></app-chiffres-modal>
+
+  <app-service-selection-modal
+    [visible]="showServiceSelectionModal"
+    [rowLabel]="serviceSelectionSummary.rowLabel"
+    [units]="serviceSelectionSummary.units"
+    [days]="serviceSelectionSummary.days"
+    [weeksCount]="serviceSelectionSummary.weeksCount"
+    (close)="closeServiceSelectionModal()">
+  </app-service-selection-modal>
 </div>

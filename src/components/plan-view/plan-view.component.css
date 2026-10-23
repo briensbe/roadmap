@@ -1882,7 +1882,22 @@
 }
 
 .capacity-container[data-view-mode='service'] .resource-detail-cell {
-  cursor: default;
+  cursor: crosshair;
+}
+
+.capacity-container[data-view-mode='service'] .calendar-row .team-cell {
+  cursor: crosshair;
+}
+
+.capacity-container[data-view-mode='service'] .calendar-row .team-cell * {
+  cursor: crosshair;
+  pointer-events: none;
+}
+
+.capacity-container[data-view-mode='service'] .calendar-row .team-cell.selected {
+  background: rgba(59, 130, 246, 0.25) !important;
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
 }
 
 .resource-detail-cell:hover {

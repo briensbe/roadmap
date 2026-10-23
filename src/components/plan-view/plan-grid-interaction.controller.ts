@@ -225,6 +225,13 @@ export abstract class PlanGridInteractionController {
   dragEndWeekIndex = -1;
   selectedCells: SelectedCell[] = [];
   isSelectionFinished = false;
+  showServiceSelectionModal = false;
+  serviceSelectionSummary = {
+    units: 0,
+    days: 0,
+    weeksCount: 0,
+    rowLabel: '',
+  };
   toolbarPosition: ToolbarPosition | null = null;
   toolbarVisible = false;
   dragStartCellValue: number | null = null;
@@ -906,11 +913,17 @@ export abstract class PlanGridInteractionController {
     this.moveGhostOffset = 0;
   }
 
+  closeServiceSelectionModal(): void {
+    this.showServiceSelectionModal = false;
+    this.clearSelection();
+    this.cdr.markForCheck();
+  }
+
   onMouseDown(event: MouseEvent, resource: ResourceRow, child: ChildRow, parent: ParentRow) {
-    if (this.viewMode() === 'service') return;
     this.activeTooltip = null;
     this.hideTooltip();
     if (this.isOverSelectionBorder) {
+      if (this.viewMode() === 'service') return;
       this.isMovingSelection = true;
       this.moveGhostOffset = 0;
       this.moveStartClientX = event.clientX;
@@ -938,6 +951,9 @@ export abstract class PlanGridInteractionController {
     const cell = (event.target as HTMLElement).closest('.week-cell');
     const indexStr = cell?.getAttribute('data-week-index');
     if (indexStr) {
+      if (this.viewMode() === 'service') {
+        event.preventDefault();
+      }
       this.dragStartWeekIndex = parseInt(indexStr, 10);
       this.dragEndWeekIndex = this.dragStartWeekIndex;
       const startWeek = this.displayedWeeks[this.dragStartWeekIndex];
@@ -971,7 +987,7 @@ export abstract class PlanGridInteractionController {
             }
           }
         }
-        if (this.dragStartCellValue && this.dragStartCellValue > 0) {
+        if (this.viewMode() !== 'service' && this.dragStartCellValue && this.dragStartCellValue > 0) {
           updateDragProjectionTooltipDomPosition(event, this.dragProjectionTooltip?.nativeElement);
           const shouldShow = this.shouldShowProjectionTooltip();
           if (shouldShow !== this.dragProjectionTooltipVisible) {
@@ -994,7 +1010,7 @@ export abstract class PlanGridInteractionController {
       }
     }
 
-    if (!this.isDragging && !this.isMovingSelection && this.selectedCells.length > 0 && this.isSelectionFinished) {
+    if (this.viewMode() !== 'service' && !this.isDragging && !this.isMovingSelection && this.selectedCells.length > 0 && this.isSelectionFinished) {
       const target = event.target as HTMLElement;
       const cell = target.closest('.week-cell');
       let isBorder = false;
@@ -1048,18 +1064,40 @@ export abstract class PlanGridInteractionController {
       this.dragProjectionTooltipVisible = false;
       if (this.selectedCells.length > 0) {
         this.isSelectionFinished = true;
-        if (this.shouldShowProjectionTooltip()) {
-          this.bulkChargeValue = this.dragStartCellValue;
-          this.bulkComment = '';
-        } else if (this.selectedCells.length === 1) {
-          this.bulkChargeValue = this.dragStartCellValue;
+        if (this.viewMode() === 'service') {
+          let units = 0;
+          let days = 0;
+          for (const cell of this.selectedCells) {
+            const weekKey = formatWeekStart(cell.week);
+            const u = cell.resource.charges?.get(weekKey) || 0;
+            const d =
+              cell.resource.dailyCharges?.get(weekKey) ??
+              u * (cell.resource.jours_par_semaine || 5);
+            units += u;
+            days += d;
+          }
           const firstCell = this.selectedCells[0];
-          this.bulkComment = firstCell.resource.comments?.get(formatWeekStart(firstCell.week)) || '';
+          this.serviceSelectionSummary = {
+            units: Math.round(units * 100) / 100,
+            days: Math.round(days * 10) / 10,
+            weeksCount: this.selectedCells.length,
+            rowLabel: firstCell?.resource?.label || '',
+          };
+          this.showServiceSelectionModal = true;
         } else {
-          this.bulkChargeValue = null;
-          this.bulkComment = '';
+          if (this.shouldShowProjectionTooltip()) {
+            this.bulkChargeValue = this.dragStartCellValue;
+            this.bulkComment = '';
+          } else if (this.selectedCells.length === 1) {
+            this.bulkChargeValue = this.dragStartCellValue;
+            const firstCell = this.selectedCells[0];
+            this.bulkComment = firstCell.resource.comments?.get(formatWeekStart(firstCell.week)) || '';
+          } else {
+            this.bulkChargeValue = null;
+            this.bulkComment = '';
+          }
+          this.updateToolbarPosition();
         }
-        this.updateToolbarPosition();
         this.cdr.detectChanges();
       }
     });

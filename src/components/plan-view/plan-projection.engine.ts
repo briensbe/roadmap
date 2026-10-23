@@ -391,6 +391,7 @@ export function buildPlanTree(
     const sortedServices = [...dataset.allServices].sort((a, b) => a.nom.localeCompare(b.nom));
     for (const service of sortedServices) {
       const parentTotal = new Map<string, number>();
+      const parentDailyCharges = new Map<string, number>();
       const projectDetailedMap = new Map<string, ResourceRow>();
 
       for (const charge of dataset.allCharges) {
@@ -422,6 +423,7 @@ export function buildPlanTree(
         const weekKey = charge.semaine_debut?.split('T')[0];
         if (weekKey) {
           parentTotal.set(weekKey, (parentTotal.get(weekKey) || 0) + charge.unite_ressource);
+          parentDailyCharges.set(weekKey, (parentDailyCharges.get(weekKey) || 0) + charge.unite_ressource * actor.jours);
           const detRow = projectDetailedMap.get(pId)!;
           detRow.charges.set(weekKey, (detRow.charges.get(weekKey) || 0) + charge.unite_ressource);
           detRow.dailyCharges!.set(weekKey, (detRow.dailyCharges!.get(weekKey) || 0) + charge.unite_ressource * actor.jours);
@@ -446,6 +448,15 @@ export function buildPlanTree(
         expanded: isExpanded,
         children: [{ id: `service_children_${service.id}`, label: service.nom, expanded: isExpanded, charges: parentTotal, resources: filteredProjectResources }],
         totalCharges: parentTotal,
+        summaryResource: {
+          id: service.id!,
+          uniqueId: `service_summary_${service.id}`,
+          label: service.nom,
+          type: 'role',
+          jours_par_semaine: 5,
+          charges: parentTotal,
+          dailyCharges: parentDailyCharges,
+        },
       });
     }
   }
