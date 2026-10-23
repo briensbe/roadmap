@@ -231,6 +231,10 @@ export abstract class PlanGridInteractionController {
     days: 0,
     weeksCount: 0,
     rowLabel: '',
+    remainingCapacityUnits: null as number | null,
+    remainingCapacityDays: null as number | null,
+    startDate: null as Date | null,
+    endDate: null as Date | null,
   };
   toolbarPosition: ToolbarPosition | null = null;
   toolbarVisible = false;
@@ -1067,6 +1071,17 @@ export abstract class PlanGridInteractionController {
         if (this.viewMode() === 'service') {
           let units = 0;
           let days = 0;
+          let remainingCapacityUnits = 0;
+          let remainingCapacityDays = 0;
+          let hasCapacityData = false;
+
+          const firstCell = this.selectedCells[0];
+          const parentRow = this.dragStartParent;
+
+          const sortedCells = [...this.selectedCells].sort((a, b) => a.week.getTime() - b.week.getTime());
+          const startDate = sortedCells.length > 0 ? sortedCells[0].week : null;
+          const endDate = sortedCells.length > 0 ? sortedCells[sortedCells.length - 1].week : null;
+
           for (const cell of this.selectedCells) {
             const weekKey = formatWeekStart(cell.week);
             const u = cell.resource.charges?.get(weekKey) || 0;
@@ -1075,13 +1090,25 @@ export abstract class PlanGridInteractionController {
               u * (cell.resource.jours_par_semaine || 5);
             units += u;
             days += d;
+
+            if (parentRow?.metrics?.has(weekKey)) {
+              hasCapacityData = true;
+              const metric = parentRow.metrics.get(weekKey)!;
+              const avail = metric.availability ?? (metric.capacity - metric.total);
+              remainingCapacityUnits += avail;
+              remainingCapacityDays += avail * 5;
+            }
           }
-          const firstCell = this.selectedCells[0];
+
           this.serviceSelectionSummary = {
             units: Math.round(units * 100) / 100,
             days: Math.round(days * 10) / 10,
             weeksCount: this.selectedCells.length,
             rowLabel: firstCell?.resource?.label || '',
+            remainingCapacityUnits: hasCapacityData ? Math.round(remainingCapacityUnits * 100) / 100 : null,
+            remainingCapacityDays: hasCapacityData ? Math.round(remainingCapacityDays * 10) / 10 : null,
+            startDate,
+            endDate,
           };
           this.showServiceSelectionModal = true;
         } else {
