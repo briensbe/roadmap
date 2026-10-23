@@ -26,7 +26,7 @@ import { CrewdayzIntegrationService } from '../../services/crewdayz-integration.
 import { SettingsService } from '../../services/settings.service';
 import { CalendarService } from '../../services/calendar.service';
 import { ThemeService } from '../../services/theme.service';
-import { Capacite, Projet, Role, Personne } from '../../models/types';
+import { Capacite, Projet, Role, Personne, Equipe } from '../../models/types';
 import { calculateNewRank, sortByRank } from '../../utils/lexorank.utils';
 import {
   PlanViewMode,
@@ -87,6 +87,43 @@ export class PlanDataRepository {
       this.resourceService.getAllServices(),
     ]);
 
+    await this.buildCapacityIndex(
+      equipes,
+      capacities,
+      roleAttachments,
+      personnes,
+      displayedWeeks,
+      capacityIndex,
+    );
+
+    return {
+      allEquipes: equipes,
+      allCharges: charges,
+      allProjects: projects,
+      availableRoles: roles,
+      availablePersonnes: personnes,
+      allJalons: jalons,
+      allLinks: links,
+      allRoleAttachments: roleAttachments,
+      allCapacities: capacities,
+      allChiffres: chiffres,
+      allServices: services,
+    };
+  }
+
+  /**
+   * Construit et met à jour l'index hybride des capacités (Roadmap + Crewdayz).
+   * Pour les équipes en source 'crewdayz', calcule la capacité effective en appelant
+   * les RPCs Crewdayz pour la plage temporelle des semaines affichées.
+   */
+  async buildCapacityIndex(
+    equipes: Equipe[],
+    capacities: Capacite[],
+    roleAttachments: RoleAttachmentRecord[],
+    personnes: Personne[],
+    displayedWeeks: Date[],
+    capacityIndex: Map<string, number>,
+  ): Promise<void> {
     const capacitySourceConfigs = await this.crewdayzService.getCapacitySourceConfigs();
     const crewdayzTeamIds = new Set(
       equipes
@@ -167,20 +204,6 @@ export class PlanDataRepository {
         }
       }
     }
-
-    return {
-      allEquipes: equipes,
-      allCharges: charges,
-      allProjects: projects,
-      availableRoles: roles,
-      availablePersonnes: personnes,
-      allJalons: jalons,
-      allLinks: links,
-      allRoleAttachments: roleAttachments,
-      allCapacities: capacities,
-      allChiffres: chiffres,
-      allServices: services,
-    };
   }
 
   /**
@@ -594,7 +617,7 @@ export class PlanDataRepository {
                   : [resource.label, resource.code || '', resource.reference_externe || '', parent.label, child.label];
 
           const weekValues = displayedWeeks.map((w) => {
-            const val = resource.charges.get(w.toISOString().split('T')[0]);
+            const val = resource.charges.get(formatWeekStart(w));
             return val === 0 || val === undefined ? '' : val;
           });
 

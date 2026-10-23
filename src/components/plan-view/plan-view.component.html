@@ -1182,20 +1182,20 @@
                           class="week-cell team-cell"
                           [class.is-year-change]="isFirstWeekOfYear($index)"
                           [class.team-cell-positive]="
-                            (viewMode() === 'resource' || viewMode() === 'service') &&
+                            (viewMode() === 'resource' || viewMode() === 'service' || viewMode() === 'team') &&
                             row.metrics?.get(formatWeekStart(week))?.status === 'positive'
                           "
                           [class.team-cell-zero]="
-                            (viewMode() === 'resource' || viewMode() === 'service') &&
+                            (viewMode() === 'resource' || viewMode() === 'service' || viewMode() === 'team') &&
                             row.metrics?.get(formatWeekStart(week))?.status === 'zero'
                           "
                           [class.team-cell-negative]="
-                            (viewMode() === 'resource' || viewMode() === 'service') &&
+                            (viewMode() === 'resource' || viewMode() === 'service' || viewMode() === 'team') &&
                             row.metrics?.get(formatWeekStart(week))?.status === 'negative'
                           ">
-                          <!-- Resource & Service View: Show cumulative data -->
+                          <!-- Resource, Service & Team View: Show cumulative data -->
                           @if (
-                            (viewMode() === 'resource' || viewMode() === 'service') &&
+                            (viewMode() === 'resource' || viewMode() === 'service' || viewMode() === 'team') &&
                             ((row.metrics?.get(formatWeekStart(week))?.total || 0) > 0 ||
                               (row.metrics?.get(formatWeekStart(week))?.capacity || 0) > 0)
                           ) {
@@ -1230,8 +1230,7 @@
                           }
                           <!-- Other views: Keep empty or simple display -->
                           @if (
-                            viewMode() !== 'resource' &&
-                            viewMode() !== 'service' &&
+                            viewMode() === 'project' &&
                             (row.metrics?.get(formatWeekStart(week))?.total || 0) > 0
                           ) {
                             <div class="team-summary">

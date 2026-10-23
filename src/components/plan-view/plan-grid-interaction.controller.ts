@@ -143,8 +143,10 @@ export function updateGridHeaderHeights(headerEl?: HTMLElement, milestonesEl?: H
   if (!headerEl || !milestonesEl) return;
   const gridEl = headerEl.parentElement;
   if (gridEl) {
-    gridEl.style.setProperty('--calendar-header-height', `${headerEl.offsetHeight}px`);
-    gridEl.style.setProperty('--milestones-header-height', `${milestonesEl.offsetHeight}px`);
+    const headerHeight = headerEl.getBoundingClientRect().height || headerEl.offsetHeight;
+    const milestonesHeight = milestonesEl.getBoundingClientRect().height || milestonesEl.offsetHeight;
+    gridEl.style.setProperty('--calendar-header-height', `${headerHeight}px`);
+    gridEl.style.setProperty('--milestones-header-height', `${milestonesHeight}px`);
   }
 }
 

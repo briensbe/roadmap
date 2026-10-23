@@ -102,7 +102,7 @@ export function shouldShowResourceByWeekFilters(resource: ResourceRow, weekFilte
   for (const weekIndex of weekFilters) {
     const week = displayedWeeks[weekIndex];
     if (!week) continue;
-    if ((resource.charges.get(week.toISOString().split('T')[0]) || 0) === 0) return false;
+    if ((resource.charges.get(formatWeekStart(week)) || 0) === 0) return false;
   }
   return true;
 }
@@ -540,12 +540,14 @@ export function precalculateResource(
     const value = resource.charges.get(weekKey) || 0;
     const availability = getAvailability(dataset, resource, week, teamId);
     const rId = resource.resourceId || resource.id;
-    const hasCapRecord = dataset.allCapacities.some(
-      (c) =>
-        c.equipe_id === teamId &&
-        c.semaine_debut.startsWith(weekKey) &&
-        (resource.type === 'role' ? c.role_id === rId : c.personne_id === rId),
-    );
+    const hasCapRecord =
+      dataset.capacityIndex.has(`${teamId}_${resource.type}_${rId}_${weekKey}`) ||
+      dataset.allCapacities.some(
+        (c) =>
+          c.equipe_id === teamId &&
+          c.semaine_debut.startsWith(weekKey) &&
+          (resource.type === 'role' ? c.role_id === rId : c.personne_id === rId),
+      );
     const isRelevant =
       resource.type === 'personne'
         ? (dataset.availablePersonnes.find((p) => p.id === rId)?.equipe_id === teamId)
@@ -633,6 +635,17 @@ function computeParentAndChildMetrics(
         total = parent.totalCharges?.get(weekKey) || 0;
         for (const resKey of serviceResourceKeys) {
           totalCapacity += dataset.capacityIndex.get(`${resKey}_${weekKey}`) || 0;
+        }
+      } else if (viewMode === 'team') {
+        const teamRoleAtts = dataset.allRoleAttachments.filter((a) => a.equipe_id === parent.id);
+        const teamPersonnes = dataset.availablePersonnes.filter((p) => p.equipe_id === parent.id);
+        for (const att of teamRoleAtts) {
+          if (activeResourceIds.length > 0 && !activeResourceIds.includes(`role:${att.role_id}`)) continue;
+          totalCapacity += dataset.capacityIndex.get(`${parent.id}_role_${att.role_id}_${weekKey}`) || 0;
+        }
+        for (const p of teamPersonnes) {
+          if (activeResourceIds.length > 0 && !activeResourceIds.includes(`personne:${p.id}`)) continue;
+          totalCapacity += dataset.capacityIndex.get(`${parent.id}_personne_${p.id}_${weekKey}`) || 0;
         }
       }
 

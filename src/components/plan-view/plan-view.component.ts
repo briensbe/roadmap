@@ -172,8 +172,8 @@ export class PlanViewComponent extends PlanGridInteractionController implements 
   activeFiltersSummary = computed(() => M.computeActiveFiltersSummary(this.filterSummaryState));
 
   ngOnInit() {
-    this.loadData({ showSkeleton: true });
     this.generateWeeks();
+    this.loadData({ showSkeleton: true });
 
     this.searchSubscription = this.searchSubject.pipe(debounceTime(300), distinctUntilChanged()).subscribe((value) => {
       this.globalSearch.set(value);
@@ -283,22 +283,32 @@ export class PlanViewComponent extends PlanGridInteractionController implements 
     return this.repo.calendarService.isCurrentWeek(date);
   }
 
-  private shiftTimeline(deltaMonths?: number) {
+  private async shiftTimeline(deltaMonths?: number) {
     if (deltaMonths === undefined) this.currentDate = new Date();
     else this.currentDate.setMonth(this.currentDate.getMonth() + deltaMonths);
     this.generateWeeks();
+    await this.repo.buildCapacityIndex(
+      this.allEquipes,
+      this.allCapacities,
+      this.allRoleAttachments,
+      this.availablePersonnes,
+      this.displayedWeeks,
+      this.capacityIndex,
+    );
+    this.buildTree();
     this.precalculateResources();
+    this.calculateMetrics();
     this.cdr.markForCheck();
   }
 
-  goToToday() {
-    this.shiftTimeline();
+  async goToToday() {
+    await this.shiftTimeline();
   }
-  goToPreviousMonth() {
-    this.shiftTimeline(-1);
+  async goToPreviousMonth() {
+    await this.shiftTimeline(-1);
   }
-  goToNextMonth() {
-    this.shiftTimeline(1);
+  async goToNextMonth() {
+    await this.shiftTimeline(1);
   }
 
   onDateSelected(event: Event) {
