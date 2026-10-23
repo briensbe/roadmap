@@ -84,6 +84,7 @@ import {
   Copy,
   Check,
   Layers,
+  Building2,
   LoaderCircle,
 } from 'lucide-angular';
 import * as XLSX from 'xlsx';
@@ -143,6 +144,7 @@ import { driver } from 'driver.js';
       Copy,
       Check,
       Layers,
+      Building2,
       LoaderCircle,
     }),
   ],
@@ -172,6 +174,7 @@ interface ResourceRow {
   type: 'role' | 'personne';
   jours_par_semaine: number;
   charges: Map<string, number>; // week string -> amount
+  dailyCharges?: Map<string, number>; // week string -> exact planned days (unite_ressource * jours_par_semaine)
   comments?: Map<string, string>; // week string -> comment
   color?: string;
   resourceId?: string; // Always the role or personne id
@@ -275,7 +278,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.selectedProjetId = null;
   }
 
-  viewMode = storageSignal<'project' | 'team' | 'resource'>('plan-view-mode', 'resource');
+  viewMode = storageSignal<'project' | 'team' | 'resource' | 'service'>('plan-view-mode', 'resource');
   displayFormat = storageSignal<'tree' | 'flat'>('plan-view-display-format', 'tree');
   zoomLevel = storageSignal<'compact' | 'normal'>('plan-view-zoom-level', 'normal');
   showAvailability = storageSignal<boolean>('plan-view-show-availability', false);
@@ -489,7 +492,11 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.filterSizeEnabled.set(false);
     this.filterSizeValue.set(null);
     this.weekFilters.set([]);
-    this.applyFilters();
+    if (this.viewMode() === 'service') {
+      this.buildTree();
+    } else {
+      this.applyFilters();
+    }
     this.cdr.markForCheck();
   }
 
@@ -699,6 +706,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   Copy = Copy;
   Check = Check;
   Layers = Layers;
+  Building2 = Building2;
   LoaderCircle = LoaderCircle;
 
   AlertTriangle = AlertTriangle;
@@ -793,6 +801,13 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
             referenceExterne = child.reference_externe || '';
             equipe = parent.label;
             ressource = resource.label;
+          } else if (this.viewMode() === 'service') {
+            // service mode: parent = service, resource = project
+            projet = resource.label;
+            codeProjet = resource.code || '';
+            referenceExterne = resource.reference_externe || '';
+            equipe = parent.label;
+            ressource = 'Consolidé Service';
           } else {
             // resource mode: parent = team, child = resource (label), resource = project
             projet = resource.label;
@@ -1282,7 +1297,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       return parentRow?.originalProject || row?.originalProject;
     } else if (this.viewMode() === 'team') {
       return childRow?.originalProject || row?.originalProject;
-    } else if (this.viewMode() === 'resource') {
+    } else if (this.viewMode() === 'resource' || this.viewMode() === 'service') {
       const projId = row?.projectId || row?.resource?.projectId;
       if (projId) {
         return this.allProjects.find((p) => p.id === projId);
@@ -1587,6 +1602,8 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
       // Sum Parent metrics
       const teamIdFromParent = this.viewMode() === 'resource' ? parent.id.split('_')[0] : parent.id;
+      const serviceResourceKeys =
+        this.viewMode() === 'service' ? this.getServiceResourceKeys(parent.id) : null;
       this.displayedWeeks.forEach((week) => {
         const weekKey = this.formatWeekStart(week);
         let total = 0;
@@ -1603,6 +1620,11 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
           const rId = parts.slice(2).join('_');
           const capKey = `${teamIdFromParent}_${rType}_${rId}_${weekKey}`;
           totalCapacity = this.capacityIndex.get(capKey) || 0;
+        } else if (this.viewMode() === 'service' && serviceResourceKeys) {
+          total = parent.totalCharges?.get(weekKey) || 0;
+          for (const resKey of serviceResourceKeys) {
+            totalCapacity += this.capacityIndex.get(`${resKey}_${weekKey}`) || 0;
+          }
         }
 
         const availability = totalCapacity - total;
@@ -1621,6 +1643,68 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
         });
       });
     });
+  }
+
+  /**
+   * Résout strictement le service_id d'un profil (role) ou d'une personne,
+   * sans aucun fallback sur Equipe.service_id.
+   */
+  getResourceServiceId(type: 'role' | 'personne', resourceId: string, teamId?: string): string | null {
+    if (!resourceId) return null;
+    if (type === 'personne') {
+      const personne = this.availablePersonnes.find((p) => p.id === resourceId);
+      return personne?.service_id ?? null;
+    }
+    if (teamId) {
+      const teamAtt = this.allRoleAttachments.find(
+        (a) => a.role_id === resourceId && a.equipe_id === teamId && a.service_id != null,
+      );
+      if (teamAtt?.service_id) return teamAtt.service_id;
+    }
+    const anyAtt = this.allRoleAttachments.find((a) => a.role_id === resourceId && a.service_id != null);
+    if (anyAtt?.service_id) return anyAtt.service_id;
+
+    const role = this.availableRoles.find((r) => r.id === resourceId);
+    return role?.service_id ?? null;
+  }
+
+  /**
+   * Retourne l'ensemble dédupliqué des clés `${teamId}_${type}_${resourceId}`
+   * rattachées au service donné et respectant les filtres Équipes et Rôle/Personne actifs.
+   */
+  private getServiceResourceKeys(serviceId: string): Set<string> {
+    const keys = new Set<string>();
+    const activeEquipeIds = this.filterEquipeIds();
+    const activeResourceIds = this.filterResourceIds();
+
+    const passesFilters = (teamId: string | null | undefined, type: 'role' | 'personne', rId: string): boolean => {
+      if (!teamId || !rId) return false;
+      if (activeEquipeIds.length > 0 && !activeEquipeIds.includes(teamId)) return false;
+      if (activeResourceIds.length > 0 && !activeResourceIds.includes(`${type}:${rId}`)) return false;
+      return this.getResourceServiceId(type, rId, teamId) === serviceId;
+    };
+
+    for (const att of this.allRoleAttachments) {
+      if (passesFilters(att.equipe_id, 'role', att.role_id)) {
+        keys.add(`${att.equipe_id}_role_${att.role_id}`);
+      }
+    }
+
+    for (const p of this.availablePersonnes) {
+      if (passesFilters(p.equipe_id, 'personne', p.id!)) {
+        keys.add(`${p.equipe_id}_personne_${p.id}`);
+      }
+    }
+
+    for (const cap of this.allCapacities) {
+      const rType: 'role' | 'personne' = cap.role_id ? 'role' : 'personne';
+      const rId = cap.role_id || cap.personne_id || '';
+      if (passesFilters(cap.equipe_id, rType, rId)) {
+        keys.add(`${cap.equipe_id}_${rType}_${rId}`);
+      }
+    }
+
+    return keys;
   }
 
   precalculateResources() {
@@ -1643,6 +1727,25 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   precalculateResource(resource: ResourceRow, teamId: string) {
     resource.cellData = [];
+    if (this.viewMode() === 'service') {
+      for (const week of this.displayedWeeks) {
+        const value = this.getResourceValue(resource, week);
+        const weekKey = this.formatWeekStart(week);
+        const comment = resource.comments?.get(weekKey) || null;
+        resource.cellData.push({
+          value,
+          availability: 0,
+          showAvailability: false,
+          isPositive: false,
+          isZero: false,
+          isNegative: false,
+          hasCapRecord: false,
+          comment,
+        });
+      }
+      return;
+    }
+
     for (const week of this.displayedWeeks) {
       const value = this.getResourceValue(resource, week);
       const availability = this.getAvailability(resource, week, teamId);
@@ -1683,7 +1786,10 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     const weekKey = this.formatWeekStart(week);
     const val = resource.charges?.get(weekKey) || 0;
     const comment = cell?.comment ?? resource.comments?.get(weekKey);
-    let text = `${resource.label} : ${val} ETP (${Math.round(val * (resource.jours_par_semaine || 5) * 10) / 10}j)`;
+    const days = resource.dailyCharges
+      ? Math.round((resource.dailyCharges.get(weekKey) || 0) * 10) / 10
+      : Math.round(val * (resource.jours_par_semaine || 5) * 10) / 10;
+    let text = `${resource.label} : ${val} ETP (${days}j)`;
     if (cell && cell.showAvailability && cell.hasCapRecord) {
       text += ` | Dispo : ${cell.availability > 0 ? '+' : ''}${cell.availability} ETP`;
     }
@@ -1848,7 +1954,8 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.capacityIndex.has(capKey);
   }
 
-  switchViewMode(mode: 'project' | 'team' | 'resource') {
+  switchViewMode(mode: 'project' | 'team' | 'resource' | 'service') {
+    this.clearSelection();
     this.viewMode.set(mode);
     this.buildTree();
   }
@@ -2316,12 +2423,129 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
           });
         });
       }
+    } else if (this.viewMode() === 'service') {
+      // Parent = Service, Child = Dummy auto-expanded level, GrandChild (ResourceRow) = Consolidated Project
+      const sortedServices = [...this.allServices].sort((a, b) => a.nom.localeCompare(b.nom));
+      const activeEquipeIds = this.filterEquipeIds();
+      const activeResourceIds = this.filterResourceIds();
+
+      for (const service of sortedServices) {
+        const parentTotal = new Map<string, number>();
+        const projectDetailedMap = new Map<string, ResourceRow>();
+
+        this.allCharges.forEach((charge) => {
+          let rType: 'role' | 'personne';
+          let rId: string;
+          let joursParSemaine = 5;
+          let resourceLabel = '';
+
+          if (charge.role_id) {
+            rType = 'role';
+            rId = charge.role_id;
+            const role = this.availableRoles.find((r) => r.id === rId);
+            joursParSemaine = role?.jours_par_semaine || 5;
+            resourceLabel = role ? role.nom : 'Rôle';
+          } else if (charge.personne_id) {
+            rType = 'personne';
+            rId = charge.personne_id;
+            const personne = this.availablePersonnes.find((p) => p.id === rId);
+            joursParSemaine = personne?.jours_par_semaine || 5;
+            resourceLabel = personne ? `${personne.prenom} ${personne.nom}` : 'Personne';
+          } else {
+            return;
+          }
+
+          if (activeEquipeIds.length > 0 && (!charge.equipe_id || !activeEquipeIds.includes(charge.equipe_id))) {
+            return;
+          }
+          if (activeResourceIds.length > 0 && !activeResourceIds.includes(`${rType}:${rId}`)) {
+            return;
+          }
+
+          const resServiceId = this.getResourceServiceId(rType, rId, charge.equipe_id);
+          if (resServiceId !== service.id) {
+            return;
+          }
+
+          const pId = charge.projet_id || 'no_project';
+          if (!projectDetailedMap.has(pId)) {
+            const project = this.allProjects.find((p) => p.id === pId);
+            projectDetailedMap.set(pId, {
+              id: pId,
+              uniqueId: `service_${service.id}_${pId}`,
+              label: project ? project.nom_projet : 'Sans projet',
+              code: project?.code_projet,
+              reference_externe: project?.reference_externe,
+              type: 'role',
+              jours_par_semaine: 5,
+              charges: new Map<string, number>(),
+              dailyCharges: new Map<string, number>(),
+              comments: new Map<string, string>(),
+              color: project?.color,
+              projectId: pId,
+            });
+          }
+
+          const weekKey = charge.semaine_debut?.split('T')[0];
+          if (weekKey) {
+            const pCur = parentTotal.get(weekKey) || 0;
+            parentTotal.set(weekKey, pCur + charge.unite_ressource);
+
+            const detRow = projectDetailedMap.get(pId)!;
+            const detCur = detRow.charges.get(weekKey) || 0;
+            detRow.charges.set(weekKey, detCur + charge.unite_ressource);
+
+            const detDaysCur = detRow.dailyCharges!.get(weekKey) || 0;
+            detRow.dailyCharges!.set(weekKey, detDaysCur + charge.unite_ressource * joursParSemaine);
+
+            if (charge.comment) {
+              const teamName = this.allEquipes.find((e) => e.id === charge.equipe_id)?.nom;
+              const prefix = teamName ? `[${teamName} - ${resourceLabel}] ` : `[${resourceLabel}] `;
+              const formattedComment = `${prefix}${charge.comment}`;
+              const existingComment = detRow.comments?.get(weekKey);
+              if (!existingComment) {
+                detRow.comments?.set(weekKey, formattedComment);
+              } else if (!existingComment.includes(formattedComment)) {
+                detRow.comments?.set(weekKey, `${existingComment}\n${formattedComment}`);
+              }
+            }
+          }
+        });
+
+        const projectResources = sortByRank(
+          Array.from(projectDetailedMap.values()),
+          (r) => this.allProjects.find((p) => p.id === r.projectId)?.rank,
+          (a, b) => a.label.localeCompare(b.label),
+        );
+
+        const filteredProjectResources = projectResources.filter((r) => this.shouldShowResource(r));
+        const isExpanded = this.manualStates.has(service.id!)
+          ? this.manualStates.get(service.id!)!
+          : this.isDefaultExpanded;
+
+        this.rows.push({
+          id: service.id!,
+          label: service.nom,
+          expanded: isExpanded,
+          children: [
+            {
+              id: `service_children_${service.id}`,
+              label: service.nom,
+              expanded: isExpanded,
+              charges: parentTotal,
+              resources: filteredProjectResources,
+            },
+          ],
+          totalCharges: parentTotal,
+        });
+      }
     }
 
     // Keep a copy of unfiltered rows and apply active filters
     this.calculateUsage(); // Ensure usage is fresh
     this.rowsAll = [...this.rows];
     this.precalculateResources();
+    this.calculateMetrics();
     this.applyFilters();
   }
 
@@ -2344,7 +2568,9 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
           const c = child;
           const r = resource;
           const fullLabel =
-            `${p.label} > ${c.label} > ${r.label} ${p.code || ''} ${p.reference_externe || ''} ${c.code || ''} ${c.reference_externe || ''}`.toLowerCase();
+            this.viewMode() === 'service'
+              ? `${p.label} > ${r.label} ${r.code || ''} ${r.reference_externe || ''}`.toLowerCase()
+              : `${p.label} > ${c.label} > ${r.label} ${p.code || ''} ${p.reference_externe || ''} ${c.code || ''} ${c.reference_externe || ''}`.toLowerCase();
           this.flatRows.push({
             uniqueId: resource.uniqueId,
             fullLabel: fullLabel,
@@ -2444,9 +2670,9 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     row.expanded = !row.expanded;
     this.manualStates.set(row.id, row.expanded);
 
-    // In resource view, the child level is a hidden dummy intermediary.
-    // Sync children expanded state so resources behind *ngIf="child.expanded" are shown.
-    if (this.viewMode() === 'resource') {
+    // In resource and service views, the child level is a hidden dummy intermediary.
+    // Sync children expanded state so resources behind @if (child.expanded) are shown.
+    if (this.viewMode() === 'resource' || this.viewMode() === 'service') {
       row.children.forEach((c) => (c.expanded = row.expanded));
     }
   }
@@ -3119,6 +3345,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onMouseDown(event: MouseEvent, resource: ResourceRow, child: ChildRow, parent: ParentRow) {
+    if (this.viewMode() === 'service') return;
     if (this.isOverSelectionBorder) {
       this.isMovingSelection = true;
       this.moveGhostOffset = 0;
@@ -3877,7 +4104,11 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       if (checked) return [...ids, id];
       return ids.filter((x) => x !== id);
     });
-    this.applyFilters();
+    if (this.viewMode() === 'service') {
+      this.buildTree();
+    } else {
+      this.applyFilters();
+    }
   }
 
   onJalonTypeToggle(type: string, event: Event) {
@@ -3940,7 +4171,11 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       if (checked) return [...ids, sel];
       return ids.filter((x) => x !== sel);
     });
-    this.applyFilters();
+    if (this.viewMode() === 'service') {
+      this.buildTree();
+    } else {
+      this.applyFilters();
+    }
   }
 
   getEquipeName(id: string) {
@@ -4168,8 +4403,10 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     let total = 0;
     const todayWeekStart = this.calendarService.getWeekStart(new Date());
     const todayWeekStartStr = this.formatLocalDate(todayWeekStart);
+    const sourceMap = resource.dailyCharges ?? resource.charges;
+    const useDirectDays = !!resource.dailyCharges;
 
-    resource.charges.forEach((val, weekStr) => {
+    sourceMap.forEach((val, weekStr) => {
       let match = false;
       if (period === 'today') {
         match = weekStr >= todayWeekStartStr;
@@ -4183,7 +4420,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       }
 
       if (match) {
-        total += (val || 0) * (resource.jours_par_semaine || 5);
+        total += useDirectDays ? val || 0 : (val || 0) * (resource.jours_par_semaine || 5);
       }
     });
 
@@ -4386,6 +4623,8 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const filteredParents: ParentRow[] = [];
     const isResourceMode = this.viewMode() === 'resource';
+    const isServiceMode = this.viewMode() === 'service';
+    const isProjectLeafMode = isResourceMode || isServiceMode;
 
     for (const parent of this.rowsAll) {
       const pMatches = parentMatchesSearch(parent);
@@ -4417,7 +4656,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       if (this.filterStatusIds().length) {
         if (this.viewMode() === 'project' && parent.originalProject) {
           parentPassesStatut = this.filterStatusIds().includes(parent.originalProject.statut);
-        } else if (this.viewMode() === 'team' || this.viewMode() === 'resource') {
+        } else if (this.viewMode() === 'team' || this.viewMode() === 'resource' || isServiceMode) {
           parentPassesStatut = true;
         }
       }
@@ -4500,6 +4739,8 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
               if (isResourceMode) {
                 teamId = parent.id.split('_')[0];
                 projectId = gr.projectId || gr.id;
+              } else if (isServiceMode) {
+                projectId = gr.projectId || gr.id;
               } else if (this.viewMode() === 'project') {
                 teamId = child.id;
                 projectId = parent.id;
@@ -4514,7 +4755,9 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
                 val = this.getPlannedDaysForResource(gr, period);
               } else if (sizeCriterion.startsWith('chiffre_')) {
                 const category = sizeCriterion.substring(8) as 'initial' | 'revise' | 'previsionnel' | 'consomme' | 'restant';
-                val = this.getChiffreValueForMode(teamId, projectId, gr.resourceId, gr.type, category);
+                val = isServiceMode
+                  ? this.getChiffreValueForServiceProject(parent.id, projectId, category)
+                  : this.getChiffreValueForMode(teamId, projectId, gr.resourceId, gr.type, category);
               }
               passesLargeProject = this.checkSizeMatch(val, sizeOperator, sizeValue);
             }
@@ -4526,7 +4769,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
               this.filterStatusIds().length ||
               sizeEnabled
             ) {
-              if (isResourceMode) {
+              if (isProjectLeafMode) {
                 const project = this.allProjects.find((p) => p.id === gr.projectId);
                 const passesStatut =
                   this.filterStatusIds().length === 0 || (!!project && this.filterStatusIds().includes(project.statut));
@@ -4552,6 +4795,8 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
             if (search) {
               if (isResourceMode) {
                 passesSearch = matchingProjetIds.has(gr.id);
+              } else if (isServiceMode) {
+                passesSearch = pMatches || matchingProjetIds.has(gr.id);
               } else if (!pMatches && !cMatchesSelf) {
                 passesSearch = resourceMatchesSearchSelf(gr);
               }
@@ -4587,7 +4832,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
           childPassesResource = parentPassesResource;
         }
 
-        const hasGrandchildFilter = isResourceMode
+        const hasGrandchildFilter = isProjectLeafMode
           ? this.filterProjetIds().length > 0 || this.filterStatusIds().length > 0 || periodEnabled || sizeEnabled
           : this.filterResourceIds().length > 0 || periodEnabled || sizeEnabled;
         const hasGrandchildrenMatch = hasGrandchildFilter ? grandchildrenMatch.length > 0 : true;
@@ -4652,6 +4897,8 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.rows.forEach((parent) => {
       // Re-calculate Parent metrics based on its current children (which are already filtered)
       const teamIdFromParent = this.viewMode() === 'resource' ? parent.id.split('_')[0] : parent.id;
+      const serviceResourceKeys =
+        this.viewMode() === 'service' ? this.getServiceResourceKeys(parent.id) : null;
       this.displayedWeeks.forEach((week) => {
         const weekKey = this.formatWeekStart(week);
         let total = 0;
@@ -4664,7 +4911,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
             childTotal += res.metrics?.get(weekKey)?.total || 0;
           });
           child.metrics?.set(weekKey, { total: childTotal });
-          if (this.viewMode() === 'resource') {
+          if (this.viewMode() === 'resource' || this.viewMode() === 'service') {
             total = parent.totalCharges?.get(weekKey) || 0;
           } else {
             total += childTotal;
@@ -4677,6 +4924,11 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
           const rId = parts.slice(2).join('_');
           const capKey = `${teamIdFromParent}_${rType}_${rId}_${weekKey}`;
           totalCapacity = this.capacityIndex.get(capKey) || 0;
+        } else if (this.viewMode() === 'service' && serviceResourceKeys) {
+          total = parent.totalCharges?.get(weekKey) || 0;
+          for (const resKey of serviceResourceKeys) {
+            totalCapacity += this.capacityIndex.get(`${resKey}_${weekKey}`) || 0;
+          }
         }
 
         const availability = totalCapacity - total;
@@ -4716,6 +4968,15 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   getResourceMetricsYear(resource: ResourceRow, year: number): number {
     let total = 0;
+    if (resource.dailyCharges) {
+      for (const [weekKey, days] of resource.dailyCharges) {
+        const weekDate = new Date(weekKey);
+        if (weekDate.getFullYear() === year) {
+          total += days;
+        }
+      }
+      return total;
+    }
     for (const [weekKey, charge] of resource.charges) {
       const weekDate = new Date(weekKey);
       if (weekDate.getFullYear() === year) {
@@ -4837,25 +5098,29 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   getResourceTotalPlannedDays(resource: ResourceRow): number {
     let total = 0;
-    resource.charges.forEach((val, weekStr) => {
+    const sourceMap = resource.dailyCharges ?? resource.charges;
+    const useDirectDays = !!resource.dailyCharges;
+
+    sourceMap.forEach((val, weekStr) => {
       const yearSel = this.selectedCapacityYear();
+      const dayContribution = useDirectDays ? val : val * resource.jours_par_semaine;
       if (yearSel === 'today') {
         const todayWeekStart = this.calendarService.getWeekStart(new Date());
         const todayWeekStartStr = this.formatLocalDate(todayWeekStart);
         if (weekStr >= todayWeekStartStr) {
-          total += val * resource.jours_par_semaine;
+          total += dayContribution;
         }
       } else if (yearSel === 'custom' && this.selectedStartDate) {
         const selectedStartStr = this.formatLocalDate(this.selectedStartDate);
         if (weekStr >= selectedStartStr) {
-          total += val * resource.jours_par_semaine;
+          total += dayContribution;
         }
       } else {
         const [y, m, d] = weekStr.split('-').map(Number);
         const date = new Date(y, m - 1, d);
         const isoYear = getISOWeekYear(date).toString();
         if (yearSel === 'all' || isoYear === yearSel) {
-          total += val * resource.jours_par_semaine;
+          total += dayContribution;
         }
       }
     });
@@ -4937,8 +5202,34 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.getChiffreValueForMode(teamId, projectId, resourceId, resourceType, this.chiffreMode());
   }
 
+  /**
+   * Retourne directement la valeur chiffre (selon mode ou chiffreMode courant)
+   * pour un couple (id_service, id_projet).
+   */
+  getChiffreValueForServiceProject(
+    serviceId: string,
+    projectId: string,
+    mode: 'initial' | 'revise' | 'previsionnel' | 'consomme' | 'restant' = this.chiffreMode(),
+  ): number | null {
+    if (!serviceId || !projectId) return null;
+    const chiffre = this.allChiffres.find((c) => c.id_projet === projectId && c.id_service === serviceId);
+    if (!chiffre) return null;
+    if (mode === 'restant') {
+      return (chiffre.previsionnel ?? 0) - (chiffre.consomme ?? 0);
+    }
+    const value = (chiffre as any)[mode];
+    return value !== undefined ? value : null;
+  }
+
   getChiffrePreviewValue(mode: 'initial' | 'revise' | 'previsionnel' | 'consomme' | 'restant'): number | null {
     if (!this.activeChiffrePopoverData) return null;
+    if (this.viewMode() === 'service') {
+      return this.getChiffreValueForServiceProject(
+        this.activeChiffrePopoverData.teamId,
+        this.activeChiffrePopoverData.projectId,
+        mode,
+      );
+    }
     return this.getChiffreValueForMode(
       this.activeChiffrePopoverData.teamId,
       this.activeChiffrePopoverData.projectId,

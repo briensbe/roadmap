@@ -2,6 +2,7 @@
   class="capacity-container"
   [attr.data-zoom]="zoomLevel()"
   [attr.data-planning-mode]="planningMode()"
+  [attr.data-view-mode]="viewMode()"
   [style.--total-weeks]="displayedWeeks.length">
   <!-- Sexy Tooltip Singleton -->
   <div #tooltipElement class="sexy-tooltip" [class.visible]="activeTooltip">
@@ -271,7 +272,7 @@
                 @if (filterEquipeIds().length > 0) {
                   <button
                     class="btn-clear"
-                    (click)="filterEquipeIds.set([]); applyFilters(); $event.stopPropagation()">
+                    (click)="filterEquipeIds.set([]); viewMode() === 'service' ? buildTree() : applyFilters(); $event.stopPropagation()">
                     Effacer
                   </button>
                 }
@@ -409,7 +410,7 @@
                 @if (filterResourceIds().length > 0) {
                   <button
                     class="btn-clear"
-                    (click)="filterResourceIds.set([]); applyFilters(); $event.stopPropagation()">
+                    (click)="filterResourceIds.set([]); viewMode() === 'service' ? buildTree() : applyFilters(); $event.stopPropagation()">
                     Effacer
                   </button>
                 }
@@ -633,7 +634,13 @@
           <div class="header-label-content">
             <div class="view-mode-popover-wrapper">
               <span style="font-weight: 600">{{
-                viewMode() === 'project' ? 'Projets / Équipes' : viewMode() === 'resource' ? 'Équipes / Ressources' : 'Équipes / Projets'
+                viewMode() === 'project'
+                  ? 'Projets / Équipes'
+                  : viewMode() === 'resource'
+                    ? 'Équipes / Ressources'
+                    : viewMode() === 'service'
+                      ? 'Services / Projets'
+                      : 'Équipes / Projets'
               }}</span>
               <button
                 class="view-mode-trigger"
@@ -680,6 +687,18 @@
                     <lucide-icon [img]="BookUser" [size]="15"></lucide-icon>
                     Par Ressources
                     @if (viewMode() === 'resource') {
+                      <span class="actions-check">✓</span>
+                    }
+                  </label>
+                  <label class="actions-radio-item" [class.selected]="viewMode() === 'service'" (click)="switchViewMode('service'); openViewDropdown = false">
+                    <input
+                      type="radio"
+                      name="viewMode"
+                      value="service"
+                      [checked]="viewMode() === 'service'" />
+                    <lucide-icon [img]="Building2" [size]="15"></lucide-icon>
+                    Par Service
+                    @if (viewMode() === 'service') {
                       <span class="actions-check">✓</span>
                     }
                   </label>
@@ -1102,48 +1121,50 @@
                           >
                         </div>
                       </div>
-                      <button
-                        class="line-menu-trigger btn-icon-s"
-                        (click)="toggleLineMenu('parent-' + row.id, $event)"
-                        [title]="viewMode() === 'resource' ? 'Actions' : 'Actions'"
-                        data-tour="line-menu">
-                        <lucide-icon [img]="MoreVertical" [size]="15"></lucide-icon>
-                      </button>
-                      <!-- Line menu -->
-                      @if (activeLineMenuId === 'parent-' + row.id) {
-                        <div class="line-menu-wrapper" (click)="$event.stopPropagation()">
-                          <button
-                            class="line-menu-item"
-                            (click)="openLinkModal(row); closeLineMenu(); $event.stopPropagation()">
-                            <lucide-icon [img]="Plus" [size]="14"></lucide-icon>
-                            {{ viewMode() === 'project' ? 'Ajouter Equipe' : 'Ajouter Projet(s)' }}
-                          </button>
-                          @if (viewMode() === 'project' && row.originalProject) {
+                      @if (viewMode() !== 'service') {
+                        <button
+                          class="line-menu-trigger btn-icon-s"
+                          (click)="toggleLineMenu('parent-' + row.id, $event)"
+                          [title]="viewMode() === 'resource' ? 'Actions' : 'Actions'"
+                          data-tour="line-menu">
+                          <lucide-icon [img]="MoreVertical" [size]="15"></lucide-icon>
+                        </button>
+                        <!-- Line menu -->
+                        @if (activeLineMenuId === 'parent-' + row.id) {
+                          <div class="line-menu-wrapper" (click)="$event.stopPropagation()">
                             <button
                               class="line-menu-item"
-                              (click)="openProjectEdit(row.originalProject); closeLineMenu(); $event.stopPropagation()">
-                              <lucide-icon [img]="Settings2" [size]="14"></lucide-icon>
-                              Modifier projet
+                              (click)="openLinkModal(row); closeLineMenu(); $event.stopPropagation()">
+                              <lucide-icon [img]="Plus" [size]="14"></lucide-icon>
+                              {{ viewMode() === 'project' ? 'Ajouter Equipe' : 'Ajouter Projet(s)' }}
                             </button>
-                          }
-                          <!-- Move up/down actions only in project view -->
-                          @if (viewMode() === 'project') {
-                            <button
-                              class="line-menu-item"
-                              (click)="moveToTop(row); closeLineMenu(); $event.stopPropagation()">
-                              <lucide-icon [img]="ArrowUp" [size]="14"></lucide-icon>
-                              Envoyer en première place
-                            </button>
-                          }
-                          @if (viewMode() === 'project') {
-                            <button
-                              class="line-menu-item"
-                              (click)="moveToBottom(row); closeLineMenu(); $event.stopPropagation()">
-                              <lucide-icon [img]="ArrowDown" [size]="14"></lucide-icon>
-                              Envoyer en dernière place
-                            </button>
-                          }
-                        </div>
+                            @if (viewMode() === 'project' && row.originalProject) {
+                              <button
+                                class="line-menu-item"
+                                (click)="openProjectEdit(row.originalProject); closeLineMenu(); $event.stopPropagation()">
+                                <lucide-icon [img]="Settings2" [size]="14"></lucide-icon>
+                                Modifier projet
+                              </button>
+                            }
+                            <!-- Move up/down actions only in project view -->
+                            @if (viewMode() === 'project') {
+                              <button
+                                class="line-menu-item"
+                                (click)="moveToTop(row); closeLineMenu(); $event.stopPropagation()">
+                                <lucide-icon [img]="ArrowUp" [size]="14"></lucide-icon>
+                                Envoyer en première place
+                              </button>
+                            }
+                            @if (viewMode() === 'project') {
+                              <button
+                                class="line-menu-item"
+                                (click)="moveToBottom(row); closeLineMenu(); $event.stopPropagation()">
+                                <lucide-icon [img]="ArrowDown" [size]="14"></lucide-icon>
+                                Envoyer en dernière place
+                              </button>
+                            }
+                          </div>
+                        }
                       }
                     </div>
                   </div>
@@ -1154,20 +1175,20 @@
                           class="week-cell team-cell"
                           [class.is-year-change]="isFirstWeekOfYear($index)"
                           [class.team-cell-positive]="
-                            viewMode() === 'resource' &&
+                            (viewMode() === 'resource' || viewMode() === 'service') &&
                             row.metrics?.get(formatWeekStart(week))?.status === 'positive'
                           "
                           [class.team-cell-zero]="
-                            viewMode() === 'resource' &&
+                            (viewMode() === 'resource' || viewMode() === 'service') &&
                             row.metrics?.get(formatWeekStart(week))?.status === 'zero'
                           "
                           [class.team-cell-negative]="
-                            viewMode() === 'resource' &&
+                            (viewMode() === 'resource' || viewMode() === 'service') &&
                             row.metrics?.get(formatWeekStart(week))?.status === 'negative'
                           ">
-                          <!-- Resource View: Show cumulative data -->
+                          <!-- Resource & Service View: Show cumulative data -->
                           @if (
-                            viewMode() === 'resource' &&
+                            (viewMode() === 'resource' || viewMode() === 'service') &&
                             ((row.metrics?.get(formatWeekStart(week))?.total || 0) > 0 ||
                               (row.metrics?.get(formatWeekStart(week))?.capacity || 0) > 0)
                           ) {
@@ -1203,6 +1224,7 @@
                           <!-- Other views: Keep empty or simple display -->
                           @if (
                             viewMode() !== 'resource' &&
+                            viewMode() !== 'service' &&
                             (row.metrics?.get(formatWeekStart(week))?.total || 0) > 0
                           ) {
                             <div class="team-summary">
@@ -1480,10 +1502,10 @@
                         </div>
                       }
                     }
-                    <!-- CASE 2: Standard/Other Views (Team view, or Project view with no resources, or Resource view projects) -->
+                    <!-- CASE 2: Standard/Other Views (Team view, or Project view with no resources, or Resource/Service view projects) -->
                     @if (viewMode() !== 'project' || child.resources.length === 0) {
                       <!-- Standard Child Row -->
-                      @if (viewMode() !== 'resource') {
+                      @if (viewMode() !== 'resource' && viewMode() !== 'service') {
                         <div
                           class="calendar-row"
                           [style.z-index]="activeLineMenuId === 'child-' + child.id + '-' + row.id ? 1700 : null">
@@ -1661,8 +1683,8 @@
                               [style.minWidth.px]="labelColumnWidth()">
                               <div
                                 class="row-label-content resource-row"
-                                [style.padding-left.px]="viewMode() === 'resource' ? 24 : 0">
-                                @if (viewMode() === 'resource') {
+                                [style.padding-left.px]="viewMode() === 'resource' || viewMode() === 'service' ? 24 : 0">
+                                @if (viewMode() === 'resource' || viewMode() === 'service') {
                                   <div class="color-bar-container">
                                     <div
                                       class="color-bar-v small"
@@ -1671,8 +1693,8 @@
                                 }
                                 <div
                                   class="resource-detail-label"
-                                  [style.padding-left.px]="viewMode() === 'resource' ? 0 : 40">
-                                  @if (viewMode() === 'resource') {
+                                  [style.padding-left.px]="viewMode() === 'resource' || viewMode() === 'service' ? 0 : 40">
+                                  @if (viewMode() === 'resource' || viewMode() === 'service') {
                                     <div class="info-stack">
                                       @if (resource.code || resource.reference_externe) {
                                         <div class="info-meta" style="display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap;">
@@ -1805,6 +1827,32 @@
                                       <span class="chiffre-badge-unit">j</span>
                                     </div>
                                   }
+                                  @if (
+                                    viewMode() === 'service' &&
+                                    getChiffreValueForServiceProject(row.id, resource.id) !== null
+                                  ) {
+                                    <span class="chiffre-badge-sep">/</span>
+                                    <div
+                                      class="chiffre-badge"
+                                      [class.anchor-active-chiffre]="
+                                        activeChiffreAnchorId === 'chiffre-' + getResourceUniqueId(resource, child, row)
+                                      "
+                                      (click)="
+                                        openChiffrePopover(
+                                          $event,
+                                          'chiffre-' + getResourceUniqueId(resource, child, row),
+                                          row.id,
+                                          resource.id
+                                        )
+                                      "
+                                      title="Cliquer pour changer la catégorie">
+                                      <span class="chiffre-badge-prefix">{{ getChiffreBadgeLabel() }}</span>
+                                      <span class="chiffre-badge-val">{{
+                                        getChiffreValueForServiceProject(row.id, resource.id) | number: '1.0-1'
+                                      }}</span>
+                                      <span class="chiffre-badge-unit">j</span>
+                                    </div>
+                                  }
                                 </div>
                                 <button
                                   class="line-menu-trigger btn-icon-s"
@@ -1823,16 +1871,18 @@
                                       <lucide-icon [img]="Search" [size]="14"></lucide-icon>
                                       Modifier le projet
                                     </button>
-                                    <button
-                                      class="line-menu-item danger"
-                                      (click)="
-                                        removeResource(resource, child, row); closeLineMenu(); $event.stopPropagation()
-                                      ">
-                                      <lucide-icon [img]="X" [size]="14"></lucide-icon>
-                                      {{
-                                        viewMode() === 'resource' ? 'Retirer ce projet' : 'Supprimer cette ressource'
-                                      }}
-                                    </button>
+                                    @if (viewMode() !== 'service') {
+                                      <button
+                                        class="line-menu-item danger"
+                                        (click)="
+                                          removeResource(resource, child, row); closeLineMenu(); $event.stopPropagation()
+                                        ">
+                                        <lucide-icon [img]="X" [size]="14"></lucide-icon>
+                                        {{
+                                          viewMode() === 'resource' ? 'Retirer ce projet' : 'Supprimer cette ressource'
+                                        }}
+                                      </button>
+                                    }
                                   </div>
                                 }
                               </div>
@@ -2099,6 +2149,32 @@
                           row.resource.resourceId,
                           row.resource.type
                         ) | number: '1.0-1'
+                      }}</span>
+                      <span class="chiffre-badge-unit">j</span>
+                    </div>
+                  }
+                  @if (
+                    viewMode() === 'service' &&
+                    getChiffreValueForServiceProject(row.parent.id, row.resource.id) !== null
+                  ) {
+                    <span class="chiffre-badge-sep">/</span>
+                    <div
+                      class="chiffre-badge"
+                      [class.anchor-active-chiffre]="
+                        activeChiffreAnchorId === 'chiffre-' + getResourceUniqueId(row.resource, row.child, row.parent)
+                      "
+                      (click)="
+                        openChiffrePopover(
+                          $event,
+                          'chiffre-' + getResourceUniqueId(row.resource, row.child, row.parent),
+                          row.parent.id,
+                          row.resource.id
+                        )
+                      "
+                      title="Cliquer pour changer la catégorie">
+                      <span class="chiffre-badge-prefix">{{ getChiffreBadgeLabel() }}</span>
+                      <span class="chiffre-badge-val">{{
+                        getChiffreValueForServiceProject(row.parent.id, row.resource.id) | number: '1.0-1'
                       }}</span>
                       <span class="chiffre-badge-unit">j</span>
                     </div>
