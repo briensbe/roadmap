@@ -41,6 +41,7 @@ import {
   ChiffrePopoverData,
 } from './plan-view.models';
 import { formatWeekStart, formatLocalDate, cleanJiraRef } from './plan-projection.engine';
+import { ServiceSelectionJalon } from './service-selection-modal.component';
 
 const MONTH_NAMES = [
   'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
@@ -235,6 +236,7 @@ export abstract class PlanGridInteractionController {
     remainingCapacityDays: null as number | null,
     startDate: null as Date | null,
     endDate: null as Date | null,
+    jalons: [] as ServiceSelectionJalon[],
   };
   toolbarPosition: ToolbarPosition | null = null;
   toolbarVisible = false;
@@ -1100,6 +1102,40 @@ export abstract class PlanGridInteractionController {
             }
           }
 
+          let jalons: ServiceSelectionJalon[] = [];
+          if (endDate) {
+            const startOfWeek = new Date(endDate);
+            startOfWeek.setHours(0, 0, 0, 0);
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+            endOfWeek.setHours(23, 59, 59, 999);
+
+            const projId = firstCell.resource.projectId;
+            const relevantProjectIds = projId
+              ? new Set([projId])
+              : new Set(
+                  (parentRow?.children[0]?.resources?.map((r) => r.projectId).filter(Boolean) as string[]) || []
+                );
+
+            const activeTypes = this.filterJalonTypes();
+            const matching = this.allJalons.filter((j) => {
+              if (activeTypes.length > 0 && !activeTypes.includes(j.event_type)) return false;
+              const jDate = new Date(j.event_date);
+              if (jDate < startOfWeek || jDate > endOfWeek) return false;
+              if (j.projet_id) {
+                return relevantProjectIds.has(j.projet_id);
+              }
+              return true;
+            });
+
+            jalons = matching
+              .sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime())
+              .map((j) => ({
+                ...j,
+                projectName: j.projet_id ? this.allProjects.find((p) => p.id === j.projet_id)?.nom_projet : undefined,
+              }));
+          }
+
           this.serviceSelectionSummary = {
             units: Math.round(units * 100) / 100,
             days: Math.round(days * 10) / 10,
@@ -1109,6 +1145,7 @@ export abstract class PlanGridInteractionController {
             remainingCapacityDays: hasCapacityData ? Math.round(remainingCapacityDays * 10) / 10 : null,
             startDate,
             endDate,
+            jalons,
           };
           this.showServiceSelectionModal = true;
         } else {

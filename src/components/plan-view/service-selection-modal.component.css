@@ -28,14 +28,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 20px;
+  padding: 10px 20px;
+  margin: 0 !important;
+  margin-bottom: 0 !important;
   background: var(--bg-muted);
   border-bottom: 1px solid var(--border-subtle);
 }
 
 .modal-title {
   margin: 0;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--text-main);
 }
@@ -43,8 +45,8 @@
 .close-btn {
   background: var(--bg-hover);
   border: none;
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border-radius: 8px;
   color: var(--text-muted);
   cursor: pointer;
@@ -61,22 +63,23 @@
 }
 
 .modal-body {
-  padding: 16px 20px;
+  padding: 12px 20px 16px;
   background: var(--bg-surface);
 }
 
 /* Subtitle / Selected row label directly above periods */
 .selection-target {
+  margin-top: 0;
   margin-bottom: 10px;
   display: flex;
   align-items: center;
 }
 
 .target-name {
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 800;
   color: var(--text-main);
-  line-height: 1.3;
+  line-height: 1.25;
 }
 
 /* Grouped period pill: dates + week count together */
@@ -121,12 +124,12 @@
   background: var(--bg-muted);
   border: 1px solid var(--border-subtle);
   border-radius: 12px;
-  padding: 14px 10px;
+  padding: 12px 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 8px;
+  gap: 10px;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -135,14 +138,31 @@
   box-shadow: var(--shadow-md);
 }
 
+.metric-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+}
+
 .metric-icon-wrapper {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+
+.metric-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  white-space: nowrap;
 }
 
 .days-icon {
@@ -206,14 +226,6 @@
   line-height: 1.2;
 }
 
-.metric-label {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-secondary);
-  margin-top: 2px;
-}
 
 /* Metric status color highlights */
 .metric-positive .hero-number,
@@ -239,6 +251,133 @@
 .metric-zero .hero-number,
 .metric-zero .hero-unit {
   color: var(--text-muted);
+}
+
+/* Milestones section at bottom of modal */
+.milestones-section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.milestones-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.milestones-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+}
+
+.milestones-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.milestones-count {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--bg-muted);
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+}
+
+.milestones-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.milestone-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-muted);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 6px 10px;
+  gap: 8px;
+  transition: background 0.15s ease;
+}
+
+.milestone-item:hover {
+  background: var(--bg-hover);
+}
+
+.milestone-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.milestone-type-badge {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 4px;
+  letter-spacing: 0.03em;
+  flex-shrink: 0;
+}
+
+.milestone-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.milestone-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.milestone-project {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.milestone-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.milestone-version {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+
+.milestone-date {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
 }
 
 .modal-footer {
@@ -312,6 +451,19 @@
 :host-context(body.dark-mode) .metric-negative .hero-unit,
 :host-context(body.dark-mode) .metric-negative .metric-subtext {
   color: #f87171;
+}
+
+:host-context(body.dark-mode) .milestones-section {
+  border-top-color: var(--border-default);
+}
+
+:host-context(body.dark-mode) .milestone-item {
+  background: rgba(15, 23, 42, 0.65);
+  border-color: var(--border-default);
+}
+
+:host-context(body.dark-mode) .milestone-item:hover {
+  background: rgba(30, 41, 59, 0.7);
 }
 
 @keyframes fadeIn {

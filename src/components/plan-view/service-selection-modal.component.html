@@ -37,8 +37,11 @@
               [class.metric-positive]="remainingCapacityDays > 0"
               [class.metric-negative]="remainingCapacityDays < 0"
               [class.metric-zero]="remainingCapacityDays === 0">
-              <div class="metric-icon-wrapper capacity-icon">
-                <lucide-icon [img]="TrendingUp" [size]="17"></lucide-icon>
+              <div class="metric-card-header">
+                <div class="metric-icon-wrapper capacity-icon">
+                  <lucide-icon [img]="TrendingUp" [size]="15"></lucide-icon>
+                </div>
+                <span class="metric-label">Capacité restante</span>
               </div>
               <div class="metric-data">
                 <div class="metric-hero-value">
@@ -52,15 +55,17 @@
                     {{ (remainingCapacityUnits > 0 ? '+' : '') + (remainingCapacityUnits | number: '1.0-2') }} ETP
                   </span>
                 }
-                <span class="metric-label">Capacité restante</span>
               </div>
             </div>
           }
 
           <!-- Charge positionnée -->
           <div class="metric-card">
-            <div class="metric-icon-wrapper days-icon">
-              <lucide-icon [img]="Clock" [size]="17"></lucide-icon>
+            <div class="metric-card-header">
+              <div class="metric-icon-wrapper days-icon">
+                <lucide-icon [img]="Clock" [size]="15"></lucide-icon>
+              </div>
+              <span class="metric-label">Charge positionnée</span>
             </div>
             <div class="metric-data">
               <div class="metric-hero-value">
@@ -68,10 +73,46 @@
                 <span class="hero-unit">j</span>
               </div>
               <span class="metric-subtext">{{ units | number: '1.0-2' }} ETP</span>
-              <span class="metric-label">Charge positionnée</span>
             </div>
           </div>
         </div>
+
+        @if (jalons.length > 0) {
+          <div class="milestones-section">
+            <div class="milestones-header">
+              <div class="milestones-title-wrap">
+                <lucide-icon [img]="Flag" [size]="14"></lucide-icon>
+                <span class="milestones-title">
+                  Jalon{{ jalons.length > 1 ? 's' : '' }} en fin de période
+                </span>
+              </div>
+              <span class="milestones-count">{{ jalons.length }}</span>
+            </div>
+            <div class="milestones-list">
+              @for (jalon of jalons; track jalon.id || jalon.title) {
+                <div class="milestone-item">
+                  <div class="milestone-left">
+                    <span class="milestone-type-badge" [ngStyle]="getJalonBadgeStyle(jalon.event_type)">
+                      {{ jalon.event_type }}
+                    </span>
+                    <div class="milestone-details">
+                      <span class="milestone-title">{{ jalon.title }}</span>
+                      @if (jalon.projectName) {
+                        <span class="milestone-project">{{ jalon.projectName }}</span>
+                      }
+                    </div>
+                  </div>
+                  <div class="milestone-right">
+                    @if (jalon.version) {
+                      <span class="milestone-version">{{ jalon.version }}</span>
+                    }
+                    <span class="milestone-date">{{ jalon.event_date | date: 'dd/MM' }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
       </div>
 
       <div class="modal-footer">
