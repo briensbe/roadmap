@@ -213,7 +213,7 @@ describe('PlanViewComponent - Vue Par Service', () => {
     ];
 
     // Populate capacityIndex
-    const capIndex = (component as any).capacityIndex as Map<string, number>;
+    const capIndex = component.capacityIndex;
     capIndex.clear();
     capIndex.set(`team-1_role_role-back_${week1}`, 3);
     capIndex.set(`team-1_personne_pers-1_${week1}`, 1);

@@ -1,226 +1,33 @@
-import {
-  Component,
-  OnInit,
-  AfterViewInit,
-  ViewChild,
-  ElementRef,
-  HostListener,
-  NgModule,
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  NgZone,
-  OnDestroy,
-  computed,
-} from '@angular/core';
+/**
+ * @file plan-view.component.ts
+ * @description Composant orchestrateur Angular de la vue Planification (Deep Module de présentation).
+ *
+ * Responsabilités :
+ * - Coordonner le cycle de vie du composant (`ngOnInit`, `ngAfterViewInit`, `ngOnDestroy`) et les écouteurs globaux.
+ * - Piloter l'état réactif des filtres (`storageSignal` / `signal`) et déclencher les recalculs du moteur
+ *   de projection (`plan-projection.engine.ts`).
+ * - Orchestrer l'ouverture et la validation des modales métier (liaison projet/équipe, ajout de ressource,
+ *   édition de projet, jalons, chiffres, confirmation de suppression) en déléguant la persistance à `PlanDataRepository`.
+ */
+import { Component, OnInit, AfterViewInit, HostListener, ChangeDetectionStrategy, OnDestroy, computed, signal, inject, WritableSignal } from '@angular/core';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TeamService } from '../../services/team.service';
-import { ProjetService } from '../../services/projet.service';
-import { ChargeService } from '../../services/charge.service';
-import { RolesService } from '../../services/roles.service';
-import { JalonService } from '../../services/jalon.service';
-import { ThemeService } from '../../services/theme.service';
-import {
-  Equipe,
-  Projet,
-  Charge,
-  Role,
-  Personne,
-  Capacite,
-  Jalon,
-  Service,
-  PROJECT_STATUS_LIST,
-  LoadDataOptions,
-} from '../../models/types';
-import { CalendarService } from '../../services/calendar.service';
-import { PersonnesService } from '../../services/personnes.service';
-import { ChiffresService } from '../../services/chiffres.service';
-import { Chiffre } from '../../models/chiffres.type';
-import { ResourceService } from '../../services/resource.service';
-import { CrewdayzIntegrationService } from '../../services/crewdayz-integration.service';
-import {
-  CapacitySourceConfig,
-  CrewdayzTeamAvailability,
-  RoadmapMappingRoleProfile,
-} from '../../models/crewdayz.types';
-
-import {
-  LucideAngularModule,
-  Plus,
-  ChevronDown,
-  ChevronRight,
-  User,
-  Contact,
-  X,
-  SquarePlus,
-  SquareMinus,
-  ExternalLink,
-  FunnelPlus,
-  FunnelX,
-  FileDown,
-  LucideCalculator,
-  Search,
-  MoreVertical,
-  ListTree,
-  AlignJustify,
-  Eye,
-  EyeOff,
-  Calendar,
-  ChevronLeft,
-  Network,
-  Users,
-  BookUser,
-  Settings2,
-  GripVertical,
-  ArrowUp,
-  ArrowDown,
-  Play,
-  AlertTriangle,
-  Filter,
-  Info,
-  Trash2,
-  Copy,
-  Check,
-  Layers,
-  Building2,
-  LoaderCircle,
-} from 'lucide-angular';
-import * as XLSX from 'xlsx';
-import { getISOWeekYear } from 'date-fns';
+import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { textContains } from '../../utils/text.utils';
-import {
-  calculateBestToolbarPosition,
-  calculateBestPopoverPosition,
-  ToolbarPosition,
-  PopoverPosition,
-} from '../../utils/selection-positioning';
+import { storageSignal } from '../../utils/storage-signal';
 import { SelectionToolbarComponent } from '../selection-toolbar.component';
 import { ProjectModalComponent } from '../project-modal.component';
-import { SettingsService } from '../../services/settings.service';
-import { storageSignal } from '../../utils/storage-signal';
-import { signal } from '@angular/core';
-import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
-import { calculateNewRank, sortByRank } from '../../utils/lexorank.utils';
-import { driver } from 'driver.js';
-
-@NgModule({
-  imports: [
-    LucideAngularModule.pick({
-      Plus,
-      ChevronDown,
-      ChevronRight,
-      User,
-      Contact,
-      X,
-      SquarePlus,
-      SquareMinus,
-      ExternalLink,
-      FunnelPlus,
-      FunnelX,
-      FileDown,
-      LucideCalculator,
-      Search,
-      MoreVertical,
-      ListTree,
-      AlignJustify,
-      Eye,
-      EyeOff,
-      Calendar,
-      ChevronLeft,
-      Network,
-      Users,
-      BookUser,
-      Settings2,
-      GripVertical,
-      ArrowUp,
-      ArrowDown,
-      Play,
-      AlertTriangle,
-      Filter,
-      Info,
-      Trash2,
-      Copy,
-      Check,
-      Layers,
-      Building2,
-      LoaderCircle,
-    }),
-  ],
-  exports: [LucideAngularModule],
-})
-export class LucideIconsModule {}
-
 import { MilestoneModalComponent } from '../milestones/milestone-modal.component';
 import { ConfirmModalComponent } from '../confirm-modal.component';
 import { ChiffresModalComponent } from '../chiffres/chiffres-modal.component';
+import * as M from './plan-view.models';
+import * as Projection from './plan-projection.engine';
+import { PlanGridInteractionController, generateWeeksTimeline } from './plan-grid-interaction.controller';
+import { PlanDataRepository } from './plan-data.repository';
 
-interface ResourceCellData {
-  value: number;
-  availability: number;
-  showAvailability: boolean;
-  isPositive: boolean;
-  isZero: boolean;
-  isNegative: boolean;
-  hasCapRecord: boolean;
-  comment?: string | null;
-}
-
-interface ResourceRow {
-  id: string;
-  uniqueId: string; // Unique identifier combining parent, child, and resource context
-  label: string;
-  type: 'role' | 'personne';
-  jours_par_semaine: number;
-  charges: Map<string, number>; // week string -> amount
-  dailyCharges?: Map<string, number>; // week string -> exact planned days (unite_ressource * jours_par_semaine)
-  comments?: Map<string, string>; // week string -> comment
-  color?: string;
-  resourceId?: string; // Always the role or personne id
-  projectId?: string; // Always the project id
-  code?: string;
-  reference_externe?: string;
-  cellData?: ResourceCellData[];
-  metrics?: Map<string, { total: number }>;
-}
-
-interface ChildRow {
-  id: string;
-  label: string;
-  code?: string;
-  reference_externe?: string;
-  color?: string;
-  expanded: boolean;
-  resources: ResourceRow[];
-  charges: Map<string, number>; // week string -> amount
-  originalProject?: Projet;
-  metrics?: Map<string, { total: number }>;
-}
-
-interface ParentRow {
-  id: string;
-  label: string;
-  code?: string;
-  reference_externe?: string;
-  color?: string;
-  expanded: boolean;
-  children: ChildRow[];
-  totalCharges: Map<string, number>; // week string -> amount
-  originalProject?: Projet;
-  metrics?: Map<
-    string,
-    { total: number; capacity: number; availability: number; status: 'positive' | 'zero' | 'negative' | 'none' }
-  >;
-}
-
-interface FlatRow {
-  uniqueId: string;
-  fullLabel: string; // "Project > Team > Resource"
-  resource: ResourceRow;
-  child: ChildRow;
-  parent: ParentRow;
-}
+export { LucideIconsModule } from './plan-view.models';
 
 @Component({
   selector: 'app-plan-view',
@@ -228,7 +35,7 @@ interface FlatRow {
   imports: [
     CommonModule,
     FormsModule,
-    LucideIconsModule,
+    M.LucideIconsModule,
     MilestoneModalComponent,
     SelectionToolbarComponent,
     ConfirmModalComponent,
@@ -240,676 +47,140 @@ interface FlatRow {
   styleUrl: './plan-view.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
-  showSkeleton: boolean = false;
-  @ViewChild('tooltipElement') tooltipElement?: ElementRef<HTMLElement>;
-  @ViewChild('dragProjectionTooltip') dragProjectionTooltip?: ElementRef<HTMLElement>;
-  @ViewChild('headerRow') headerRowElement?: ElementRef<HTMLElement>;
-  @ViewChild('milestonesRow') milestonesRowElement?: ElementRef<HTMLElement>;
+export class PlanViewComponent extends PlanGridInteractionController implements OnInit, AfterViewInit, OnDestroy {
+  private readonly repo = inject(PlanDataRepository);
 
-  private resizeObserver?: ResizeObserver;
-
-  // Milestone Modal props
+  showSkeleton = false;
   showMilestoneModal = false;
-  selectedJalon: Jalon | null = null;
-
-  openMilestoneModal(jalon: Jalon, event: Event) {
-    event.stopPropagation();
-    this.selectedJalon = jalon;
-    this.showMilestoneModal = true;
-  }
-
-  // Chiffres Modal props
+  selectedJalon: M.Jalon | null = null;
   showChiffresModal = false;
   selectedProjetId: string | null = null;
 
-  async onMilestoneSaved() {
-    await this.loadData({ showSkeleton: false });
-  }
-
-  onOpenChiffresFromProject(idProjet: string | undefined) {
-    if (!idProjet) return;
-    this.selectedProjetId = idProjet;
-    this.showChiffresModal = true;
-  }
-
-  closeChiffresModal() {
-    this.showChiffresModal = false;
-    this.selectedProjetId = null;
-  }
-
-  viewMode = storageSignal<'project' | 'team' | 'resource' | 'service'>('plan-view-mode', 'resource');
-  displayFormat = storageSignal<'tree' | 'flat'>('plan-view-display-format', 'tree');
-  zoomLevel = storageSignal<'compact' | 'normal'>('plan-view-zoom-level', 'normal');
-  showAvailability = storageSignal<boolean>('plan-view-show-availability', false);
-  weekFilters = storageSignal<number[]>('plan-view-week-filters', []);
-  chiffreMode = storageSignal<'initial' | 'revise' | 'previsionnel' | 'consomme' | 'restant'>(
-    'plan-view-chiffre-mode',
-    'previsionnel',
-  );
-  planningMode = storageSignal<'saisie' | 'visualisation'>('plan-view-planning-mode', 'saisie');
-  displayedMonths: Array<{
-    key: string;
-    label: string;
-    year: number;
-    quarterLabel: string;
-    startWeekNum: number;
-    weeks: Date[];
-  }> = [];
-  showGlobalFilters = signal<boolean>(false);
   private isDefaultExpanded = true;
   private manualStates = new Map<string, boolean>();
-  private tutorialStarted = false;
-
-  selectedCapacityYear = storageSignal<'today' | 'all' | '2025' | '2026' | 'custom'>(
-    'plan-view-capacity-year',
-    'today',
-  );
   private globalMouseMoveListener?: () => void;
   private globalMouseUpListener?: () => void;
   private scrollCloseListener?: () => void;
 
-  selectedStartDate: Date | null = null;
-  showYearPopover = false;
-  showChiffrePopover = false;
-  chiffrePopoverPosition: PopoverPosition | null = null;
-  chiffrePopoverArrowSide: 'top' | 'bottom' = 'top';
-  activeChiffreAnchorId: string | null = null;
-  activeChiffrePopoverData: {
-    teamId: string;
-    projectId: string;
-    resourceId?: string;
-    resourceType?: 'role' | 'personne';
-  } | null = null;
-  popoverPosition: PopoverPosition | null = null;
-  popoverArrowSide: 'top' | 'bottom' = 'top';
-  activeAnchorId: string | null = null;
+  flatRows: M.FlatRow[] = [];
+  rows: M.ParentRow[] = [];
+  rowsAll: M.ParentRow[] = [];
 
-  labelColumnWidth = storageSignal<number>('plan-view-label-column-width', 300);
-  isResizing = false;
-  private startX = 0;
-  private startWidth = 0;
+  capacityIndex = new Map<string, number>();
+  usageMap = new Map<string, number>();
 
-  onResizeStart(event: MouseEvent) {
-    event.preventDefault();
-    event.stopPropagation();
-    this.isResizing = true;
-    this.startX = event.clientX;
-    this.startWidth = this.labelColumnWidth();
-  }
-
-  @HostListener('document:mousemove', ['$event'])
-  onResizing(event: MouseEvent) {
-    if (!this.isResizing) return;
-    const deltaX = event.clientX - this.startX;
-    const newWidth = Math.max(150, Math.min(600, this.startWidth + deltaX));
-    this.labelColumnWidth.set(newWidth);
-  }
-
-  @HostListener('document:mouseup')
-  onResizeEnd() {
-    this.isResizing = false;
-  }
-
-  @HostListener('document:keydown.escape')
-  onEscape() {
-    this.openEquipeDropdown = false;
-    this.openProjetDropdown = false;
-    this.openResourceDropdown = false;
-    this.openStatusDropdown = false;
-    this.showPeriodDropdown = false;
-    this.openSizeDropdown = false;
-    this.openJalonDropdown = false;
-    this.showYearPopover = false;
-    this.showChiffrePopover = false;
-    this.activeChiffreAnchorId = null;
-    this.activeChiffrePopoverData = null;
-    this.clearSelection();
-    this.cdr.markForCheck();
-  }
-
-  flatRows: FlatRow[] = [];
-
-  // Capacity Index for O(1) lookups: teamId_type_resourceId_weekKey -> capacity
-  private capacityIndex = new Map<string, number>();
-
-  // Usage Map
-  usageMap: Map<string, number> = new Map();
-
-  displayedWeeks: Date[] = [];
-  displayedYears: { year: number; weeksCount: number }[] = [];
-  currentDate: Date = new Date();
-
-  rows: ParentRow[] = [];
-
-  allProjects: Projet[] = [];
-  allCharges: Charge[] = [];
-  allJalons: Jalon[] = [];
-
-  // Sexy Tooltip State
-  activeTooltip: string | null = null;
-  tooltipX = 0;
-  tooltipY = 0;
-  private tooltipShowTimer: any;
-  private tooltipHideTimer: any;
-  private readonly SHOW_DELAY = 400;
-  private readonly HIDE_DELAY = 100;
-
-  allEquipes: Equipe[] = [];
-  // Duplicate removed
-
-  allCapacities: Capacite[] = [];
+  allCharges: M.Charge[] = [];
+  allEquipes: M.Equipe[] = [];
+  allCapacities: M.Capacite[] = [];
   allLinks: { equipe_id: string; projet_id: string }[] = [];
-  allRoleAttachments: any[] = [];
+  allRoleAttachments: M.RoleAttachmentRecord[] = [];
+  allChiffres: M.Chiffre[] = [];
+  allServices: M.Service[] = [];
+  availableRoles: M.Role[] = [];
+  availablePersonnes: M.Personne[] = [];
 
-  // Chiffres Triskell
-  allChiffres: Chiffre[] = [];
-  allServices: Service[] = [];
-
-  // Crewdayz integration
-  private crewdayzAvailabilities: CrewdayzTeamAvailability[] = [];
-  private crewdayzMappings: RoadmapMappingRoleProfile[] = [];
-  private capacitySourceConfigs: CapacitySourceConfig[] = [];
-
-  // Filters
-  rowsAll: ParentRow[] = [];
   filterEquipeIds = storageSignal<string[]>('plan-view-filter-equipes', []);
   filterProjetIds = storageSignal<string[]>('plan-view-filter-projets', []);
-  filterProjetSearch = storageSignal<string>('plan-view-filter-search', '');
-  filterResourceIds = storageSignal<string[]>('plan-view-filter-resources', []); // values like 'role:<id>' or 'personne:<id>'
+  filterResourceIds = storageSignal<string[]>('plan-view-filter-resources', []);
   filterStatusIds = storageSignal<string[]>('plan-view-filter-statuses', []);
-  filterJalonTypes = storageSignal<string[]>('plan-view-filter-jalon-types', []);
-
-  // Period filter (default: current week → +6 months; empty string = use default)
   filterPeriodEnabled = signal<boolean>(false);
   filterPeriodStart = storageSignal<string>('plan-view-filter-period-start', '');
   filterPeriodEnd = storageSignal<string>('plan-view-filter-period-end', '');
-
-  // Size filter
   filterSizeEnabled = signal<boolean>(false);
-  filterSizeCriterion = storageSignal<
-    | 'charges_today'
-    | 'charges_all'
-    | 'charges_2025'
-    | 'charges_2026'
-    | 'chiffre_initial'
-    | 'chiffre_revise'
-    | 'chiffre_previsionnel'
-    | 'chiffre_consomme'
-    | 'chiffre_restant'
-  >('plan-view-filter-size-criterion', 'charges_all');
-  filterSizeOperator = storageSignal<'gte' | 'lte'>('plan-view-filter-size-operator', 'gte');
+  filterSizeCriterion = storageSignal<M.SizeFilterCriterion>('plan-view-filter-size-criterion', 'charges_all');
+  filterSizeOperator = storageSignal<M.SizeFilterOperator>('plan-view-filter-size-operator', 'gte');
   filterSizeValue = storageSignal<number | null>('plan-view-filter-size-value', null);
-
-  activeFiltersCount = computed(() => {
-    let count = 0;
-    if (this.globalSearch().trim()) count++;
-    if (this.filterEquipeIds().length) count += this.filterEquipeIds().length;
-    if (this.filterProjetIds().length) count += this.filterProjetIds().length;
-    if (this.filterStatusIds().length) count += this.filterStatusIds().length;
-    if (this.filterResourceIds().length) count += this.filterResourceIds().length;
-    if (this.filterPeriodEnabled()) count++;
-    if (this.filterSizeEnabled() && this.filterSizeValue() !== null) count++;
-    if (this.weekFilters().length) count += this.weekFilters().length;
-    return count;
-  });
-
-  activeFiltersSummary = computed(() => {
-    const parts: string[] = [];
-    if (this.globalSearch().trim()) parts.push('Recherche');
-
-    const eqCount = this.filterEquipeIds().length;
-    if (eqCount > 0) parts.push(`${eqCount} équipe${eqCount > 1 ? 's' : ''}`);
-
-    const prCount = this.filterProjetIds().length;
-    if (prCount > 0) parts.push(`${prCount} projet${prCount > 1 ? 's' : ''}`);
-
-    const stCount = this.filterStatusIds().length;
-    if (stCount > 0) parts.push(`${stCount} statut${stCount > 1 ? 's' : ''}`);
-
-    const resCount = this.filterResourceIds().length;
-    if (resCount > 0) parts.push(`${resCount} ressource${resCount > 1 ? 's' : ''}`);
-
-    if (this.filterPeriodEnabled()) parts.push('Période');
-    if (this.filterSizeEnabled() && this.filterSizeValue() !== null) parts.push('Taille');
-
-    const wkCount = this.weekFilters().length;
-    if (wkCount > 0) parts.push(`${wkCount} semaine${wkCount > 1 ? 's' : ''}`);
-
-    return parts.join(', ');
-  });
-
-  clearAllFilters() {
-    this.globalSearch.set('');
-    this.filterEquipeIds.set([]);
-    this.filterProjetIds.set([]);
-    this.filterProjetSearch.set('');
-    this.filterResourceIds.set([]);
-    this.filterStatusIds.set([]);
-    this.filterPeriodEnabled.set(false);
-    this.filterPeriodStart.set('');
-    this.filterPeriodEnd.set('');
-    this.filterSizeEnabled.set(false);
-    this.filterSizeValue.set(null);
-    this.weekFilters.set([]);
-    if (this.viewMode() === 'service') {
-      this.buildTree();
-    } else {
-      this.applyFilters();
-    }
-    this.cdr.markForCheck();
-  }
-
-  readonly PROJECT_STATUSES = PROJECT_STATUS_LIST;
-
-  // Dropdown states
-  openEquipeDropdown = false;
-  openProjetDropdown = false;
-  openResourceDropdown = false;
-  openStatusDropdown = false;
-  showPeriodDropdown = false;
-  openSizeDropdown = false;
-  openJalonDropdown = false;
-  openViewDropdown = false;
-
-  // Actions menu state
-  showActionsMenu = false;
-  activeActionsSubmenu: string | null = null;
-
-  // Line context menu state
-  activeLineMenuId: string | null = null;
-  lineMenuPosition = { x: 0, y: 0 };
-
-  // Global search
   globalSearch = storageSignal<string>('plan-view-global-search', '');
+
   private searchSubject = new Subject<string>();
   private searchSubscription?: Subscription;
-
-  // Size filter debounce
   private sizeValueSubject = new Subject<number | null>();
   private sizeValueSubscription?: Subscription;
 
-  // Link Modal State
+  readonly PROJECT_STATUSES = M.PROJECT_STATUS_LIST;
+
   showLinkModal = false;
-  selectedParentRow: ParentRow | null = null;
-  selectedChildRowToLink: ChildRow | null = null;
-  linkableItems: { id: string; label: string; type?: 'role' | 'personne' }[] = [];
-  selectedIdToLink: string = ''; // kept for project mode (select)
+  selectedParentRow: M.ParentRow | null = null;
+  selectedChildRowToLink: M.ChildRow | null = null;
+  linkableItems: M.LinkableItem[] = [];
+  selectedIdToLink = '';
+  selectedIdsToLink = new Set<string>();
+  linkModalSearchQuery = '';
+  linkModalStatusFilter = '';
+  linkModalIsSaving = false;
 
-  // Bulk-select (Gmail-style)
-  selectedIdsToLink: Set<string> = new Set();
-  linkModalSearchQuery: string = '';
-  linkModalStatusFilter: string = '';
-  linkModalIsSaving: boolean = false;
-
-  get filteredLinkableItems(): { id: string; label: string; type?: 'role' | 'personne' }[] {
-    const q = this.linkModalSearchQuery.trim();
-    const s = this.linkModalStatusFilter;
-    return this.linkableItems.filter((item) => {
-      const proj = this.allProjects.find((p) => p.id === item.id);
-      const matchSearch =
-        !q ||
-        textContains(item.label, q) ||
-        textContains(proj?.code_projet, q) ||
-        textContains(proj?.reference_externe, q);
-      const matchStatus = !s || (proj?.statut || '') === s;
-      return matchSearch && matchStatus;
-    });
-  }
-
-  get isAllFilteredSelected(): boolean {
-    const filtered = this.filteredLinkableItems;
-    return filtered.length > 0 && filtered.every((i) => this.selectedIdsToLink.has(i.id));
-  }
-
-  get isSelectionIndeterminate(): boolean {
-    const filtered = this.filteredLinkableItems;
-    const count = filtered.filter((i) => this.selectedIdsToLink.has(i.id)).length;
-    return count > 0 && count < filtered.length;
-  }
-
-  isLinkSelected(id: string): boolean {
-    return this.selectedIdsToLink.has(id);
-  }
-
-  toggleLinkSelection(id: string): void {
-    if (this.selectedIdsToLink.has(id)) {
-      this.selectedIdsToLink.delete(id);
-    } else {
-      this.selectedIdsToLink.add(id);
-    }
-    this.selectedIdsToLink = new Set(this.selectedIdsToLink); // trigger CD
-  }
-
-  toggleAllLinkSelection(): void {
-    if (this.isAllFilteredSelected) {
-      this.filteredLinkableItems.forEach((i) => this.selectedIdsToLink.delete(i.id));
-    } else {
-      this.filteredLinkableItems.forEach((i) => this.selectedIdsToLink.add(i.id));
-    }
-    this.selectedIdsToLink = new Set(this.selectedIdsToLink); // trigger CD
-  }
-
-  clearLinkSelection(): void {
-    this.selectedIdsToLink = new Set();
-  }
-
-  getLinkableProjectData(id: string): import('../../models/types').Projet | undefined {
-    return this.allProjects.find((p) => p.id === id);
-  }
-
-  // Resource Modal State
   showAddResourceModal = false;
-  selectedChildRow: ChildRow | null = null;
-  selectedParentForResource: ParentRow | null = null;
+  selectedChildRow: M.ChildRow | null = null;
+  selectedParentForResource: M.ParentRow | null = null;
   resourceTypeToAdd: 'role' | 'personne' = 'role';
-  selectedResourceId: string = '';
-  availableRoles: Role[] = [];
-  availablePersonnes: Personne[] = [];
+  selectedResourceId = '';
 
-  // Drag selection
-  isDragging = false;
-  dragStartResource: ResourceRow | null = null;
-  private dragStartChild?: ChildRow;
-  private dragStartParent?: ParentRow;
+  showProjectModal = false;
+  projectToEdit: Partial<M.Projet> | null = null;
+  isCreatingProjectFromLink = false;
+  isMouseDownOnOverlay = false;
 
-  dragStartWeekIndex: number = -1;
-  dragEndWeekIndex: number = -1;
-  selectedCells: Array<{ resource: ResourceRow; week: Date; childId: string; parentId: string }> = [];
-  isSelectionFinished: boolean = false;
-  toolbarPosition: ToolbarPosition | null = null;
-  toolbarVisible: boolean = false; // Controls opacity to prevent flash
-
-  // Value of the first dragged cell (used for pre-fill & live projection tooltip)
-  dragStartCellValue: number | null = null;
-  dragProjectionTooltipVisible: boolean = false;
-
-  get selectionStartWeekDate(): Date | null {
-    if (this.selectedCells.length === 0) return null;
-    const sorted = [...this.selectedCells].sort((a, b) => a.week.getTime() - b.week.getTime());
-    return sorted[0].week;
-  }
-
-  get selectionDaysPerWeek(): number {
-    return this.selectedCells.length > 0 ? this.selectedCells[0].resource.jours_par_semaine || 5 : 5;
-  }
-
-  /** Projected days shown in the live drag tooltip: nbWeeks × dragStartCellValue × daysPerWeek */
-  get dragProjectionDays(): number {
-    if (!this.dragStartCellValue || this.dragStartCellValue <= 0) return 0;
-    const nbWeeks = this.selectedCells.length;
-    const daysPerWeek = this.dragStartResource?.jours_par_semaine || 5;
-    return nbWeeks * this.dragStartCellValue * daysPerWeek;
-  }
-
-  bulkChargeValue: number | null = null;
-  bulkComment: string = '';
-  isSaving = false;
-  isCommittingSelection = false;
-  projectionCommitting: {
-    resourceUniqueId: string;
-    startWeekIdx: number;
-    nbWeeks: number;
-  } | null = null;
-
-  // Moving logic
-  isMovingSelection = false;
-  isMoveCommitting = false; // true while API calls in progress, ghost stays visible
-  isOverSelectionBorder = false;
-  moveStartWeekIndex = -1;
-  moveGhostOffset = 0; // horizontal offset in weeks
-  moveDragBadgeX = 0;
-  moveDragBadgeY = 0;
-  private moveStartClientX = 0;
-  private cellWidthPx = 80; // will be measured at drag start
-
-  // Confirm Modal state
   showConfirmModal = false;
   confirmTitle = '';
   confirmMessage = '';
   private pendingConfirmAction: (() => void) | null = null;
+  private lastMouseDownTarget: HTMLElement | null = null;
 
-  onConfirmAction() {
-    if (this.pendingConfirmAction) {
-      this.pendingConfirmAction();
-    }
-    this.showConfirmModal = false;
-  }
-
-  // Icons
-  Plus = Plus;
-  X = X;
-  Contact = Contact;
-  User = User;
-  FileDown = FileDown;
-  MoreVertical = MoreVertical;
-  ListTree = ListTree;
-  AlignJustify = AlignJustify;
-  Eye = Eye;
-  EyeOff = EyeOff;
-  Calendar = Calendar;
-  ChevronLeft = ChevronLeft;
-  ChevronDown = ChevronDown;
-  ChevronRight = ChevronRight;
-  Network = Network;
-  Users = Users;
-  BookUser = BookUser;
-  Settings2 = Settings2;
-  Search = Search;
-  LucideCalculator = LucideCalculator;
-  GripVertical = GripVertical;
-  ArrowUp = ArrowUp;
-  ArrowDown = ArrowDown;
-  Play = Play;
-  Filter = Filter;
-  Trash2 = Trash2;
-  Copy = Copy;
-  Check = Check;
-  Layers = Layers;
-  Building2 = Building2;
-  LoaderCircle = LoaderCircle;
-
-  AlertTriangle = AlertTriangle;
-  Info = Info;
-  SquarePlus = SquarePlus;
-  SquareMinus = SquareMinus;
-
-  constructor(
-    private teamService: TeamService,
-    private projetService: ProjetService,
-    private chargeService: ChargeService,
-    private rolesService: RolesService,
-    private calendarService: CalendarService,
-    private jalonService: JalonService,
-    private settingsService: SettingsService,
-    private personnesService: PersonnesService,
-    private chiffresService: ChiffresService,
-    private resourceService: ResourceService,
-    private crewdayzService: CrewdayzIntegrationService,
-    private themeService: ThemeService,
-    private cdr: ChangeDetectorRef,
-    private ngZone: NgZone,
-  ) {}
-
-  expandAll() {
-    this.isDefaultExpanded = true;
-    this.manualStates.clear();
-    this.rows.forEach((r) => {
-      r.expanded = true;
-      r.children.forEach((c) => (c.expanded = true));
-    });
-  }
-
-  toggleGlobalFilters() {
-    this.showGlobalFilters.set(!this.showGlobalFilters());
-    if (!this.showGlobalFilters()) {
-      this.openEquipeDropdown = false;
-      this.openProjetDropdown = false;
-      this.openResourceDropdown = false;
-      this.openStatusDropdown = false;
-      this.showPeriodDropdown = false;
-      this.openSizeDropdown = false;
-      this.openJalonDropdown = false;
-    }
-  }
-
-  collapseAll() {
-    this.isDefaultExpanded = false;
-    this.manualStates.clear();
-    this.rows.forEach((r) => {
-      r.expanded = false;
-      r.children.forEach((c) => (c.expanded = false));
-    });
-  }
-
-  exportToExcel() {
-    // Build header row: fixed columns + one column per displayed week
-    const weekHeaders = this.displayedWeeks.map((w) => {
-      const d = w.getDate().toString().padStart(2, '0');
-      const m = (w.getMonth() + 1).toString().padStart(2, '0');
-      const y = w.getFullYear();
-      return `${d}/${m}/${y}`;
-    });
-
-    const headers = ['Projet', 'Code Projet', 'Réf Externe', 'Équipe', 'Ressource', 'Type', ...weekHeaders];
-
-    const dataRows: (string | number)[][] = [];
-
-    // Always iterate in project > team > resource order (mode-agnostic)
-    // We iterate over allProjects sorted as in the tree, using the built rows
-    for (const parent of this.rowsAll) {
-      for (const child of parent.children) {
-        for (const resource of child.resources) {
-          // Determine Projet / Équipe / Ressource columns depending on viewMode
-          let projet: string;
-          let codeProjet: string;
-          let referenceExterne: string = '';
-          let equipe: string;
-          let ressource: string;
-
-          if (this.viewMode() === 'project') {
-            // parent = project, child = team
-            projet = parent.label;
-            codeProjet = parent.code || '';
-            referenceExterne = parent.reference_externe || '';
-            equipe = child.label;
-            ressource = resource.label;
-          } else if (this.viewMode() === 'team') {
-            // parent = team, child = project
-            projet = child.label;
-            codeProjet = child.code || '';
-            referenceExterne = child.reference_externe || '';
-            equipe = parent.label;
-            ressource = resource.label;
-          } else if (this.viewMode() === 'service') {
-            // service mode: parent = service, resource = project
-            projet = resource.label;
-            codeProjet = resource.code || '';
-            referenceExterne = resource.reference_externe || '';
-            equipe = parent.label;
-            ressource = 'Consolidé Service';
-          } else {
-            // resource mode: parent = team, child = resource (label), resource = project
-            projet = resource.label;
-            codeProjet = resource.code || '';
-            referenceExterne = resource.reference_externe || '';
-            equipe = parent.label;
-            ressource = child.label;
-          }
-
-          const weekValues = this.displayedWeeks.map((w) => {
-            const weekKey = w.toISOString().split('T')[0];
-            const val = resource.charges.get(weekKey);
-            return val === 0 || val === undefined ? '' : val;
-          });
-
-          dataRows.push([projet, codeProjet, referenceExterne, equipe, ressource, resource.type, ...weekValues]);
-        }
-      }
-    }
-
-    // Sort by Projet > Équipe > Ressource
-    dataRows.sort((a, b) => {
-      const pa = (a[0] as string).localeCompare(b[0] as string);
-      if (pa !== 0) return pa;
-      const ea = (a[3] as string).localeCompare(b[3] as string); // Adjusted index for 'Équipe'
-      if (ea !== 0) return ea;
-      return (a[4] as string).localeCompare(b[4] as string); // Adjusted index for 'Ressource'
-    });
-
-    const aoa = [headers, ...dataRows];
-    const ws = XLSX.utils.aoa_to_sheet(aoa);
-
-    // Auto-width for fixed columns
-    ws['!cols'] = [
-      { wch: 30 }, // Projet
-      { wch: 12 }, // Code Projet
-      { wch: 15 }, // Réf Externe
-      { wch: 20 }, // Équipe
-      { wch: 24 }, // Ressource
-      { wch: 10 }, // Type
-      ...weekHeaders.map(() => ({ wch: 12 })),
-    ];
-
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Planification');
-
-    const today = new Date();
-    const dateStr = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
-    XLSX.writeFile(wb, `planification_${dateStr}.xlsx`);
-  }
-
-  private externalReferenceUrlQuery = this.settingsService.getSettingQuery('external_reference_url', 'global');
+  private externalReferenceUrlQuery = this.repo.settingsService.getSettingQuery('external_reference_url', 'global');
   externalReferenceUrl = computed(() => this.externalReferenceUrlQuery.data()?.value || null);
 
-  copiedCodes = signal<Set<string>>(new Set());
-
-  copyToClipboard(event: MouseEvent, text: string, key?: string) {
-    event.stopPropagation();
-    const idToStore = key || text;
-    navigator.clipboard.writeText(text).then(() => {
-      const current = new Set(this.copiedCodes());
-      current.add(idToStore);
-      this.copiedCodes.set(current);
-
-      setTimeout(() => {
-        const updated = new Set(this.copiedCodes());
-        updated.delete(idToStore);
-        this.copiedCodes.set(updated);
-      }, 2000);
-    }).catch(err => {
-      console.error('Failed to copy code: ', err);
-    });
+  protected override isDarkMode(): boolean {
+    return this.repo.themeService.isDarkMode();
   }
 
-  cleanJiraRef(ref: string | null | undefined): string {
-    if (!ref) return '';
-    const match = ref.match(/(SUIVI-\d+)/i);
-    if (match) {
-      return match[1].toUpperCase();
-    }
-    return ref.trim();
+  protected override getTodayWeekStart(): Date {
+    return this.repo.calendarService.getWeekStart(new Date());
   }
 
-  formatWeekStart(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+  private get dataset(): M.PlanRawDataset {
+    return {
+      allEquipes: this.allEquipes,
+      allCharges: this.allCharges,
+      allProjects: this.allProjects,
+      availableRoles: this.availableRoles,
+      availablePersonnes: this.availablePersonnes,
+      allJalons: this.allJalons,
+      allLinks: this.allLinks,
+      allRoleAttachments: this.allRoleAttachments,
+      allCapacities: this.allCapacities,
+      allChiffres: this.allChiffres,
+      allServices: this.allServices,
+      capacityIndex: this.capacityIndex,
+      usageMap: this.usageMap,
+    };
   }
+
+  private get filterSummaryState() {
+    return {
+      search: this.globalSearch(),
+      eqLen: this.filterEquipeIds().length,
+      prLen: this.filterProjetIds().length,
+      stLen: this.filterStatusIds().length,
+      resLen: this.filterResourceIds().length,
+      periodEnabled: this.filterPeriodEnabled(),
+      sizeActive: this.filterSizeEnabled() && this.filterSizeValue() !== null,
+      wkLen: this.weekFilters().length,
+    };
+  }
+
+  activeFiltersCount = computed(() => M.computeActiveFiltersCount(this.filterSummaryState));
+  activeFiltersSummary = computed(() => M.computeActiveFiltersSummary(this.filterSummaryState));
 
   ngOnInit() {
     this.loadData({ showSkeleton: true });
     this.generateWeeks();
 
-    // Setup debounced search
     this.searchSubscription = this.searchSubject.pipe(debounceTime(300), distinctUntilChanged()).subscribe((value) => {
       this.globalSearch.set(value);
       this.applyFilters();
       this.cdr.markForCheck();
     });
 
-    // Setup debounced size filter value
     this.sizeValueSubscription = this.sizeValueSubject
       .pipe(debounceTime(300), distinctUntilChanged())
       .subscribe((val) => {
@@ -927,7 +198,6 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       window.addEventListener('mouseup', mouseUpListener);
       this.globalMouseUpListener = () => window.removeEventListener('mouseup', mouseUpListener);
 
-      // Close popovers on scroll so they don't detach from their anchor badge
       const scrollHandler = () => {
         if (this.showYearPopover || this.showChiffrePopover) {
           this.ngZone.run(() => {
@@ -939,14 +209,10 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
             this.cdr.markForCheck();
           });
         }
-
-        // Check selection toolbar visibility on scroll if it is visible
         if (this.selectedCells.length > 0 && this.isSelectionFinished && !this.isMovingSelection && !this.isSaving) {
           this.checkToolbarVisibilityOnScroll();
         }
       };
-      // Attach to the calendar wrapper (the scrollable container)
-      // Use capture phase to catch scroll on any child element
       document.addEventListener('scroll', scrollHandler, true);
       this.scrollCloseListener = () => document.removeEventListener('scroll', scrollHandler, true);
     });
@@ -957,452 +223,18 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.setupResizeObserver();
   }
 
-  restartTutorial() {
-    this.showActionsMenu = false;
-    this.startTutorial(true);
-  }
-
-  private startTutorial(force = false) {
-    const keyActions = 'tutorial-actions-menu-v1';
-    const keyVue = 'tutorial-view-mode-selector-v1';
-
-    const hasSeenActions = !!localStorage.getItem(keyActions);
-    const hasSeenVue = !!localStorage.getItem(keyVue);
-
-    if (!force && hasSeenActions && hasSeenVue) return;
-
-    // Determine mode
-    let mode: 'full' | 'vue-only' = 'full';
-    if (!force && hasSeenActions && !hasSeenVue) {
-      mode = 'vue-only';
-    }
-
-    this.tutorialStarted = true;
-
-    if (force) {
-      this.runTutorialLogic(mode);
-    } else {
-      // We use a timeout to ensure data is loaded and DOM is fully rendered on first load
-      setTimeout(() => this.runTutorialLogic(mode), 2000);
-    }
-  }
-
-  private runTutorialLogic(mode: 'full' | 'vue-only') {
-    // On ouvre les filtres globaux au début du tutoriel
-    // pour s'assurer que la barre de recherche est bien présente et mesurable par driver.js
-    if (!this.showGlobalFilters()) {
-      this.showGlobalFilters.set(true);
-      this.cdr.detectChanges();
-    }
-
-    const steps: any[] = [];
-
-    if (mode === 'full') {
-      steps.push({
-        element: '[data-tour="actions-menu"]',
-        popover: {
-          title: 'Nouveau menu "Actions"',
-          description:
-            'On a regroupé les options d’affichage et d’export dans ce nouveau menu pour libérer de l’espace.',
-          side: 'bottom',
-          align: 'end',
-          showButtons: ['next', 'previous', 'close'],
-        },
-      });
-    }
-
-    steps.push({
-      element: '[data-tour="view-mode-selector"]',
-      popover: {
-        title: 'Choix de la Vue',
-        description:
-          'Le choix de la vue (Par Projet, Par Équipe, Par Ressources) a été déplacé ici. Cliquez sur cette icône pour changer de vue.',
-        side: 'bottom',
-        align: 'start',
-        showButtons: ['next', 'previous', 'close'],
-      },
-    });
-
-    if (mode === 'full') {
-      // Check for line menu presence now that we've waited for render
-      const hasLineMenu = document.querySelector('[data-tour="line-menu"]');
-      if (hasLineMenu) {
-        steps.push({
-          element: '[data-tour="line-menu"]',
-          popover: {
-            title: 'Options de ligne',
-            description: 'Retrouvez ici les actions spécifiques à cette ligne (ajout de ressource, suppression, etc.).',
-            side: 'right',
-            align: 'start',
-            showButtons: ['next', 'previous', 'close'],
-          },
-        });
-      }
-
-      // Check for drag handle presence (Project Mode)
-      const hasDragHandle = document.querySelector('[data-tour="drag-handle"]');
-      if (hasDragHandle) {
-        steps.push({
-          element: '[data-tour="drag-handle"]',
-          popover: {
-            title: 'Réorganisation',
-            description:
-              'Désormais, uniquement dans la Vue "Par Projets", les lignes déplaçables sont indiquées avec la poignée cdkdraghandle.',
-            side: 'right',
-            align: 'start',
-            showButtons: ['next', 'previous', 'close'],
-          },
-        });
-      }
-
-      // La recherche globale en fin de tutorial
-      steps.push({
-        element: '.header-search-bar',
-        popover: {
-          title: 'Recherche globale',
-          description: 'Vous pouvez filtrer les lignes projets visibles via une chaîne de caractères.',
-          side: 'bottom',
-          align: 'start',
-          showButtons: ['next', 'previous', 'close'],
-        },
-      });
-    }
-
-    const driverObj = driver({
-      showProgress: steps.length > 1,
-      nextBtnText: 'Suivant',
-      prevBtnText: 'Précédent',
-      doneBtnText: 'Terminer',
-      allowClose: true,
-      overlayColor: 'rgba(15, 23, 42, 0.75)',
-      // @ts-ignore - popupClass is valid but may not be in older types
-      popoverClass: 'premium-driver-popover',
-      steps: steps,
-      onDestroyed: () => {
-        if (mode === 'full') {
-          localStorage.setItem('tutorial-actions-menu-v1', 'true');
-          localStorage.setItem('tutorial-view-mode-selector-v1', 'true');
-        } else {
-          localStorage.setItem('tutorial-view-mode-selector-v1', 'true');
-        }
-      },
-    });
-
-    driverObj.drive();
-  }
-
   ngOnDestroy() {
-    if (this.resizeObserver) {
-      this.resizeObserver.disconnect();
-    }
-    if (this.globalMouseMoveListener) {
-      this.globalMouseMoveListener();
-    }
-    if (this.globalMouseUpListener) {
-      this.globalMouseUpListener();
-    }
-    if (this.scrollCloseListener) {
-      this.scrollCloseListener();
-    }
-    if (this.searchSubscription) {
-      this.searchSubscription.unsubscribe();
-    }
-    if (this.sizeValueSubscription) {
-      this.sizeValueSubscription.unsubscribe();
-    }
+    this.resizeObserver?.disconnect();
+    this.globalMouseMoveListener?.();
+    this.globalMouseUpListener?.();
+    this.scrollCloseListener?.();
+    this.searchSubscription?.unsubscribe();
+    this.sizeValueSubscription?.unsubscribe();
   }
 
-  onSearchInput(value: string) {
-    this.searchSubject.next(value);
-  }
-
-  setupResizeObserver() {
-    if (typeof ResizeObserver === 'undefined') return;
-
-    this.ngZone.runOutsideAngular(() => {
-      this.resizeObserver = new ResizeObserver(() => {
-        this.updateHeaderHeights();
-      });
-
-      const headerEl = this.headerRowElement?.nativeElement;
-      const milestonesEl = this.milestonesRowElement?.nativeElement;
-
-      if (headerEl) {
-        this.resizeObserver.observe(headerEl);
-      }
-      if (milestonesEl) {
-        this.resizeObserver.observe(milestonesEl);
-      }
-
-      // Initial measurement after rendering completes
-      setTimeout(() => {
-        this.updateHeaderHeights();
-      }, 0);
-    });
-  }
-
-  updateHeaderHeights() {
-    const headerEl = this.headerRowElement?.nativeElement;
-    const milestonesEl = this.milestonesRowElement?.nativeElement;
-
-    if (!headerEl || !milestonesEl) return;
-
-    const headerHeight = headerEl.offsetHeight;
-    const milestonesHeight = milestonesEl.offsetHeight;
-
-    const gridEl = headerEl.parentElement;
-    if (gridEl) {
-      gridEl.style.setProperty('--calendar-header-height', `${headerHeight}px`);
-      gridEl.style.setProperty('--milestones-header-height', `${milestonesHeight}px`);
-    }
-  }
-
-  generateWeeks() {
-    this.displayedWeeks = [];
-    const startDate = new Date(this.currentDate);
-    startDate.setDate(1);
-
-    const firstWeek = this.calendarService.getWeekStart(startDate);
-
-    const NB_WEEKS_TO_DISPLAY = 53; // un an par défaut (besoin de 53 semaines pour couvrir 2026)
-    for (let i = 0; i < NB_WEEKS_TO_DISPLAY; i++) {
-      const week = new Date(firstWeek);
-      week.setDate(week.getDate() + i * 7);
-      this.displayedWeeks.push(week);
-    }
-
-    this.generateMonths();
-    this.generateYears();
-  }
-
-  generateMonths() {
-    this.displayedMonths = [];
-    if (!this.displayedWeeks || this.displayedWeeks.length === 0) return;
-
-    const monthGroups: {
-      [key: string]: {
-        key: string;
-        label: string;
-        year: number;
-        monthNum: number;
-        weeks: Date[];
-        startWeekNum: number;
-      };
-    } = {};
-    const monthKeysOrder: string[] = [];
-
-    this.displayedWeeks.forEach((week) => {
-      const monthNum = week.getMonth();
-      const year = week.getFullYear();
-      const key = `${year}-${monthNum}`;
-
-      if (!monthGroups[key]) {
-        const monthNames = [
-          'Janvier',
-          'Février',
-          'Mars',
-          'Avril',
-          'Mai',
-          'Juin',
-          'Juillet',
-          'Août',
-          'Septembre',
-          'Octobre',
-          'Novembre',
-          'Décembre',
-        ];
-        const label = monthNames[monthNum];
-        const startWeekNum = this.getWeekNumber(week);
-
-        monthGroups[key] = {
-          key,
-          label,
-          year,
-          monthNum,
-          weeks: [],
-          startWeekNum,
-        };
-        monthKeysOrder.push(key);
-      }
-      monthGroups[key].weeks.push(week);
-    });
-
-    this.displayedMonths = monthKeysOrder.map((key) => {
-      const group = monthGroups[key];
-      const quarterNum = Math.floor(group.monthNum / 3) + 1;
-      const quarterLabel = `T${quarterNum} ${group.year}`;
-
-      return {
-        key: group.key,
-        label: group.label,
-        year: group.year,
-        quarterLabel,
-        startWeekNum: group.startWeekNum,
-        weeks: group.weeks,
-      };
-    });
-  }
-
-  get displayedQuarters() {
-    const quarters: { label: string; year: number; weeksCount: number; months: any[] }[] = [];
-    this.displayedMonths.forEach((m) => {
-      let q = quarters.find((x) => x.label === m.quarterLabel);
-      if (!q) {
-        q = {
-          label: m.quarterLabel,
-          year: m.year,
-          weeksCount: 0,
-          months: [],
-        };
-        quarters.push(q);
-      }
-      q.months.push(m);
-      q.weeksCount += m.weeks.length;
-    });
-    return quarters;
-  }
-
-  getGanttBar(charges: Map<string, number> | undefined) {
-    if (!charges || charges.size === 0 || !this.displayedWeeks || this.displayedWeeks.length === 0) {
-      return null;
-    }
-
-    let firstIndex = -1;
-    let lastIndex = -1;
-
-    for (let i = 0; i < this.displayedWeeks.length; i++) {
-      const weekKey = this.formatWeekStart(this.displayedWeeks[i]);
-      const val = charges.get(weekKey) || 0;
-      if (val > 0) {
-        if (firstIndex === -1) {
-          firstIndex = i;
-        }
-        lastIndex = i;
-      }
-    }
-
-    if (firstIndex === -1) {
-      return null;
-    }
-
-    const totalWeeks = this.displayedWeeks.length;
-    const left = (firstIndex / totalWeeks) * 100;
-    const width = ((lastIndex - firstIndex + 1) / totalWeeks) * 100;
-
-    return { left, width };
-  }
-
-  getAssociatedProject(row: any, parentRow?: any, childRow?: any): Projet | undefined {
-    if (this.viewMode() === 'project') {
-      return parentRow?.originalProject || row?.originalProject;
-    } else if (this.viewMode() === 'team') {
-      return childRow?.originalProject || row?.originalProject;
-    } else if (this.viewMode() === 'resource' || this.viewMode() === 'service') {
-      const projId = row?.projectId || row?.resource?.projectId;
-      if (projId) {
-        return this.allProjects.find((p) => p.id === projId);
-      }
-    }
-    return undefined;
-  }
-
-  getGanttBarColor(row: any, parentRow?: any, childRow?: any): string {
-    const project = this.getAssociatedProject(row, parentRow, childRow);
-    if (project && project.color) {
-      return project.color;
-    }
-    if (row && row.color) {
-      return row.color;
-    }
-    if (childRow && childRow.color) {
-      return childRow.color;
-    }
-    return '#10b981';
-  }
-
-  getGanttJalons(row: any, parentRow?: any, childRow?: any): Jalon[] {
-    const project = this.getAssociatedProject(row, parentRow, childRow);
-    if (!project || !project.id || !this.displayedWeeks || this.displayedWeeks.length === 0) {
-      return [];
-    }
-
-    const startOfTimeline = this.displayedWeeks[0];
-    const endOfTimeline = new Date(this.displayedWeeks[this.displayedWeeks.length - 1]);
-    endOfTimeline.setDate(endOfTimeline.getDate() + 7);
-
-    const activeTypes = this.filterJalonTypes();
-    return this.allJalons.filter((j) => {
-      if (j.projet_id !== project.id) return false;
-      if (activeTypes.length > 0 && !activeTypes.includes(j.event_type)) {
-        return false;
-      }
-      const jDate = new Date(j.event_date);
-      return jDate >= startOfTimeline && jDate <= endOfTimeline;
-    });
-  }
-
-  getJalonLeftPercentage(jalon: Jalon): number {
-    if (!this.displayedWeeks || this.displayedWeeks.length === 0) return 0;
-
-    const jDate = new Date(jalon.event_date).getTime();
-    const start = this.displayedWeeks[0].getTime();
-
-    const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
-    const end = this.displayedWeeks[this.displayedWeeks.length - 1].getTime() + oneWeekMs;
-
-    const totalDuration = end - start;
-    if (totalDuration <= 0) return 0;
-
-    const fraction = (jDate - start) / totalDuration;
-    return Math.max(0, Math.min(100, fraction * 100));
-  }
-
-  get visibleJalons(): Jalon[] {
-    if (!this.displayedWeeks || this.displayedWeeks.length === 0) return [];
-    const start = this.displayedWeeks[0];
-    const end = new Date(this.displayedWeeks[this.displayedWeeks.length - 1]);
-    end.setDate(end.getDate() + 7);
-
-    const activeTypes = this.filterJalonTypes();
-    return this.allJalons.filter((j) => {
-      if (activeTypes.length > 0 && !activeTypes.includes(j.event_type)) {
-        return false;
-      }
-      const d = new Date(j.event_date);
-      return d >= start && d <= end;
-    });
-  }
-
-  get uniqueJalonTypes(): string[] {
-    const types = new Set<string>();
-    for (const j of this.allJalons) {
-      if (j.event_type) {
-        types.add(j.event_type);
-      }
-    }
-    return Array.from(types).sort();
-  }
-
-  // trackBy functions for performance
-  trackByRow(index: number, row: ParentRow) {
-    return row.id;
-  }
-  trackByChild(index: number, child: ChildRow) {
-    return child.id;
-  }
-  trackByResource(index: number, res: ResourceRow) {
-    return res.uniqueId;
-  }
-  trackByWeek(index: number, week: Date) {
-    return week.getTime();
-  }
-  trackByFlatRow(index: number, row: FlatRow) {
-    return row.uniqueId;
-  }
-
-  async loadData(options: LoadDataOptions = {}) {
+  async loadData(options: M.LoadDataOptions = {}) {
     const showSkeleton = options.showSkeleton ?? true;
-    let timer: any = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
     if (showSkeleton) {
       timer = setTimeout(() => {
         this.showSkeleton = true;
@@ -1414,1192 +246,278 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     try {
-      const [
-        equipes,
-        charges,
-        projects,
-        roles,
-        personnes,
-        jalons,
-        links,
-        roleAttachments,
-        capacities,
-        chiffres,
-        services,
-      ] = await Promise.all([
-        this.teamService.getAllEquipes(),
-        this.chargeService.getAllCharges(),
-        this.projetService.getAllProjets(),
-        this.rolesService.getAllRoles(),
-        this.personnesService.getAllPersonnes(),
-        this.jalonService.getAllJalons(),
-        this.projetService.getAllEquipeProjetLinks(),
-        this.rolesService.getAllRoleAttachments(),
-        this.teamService.getAllCapacities(),
-        this.chiffresService.getAllChiffres(),
-        this.resourceService.getAllServices(),
-      ]);
-
-      this.allEquipes = equipes;
-      this.allCharges = charges;
-      this.allProjects = projects;
-      this.availableRoles = roles;
-      this.availablePersonnes = personnes;
-      this.allJalons = jalons;
-      this.allLinks = links;
-      this.allRoleAttachments = roleAttachments;
-      this.allCapacities = capacities;
-      this.allChiffres = chiffres;
-      this.allServices = services;
-
-      // Charger la config source de capacité (Roadmap vs Crewdayz)
-      this.capacitySourceConfigs = await this.crewdayzService.getCapacitySourceConfigs();
-
-      // Détecter les équipes en mode Crewdayz
-      const crewdayzTeamIds = new Set(
-        equipes
-          .filter((eq) => this.crewdayzService.getSourceForTeam(eq.id!, this.capacitySourceConfigs) === 'crewdayz')
-          .map((eq) => eq.id!)
-      );
-
-      // Charger les mappings et availabilities Crewdayz uniquement si nécessaire
-      if (crewdayzTeamIds.size > 0) {
-        const startDateStr = this.formatWeekStart(this.displayedWeeks[0]);
-        const endDateStr = this.formatWeekStart(this.displayedWeeks[this.displayedWeeks.length - 1]);
-        const [mappings, availabilities] = await Promise.all([
-          this.crewdayzService.getMappings(),
-          this.crewdayzService.getAvailabilities(startDateStr, endDateStr),
-        ]);
-        this.crewdayzMappings = mappings;
-        this.crewdayzAvailabilities = availabilities;
-      } else {
-        this.crewdayzMappings = [];
-        this.crewdayzAvailabilities = [];
-      }
-
-      // Index des capacités : source hybride par équipe
-      // 1️⃣ Indexer TOUTES les capacités roadmap d'abord (base de données par défaut)
-      this.capacityIndex.clear();
-      const capacityMap = new Map<string, Capacite>();
-      this.allCapacities.forEach((c) => {
-        const weekKey = c.semaine_debut.split('T')[0];
-        const rId = c.role_id || c.personne_id;
-        const type = c.role_id ? 'role' : 'personne';
-        const key = `${c.equipe_id}_${type}_${rId}_${weekKey}`;
-        capacityMap.set(key, c);
-        this.capacityIndex.set(key, c.capacite);
-      });
-
-      // 2️⃣ Pour les équipes en source 'crewdayz', calculer la capacité effective (Crewdayz + override/delta)
-      if (crewdayzTeamIds.size > 0) {
-        for (const equipe of equipes) {
-          if (!crewdayzTeamIds.has(equipe.id!)) continue;
-
-          // Ressources de type 'role' (via role_attachments de cette équipe)
-          const teamRoleAtts = roleAttachments.filter((att: any) => att.equipe_id === equipe.id);
-          // Ressources de type 'personne' (via equipe_id)
-          const teamPersonnes = personnes.filter((p) => p.equipe_id === equipe.id);
-
-          for (const week of this.displayedWeeks) {
-            const weekStr = this.formatWeekStart(week);
-
-            // Rôles
-            for (const att of teamRoleAtts) {
-              if (!att.id) continue;
-              const key = `${equipe.id!}_role_${att.role_id}_${weekStr}`;
-              const custom = capacityMap.get(key);
-
-              const crewdayzBase = this.crewdayzService.calculateAvailableCount(
-                weekStr,
-                att.id as string,
-                null,
-                equipe.id!,
-                this.crewdayzAvailabilities,
-                this.crewdayzMappings
-              );
-
-              const effectiveCap = this.crewdayzService.getEffectiveCapacity(
-                'crewdayz',
-                custom?.capacite || 0,
-                crewdayzBase,
-                custom?.override_capacite,
-                custom?.override_delta
-              );
-
-              this.capacityIndex.set(key, effectiveCap);
-            }
-
-            // Personnes
-            for (const p of teamPersonnes) {
-              const key = `${equipe.id!}_personne_${p.id!}_${weekStr}`;
-              const custom = capacityMap.get(key);
-
-              const crewdayzBase = this.crewdayzService.calculateAvailableCount(
-                weekStr,
-                equipe.id!,
-                p.id!,
-                equipe.id!,
-                this.crewdayzAvailabilities,
-                this.crewdayzMappings
-              );
-
-              const effectiveCap = this.crewdayzService.getEffectiveCapacity(
-                'crewdayz',
-                custom?.capacite || 0,
-                crewdayzBase,
-                custom?.override_capacite,
-                custom?.override_delta
-              );
-
-              this.capacityIndex.set(key, effectiveCap);
-            }
-          }
-        }
-      }
-
+      const loaded = await this.repo.loadDataset(this.displayedWeeks, this.capacityIndex);
+      Object.assign(this, loaded);
       this.buildTree();
       this.precalculateResources();
-      this.calculateMetrics(); // New step
+      this.calculateMetrics();
       this.cdr.markForCheck();
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
-      if (timer) {
-        clearTimeout(timer);
-      }
-      if (this.showSkeleton) {
-        this.showSkeleton = false;
-      }
+      if (timer) clearTimeout(timer);
+      if (this.showSkeleton) this.showSkeleton = false;
       this.isSaving = false;
       this.cdr.markForCheck();
     }
   }
 
-  calculateMetrics() {
-    this.rowsAll.forEach((parent) => {
-      parent.metrics = new Map();
-      parent.children.forEach((child) => {
-        child.metrics = new Map();
-        child.resources.forEach((res) => {
-          res.metrics = new Map();
-          this.displayedWeeks.forEach((week) => {
-            const weekKey = this.formatWeekStart(week);
-            const charge = res.charges.get(weekKey) || 0;
-            res.metrics!.set(weekKey, { total: charge });
-          });
-        });
-
-        // Sum Child metrics
-        this.displayedWeeks.forEach((week) => {
-          const weekKey = this.formatWeekStart(week);
-          let total = 0;
-          child.resources.forEach((res) => {
-            total += res.metrics?.get(weekKey)?.total || 0;
-          });
-          child.metrics!.set(weekKey, { total });
-        });
-      });
-
-      // Sum Parent metrics
-      const teamIdFromParent = this.viewMode() === 'resource' ? parent.id.split('_')[0] : parent.id;
-      const serviceResourceKeys =
-        this.viewMode() === 'service' ? this.getServiceResourceKeys(parent.id) : null;
-      this.displayedWeeks.forEach((week) => {
-        const weekKey = this.formatWeekStart(week);
-        let total = 0;
-        let totalCapacity = 0;
-
-        parent.children.forEach((child) => {
-          total += child.metrics?.get(weekKey)?.total || 0;
-        });
-
-        if (this.viewMode() === 'resource') {
-          // In Resource Mode, Parent IS a specific resource for a team
-          const parts = parent.id.split('_');
-          const rType = parts[1];
-          const rId = parts.slice(2).join('_');
-          const capKey = `${teamIdFromParent}_${rType}_${rId}_${weekKey}`;
-          totalCapacity = this.capacityIndex.get(capKey) || 0;
-        } else if (this.viewMode() === 'service' && serviceResourceKeys) {
-          total = parent.totalCharges?.get(weekKey) || 0;
-          for (const resKey of serviceResourceKeys) {
-            totalCapacity += this.capacityIndex.get(`${resKey}_${weekKey}`) || 0;
-          }
-        }
-
-        const availability = totalCapacity - total;
-        let status: 'positive' | 'zero' | 'negative' | 'none' = 'none';
-        if (totalCapacity > 0 || total > 0) {
-          if (availability > 0) status = 'positive';
-          else if (availability === 0) status = 'zero';
-          else status = 'negative';
-        }
-
-        parent.metrics!.set(weekKey, {
-          total,
-          capacity: totalCapacity,
-          availability: availability,
-          status: status,
-        });
-      });
-    });
+  generateWeeks() {
+    const res = generateWeeksTimeline(
+      this.currentDate,
+      (d) => this.repo.calendarService.getWeekStart(d),
+      (d) => this.repo.calendarService.getWeekNumber(d),
+      (d) => this.repo.calendarService.getWeekYear(d),
+    );
+    this.displayedWeeks = res.displayedWeeks;
+    this.displayedMonths = res.displayedMonths;
+    this.displayedYears = res.displayedYears;
+    this.isYearChangeMap = res.isYearChangeMap;
   }
 
-  /**
-   * Résout strictement le service_id d'un profil (role) ou d'une personne,
-   * sans aucun fallback sur Equipe.service_id.
-   */
+  getWeekNumber(date: Date): number {
+    return this.repo.calendarService.getWeekNumber(date);
+  }
+
+  isCurrentWeek(date: Date): boolean {
+    return this.repo.calendarService.isCurrentWeek(date);
+  }
+
+  private shiftTimeline(deltaMonths?: number) {
+    if (deltaMonths === undefined) this.currentDate = new Date();
+    else this.currentDate.setMonth(this.currentDate.getMonth() + deltaMonths);
+    this.generateWeeks();
+    this.precalculateResources();
+    this.cdr.markForCheck();
+  }
+
+  goToToday() {
+    this.shiftTimeline();
+  }
+  goToPreviousMonth() {
+    this.shiftTimeline(-1);
+  }
+  goToNextMonth() {
+    this.shiftTimeline(1);
+  }
+
+  onDateSelected(event: Event) {
+    const selectedDateStr = (event.target as HTMLInputElement).value;
+    if (!selectedDateStr) return;
+    this.selectedStartDate = this.repo.calendarService.getWeekStart(new Date(selectedDateStr));
+    this.selectedCapacityYear.set('custom');
+    this.showYearPopover = false;
+  }
+
+  // --- Projection, Tree, Metrics & Chiffres ---
   getResourceServiceId(type: 'role' | 'personne', resourceId: string, teamId?: string): string | null {
-    if (!resourceId) return null;
-    if (type === 'personne') {
-      const personne = this.availablePersonnes.find((p) => p.id === resourceId);
-      return personne?.service_id ?? null;
-    }
-    if (teamId) {
-      const teamAtt = this.allRoleAttachments.find(
-        (a) => a.role_id === resourceId && a.equipe_id === teamId && a.service_id != null,
-      );
-      if (teamAtt?.service_id) return teamAtt.service_id;
-    }
-    const anyAtt = this.allRoleAttachments.find((a) => a.role_id === resourceId && a.service_id != null);
-    if (anyAtt?.service_id) return anyAtt.service_id;
-
-    const role = this.availableRoles.find((r) => r.id === resourceId);
-    return role?.service_id ?? null;
-  }
-
-  /**
-   * Retourne l'ensemble dédupliqué des clés `${teamId}_${type}_${resourceId}`
-   * rattachées au service donné et respectant les filtres Équipes et Rôle/Personne actifs.
-   */
-  private getServiceResourceKeys(serviceId: string): Set<string> {
-    const keys = new Set<string>();
-    const activeEquipeIds = this.filterEquipeIds();
-    const activeResourceIds = this.filterResourceIds();
-
-    const passesFilters = (teamId: string | null | undefined, type: 'role' | 'personne', rId: string): boolean => {
-      if (!teamId || !rId) return false;
-      if (activeEquipeIds.length > 0 && !activeEquipeIds.includes(teamId)) return false;
-      if (activeResourceIds.length > 0 && !activeResourceIds.includes(`${type}:${rId}`)) return false;
-      return this.getResourceServiceId(type, rId, teamId) === serviceId;
-    };
-
-    for (const att of this.allRoleAttachments) {
-      if (passesFilters(att.equipe_id, 'role', att.role_id)) {
-        keys.add(`${att.equipe_id}_role_${att.role_id}`);
-      }
-    }
-
-    for (const p of this.availablePersonnes) {
-      if (passesFilters(p.equipe_id, 'personne', p.id!)) {
-        keys.add(`${p.equipe_id}_personne_${p.id}`);
-      }
-    }
-
-    for (const cap of this.allCapacities) {
-      const rType: 'role' | 'personne' = cap.role_id ? 'role' : 'personne';
-      const rId = cap.role_id || cap.personne_id || '';
-      if (passesFilters(cap.equipe_id, rType, rId)) {
-        keys.add(`${cap.equipe_id}_${rType}_${rId}`);
-      }
-    }
-
-    return keys;
-  }
-
-  precalculateResources() {
-    this.rowsAll.forEach((parent) => {
-      // In resource mode, parent.id is `${team.id}_${rKey}`.
-      // In team mode, parent.id is just `${team.id}`.
-      const teamIdFromParent = this.viewMode() === 'resource' ? parent.id.split('_')[0] : parent.id;
-
-      parent.children.forEach((child) => {
-        // In project mode, children are teams, so teamId is child.id
-        // In team/resource mode, teamId comes from parent
-        const teamId = this.viewMode() === 'project' ? child.id : teamIdFromParent;
-
-        child.resources.forEach((resource) => {
-          this.precalculateResource(resource, teamId);
-        });
-      });
-    });
-  }
-
-  precalculateResource(resource: ResourceRow, teamId: string) {
-    resource.cellData = [];
-    if (this.viewMode() === 'service') {
-      for (const week of this.displayedWeeks) {
-        const value = this.getResourceValue(resource, week);
-        const weekKey = this.formatWeekStart(week);
-        const comment = resource.comments?.get(weekKey) || null;
-        resource.cellData.push({
-          value,
-          availability: 0,
-          showAvailability: false,
-          isPositive: false,
-          isZero: false,
-          isNegative: false,
-          hasCapRecord: false,
-          comment,
-        });
-      }
-      return;
-    }
-
-    for (const week of this.displayedWeeks) {
-      const value = this.getResourceValue(resource, week);
-      const availability = this.getAvailability(resource, week, teamId);
-
-      const weekKey = this.formatWeekStart(week);
-      const hasCapRecord = this.allCapacities.some(
-        (c) =>
-          c.equipe_id === teamId &&
-          c.semaine_debut.startsWith(weekKey) &&
-          (resource.type === 'role'
-            ? c.role_id === (resource.resourceId || resource.id)
-            : c.personne_id === (resource.resourceId || resource.id)),
-      );
-
-      // Relevance check for persons
-      let isRelevant = true;
-      if (resource.type === 'personne') {
-        const personne = this.availablePersonnes.find((p) => p.id === (resource.resourceId || resource.id));
-        isRelevant = personne ? personne.equipe_id === teamId : false;
-      }
-
-      const comment = resource.comments?.get(weekKey) || null;
-
-      resource.cellData.push({
-        value,
-        availability,
-        showAvailability: isRelevant,
-        isPositive: availability > 0,
-        isZero: availability === 0,
-        isNegative: availability < 0,
-        hasCapRecord: hasCapRecord,
-        comment,
-      });
-    }
-  }
-
-  getCellTooltip(resource: ResourceRow, week: Date, cell?: ResourceCellData): string {
-    const weekKey = this.formatWeekStart(week);
-    const val = resource.charges?.get(weekKey) || 0;
-    const comment = cell?.comment ?? resource.comments?.get(weekKey);
-    const days = resource.dailyCharges
-      ? Math.round((resource.dailyCharges.get(weekKey) || 0) * 10) / 10
-      : Math.round(val * (resource.jours_par_semaine || 5) * 10) / 10;
-    let text = `${resource.label} : ${val} ETP (${days}j)`;
-    if (cell && cell.showAvailability && cell.hasCapRecord) {
-      text += ` | Dispo : ${cell.availability > 0 ? '+' : ''}${cell.availability} ETP`;
-    }
-    if (comment) {
-      text += `\n💬 Note : ${comment}`;
-    }
-    return text;
-  }
-
-  private shouldShowAvailabilityInternal(resource: ResourceRow, week: Date, teamId: string): boolean {
-    // Exact same logic as shouldShowAvailability but without the this.showAvailability() check
-    if (resource.type === 'role') return true;
-    const personne = this.availablePersonnes.find((p) => p.id === resource.id);
-    if (!personne) return false;
-    return personne.equipe_id === teamId;
-  }
-
-  getJalonsForWeek(week: Date): Jalon[] {
-    const startOfWeek = new Date(week);
-    startOfWeek.setHours(0, 0, 0, 0);
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6);
-    endOfWeek.setHours(23, 59, 59, 999);
-
-    const activeTypes = this.filterJalonTypes();
-    return this.allJalons.filter((j) => {
-      if (activeTypes.length > 0 && !activeTypes.includes(j.event_type)) {
-        return false;
-      }
-      const jDate = new Date(j.event_date);
-      return jDate >= startOfWeek && jDate <= endOfWeek;
-    });
-  }
-
-  getJalonBadgeColor(type: string): string {
-    const isDark = this.themeService.isDarkMode();
-    switch (type?.toLowerCase()) {
-      case 'livraison':
-      case 'lv':
-        return isDark ? '#10b981' : '#059669';
-      case 'maintenance':
-      case 'lvm':
-        return isDark ? '#c084fc' : '#9333ea';
-      case 'mep':
-        return isDark ? '#60a5fa' : '#2563eb';
-      case 'sprint':
-      case 'sp':
-        return isDark ? '#fbbf24' : '#d97706';
-      default:
-        return isDark ? '#94a3b8' : '#6b7280';
-    }
-  }
-
-  getJalonColor(type: string): string {
-    const isDark = this.themeService.isDarkMode();
-    switch (type?.toLowerCase()) {
-      case 'livraison':
-      case 'lv':
-        return isDark ? '#064e3b' : '#d1fae5'; // Dark emerald vs light emerald
-      case 'maintenance':
-      case 'lvm':
-        return isDark ? '#581c87' : '#f3e8ff'; // Dark purple vs light purple
-      case 'mep':
-        return isDark ? '#1e3a8a' : '#dbeafe'; // Dark blue vs light blue
-      case 'sprint':
-      case 'sp':
-        return isDark ? '#78350f' : '#fef3c7'; // Dark amber vs light amber
-      default:
-        return isDark ? '#334155' : '#f3f4f6'; // Slate 700 vs gray 100
-    }
-  }
-
-  getJalonTextColor(type: string): string {
-    const isDark = this.themeService.isDarkMode();
-    switch (type?.toLowerCase()) {
-      case 'livraison':
-      case 'lv':
-        return isDark ? '#a7f3d0' : '#065f46';
-      case 'maintenance':
-      case 'lvm':
-        return isDark ? '#f3e8ff' : '#6b21a8';
-      case 'mep':
-        return isDark ? '#bfdbfe' : '#1e40af';
-      case 'sprint':
-      case 'sp':
-        return isDark ? '#fef3c7' : '#92400e';
-      default:
-        return isDark ? '#f1f5f9' : '#374151';
-    }
-  }
-
-  getJalonBorderColor(type: string): string {
-    const isDark = this.themeService.isDarkMode();
-    switch (type?.toLowerCase()) {
-      case 'livraison':
-      case 'lv':
-        return isDark ? '#10b981' : '#34d399';
-      case 'maintenance':
-      case 'lvm':
-        return isDark ? '#a855f7' : '#c084fc';
-      case 'mep':
-        return isDark ? '#3b82f6' : '#60a5fa';
-      case 'sprint':
-      case 'sp':
-        return isDark ? '#f59e0b' : '#fbbf24';
-      default:
-        return isDark ? '#64748b' : '#cbd5e1';
-    }
+    return Projection.getResourceServiceId(this.dataset, type, resourceId, teamId);
   }
 
   calculateUsage() {
-    this.usageMap.clear();
-
-    for (const charge of this.allCharges) {
-      if (!charge.semaine_debut || !charge.equipe_id) continue;
-
-      const weekKey = charge.semaine_debut.split('T')[0];
-      const teamId = charge.equipe_id;
-
-      let resourceKey = '';
-      if (charge.role_id) {
-        resourceKey = `role_${charge.role_id}`;
-      } else if (charge.personne_id) {
-        resourceKey = `personne_${charge.personne_id}`;
-      } else {
-        continue;
-      }
-
-      const mapKey = `${teamId}_${resourceKey}_${weekKey}`;
-      const currentVal = this.usageMap.get(mapKey) || 0;
-      this.usageMap.set(mapKey, currentVal + charge.unite_ressource);
-    }
+    Projection.calculateUsageMap(this.dataset);
   }
 
-  getAvailability(resource: ResourceRow, week: Date, teamId: string): number {
-    const weekKey = this.formatWeekStart(week);
-    const rId = resource.resourceId || resource.id;
-    const resourceKey = `${resource.type}_${rId}`;
-    const mapKey = `${teamId}_${resourceKey}_${weekKey}`;
-
-    const usage = this.usageMap.get(mapKey) || 0;
-
-    // Use capacityIndex which accounts for capacity source config (Roadmap vs Crewdayz)
-    const capKey = `${teamId}_${resource.type}_${rId}_${weekKey}`;
-    const totalCapacity = this.capacityIndex.get(capKey) || 0;
-
-    return totalCapacity - usage;
+  getAvailability(resource: M.ResourceRow, week: Date, teamId: string): number {
+    return Projection.getAvailability(this.dataset, resource, week, teamId);
   }
 
-  shouldShowAvailability(resource: ResourceRow, week: Date, teamId: string): boolean {
-    const charge = this.getResourceValue(resource, week);
-    if (charge > 0) return true;
-    if (!this.showAvailability()) return false;
-
-    const availability = this.getAvailability(resource, week, teamId);
-    if (availability !== 0) return true;
-
-    // Check if a capacity record actually exists or is set in capacityIndex
-    const weekKey = this.formatWeekStart(week);
-    const rId = resource.resourceId || resource.id;
-    const capKey = `${teamId}_${resource.type}_${rId}_${weekKey}`;
-    return this.capacityIndex.has(capKey);
+  shouldShowAvailability(resource: M.ResourceRow, week: Date, teamId: string): boolean {
+    return Projection.shouldShowAvailability(this.dataset, this.showAvailability(), resource, week, teamId);
   }
 
-  switchViewMode(mode: 'project' | 'team' | 'resource' | 'service') {
-    this.clearSelection();
-    this.viewMode.set(mode);
-    this.buildTree();
+  precalculateResources() {
+    Projection.precalculateAllResources(this.dataset, this.rowsAll, this.viewMode(), this.displayedWeeks);
   }
 
-  async drop(event: CdkDragDrop<any[]>) {
-    if (this.viewMode() !== 'project' || this.displayFormat() !== 'tree') return;
-    if (event.previousIndex === event.currentIndex) return;
+  precalculateResource(resource: M.ResourceRow, teamId: string) {
+    Projection.precalculateResource(this.dataset, this.viewMode(), this.displayedWeeks, resource, teamId);
+  }
 
-    // Move in UI first for responsiveness
-    moveItemInArray(this.rows, event.previousIndex, event.currentIndex);
-    await this.updateRankAfterMove(event.currentIndex);
+  calculateMetrics() {
+    Projection.calculateTreeMetrics(this.dataset, this.rowsAll, this.viewMode(), this.displayedWeeks, this.filterEquipeIds(), this.filterResourceIds());
+  }
+
+  shouldShowResource(resource: M.ResourceRow): boolean {
+    return Projection.shouldShowResourceByWeekFilters(resource, this.weekFilters(), this.displayedWeeks);
   }
 
   buildTree() {
-    this.rows = [];
-    // Restore expanded state if re-building (optional, good UX)
-    // For now reset to closed or keep simple.
-
-    if (this.viewMode() === 'project') {
-      // Parent = Project, Child = Team, GrandChild = Resource
-      // Sort projects by rank using utility function
-      const sortedProjects = sortByRank(
-        this.allProjects,
-        (p) => p.rank,
-        (a, b) => a.nom_projet.localeCompare(b.nom_projet),
-      );
-
-      for (const project of sortedProjects) {
-        const projectCharges = this.allCharges.filter((c) => c.projet_id === project.id);
-
-        // Find all teams involved in this project (via charges OR links)
-        const chargeTeamIds = projectCharges.map((c) => c.equipe_id).filter((id) => !!id);
-        const linkedTeamIds = this.allLinks.filter((l) => l.projet_id === project.id).map((l) => l.equipe_id);
-
-        const involvedTeamIds = new Set([...chargeTeamIds, ...linkedTeamIds]);
-
-        const children: ChildRow[] = [];
-        const parentTotal = new Map<string, number>();
-
-        involvedTeamIds.forEach((teamId) => {
-          const team = this.allEquipes.find((e) => e.id === teamId);
-          const label = team ? team.nom : 'No Team';
-          const color = team ? team.color : undefined;
-          const code = team ? team.code : undefined;
-          const teamCharges = new Map<string, number>();
-
-          // Get charges for this team on this project
-          const teamProjectCharges = projectCharges.filter((c) => c.equipe_id === teamId);
-
-          // Build resources for this team
-          const resources: ResourceRow[] = [];
-          const resourceMap = new Map<string, ResourceRow>();
-
-          teamProjectCharges.forEach((charge) => {
-            let resourceKey: string;
-            let resourceLabel: string;
-            let resourceType: 'role' | 'personne';
-            let joursParSemaine = 0;
-            let resourceColor: string | undefined;
-
-            if (charge.role_id) {
-              resourceKey = `role_${charge.role_id}`;
-              const role = this.availableRoles.find((r) => r.id === charge.role_id);
-              resourceLabel = role ? role.nom : 'Unknown Role';
-              joursParSemaine = role?.jours_par_semaine || 0;
-              resourceType = 'role';
-              resourceColor = role?.color;
-            } else if (charge.personne_id) {
-              resourceKey = `personne_${charge.personne_id}`;
-              const personne = this.availablePersonnes.find((p) => p.id === charge.personne_id);
-              resourceLabel = personne ? `${personne.prenom} ${personne.nom}` : 'Unknown Person';
-              joursParSemaine = personne?.jours_par_semaine || 0;
-              resourceType = 'personne';
-              resourceColor = personne?.color;
-            } else {
-              return; // Skip charges without resource
-            }
-
-            if (!resourceMap.has(resourceKey)) {
-              const uniqueId = `${project.id}_${teamId}_${charge.role_id || charge.personne_id}_${resourceType}`;
-              resourceMap.set(resourceKey, {
-                id: charge.role_id || charge.personne_id || '',
-                uniqueId: uniqueId,
-                label: resourceLabel,
-                type: resourceType,
-                jours_par_semaine: joursParSemaine,
-                charges: new Map<string, number>(),
-                comments: new Map<string, string>(),
-                color: resourceColor,
-                resourceId: charge.role_id || charge.personne_id || '',
-                projectId: project.id,
-              });
-            }
-
-            const resource = resourceMap.get(resourceKey)!;
-
-            // Add charge to resource if it has dates
-            if (charge.semaine_debut) {
-              const weekKey = charge.semaine_debut.split('T')[0];
-              const val = resource.charges.get(weekKey) || 0;
-              resource.charges.set(weekKey, val + charge.unite_ressource);
-              if (charge.comment) {
-                resource.comments?.set(weekKey, charge.comment);
-              }
-
-              // Add to team total
-              const teamVal = teamCharges.get(weekKey) || 0;
-              teamCharges.set(weekKey, teamVal + charge.unite_ressource);
-
-              // Add to parent total
-              const pVal = parentTotal.get(weekKey) || 0;
-              parentTotal.set(weekKey, pVal + charge.unite_ressource);
-            }
-          });
-
-          resources.push(...resourceMap.values());
-
-          // Apply week filters to resources
-          const filteredResources = resources.filter((r) => this.shouldShowResource(r));
-
-          children.push({
-            id: teamId!,
-            label: label,
-            code: code,
-            color: color,
-            expanded: this.manualStates.has(`${project.id}_${teamId}`)
-              ? this.manualStates.get(`${project.id}_${teamId}`)!
-              : this.isDefaultExpanded, // Respect persisted preference
-            resources: filteredResources,
-            charges: teamCharges,
-          });
-        });
-
-        // Sort children (teams) alphabetically
-        children.sort((a, b) => a.label.localeCompare(b.label));
-
-        // Sort resources within each child alphabetically
-        children.forEach((child) => {
-          child.resources.sort((a, b) => a.label.localeCompare(b.label));
-        });
-
-        this.rows.push({
-          id: project.id!,
-          label: project.nom_projet,
-          code: project.code_projet,
-          reference_externe: project.reference_externe,
-          color: project.color,
-          expanded: this.manualStates.has(project.id!) ? this.manualStates.get(project.id!)! : this.isDefaultExpanded, // Respect persisted preference
-          children: children,
-          totalCharges: parentTotal,
-          originalProject: project,
-        });
-      }
-    } else if (this.viewMode() === 'team') {
-      // Parent = Team, Child = Project, GrandChild = Resource
-      // Sort teams alphabetically
-      const sortedTeams = [...this.allEquipes].sort((a, b) => a.nom.localeCompare(b.nom));
-
-      for (const team of sortedTeams) {
-        const teamCharges = this.allCharges.filter((c) => c.equipe_id === team.id);
-
-        // Find all projects this team is working on (via charges OR links)
-        const chargeProjectIds = teamCharges.map((c) => c.projet_id).filter((id) => !!id);
-        const linkedProjectIds = this.allLinks.filter((l) => l.equipe_id === team.id).map((l) => l.projet_id);
-
-        const involvedProjectIds = new Set([...chargeProjectIds, ...linkedProjectIds]);
-
-        const children: ChildRow[] = [];
-        const parentTotal = new Map<string, number>();
-
-        const sortedInvolvedProjects = sortByRank(
-          this.allProjects.filter((p) => involvedProjectIds.has(p.id!)),
-          (p) => p.rank,
-          (a, b) => a.nom_projet.localeCompare(b.nom_projet),
-        );
-
-        sortedInvolvedProjects.forEach((project) => {
-          const label = project ? project.nom_projet : 'Unknown Project';
-          const color = project ? project.color : undefined;
-          const code = project ? project.code_projet : undefined;
-          const reference_externe = project ? project.reference_externe : undefined;
-          const projectId = project.id;
-          const projectCharges = new Map<string, number>();
-
-          // Get charges for this project on this team
-          const teamProjectCharges = teamCharges.filter((c) => c.projet_id === projectId);
-
-          // Build resources for this project
-          const resources: ResourceRow[] = [];
-          const resourceMap = new Map<string, ResourceRow>();
-
-          teamProjectCharges.forEach((charge) => {
-            let resourceKey: string;
-            let resourceLabel: string;
-            let resourceType: 'role' | 'personne';
-            let joursParSemaine = 0;
-            let resourceColor: string | undefined;
-
-            if (charge.role_id) {
-              resourceKey = `role_${charge.role_id}`;
-              const role = this.availableRoles.find((r) => r.id === charge.role_id);
-              resourceLabel = role ? role.nom : 'Unknown Role';
-              joursParSemaine = role?.jours_par_semaine || 0;
-              resourceType = 'role';
-              resourceColor = role?.color;
-            } else if (charge.personne_id) {
-              resourceKey = `personne_${charge.personne_id}`;
-              const personne = this.availablePersonnes.find((p) => p.id === charge.personne_id);
-              resourceLabel = personne ? `${personne.prenom} ${personne.nom}` : 'Unknown Person';
-              joursParSemaine = personne?.jours_par_semaine || 0;
-              resourceType = 'personne';
-              resourceColor = personne?.color;
-            } else {
-              return; // Skip charges without resource
-            }
-
-            if (!resourceMap.has(resourceKey)) {
-              const uniqueId = `${team.id}_${projectId}_${charge.role_id || charge.personne_id}_${resourceType}`;
-              resourceMap.set(resourceKey, {
-                id: charge.role_id || charge.personne_id || '',
-                uniqueId: uniqueId,
-                label: resourceLabel,
-                type: resourceType,
-                jours_par_semaine: joursParSemaine,
-                charges: new Map<string, number>(),
-                comments: new Map<string, string>(),
-                color: resourceColor,
-                resourceId: charge.role_id || charge.personne_id || '',
-                projectId: projectId,
-              });
-            }
-
-            const resource = resourceMap.get(resourceKey)!;
-
-            // Add charge to resource if it has dates
-            if (charge.semaine_debut) {
-              const weekKey = charge.semaine_debut.split('T')[0];
-              const val = resource.charges.get(weekKey) || 0;
-              resource.charges.set(weekKey, val + charge.unite_ressource);
-              if (charge.comment) {
-                resource.comments?.set(weekKey, charge.comment);
-              }
-
-              // Add to project total
-              const projVal = projectCharges.get(weekKey) || 0;
-              projectCharges.set(weekKey, projVal + charge.unite_ressource);
-
-              // Add to parent total
-              const pVal = parentTotal.get(weekKey) || 0;
-              parentTotal.set(weekKey, pVal + charge.unite_ressource);
-            }
-          });
-
-          resources.push(...resourceMap.values());
-
-          // Apply week filters to resources
-          const filteredResources = resources.filter((r) => this.shouldShowResource(r));
-
-          children.push({
-            id: projectId!,
-            label: label,
-            code: code,
-            reference_externe: reference_externe,
-            color: color,
-            expanded: this.manualStates.has(`${team.id}_${projectId}`)
-              ? this.manualStates.get(`${team.id}_${projectId}`)!
-              : this.isDefaultExpanded, // Respect persisted preference
-            resources: filteredResources,
-            charges: projectCharges,
-            originalProject: project,
-          });
-        });
-
-        // Resources are already pushed in order of projects
-
-        // Sort resources within each child alphabetically
-        children.forEach((child) => {
-          child.resources.sort((a, b) => a.label.localeCompare(b.label));
-        });
-
-        this.rows.push({
-          id: team.id!,
-          label: team.nom,
-          code: team.code,
-          color: team.color,
-          expanded: this.manualStates.has(team.id!) ? this.manualStates.get(team.id!)! : this.isDefaultExpanded, // Respect persisted preference
-          children: children,
-          totalCharges: parentTotal,
-        });
-      }
-    } else if (this.viewMode() === 'resource') {
-      // Parent = Team, Child = Resource, GrandChild = Project
-      const sortedTeams = [...this.allEquipes].sort((a, b) => a.nom.localeCompare(b.nom));
-
-      for (const team of sortedTeams) {
-        const teamCharges = this.allCharges.filter((c) => c.equipe_id === team.id);
-        const children: ChildRow[] = [];
-        const parentTotal = new Map<string, number>();
-
-        // We need to identify ALL resources for this team
-        // Logic: resources present in charges OR potentially all team members if linked
-        // For now, let's use charges to identify active resources
-        const resourceMap = new Map<
-          string,
-          {
-            label: string;
-            type: 'role' | 'personne';
-            jours_par_semaine: number;
-            color?: string;
-            charges: Map<string, number>;
-            comments: Map<string, string>;
-            projectDetailedMap: Map<string, ResourceRow>;
-          }
-        >();
-
-        // Pre-populate with all resources linked to this team
-        // Roles
-        this.allRoleAttachments
-          .filter((a) => a.equipe_id === team.id)
-          .forEach((att) => {
-            const role = this.availableRoles.find((r) => r.id === att.role_id);
-            if (role) {
-              const rKey = `role_${role.id}`;
-              resourceMap.set(rKey, {
-                label: role.nom,
-                type: 'role',
-                jours_par_semaine: role.jours_par_semaine,
-                color: role.color,
-                charges: new Map(),
-                comments: new Map(),
-                projectDetailedMap: new Map(),
-              });
-            }
-          });
-        // Persons
-        this.availablePersonnes
-          .filter((p) => p.equipe_id === team.id)
-          .forEach((p) => {
-            const rKey = `personne_${p.id}`;
-            resourceMap.set(rKey, {
-              label: `${p.prenom} ${p.nom}`,
-              type: 'personne',
-              jours_par_semaine: p.jours_par_semaine,
-              color: p.color,
-              charges: new Map(),
-              comments: new Map(),
-              projectDetailedMap: new Map(),
-            });
-          });
-
-        teamCharges.forEach((charge) => {
-          let rKey: string;
-          if (charge.role_id) {
-            rKey = `role_${charge.role_id}`;
-          } else if (charge.personne_id) {
-            rKey = `personne_${charge.personne_id}`;
-          } else return;
-
-          if (!resourceMap.has(rKey)) {
-            // This should not happen now as we pre-populated, but for safety:
-            let rLabel: string;
-            let rType: 'role' | 'personne';
-            let rJours: number = 0;
-            let rColor: string | undefined;
-
-            if (charge.role_id) {
-              const role = this.availableRoles.find((r) => r.id === charge.role_id);
-              rLabel = role ? role.nom : 'Unknown Role';
-              rJours = role?.jours_par_semaine || 0;
-              rType = 'role';
-              rColor = role?.color;
-            } else {
-              const p = this.availablePersonnes.find((pers) => pers.id === charge.personne_id);
-              rLabel = p ? `${p.prenom} ${p.nom}` : 'Unknown Person';
-              rJours = p?.jours_par_semaine || 0;
-              rType = 'personne';
-              rColor = p?.color;
-            }
-
-            resourceMap.set(rKey, {
-              label: rLabel,
-              type: rType,
-              jours_par_semaine: rJours,
-              color: rColor,
-              charges: new Map(),
-              comments: new Map(),
-              projectDetailedMap: new Map(),
-            });
-          }
-
-          const res = resourceMap.get(rKey)!;
-          const weekKey = charge.semaine_debut?.split('T')[0];
-
-          // Detailed project row - ensure it exists if there is a projet_id
-          const pId = charge.projet_id || 'no_project';
-          if (!res.projectDetailedMap.has(pId)) {
-            const project = this.allProjects.find((p) => p.id === pId);
-            res.projectDetailedMap.set(pId, {
-              id: pId,
-              uniqueId: `${team.id}_${rKey}_${pId}`,
-              label: project ? project.nom_projet : 'Sans projet',
-              code: project?.code_projet,
-              reference_externe: project?.reference_externe,
-              type: res.type,
-              jours_par_semaine: res.jours_par_semaine,
-              charges: new Map(),
-              comments: new Map(),
-              color: project?.color,
-              resourceId: rKey.split('_')[1],
-              projectId: pId,
-            });
-          }
-
-          if (weekKey) {
-            // Aggregate in resource overview
-            const cur = res.charges.get(weekKey) || 0;
-            res.charges.set(weekKey, cur + charge.unite_ressource);
-            if (charge.comment) {
-              res.comments.set(weekKey, charge.comment);
-            }
-
-            // Parent total
-            const pCur = parentTotal.get(weekKey) || 0;
-            parentTotal.set(weekKey, pCur + charge.unite_ressource);
-
-            const detRow = res.projectDetailedMap.get(pId)!;
-            const detCur = detRow.charges.get(weekKey) || 0;
-            detRow.charges.set(weekKey, detCur + charge.unite_ressource);
-            if (charge.comment) {
-              detRow.comments?.set(weekKey, charge.comment);
-            }
-          }
-        });
-
-        // In resource mode, we flatten Team and Resource into single level ParentRows
-        resourceMap.forEach((res, rKey) => {
-          const projectResources = sortByRank(
-            Array.from(res.projectDetailedMap.values()),
-            (r) => this.allProjects.find((p) => p.id === r.projectId)?.rank,
-            (a, b) => a.label.localeCompare(b.label),
-          );
-
-          // Apply week filters to project resources
-          const filteredProjectResources = projectResources.filter((r) => this.shouldShowResource(r));
-
-          this.rows.push({
-            id: `${team.id}_${rKey}`,
-            label: `${team.nom} - ${res.label}`,
-            code: team.code,
-            color: team.color,
-            expanded: this.manualStates.has(`${team.id}_${rKey}`)
-              ? this.manualStates.get(`${team.id}_${rKey}`)!
-              : this.isDefaultExpanded,
-            children: [
-              {
-                id: rKey,
-                label: res.label,
-                color: res.color,
-                expanded: true, // Auto-expand this dummy level to show projects
-                charges: res.charges,
-                resources: filteredProjectResources,
-              },
-            ],
-            totalCharges: res.charges,
-          });
-        });
-      }
-    } else if (this.viewMode() === 'service') {
-      // Parent = Service, Child = Dummy auto-expanded level, GrandChild (ResourceRow) = Consolidated Project
-      const sortedServices = [...this.allServices].sort((a, b) => a.nom.localeCompare(b.nom));
-      const activeEquipeIds = this.filterEquipeIds();
-      const activeResourceIds = this.filterResourceIds();
-
-      for (const service of sortedServices) {
-        const parentTotal = new Map<string, number>();
-        const projectDetailedMap = new Map<string, ResourceRow>();
-
-        this.allCharges.forEach((charge) => {
-          let rType: 'role' | 'personne';
-          let rId: string;
-          let joursParSemaine = 5;
-          let resourceLabel = '';
-
-          if (charge.role_id) {
-            rType = 'role';
-            rId = charge.role_id;
-            const role = this.availableRoles.find((r) => r.id === rId);
-            joursParSemaine = role?.jours_par_semaine || 5;
-            resourceLabel = role ? role.nom : 'Rôle';
-          } else if (charge.personne_id) {
-            rType = 'personne';
-            rId = charge.personne_id;
-            const personne = this.availablePersonnes.find((p) => p.id === rId);
-            joursParSemaine = personne?.jours_par_semaine || 5;
-            resourceLabel = personne ? `${personne.prenom} ${personne.nom}` : 'Personne';
-          } else {
-            return;
-          }
-
-          if (activeEquipeIds.length > 0 && (!charge.equipe_id || !activeEquipeIds.includes(charge.equipe_id))) {
-            return;
-          }
-          if (activeResourceIds.length > 0 && !activeResourceIds.includes(`${rType}:${rId}`)) {
-            return;
-          }
-
-          const resServiceId = this.getResourceServiceId(rType, rId, charge.equipe_id);
-          if (resServiceId !== service.id) {
-            return;
-          }
-
-          const pId = charge.projet_id || 'no_project';
-          if (!projectDetailedMap.has(pId)) {
-            const project = this.allProjects.find((p) => p.id === pId);
-            projectDetailedMap.set(pId, {
-              id: pId,
-              uniqueId: `service_${service.id}_${pId}`,
-              label: project ? project.nom_projet : 'Sans projet',
-              code: project?.code_projet,
-              reference_externe: project?.reference_externe,
-              type: 'role',
-              jours_par_semaine: 5,
-              charges: new Map<string, number>(),
-              dailyCharges: new Map<string, number>(),
-              comments: new Map<string, string>(),
-              color: project?.color,
-              projectId: pId,
-            });
-          }
-
-          const weekKey = charge.semaine_debut?.split('T')[0];
-          if (weekKey) {
-            const pCur = parentTotal.get(weekKey) || 0;
-            parentTotal.set(weekKey, pCur + charge.unite_ressource);
-
-            const detRow = projectDetailedMap.get(pId)!;
-            const detCur = detRow.charges.get(weekKey) || 0;
-            detRow.charges.set(weekKey, detCur + charge.unite_ressource);
-
-            const detDaysCur = detRow.dailyCharges!.get(weekKey) || 0;
-            detRow.dailyCharges!.set(weekKey, detDaysCur + charge.unite_ressource * joursParSemaine);
-
-            if (charge.comment) {
-              const teamName = this.allEquipes.find((e) => e.id === charge.equipe_id)?.nom;
-              const prefix = teamName ? `[${teamName} - ${resourceLabel}] ` : `[${resourceLabel}] `;
-              const formattedComment = `${prefix}${charge.comment}`;
-              const existingComment = detRow.comments?.get(weekKey);
-              if (!existingComment) {
-                detRow.comments?.set(weekKey, formattedComment);
-              } else if (!existingComment.includes(formattedComment)) {
-                detRow.comments?.set(weekKey, `${existingComment}\n${formattedComment}`);
-              }
-            }
-          }
-        });
-
-        const projectResources = sortByRank(
-          Array.from(projectDetailedMap.values()),
-          (r) => this.allProjects.find((p) => p.id === r.projectId)?.rank,
-          (a, b) => a.label.localeCompare(b.label),
-        );
-
-        const filteredProjectResources = projectResources.filter((r) => this.shouldShowResource(r));
-        const isExpanded = this.manualStates.has(service.id!)
-          ? this.manualStates.get(service.id!)!
-          : this.isDefaultExpanded;
-
-        this.rows.push({
-          id: service.id!,
-          label: service.nom,
-          expanded: isExpanded,
-          children: [
-            {
-              id: `service_children_${service.id}`,
-              label: service.nom,
-              expanded: isExpanded,
-              charges: parentTotal,
-              resources: filteredProjectResources,
-            },
-          ],
-          totalCharges: parentTotal,
-        });
-      }
-    }
-
-    // Keep a copy of unfiltered rows and apply active filters
-    this.calculateUsage(); // Ensure usage is fresh
+    this.rows = Projection.buildPlanTree(
+      this.dataset,
+      this.viewMode(),
+      this.manualStates,
+      this.isDefaultExpanded,
+      this.weekFilters(),
+      this.displayedWeeks,
+      this.filterEquipeIds(),
+      this.filterResourceIds(),
+    );
+    this.calculateUsage();
     this.rowsAll = [...this.rows];
     this.precalculateResources();
     this.calculateMetrics();
     this.applyFilters();
   }
 
-  toggleDisplayFormat(format: 'tree' | 'flat') {
-    this.displayFormat.set(format);
-    if (format === 'flat') {
-      this.buildFlatList();
-    }
-  }
-
   buildFlatList() {
-    this.flatRows = [];
-    const collator = new Intl.Collator('fr-FR', { numeric: true, sensitivity: 'base' });
-
-    // Iterate over the currently filtered rows (this.rows)
-    for (const parent of this.rows) {
-      for (const child of parent.children) {
-        for (const resource of child.resources) {
-          const p = parent;
-          const c = child;
-          const r = resource;
-          const fullLabel =
-            this.viewMode() === 'service'
-              ? `${p.label} > ${r.label} ${r.code || ''} ${r.reference_externe || ''}`.toLowerCase()
-              : `${p.label} > ${c.label} > ${r.label} ${p.code || ''} ${p.reference_externe || ''} ${c.code || ''} ${c.reference_externe || ''}`.toLowerCase();
-          this.flatRows.push({
-            uniqueId: resource.uniqueId,
-            fullLabel: fullLabel,
-            resource: resource,
-            child: child,
-            parent: parent,
-          });
-        }
-      }
-    }
-
-    // Sort flattened rows faster
-    this.flatRows.sort((a, b) => collator.compare(a.fullLabel, b.fullLabel));
+    this.flatRows = Projection.buildFlatList(this.rows, this.viewMode());
   }
 
-  // Week Filter Methods
+  applyFilters() {
+    this.calculateUsage();
+    const criteria: M.PlanFilterCriteria = {
+      viewMode: this.viewMode(),
+      displayFormat: this.displayFormat(),
+      globalSearch: this.globalSearch(),
+      filterEquipeIds: this.filterEquipeIds(),
+      filterProjetIds: this.filterProjetIds(),
+      filterResourceIds: this.filterResourceIds(),
+      filterStatusIds: this.filterStatusIds(),
+      filterPeriodEnabled: this.filterPeriodEnabled(),
+      effectivePeriodStart: this.effectivePeriodStart,
+      effectivePeriodEnd: this.effectivePeriodEnd,
+      filterSizeEnabled: this.filterSizeEnabled(),
+      filterSizeCriterion: this.filterSizeCriterion(),
+      filterSizeOperator: this.filterSizeOperator(),
+      filterSizeValue: this.filterSizeValue(),
+      weekFilters: this.weekFilters(),
+      chiffreMode: this.chiffreMode(),
+    };
+    this.rows = Projection.applyPlanFilters(this.dataset, this.rowsAll, criteria, this.getTodayWeekStart());
+    Projection.calculateFilteredTreeMetrics(this.dataset, this.rows, this.viewMode(), this.displayedWeeks, this.filterEquipeIds(), this.filterResourceIds());
+    if (this.displayFormat() === 'flat') this.buildFlatList();
+  }
+
+  getPlannedDaysForResource(resource: M.ResourceRow, period: M.PlannedDaysPeriod): number {
+    return Projection.getPlannedDaysForResource(resource, period, this.getTodayWeekStart());
+  }
+
+  getPlannedDaysForChildInTeam(child: M.ChildRow, period: M.PlannedDaysPeriod): number {
+    return Projection.getPlannedDaysForChildInTeam(child, period, this.getTodayWeekStart());
+  }
+
+  getPlannedDaysForProjectParent(parent: M.ParentRow, period: M.PlannedDaysPeriod): number {
+    return Projection.getPlannedDaysForProjectParent(parent, period, this.filterEquipeIds(), this.getTodayWeekStart());
+  }
+
+  getResourceTotalPlannedDays(resource: M.ResourceRow): number {
+    return Projection.getResourceTotalPlannedDays(resource, this.selectedCapacityYear(), this.selectedStartDate, this.getTodayWeekStart());
+  }
+
+  getChiffreValueForServiceProject(serviceId: string, projectId: string, mode: M.ChiffreCategory = this.chiffreMode()): number | null {
+    return Projection.getChiffreValueForServiceProject(this.allChiffres, serviceId, projectId, mode);
+  }
+
+  getChiffreValueForMode(
+    teamId: string,
+    projectId: string,
+    resourceId: string | undefined,
+    resourceType: 'role' | 'personne' | undefined,
+    mode: M.ChiffreCategory,
+  ): number | null {
+    return Projection.getChiffreValueForMode(this.dataset, teamId, projectId, resourceId, resourceType, mode);
+  }
+
+  getChiffreValue(teamId: string, projectId: string, resourceId?: string, resourceType?: 'role' | 'personne'): number | null {
+    return this.getChiffreValueForMode(teamId, projectId, resourceId, resourceType, this.chiffreMode());
+  }
+
+  getChiffreValueForTeamProject(teamId: string, projectId: string, category: M.ChiffreCategory): number | null {
+    return Projection.getChiffreValueForTeamProject(this.dataset, teamId, projectId, category);
+  }
+
+  getChiffreValueForProjectParent(parent: M.ParentRow, category: M.ChiffreCategory): number | null {
+    return Projection.getChiffreValueForProjectParent(this.dataset, parent, this.filterEquipeIds(), category);
+  }
+
+  getChiffrePreviewValue(mode: M.ChiffreCategory): number | null {
+    const d = this.activeChiffrePopoverData;
+    if (!d) return null;
+    return this.viewMode() === 'service'
+      ? this.getChiffreValueForServiceProject(d.teamId, d.projectId, mode)
+      : this.getChiffreValueForMode(d.teamId, d.projectId, d.resourceId, d.resourceType, mode);
+  }
+
+  checkSizeMatch(val: number | null): boolean {
+    return Projection.checkSizeMatch(val, this.filterSizeOperator(), this.filterSizeValue() ?? 0);
+  }
+
+  exportToExcel(): void {
+    this.repo.exportToExcel(this.rowsAll, this.displayedWeeks, this.viewMode());
+  }
+
+  // --- Tree Expansion & View Mode ---
+  private setAllExpanded(expand: boolean) {
+    this.isDefaultExpanded = expand;
+    this.manualStates.clear();
+    for (const row of this.rowsAll) {
+      row.expanded = expand;
+      for (const child of row.children) child.expanded = expand;
+    }
+    this.applyFilters();
+    this.cdr.markForCheck();
+  }
+
+  expandAll() {
+    this.setAllExpanded(true);
+  }
+  collapseAll() {
+    this.setAllExpanded(false);
+  }
+
+  toggleRow(row: M.ParentRow) {
+    row.expanded = !row.expanded;
+    this.manualStates.set(row.id, row.expanded);
+    const orig = this.rowsAll.find((r) => r.id === row.id);
+    if (orig) orig.expanded = row.expanded;
+  }
+
+  toggleChild(child: M.ChildRow, parent: M.ParentRow) {
+    child.expanded = !child.expanded;
+    this.manualStates.set(`${parent.id}_${child.id}`, child.expanded);
+    const origChild = this.rowsAll.find((r) => r.id === parent.id)?.children.find((c) => c.id === child.id);
+    if (origChild) origChild.expanded = child.expanded;
+  }
+
+  switchViewMode(mode: M.PlanViewMode) {
+    this.clearSelection();
+    this.viewMode.set(mode);
+    this.buildTree();
+  }
+
+  toggleDisplayFormat(format: M.DisplayFormat) {
+    this.displayFormat.set(format);
+    if (format === 'flat') this.buildFlatList();
+  }
+
+  // --- Filter Controls ---
+  clearAllFilters() {
+    this.globalSearch.set('');
+    this.filterEquipeIds.set([]);
+    this.filterProjetIds.set([]);
+    this.filterProjetSearch.set('');
+    this.filterResourceIds.set([]);
+    this.filterStatusIds.set([]);
+    this.filterPeriodEnabled.set(false);
+    this.filterPeriodStart.set('');
+    this.filterPeriodEnd.set('');
+    this.filterSizeEnabled.set(false);
+    this.filterSizeValue.set(null);
+    this.weekFilters.set([]);
+    if (this.viewMode() === 'service') this.buildTree();
+    else this.applyFilters();
+    this.cdr.markForCheck();
+  }
+
+  onSearchInput(value: string) {
+    this.searchSubject.next(value);
+  }
+
   toggleWeekFilter(weekIndex: number) {
     const current = this.weekFilters();
     const index = current.indexOf(weekIndex);
-
-    if (index > -1) {
-      // Remove filter
-      this.weekFilters.set(current.filter((i) => i !== weekIndex));
-    } else {
-      // Add filter
-      this.weekFilters.set([...current, weekIndex]);
-    }
-
-    // Rebuild tree/flat list with new filters
+    this.weekFilters.set(index > -1 ? current.filter((i) => i !== weekIndex) : [...current, weekIndex]);
     this.buildTree();
     this.buildFlatList();
     this.cdr.markForCheck();
@@ -2620,1567 +538,52 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.weekFilters().length;
   }
 
-  shouldShowResource(resource: ResourceRow): boolean {
-    const filters = this.weekFilters();
-
-    // No filters active - show all resources
-    if (filters.length === 0) {
-      return true;
-    }
-
-    // Check if resource has charges for ALL filtered weeks
-    for (const weekIndex of filters) {
-      const week = this.displayedWeeks[weekIndex];
-      if (!week) continue;
-
-      const weekKey = week.toISOString().split('T')[0];
-      const charge = resource.charges.get(weekKey) || 0;
-
-      // If resource has no charge for this filtered week, hide it
-      if (charge === 0) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  goToToday() {
-    this.currentDate = new Date();
-    this.generateWeeks();
-    this.precalculateResources();
-    this.cdr.markForCheck();
-  }
-
-  goToPreviousMonth() {
-    this.currentDate.setMonth(this.currentDate.getMonth() - 1);
-    this.generateWeeks();
-    this.precalculateResources();
-    this.cdr.markForCheck();
-  }
-
-  goToNextMonth() {
-    this.currentDate.setMonth(this.currentDate.getMonth() + 1);
-    this.generateWeeks();
-    this.precalculateResources();
-    this.cdr.markForCheck();
-  }
-
-  toggleRow(row: ParentRow) {
-    row.expanded = !row.expanded;
-    this.manualStates.set(row.id, row.expanded);
-
-    // In resource and service views, the child level is a hidden dummy intermediary.
-    // Sync children expanded state so resources behind @if (child.expanded) are shown.
-    if (this.viewMode() === 'resource' || this.viewMode() === 'service') {
-      row.children.forEach((c) => (c.expanded = row.expanded));
-    }
-  }
-
-  toggleChild(child: ChildRow, parent: ParentRow) {
-    child.expanded = !child.expanded;
-    this.manualStates.set(`${parent.id}_${child.id}`, child.expanded);
-  }
-
-  formatWeekHeader(date: Date): string {
-    return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
-  }
-
-  getWeekNumber(date: Date): number {
-    return this.calendarService.getWeekNumber(date);
-  }
-
-  isYearChangeMap: boolean[] = [];
-
-  generateYears() {
-    this.displayedYears = [];
-    this.isYearChangeMap = [];
-    if (!this.displayedWeeks || this.displayedWeeks.length === 0) return;
-
-    const yearsMap: { year: number; weeksCount: number }[] = [];
-    this.displayedWeeks.forEach((week, index) => {
-      const year = this.calendarService.getWeekYear(week);
-      const last = yearsMap[yearsMap.length - 1];
-      if (last && last.year === year) {
-        last.weeksCount++;
-      } else {
-        yearsMap.push({ year, weeksCount: 1 });
-      }
-
-      if (index === 0) {
-        this.isYearChangeMap.push(false);
-      } else {
-        const prevYear = this.calendarService.getWeekYear(this.displayedWeeks[index - 1]);
-        this.isYearChangeMap.push(year !== prevYear);
-      }
-    });
-    this.displayedYears = yearsMap;
-  }
-
-  isFirstWeekOfYear(index: number): boolean {
-    return this.isYearChangeMap[index] ?? false;
-  }
-
-  isCurrentWeek(date: Date): boolean {
-    return this.calendarService.isCurrentWeek(date);
-  }
-
-  getChildValue(child: ChildRow, week: Date): number {
-    const weekKey = this.formatWeekStart(week);
-    return child.charges.get(weekKey) || 0;
-  }
-
-  getResourceValue(resource: ResourceRow, week: Date): number {
-    const weekKey = this.formatWeekStart(week);
-    return resource.charges.get(weekKey) || 0;
-  }
-
-  async moveToTop(row: ParentRow) {
-    if (this.viewMode() !== 'project') return;
-
-    const currentIndex = this.rows.indexOf(row);
-    if (currentIndex <= 0) return;
-
-    moveItemInArray(this.rows, currentIndex, 0);
-    await this.updateRankAfterMove(0);
-  }
-
-  async moveToBottom(row: ParentRow) {
-    if (this.viewMode() !== 'project') return;
-
-    const currentIndex = this.rows.indexOf(row);
-    if (currentIndex === -1 || currentIndex === this.rows.length - 1) return;
-
-    moveItemInArray(this.rows, currentIndex, this.rows.length - 1);
-    await this.updateRankAfterMove(this.rows.length - 1);
-  }
-
-  private async updateRankAfterMove(index: number) {
-    const movedItem = this.rows[index];
-    if (!movedItem?.originalProject) return;
-
-    try {
-      const rankStr = calculateNewRank(this.rows, index, (row) => row.originalProject?.rank);
-
-      movedItem.originalProject.rank = rankStr;
-      this.rowsAll = sortByRank(
-        this.rowsAll,
-        (row) => row.originalProject?.rank,
-        (a, b) => a.label.localeCompare(b.label),
-      );
-      this.cdr.markForCheck();
-      await this.projetService.updateProjet(movedItem.id, { rank: rankStr });
-      this.cdr.markForCheck();
-    } catch (error) {
-      console.error('Error calculating rank:', error);
-      await this.loadData({ showSkeleton: false });
-    }
-  }
-
-  // Modal & Linking Logic
-  openLinkModal(row: ParentRow, child?: ChildRow) {
-    this.selectedParentRow = row;
-    this.selectedChildRowToLink = child || null;
-    this.selectedIdToLink = '';
-    this.selectedIdsToLink = new Set();
-    this.linkModalSearchQuery = '';
-    this.linkModalStatusFilter = '';
-    this.linkModalIsSaving = false;
-
-    if (this.viewMode() === 'project') {
-      // Parent is Project, we want to add Teams
-      const existingChildIds = new Set(row.children.map((c) => c.id));
-      this.linkableItems = this.allEquipes
-        .filter((e) => !existingChildIds.has(e.id!))
-        .map((e) => ({ id: e.id!, label: e.nom }));
-    } else if (this.viewMode() === 'team') {
-      // Parent is Team, we want to add Projects
-      const existingChildIds = new Set(row.children.map((c) => c.id));
-      this.linkableItems = this.allProjects
-        .filter((p) => !existingChildIds.has(p.id!))
-        .map((p) => ({ id: p.id!, label: p.nom_projet }));
-    } else if (this.viewMode() === 'resource') {
-      if (!child) {
-        // Level 1 Parent: [Team - Resource]
-        const existingProjectIds = new Set(row.children[0]?.resources.map((r) => r.projectId) || []);
-        this.linkableItems = this.allProjects
-          .filter((p) => !existingProjectIds.has(p.id!))
-          .map((p) => ({ id: p.id!, label: p.nom_projet }));
-      } else {
-        // Level 2 Child: Resource (already expanded)
-        const existingProjectIds = new Set(child.resources.map((r) => r.projectId));
-        this.linkableItems = this.allProjects
-          .filter((p) => !existingProjectIds.has(p.id!))
-          .map((p) => ({ id: p.id!, label: p.nom_projet }));
-      }
-    }
-
-    this.showLinkModal = true;
-  }
-
-  isMouseDownOnOverlay = false;
-
-  onOverlayMouseDown(event: MouseEvent) {
-    if (event.target === event.currentTarget) {
-      this.isMouseDownOnOverlay = true;
-    }
-  }
-
-  onOverlayMouseUp(event: MouseEvent, modalType: 'link' | 'resource') {
-    if (this.isMouseDownOnOverlay && event.target === event.currentTarget) {
-      if (modalType === 'link') {
-        this.closeLinkModal();
-      } else if (modalType === 'resource') {
-        this.closeAddResourceModal();
-      }
-    }
-    this.isMouseDownOnOverlay = false;
-  }
-
-  closeLinkModal() {
-    this.showLinkModal = false;
-    this.selectedParentRow = null;
-    this.selectedChildRowToLink = null;
-    this.selectedIdToLink = '';
-    this.selectedIdsToLink = new Set();
-    this.linkModalSearchQuery = '';
-    this.linkModalStatusFilter = '';
-    this.linkModalIsSaving = false;
-  }
-
-  async linkItem() {
-    if (!this.selectedParentRow) return;
-
-    // MODE PROJECT: single select via <select>
-    if (this.viewMode() === 'project') {
-      if (!this.selectedIdToLink) return;
-      try {
-        const projetId = this.selectedParentRow.id;
-        const equipeId = this.selectedIdToLink;
-        await this.projetService.linkProjectToTeam(projetId, equipeId);
-        await this.addAllTeamResourcesToProject(equipeId, projetId);
-        await this.loadData({ showSkeleton: false });
-        this.closeLinkModal();
-      } catch (error: any) {
-        console.error('Error linking item:', error);
-        alert(error.message || "Erreur lors de l'ajout du lien.");
-      }
-      return;
-    }
-
-    // MODES TEAM / RESOURCE: bulk via checkboxes
-    if (this.selectedIdsToLink.size === 0) return;
-
-    this.linkModalIsSaving = true;
-    this.cdr.markForCheck();
-    const errors: string[] = [];
-
-    for (const selectedId of Array.from(this.selectedIdsToLink)) {
-      try {
-        if (this.viewMode() === 'team') {
-          const equipeId = this.selectedParentRow.id;
-          const projetId = selectedId;
-          await this.projetService.linkProjectToTeam(projetId, equipeId);
-          await this.addAllTeamResourcesToProject(equipeId, projetId);
-        } else if (this.viewMode() === 'resource') {
-          if (!this.selectedChildRowToLink) {
-            // Level 1: Add Project to Resource
-            const [equipeId, type, rawResId] = this.selectedParentRow.id.split('_');
-            const projetId = selectedId;
-            const roleId = type === 'role' ? rawResId : undefined;
-            const personneId = type === 'personne' ? rawResId : undefined;
-            await this.chargeService.createChargeWithoutDates(projetId, equipeId, roleId, personneId);
-          } else {
-            // Level 2: Add Project to Resource
-            const equipeId = this.selectedParentRow.id.split('_')[0];
-            const [type, resId] = this.selectedChildRowToLink.id.split('_');
-            const projetId = selectedId;
-            const roleId = type === 'role' ? resId : undefined;
-            await this.chargeService.createChargeWithoutDates(
-              projetId,
-              equipeId,
-              roleId,
-              type === 'personne' ? resId : undefined,
-            );
-          }
-        }
-      } catch (error: any) {
-        console.error('Error linking item:', error);
-        const proj = this.allProjects.find((p) => p.id === selectedId);
-        errors.push(proj?.nom_projet || selectedId);
-      }
-    }
-
-    await this.loadData({ showSkeleton: false });
-    this.linkModalIsSaving = false;
-
-    if (errors.length > 0) {
-      alert(`Erreur lors de l'ajout de : ${errors.join(', ')}`);
-    }
-
-    this.closeLinkModal();
-  }
-
-  private async addAllTeamResourcesToProject(equipeId: string, projetId: string) {
-    const teamResources = await this.teamService.getEquipeResources(equipeId);
-    const existingCharges = await this.chargeService.getChargesByProject(projetId);
-    const teamCharges = existingCharges.filter((c) => c.equipe_id === equipeId);
-
-    for (const resource of teamResources) {
-      const isAlreadyAdded = teamCharges.some(
-        (c) =>
-          (resource.type === 'role' && c.role_id === resource.id) ||
-          (resource.type === 'personne' && c.personne_id === resource.id),
-      );
-
-      if (!isAlreadyAdded) {
-        const roleId = resource.type === 'role' ? resource.id : undefined;
-        const personneId = resource.type === 'personne' ? resource.id : undefined;
-        await this.chargeService.createChargeWithoutDates(projetId, equipeId, roleId, personneId);
-      }
-    }
-  }
-
-  // --- Project Modal Integration ---
-  showProjectModal = false;
-  projectToEdit: Partial<Projet> | null = null;
-  isCreatingProjectFromLink = false;
-  ExternalLink = ExternalLink;
-
-  getProjectForLinks(): Projet | undefined {
-    if (this.showLinkModal) {
-      if (!this.selectedParentRow && !this.selectedIdToLink) return undefined;
-      let projetId: string | undefined;
-      if (this.viewMode() === 'project') {
-        projetId = this.selectedParentRow?.id;
-      } else {
-        projetId = this.selectedIdToLink;
-      }
-      return this.allProjects.find((p) => p.id === projetId);
-    }
-
-    if (this.showAddResourceModal && this.viewMode() === 'team' && this.selectedChildRow) {
-      return this.allProjects.find((p) => p.id === this.selectedChildRow?.id);
-    }
-
-    return undefined;
-  }
-
-  openProjectEditFromLink() {
-    const project = this.getProjectForLinks();
-    if (project) {
-      this.projectToEdit = { ...project };
-      this.showProjectModal = true;
-    }
-  }
-
-  openNewProjectFromLink() {
-    this.projectToEdit = {};
-    this.isCreatingProjectFromLink = true;
-    this.showProjectModal = true;
-  }
-
-  async onProjectSaved(newProject?: Projet) {
-    this.showProjectModal = false;
-
-    if (this.isCreatingProjectFromLink && newProject && newProject.id) {
-      this.isCreatingProjectFromLink = false;
-      try {
-        if (this.viewMode() === 'team' && this.selectedParentRow) {
-          const equipeId = this.selectedParentRow.id;
-          const projetId = newProject.id;
-          await this.projetService.linkProjectToTeam(projetId, equipeId);
-          await this.addAllTeamResourcesToProject(equipeId, projetId);
-        } else if (this.viewMode() === 'resource' && this.selectedParentRow) {
-          if (!this.selectedChildRowToLink) {
-            // Level 1: Add Project to Resource
-            const [equipeId, type, rawResId] = this.selectedParentRow.id.split('_');
-            const projetId = newProject.id;
-            const roleId = type === 'role' ? rawResId : undefined;
-            const personneId = type === 'personne' ? rawResId : undefined;
-            await this.chargeService.createChargeWithoutDates(projetId, equipeId, roleId, personneId);
-          } else {
-            // Level 2: Add Project to Resource
-            const equipeId = this.selectedParentRow.id.split('_')[0];
-            const [type, resId] = this.selectedChildRowToLink.id.split('_');
-            const projetId = newProject.id;
-            const roleId = type === 'role' ? resId : undefined;
-            await this.chargeService.createChargeWithoutDates(
-              projetId,
-              equipeId,
-              roleId,
-              type === 'personne' ? resId : undefined,
-            );
-          }
-        }
-        await this.loadData({ showSkeleton: false });
-        this.closeLinkModal();
-      } catch (error: any) {
-        console.error('Error linking newly created project:', error);
-        alert(`Le projet "${newProject.nom_projet}" a été créé, mais une erreur est survenue lors de son association : ${error.message || error}`);
-      }
-    } else {
-      await this.loadData({ showSkeleton: false });
-    }
-  }
-
-  closeProjectModal() {
-    this.showProjectModal = false;
-    this.isCreatingProjectFromLink = false;
-  }
-
-  // Resource Addition Modal Methods
-  async openAddResourceModal(child: ChildRow, parent: ParentRow) {
-    this.selectedChildRow = child;
-    this.selectedParentForResource = parent;
-    this.resourceTypeToAdd = 'role';
-    this.selectedResourceId = '';
-    this.showAddResourceModal = true;
-
-    // Determine projetId and equipeId based on view mode
-    let projetId: string;
-    let equipeId: string;
-
-    if (this.viewMode() === 'project') {
-      // Parent is Project, Child is Team
-      projetId = parent.id;
-      equipeId = child.id;
-    } else {
-      // Parent is Team, Child is Project
-      equipeId = parent.id;
-      projetId = child.id;
-    }
-
-    try {
-      // Load only available roles for this project+team combination
-      this.availableRoles = await this.chargeService.getAvailableRolesForProjectTeam(projetId, equipeId);
-
-      // Load only available persons for this project+team combination
-      this.availablePersonnes = await this.chargeService.getAvailablePersonnesForProjectTeam(projetId, equipeId);
-    } catch (error) {
-      console.error('Error loading available resources:', error);
-      this.availableRoles = [];
-      this.availablePersonnes = [];
-    }
-  }
-
-  closeAddResourceModal() {
-    this.showAddResourceModal = false;
-    this.selectedChildRow = null;
-    this.selectedParentForResource = null;
-    this.selectedResourceId = '';
-  }
-
-  async addResourceToCharge() {
-    if (!this.selectedChildRow || !this.selectedParentForResource || !this.selectedResourceId) return;
-
-    try {
-      let projetId: string;
-      let equipeId: string;
-
-      if (this.viewMode() === 'project') {
-        // Parent is Project, Child is Team
-        projetId = this.selectedParentForResource.id;
-        equipeId = this.selectedChildRow.id;
-      } else {
-        // Parent is Team, Child is Project
-        equipeId = this.selectedParentForResource.id;
-        projetId = this.selectedChildRow.id;
-      }
-
-      const roleId = this.resourceTypeToAdd === 'role' ? this.selectedResourceId : undefined;
-      const personneId = this.resourceTypeToAdd === 'personne' ? this.selectedResourceId : undefined;
-
-      await this.chargeService.createChargeWithoutDates(projetId, equipeId, roleId, personneId);
-
-      await this.loadData({ showSkeleton: false }); // Reload to refresh tree
-      this.closeAddResourceModal();
-    } catch (error) {
-      console.error('Error adding resource:', error);
-      alert("Erreur lors de l'ajout de la ressource.");
-    }
-  }
-
-  // Drag Selection Methods
-  getResourceUniqueId(resource: ResourceRow, child: ChildRow, parent: ParentRow): string {
-    return `${parent.id}_${child.id}_${resource.id}_${resource.type} `;
-  }
-
-  // Sexy Tooltip Methods
-  showTooltip(event: MouseEvent, text: string) {
-    if (this.tooltipHideTimer) {
-      clearTimeout(this.tooltipHideTimer);
-      this.tooltipHideTimer = null;
-    }
-
-    if (this.activeTooltip === text) return;
-
-    this.tooltipShowTimer = setTimeout(() => {
-      this.activeTooltip = text;
-      this.updateTooltipPosition(event);
-    }, this.SHOW_DELAY);
-  }
-
-  hideTooltip() {
-    if (this.tooltipShowTimer) {
-      clearTimeout(this.tooltipShowTimer);
-      this.tooltipShowTimer = null;
-    }
-
-    this.tooltipHideTimer = setTimeout(() => {
-      this.activeTooltip = null;
-    }, this.HIDE_DELAY);
-  }
-
-  onGlobalMouseMove(event: MouseEvent) {
-    // 1. Tooltip update
-    if (this.activeTooltip) {
-      this.updateTooltipPosition(event);
-    }
-
-    // 2. Drag Selection update
-    if (this.isDragging && this.dragStartResource) {
-      const target = event.target as HTMLElement;
-      const cell = target.closest('.week-cell');
-      if (cell) {
-        const row = target.closest('.calendar-row');
-        if (row) {
-          const resId = row.getAttribute('data-resource-id');
-          const expectedId = this.getResourceUniqueId(
-            this.dragStartResource,
-            this.dragStartChild!,
-            this.dragStartParent!,
-          );
-
-          if (resId === expectedId) {
-            const indexStr = cell.getAttribute('data-week-index');
-            if (indexStr) {
-              const newIndex = parseInt(indexStr, 10);
-              if (newIndex !== this.dragEndWeekIndex) {
-                this.ngZone.run(() => {
-                  this.dragEndWeekIndex = newIndex;
-                  this.updateSelection(this.dragStartChild!, this.dragStartParent!);
-                  this.cdr.markForCheck();
-                });
-              }
-            }
-          }
-          // Update live projection tooltip visibility and position during drag
-          if (this.dragStartCellValue && this.dragStartCellValue > 0) {
-            this.updateDragProjectionTooltipPosition(event);
-
-            const shouldShow = this.shouldShowProjectionTooltip();
-            if (shouldShow && !this.dragProjectionTooltipVisible) {
-              this.ngZone.run(() => {
-                this.dragProjectionTooltipVisible = true;
-                this.cdr.markForCheck();
-              });
-            } else if (!shouldShow && this.dragProjectionTooltipVisible) {
-              this.ngZone.run(() => {
-                this.dragProjectionTooltipVisible = false;
-                this.cdr.markForCheck();
-              });
-            }
-          }
-        }
-      }
-    }
-
-    // 3. Move Selection update — tracked from cursor X delta, works outside the row
-    //    Frozen during commit so the ghost doesn't follow the mouse after mouseup
-    if (this.isMovingSelection && !this.isMoveCommitting && this.selectedCells.length > 0) {
-      // Compute offset from pixel delta, independent of hovered row
-      const deltaX = event.clientX - this.moveStartClientX;
-      const newOffset = Math.round(deltaX / this.cellWidthPx);
-      if (newOffset !== this.moveGhostOffset) {
-        this.ngZone.run(() => {
-          this.moveGhostOffset = newOffset;
-          this.cdr.markForCheck();
-        });
-      }
-    }
-
-    // 4. Border Hover Detection
-    if (!this.isDragging && !this.isMovingSelection && this.selectedCells.length > 0 && this.isSelectionFinished) {
-      const target = event.target as HTMLElement;
-      const cell = target.closest('.week-cell');
-      if (cell) {
-        const isSelected = cell.classList.contains('selected');
-        if (isSelected) {
-          const rect = cell.getBoundingClientRect();
-          const margin = 5; // 5px threshold for border detection
-
-          const isAtLeft = event.clientX - rect.left < margin;
-          const isAtRight = rect.right - event.clientX < margin;
-          const isAtTop = event.clientY - rect.top < margin;
-          const isAtBottom = rect.bottom - event.clientY < margin;
-
-          const resRow = target.closest('.calendar-row');
-          const resId = resRow?.getAttribute('data-resource-id');
-          const weekIndex = parseInt(cell.getAttribute('data-week-index') || '-1', 10);
-
-          const isBorder = this.isCellAtSelectionEdge(resId, weekIndex, isAtLeft, isAtRight, isAtTop, isAtBottom);
-
-          if (this.isOverSelectionBorder !== isBorder) {
-            this.ngZone.run(() => {
-              this.isOverSelectionBorder = isBorder;
-              this.cdr.markForCheck();
-            });
-          }
-        } else {
-          if (this.isOverSelectionBorder) {
-            this.ngZone.run(() => {
-              this.isOverSelectionBorder = false;
-              this.cdr.markForCheck();
-            });
-          }
-        }
-      } else {
-        if (this.isOverSelectionBorder) {
-          this.ngZone.run(() => {
-            this.isOverSelectionBorder = false;
-            this.cdr.markForCheck();
-          });
-        }
-      }
-    }
-  }
-
-  isCellAtSelectionEdge(
-    resId: string | null | undefined,
-    weekIndex: number,
-    isAtLeft: boolean,
-    isAtRight: boolean,
-    isAtTop: boolean,
-    isAtBottom: boolean,
-  ): boolean {
-    if (!resId || this.selectedCells.length === 0) return false;
-
-    // Find min/max week and resource context
-    const selectedWeeks = this.selectedCells.map((c) =>
-      this.displayedWeeks.findIndex((w) => w.getTime() === c.week.getTime()),
-    );
-    const minW = Math.min(...selectedWeeks);
-    const maxW = Math.max(...selectedWeeks);
-
-    // Currently one row only
-    const firstCell = this.selectedCells[0];
-    const selResId = this.getResourceUniqueId(
-      firstCell.resource,
-      { id: firstCell.childId } as ChildRow,
-      { id: firstCell.parentId } as ParentRow,
-    );
-
-    if (resId !== selResId) return false;
-
-    // Check if cell is an outer edge of the selection block
-    const isMinW = weekIndex === minW;
-    const isMaxW = weekIndex === maxW;
-
-    return (isMinW && isAtLeft) || (isMaxW && isAtRight) || isAtTop || isAtBottom;
-  }
-
-  updateTooltipPosition(event: MouseEvent) {
-    if (!this.activeTooltip || !this.tooltipElement) return;
-
-    // Offset from cursor to avoid overlap
-    const offsetX = 15;
-    const offsetY = 15;
-
-    let x = event.clientX + offsetX;
-    let y = event.clientY + offsetY;
-
-    // Simple boundary check to keep tooltip on screen
-    const tooltipWidth = 200; // Estimated
-    const tooltipHeight = 40; // Estimated
-
-    if (x + tooltipWidth > window.innerWidth) {
-      x = event.clientX - tooltipWidth - offsetX;
-    }
-
-    if (y + tooltipHeight > window.innerHeight) {
-      y = event.clientY - tooltipHeight - offsetY;
-    }
-
-    // Direct DOM manipulation for fast updates outside Angular zone
-    this.tooltipElement.nativeElement.style.left = `${x}px`;
-    this.tooltipElement.nativeElement.style.top = `${y}px`;
-  }
-
-  updateDragProjectionTooltipPosition(event: MouseEvent) {
-    if (!this.dragProjectionTooltip) return;
-
-    const x = event.clientX;
-    let y = 0;
-
-    // Position below if space permits, otherwise above
-    const spaceBelow = window.innerHeight - event.clientY;
-    if (spaceBelow > 80) {
-      y = event.clientY + 20;
-    } else {
-      y = event.clientY - 65;
-    }
-
-    // Direct DOM manipulation for fast updates outside Angular zone
-    this.dragProjectionTooltip.nativeElement.style.left = `${x}px`;
-    this.dragProjectionTooltip.nativeElement.style.top = `${y}px`;
-  }
-
-  private shouldShowProjectionTooltip(): boolean {
-    // Condition 1: Au moins 2 cellules sélectionnées
-    if (this.selectedCells.length <= 1) return false;
-
-    // Condition 2: La cellule de départ doit avoir une valeur à projeter
-    if (!this.dragStartCellValue || this.dragStartCellValue <= 0) return false;
-
-    // Condition 3: Toutes les cellules à partir de la deuxième doivent être vides
-    for (let i = 1; i < this.selectedCells.length; i++) {
-      const cell = this.selectedCells[i];
-      const weekKey = this.formatWeekStart(cell.week);
-      const value = cell.resource.charges.get(weekKey) || 0;
-      if (value > 0) return false;
-    }
-
-    return true;
-  }
-
-  onMouseDown(event: MouseEvent, resource: ResourceRow, child: ChildRow, parent: ParentRow) {
-    if (this.viewMode() === 'service') return;
-    if (this.isOverSelectionBorder) {
-      this.isMovingSelection = true;
-      this.moveGhostOffset = 0;
-      this.moveStartClientX = event.clientX;
-      // Measure actual cell width from DOM
-      const target = event.target as HTMLElement;
-      const cell = target.closest('.week-cell') as HTMLElement;
-      if (cell) {
-        this.cellWidthPx = cell.getBoundingClientRect().width || 80;
-        const indexStr = cell.getAttribute('data-week-index');
-        if (indexStr) {
-          this.moveStartWeekIndex = parseInt(indexStr, 10);
-        }
-      }
-      // Initialize badge at cursor
-      this.moveDragBadgeX = event.clientX + 16;
-      this.moveDragBadgeY = event.clientY - 20;
-      event.preventDefault();
-      event.stopPropagation();
-      return;
-    }
-
-    this.isDragging = true;
-    this.isSelectionFinished = false;
-    this.isOverSelectionBorder = false;
-    this.dragStartResource = resource;
-    this.dragStartChild = child;
-    this.dragStartParent = parent;
-    this.bulkChargeValue = null;
-
-    const target = event.target as HTMLElement;
-    const cell = target.closest('.week-cell');
-    if (cell) {
-      const indexStr = cell.getAttribute('data-week-index');
-      if (indexStr) {
-        this.dragStartWeekIndex = parseInt(indexStr, 10);
-        this.dragEndWeekIndex = this.dragStartWeekIndex;
-
-        // Detect value on the starting cell for pre-fill & live projection
-        const startWeek = this.displayedWeeks[this.dragStartWeekIndex];
-        if (startWeek) {
-          const weekKey = this.formatWeekStart(startWeek);
-          const existingValue = resource.charges.get(weekKey) || 0;
-          this.dragStartCellValue = existingValue > 0 ? existingValue : null;
-        } else {
-          this.dragStartCellValue = null;
-        }
-
-        this.updateSelection(child, parent);
-        this.cdr.markForCheck();
-      }
-    }
-  }
-
-  onMouseMove(event: MouseEvent, resource: ResourceRow, child: ChildRow, parent: ParentRow) {
-    // This method is now obsolete as we use onGlobalMouseMove
-  }
-
-  // Called by the global window mouseup listener — fires even outside the grid
-  async onGlobalMouseUp(_event?: MouseEvent) {
-    if (this.isMovingSelection) {
-      if (this.moveGhostOffset !== 0) {
-        // Keep isMovingSelection = true so the ghost remains visible during save
-        this.isMoveCommitting = true;
-        this.ngZone.run(() => this.executeMove());
-      } else {
-        // No movement: cancel and restore
-        this.ngZone.run(() => {
-          this.isMovingSelection = false;
-          this.isMoveCommitting = false;
-          this.isOverSelectionBorder = false;
-          this.moveGhostOffset = 0;
-          this.cdr.markForCheck();
-        });
-      }
-      return;
-    }
-
-    if (!this.isDragging) return;
-
-    this.ngZone.run(() => {
-      this.isDragging = false;
-      this.dragProjectionTooltipVisible = false;
-      if (this.selectedCells.length > 0) {
-        this.isSelectionFinished = true;
-
-        // On ne pré-remplit la valeur que si on est dans le cas d'une projection vers du vide
-        // ou pour une sélection à cellule unique (remplie ou vide) afin de ré-actualiser l'input.
-        if (this.shouldShowProjectionTooltip()) {
-          this.bulkChargeValue = this.dragStartCellValue;
-          this.bulkComment = '';
-        } else if (this.selectedCells.length === 1) {
-          this.bulkChargeValue = this.dragStartCellValue;
-          const firstCell = this.selectedCells[0];
-          const weekKey = this.formatWeekStart(firstCell.week);
-          this.bulkComment = firstCell.resource.comments?.get(weekKey) || '';
-        } else {
-          this.bulkChargeValue = null;
-          this.bulkComment = '';
-        }
-
-        this.updateToolbarPosition();
-        this.cdr.detectChanges(); // Force l'apparition immédiate de la toolbar
-      }
-    });
-  }
-
-  async executeMove() {
-    if (this.selectedCells.length === 0 || this.moveGhostOffset === 0) return;
-
-    this.isSaving = true;
-    this.cdr.markForCheck();
-
-    try {
-      // Group cells by resource identity (projet + equipe + role/personne)
-      // Since move is restricted to 1 resource line, all cells share the same identity
-      const firstCell = this.selectedCells[0];
-      let projetId: string, equipeId: string;
-
-      if (this.viewMode() === 'project') {
-        projetId = firstCell.parentId;
-        equipeId = firstCell.childId;
-      } else if (this.viewMode() === 'team') {
-        equipeId = firstCell.parentId;
-        projetId = firstCell.childId;
-      } else {
-        const parts = firstCell.parentId.split('_');
-        equipeId = parts[0];
-        projetId = firstCell.resource.projectId!;
-      }
-
-      const rId = firstCell.resource.resourceId || firstCell.resource.id;
-      const roleId = firstCell.resource.type === 'role' ? rId : undefined;
-      const personneId = firstCell.resource.type === 'personne' ? rId : undefined;
-
-      // Build the move list in one pass
-      const moves = this.selectedCells
-        .map((cell) => {
-          const fromWeek = this.formatWeekStart(cell.week);
-          const value = cell.resource.charges.get(fromWeek) || 0;
-          const srcIdx = this.displayedWeeks.findIndex((w) => w.getTime() === cell.week.getTime());
-          const tgtWeek = this.displayedWeeks[srcIdx + this.moveGhostOffset];
-          return { fromWeek, toWeek: tgtWeek ? this.formatWeekStart(tgtWeek) : '', value };
-        })
-        .filter((m) => m.toWeek); // discard out-of-range
-
-      // 3 queries total instead of 2×N
-      await this.chargeService.bulkMoveCharges(projetId, equipeId, moves, roleId, personneId);
-
-      await this.loadData({ showSkeleton: false });
-      this.clearSelection();
-    } catch (error) {
-      console.error('Error executing move:', error);
-      alert('Erreur lors du déplacement des charges.');
-    } finally {
-      this.isMovingSelection = false;
-      this.isMoveCommitting = false;
-      this.isSaving = false;
-      this.isOverSelectionBorder = false;
-      this.moveGhostOffset = 0;
-      this.cdr.markForCheck();
-    }
-  }
-
-  private async updateChargeValue(cell: any, value: number, overrideWeek?: Date) {
-    const week = overrideWeek || cell.week;
-    const weekKey = this.formatWeekStart(week);
-
-    let projetId, equipeId;
-    if (this.viewMode() === 'project') {
-      projetId = cell.parentId;
-      equipeId = cell.childId;
-    } else if (this.viewMode() === 'team') {
-      equipeId = cell.parentId;
-      projetId = cell.childId;
-    } else {
-      const parentIdParts = cell.parentId.split('_');
-      equipeId = parentIdParts[0];
-      projetId = cell.resource.projectId!;
-    }
-
-    const rId = cell.resource.resourceId || cell.resource.id;
-    const roleId = cell.resource.type === 'role' ? rId : undefined;
-    const personneId = cell.resource.type === 'personne' ? rId : undefined;
-
-    await this.chargeService.createOrUpdateCharge(projetId, equipeId, weekKey, value, roleId, personneId);
-  }
-
-  // Visual helpers for HTML
-  getCellSelectionClasses(resource: ResourceRow, week: Date, weekIndex: number, child: ChildRow, parent: ParentRow) {
-    if (this.selectedCells.length === 0 && !this.projectionCommitting) return {};
-
-    const isSelected = this.isCellSelected(resource, week);
-
-    if (this.isMovingSelection) {
-      if (this.isCellGhostSelected(resource, weekIndex, child, parent)) {
-        return { selected: true, 'ghost-selection': true, committing: this.isMoveCommitting };
-      }
-      if (isSelected) {
-        // Only hide source if we have actually moved to a new position
-        return this.moveGhostOffset === 0 ? { selected: true } : { 'moving-source': true };
-      }
-      return {};
-    }
-
-    if (this.isProjectionCommitting(resource, weekIndex, child, parent)) {
-      return { selected: true, committing: true };
-    }
-
-    if (!isSelected) return {};
-
-    // Standard selection mode (not moving)
-    return {
-      selected: true,
-      committing: this.isCommittingSelection,
-      'is-over-border': this.isOverSelectionBorder,
-    };
-  }
-
-  isProjectionCommitting(resource: ResourceRow, weekIndex: number, child: ChildRow, parent: ParentRow): boolean {
-    if (!this.projectionCommitting) return false;
-    const currResId = this.getResourceUniqueId(resource, child, parent);
-    if (currResId !== this.projectionCommitting.resourceUniqueId) return false;
-    return (
-      weekIndex >= this.projectionCommitting.startWeekIdx &&
-      weekIndex < this.projectionCommitting.startWeekIdx + this.projectionCommitting.nbWeeks
-    );
-  }
-
-  isCellGhostSelected(resource: ResourceRow, weekIndex: number, child: ChildRow, parent: ParentRow): boolean {
-    if (!this.isMovingSelection || this.moveGhostOffset === 0) return false;
-
-    const currResId = this.getResourceUniqueId(resource, child, parent);
-    const firstCell = this.selectedCells[0];
-    const selResId = this.getResourceUniqueId(
-      firstCell.resource,
-      { id: firstCell.childId } as ChildRow,
-      { id: firstCell.parentId } as ParentRow,
-    );
-
-    if (currResId !== selResId) return false;
-
-    const sourceWeekIndex = weekIndex - this.moveGhostOffset;
-    if (sourceWeekIndex < 0 || sourceWeekIndex >= this.displayedWeeks.length) return false;
-
-    const sourceWeek = this.displayedWeeks[sourceWeekIndex];
-    return this.isCellSelected(resource, sourceWeek);
-  }
-
-  getAbsOffset(): number {
-    return Math.abs(this.moveGhostOffset);
-  }
-
-  getGhostValue(resource: ResourceRow, weekIndex: number): number | null {
-    if (!this.isMovingSelection || this.moveGhostOffset === 0) return null;
-
-    const sourceWeekIndex = weekIndex - this.moveGhostOffset;
-    if (sourceWeekIndex < 0 || sourceWeekIndex >= this.displayedWeeks.length) return null;
-
-    const sourceWeek = this.displayedWeeks[sourceWeekIndex];
-    if (this.isCellSelected(resource, sourceWeek)) {
-      const sourceWeekKey = this.formatWeekStart(sourceWeek);
-      return resource.charges.get(sourceWeekKey) || 0;
-    }
-    return null;
-  }
-
-  updateToolbarPosition() {
-    if (!this.dragStartResource || this.dragEndWeekIndex < 0) return;
-
-    const firstCell = this.selectedCells[0];
-    if (!firstCell) return;
-
-    const uniqueId = this.getResourceUniqueId(
-      firstCell.resource,
-      { id: firstCell.childId } as ChildRow,
-      { id: firstCell.parentId } as ParentRow,
-    );
-
-    const rowSelector = `[data-resource-id="${uniqueId}"]`;
-    const rowElement = document.querySelector(rowSelector);
-
-    if (rowElement) {
-      const cellSelector = `[data-week-index="${this.dragEndWeekIndex}"]`;
-      const cellElement = rowElement.querySelector(cellSelector);
-
-      if (cellElement) {
-        const rect = cellElement.getBoundingClientRect();
-
-        // Check if the cell has scrolled out of the visible area of the calendar
-        const wrapperEl = document.querySelector('.calendar-wrapper');
-        const headerEl = this.headerRowElement?.nativeElement;
-        const milestonesEl = this.milestonesRowElement?.nativeElement;
-        const labelEl = rowElement.querySelector('.label-cell');
-
-        if (wrapperEl && headerEl && milestonesEl && labelEl) {
-          const wrapperRect = wrapperEl.getBoundingClientRect();
-          const milestonesRect = milestonesEl.getBoundingClientRect();
-          const labelRect = labelEl.getBoundingClientRect();
-
-          const visibleTop = milestonesRect.bottom;
-          const visibleBottom = wrapperRect.bottom;
-          const visibleLeft = labelRect.right;
-          const visibleRight = wrapperRect.right;
-
-          // Check if cell is completely outside the visible scroll bounds
-          const cellIsHidden =
-            rect.bottom <= visibleTop || // Scrolled above (under headers)
-            rect.top >= visibleBottom || // Scrolled below viewport
-            rect.right <= visibleLeft || // Scrolled left (under label column)
-            rect.left >= visibleRight; // Scrolled right off screen
-
-          if (cellIsHidden) {
-            this.toolbarVisible = false;
-            this.cdr.detectChanges();
-            return;
-          }
-        }
-
-        const viewportHeight = window.innerHeight;
-        const viewportWidth = window.innerWidth;
-
-        const pos = calculateBestToolbarPosition({
-          rect,
-          viewportWidth,
-          viewportHeight,
-          dragStartWeekIndex: this.dragStartWeekIndex,
-          dragEndWeekIndex: this.dragEndWeekIndex,
-          bottomSafetyMargin: 150,
-          rightSafetyMargin: 320,
-        });
-
-        // Convert viewport coordinates to calendar-wrapper relative absolute coordinates
-        if (wrapperEl) {
-          const wrapperRect = wrapperEl.getBoundingClientRect();
-          this.toolbarPosition = {
-            top: pos.top - wrapperRect.top + wrapperEl.scrollTop,
-            left: pos.left - wrapperRect.left + wrapperEl.scrollLeft,
-            transform: pos.transform,
-          };
-        } else {
-          this.toolbarPosition = pos;
-        }
-
-        // Make toolbar visible now that position is set
-        this.toolbarVisible = true;
-        this.cdr.detectChanges();
-      }
-    }
-  }
-
-  checkToolbarVisibilityOnScroll() {
-    if (!this.dragStartResource || this.dragEndWeekIndex < 0) return;
-
-    const firstCell = this.selectedCells[0];
-    if (!firstCell) return;
-
-    const uniqueId = this.getResourceUniqueId(
-      firstCell.resource,
-      { id: firstCell.childId } as ChildRow,
-      { id: firstCell.parentId } as ParentRow,
-    );
-
-    const rowSelector = `[data-resource-id="${uniqueId}"]`;
-    const rowElement = document.querySelector(rowSelector);
-
-    if (rowElement) {
-      const cellSelector = `[data-week-index="${this.dragEndWeekIndex}"]`;
-      const cellElement = rowElement.querySelector(cellSelector);
-
-      if (cellElement) {
-        const rect = cellElement.getBoundingClientRect();
-        const wrapperEl = document.querySelector('.calendar-wrapper');
-        const headerEl = this.headerRowElement?.nativeElement;
-        const milestonesEl = this.milestonesRowElement?.nativeElement;
-        const labelEl = rowElement.querySelector('.label-cell');
-
-        if (wrapperEl && headerEl && milestonesEl && labelEl) {
-          const wrapperRect = wrapperEl.getBoundingClientRect();
-          const milestonesRect = milestonesEl.getBoundingClientRect();
-          const labelRect = labelEl.getBoundingClientRect();
-
-          const visibleTop = milestonesRect.bottom;
-          const visibleBottom = wrapperRect.bottom;
-          const visibleLeft = labelRect.right;
-          const visibleRight = wrapperRect.right;
-
-          // Check if cell is completely outside the visible scroll bounds
-          const cellIsHidden =
-            rect.bottom <= visibleTop || // Scrolled under headers
-            rect.top >= visibleBottom || // Scrolled below viewport
-            rect.right <= visibleLeft || // Scrolled left under label column
-            rect.left >= visibleRight; // Scrolled right off screen
-
-          const shouldBeVisible = !cellIsHidden;
-          if (this.toolbarVisible !== shouldBeVisible) {
-            this.toolbarVisible = shouldBeVisible;
-            this.cdr.detectChanges();
-          }
-        }
-      }
-    }
-  }
-
-  updateSelection(child: ChildRow, parent: ParentRow) {
-    if (!this.dragStartResource || this.dragStartWeekIndex < 0 || this.dragEndWeekIndex < 0) return;
-
-    this.selectedCells = [];
-    const startIndex = Math.min(this.dragStartWeekIndex, this.dragEndWeekIndex);
-    const endIndex = Math.max(this.dragStartWeekIndex, this.dragEndWeekIndex);
-
-    for (let i = startIndex; i <= endIndex; i++) {
-      this.selectedCells.push({
-        resource: this.dragStartResource,
-        week: this.displayedWeeks[i],
-        childId: child.id,
-        parentId: parent.id,
-      });
-    }
-  }
-
-  isCellSelected(resource: ResourceRow, week: Date): boolean {
-    return this.selectedCells.some(
-      (s) => s.resource.uniqueId === resource.uniqueId && s.week.getTime() === week.getTime(),
-    );
-  }
-
-  clearSelection() {
-    this.selectedCells = [];
-    this.isSelectionFinished = false;
-    this.toolbarPosition = null;
-    this.toolbarVisible = false;
-    this.dragStartResource = null;
-    this.dragStartWeekIndex = -1;
-    this.dragEndWeekIndex = -1;
-    this.bulkChargeValue = null;
-    this.bulkComment = '';
-    this.dragStartCellValue = null;
-    this.dragProjectionTooltipVisible = false;
-    // Reset move & commit state
-    this.isMovingSelection = false;
-    this.isMoveCommitting = false;
-    this.isCommittingSelection = false;
-    this.projectionCommitting = null;
-    this.isOverSelectionBorder = false;
-    this.moveGhostOffset = 0;
-  }
-
-  async applyBulkCharge(value: number | null, comment?: string) {
-    if (this.selectedCells.length === 0 || value == null) return;
-
-    this.bulkChargeValue = value;
-    const targetComment = comment !== undefined ? comment : this.bulkComment;
-    this.isCommittingSelection = true;
-    this.isSaving = true;
-    this.cdr.markForCheck();
-    try {
-      for (const cell of this.selectedCells) {
-        const weekKey = this.formatWeekStart(cell.week);
-
-        let projetId: string;
-        let equipeId: string;
-
-        if (this.viewMode() === 'project') {
-          // Parent is Project, Child is Team
-          projetId = cell.parentId;
-          equipeId = cell.childId;
-        } else if (this.viewMode() === 'team') {
-          // Parent is Team, Child is Project
-          equipeId = cell.parentId;
-          projetId = cell.childId;
-        } else {
-          // Resource mode: Parent.id is `${team.id}_${resourceType}_${resourceId}`
-          // We need to extract just the team.id (first part before the first underscore that separates it from 'role_' or 'personne_')
-          const parentIdParts = cell.parentId.split('_');
-          // The team ID is a UUID, which doesn't contain underscores in its format (8-4-4-4-12 hex)
-          // So team.id is parentIdParts[0], and the rest is the resource key
-          equipeId = parentIdParts[0];
-          projetId = cell.resource.projectId!;
-        }
-
-        const rId = cell.resource.resourceId || cell.resource.id;
-        const roleId = cell.resource.type === 'role' ? rId : undefined;
-        const personneId = cell.resource.type === 'personne' ? rId : undefined;
-
-        // Create or update charge
-        await this.chargeService.createOrUpdateCharge(
-          projetId,
-          equipeId,
-          weekKey,
-          this.bulkChargeValue,
-          roleId,
-          personneId,
-          targetComment !== undefined ? targetComment : cell.resource.comments?.get(weekKey),
-        );
-      }
-
-      // Reload data to refresh the view
-      await this.loadData({ showSkeleton: false });
-      // calculateUsage is called within loadData
-      this.clearSelection();
-    } catch (error) {
-      console.error('Error applying bulk charge:', error);
-      alert("Erreur lors de l'application des charges.");
-    } finally {
-      this.isCommittingSelection = false;
-      this.isSaving = false;
-      this.cdr.markForCheck();
-    }
-  }
-
-  async applyProjection(data: { resources: number; totalDays: number }) {
-    if (this.selectedCells.length === 0) return;
-    this.isSaving = true;
-    try {
-      // Find the earliest selected week to start from
-      const sortedCells = [...this.selectedCells].sort((a, b) => a.week.getTime() - b.week.getTime());
-      const firstCell = sortedCells[0];
-      const startWeekIdx = this.displayedWeeks.findIndex((w) => w.getTime() === firstCell.week.getTime());
-
-      if (startWeekIdx === -1) return;
-
-      const resourceRow = firstCell.resource;
-      const daysPerWeek = resourceRow.jours_par_semaine || 5;
-
-      // Calculate how many weeks are needed (rounded up)
-      const nbWeeks = Math.ceil(data.totalDays / (data.resources * daysPerWeek));
-
-      const resourceUniqueId = this.getResourceUniqueId(
-        resourceRow,
-        { id: firstCell.childId } as ChildRow,
-        { id: firstCell.parentId } as ParentRow,
-      );
-
-      this.projectionCommitting = {
-        resourceUniqueId,
-        startWeekIdx,
-        nbWeeks,
-      };
-      this.isCommittingSelection = true;
-      this.cdr.markForCheck();
-
-      for (let i = 0; i < nbWeeks; i++) {
-        const currentTargetIdx = startWeekIdx + i;
-        if (currentTargetIdx >= this.displayedWeeks.length) break;
-
-        const targetWeek = this.displayedWeeks[currentTargetIdx];
-        const weekKey = this.formatWeekStart(targetWeek);
-
-        let projetId: string;
-        let equipeId: string;
-
-        if (this.viewMode() === 'project') {
-          projetId = firstCell.parentId;
-          equipeId = firstCell.childId;
-        } else if (this.viewMode() === 'team') {
-          equipeId = firstCell.parentId;
-          projetId = firstCell.childId;
-        } else {
-          const parentIdParts = firstCell.parentId.split('_');
-          equipeId = parentIdParts[0];
-          projetId = firstCell.resource.projectId!;
-        }
-
-        const rId = resourceRow.resourceId || resourceRow.id;
-        const roleId = resourceRow.type === 'role' ? rId : undefined;
-        const personneId = resourceRow.type === 'personne' ? rId : undefined;
-
-        // Save the charge with a value equal to the number of resources
-        await this.chargeService.createOrUpdateCharge(
-          projetId,
-          equipeId,
-          weekKey,
-          data.resources, // unite_ressource = resources count
-          roleId,
-          personneId,
-        );
-      }
-
-      await this.loadData({ showSkeleton: false });
-      this.clearSelection();
-    } catch (error) {
-      console.error('Error applying projection:', error);
-      alert("Erreur lors de l'application de la projection.");
-    } finally {
-      this.projectionCommitting = null;
-      this.isCommittingSelection = false;
-      this.isSaving = false;
-      this.cdr.markForCheck();
-    }
-  }
-
-  private lastMouseDownTarget: HTMLElement | null = null;
-
-  @HostListener('document:mousedown', ['$event'])
-  onDocumentMouseDown(event: MouseEvent) {
-    this.lastMouseDownTarget = event.target as HTMLElement;
-  }
-
-  // --- Filter helpers ---
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: Event) {
-    const target = event.target as HTMLElement;
-    const mouseDownTarget = this.lastMouseDownTarget;
-
-    const isInsideFilters =
-      !!(target?.closest('.filters-bar') || mouseDownTarget?.closest('.filters-bar')) ||
-      !!(target?.closest('.milestone-filter-group') || mouseDownTarget?.closest('.milestone-filter-group'));
-
-    // Close filter dropdowns if clicking outside filters-bar and milestone-filter-group
-    if (!isInsideFilters) {
-      this.openEquipeDropdown = false;
-      this.openProjetDropdown = false;
-      this.openResourceDropdown = false;
-      this.openStatusDropdown = false;
-      this.openSizeDropdown = false;
-      this.showPeriodDropdown = false;
-      this.openJalonDropdown = false;
-      this.filterProjetSearch.set('');
-    }
-    // Close actions menu if clicking outside
-    const isInsideActions =
-      !!(target?.closest('.actions-menu-wrapper') || mouseDownTarget?.closest('.actions-menu-wrapper'));
-    if (!isInsideActions) {
-      this.showActionsMenu = false;
-    }
-    // Close view mode popover if clicking outside
-    const isInsideView =
-      !!(target?.closest('.view-mode-popover-wrapper') || mouseDownTarget?.closest('.view-mode-popover-wrapper'));
-    if (!isInsideView) {
-      this.openViewDropdown = false;
-    }
-    // Close line menu if clicking outside
-    const isInsideLineMenu =
-      !!(target?.closest('.line-menu-wrapper') || mouseDownTarget?.closest('.line-menu-wrapper')) ||
-      !!(target?.closest('.line-menu-trigger') || mouseDownTarget?.closest('.line-menu-trigger'));
-    if (!isInsideLineMenu) {
-      this.activeLineMenuId = null;
-    }
-
-    this.lastMouseDownTarget = null;
-    this.cdr.markForCheck();
-  }
-
-  toggleViewDropdown(event: MouseEvent) {
-    event.stopPropagation();
-    this.openViewDropdown = !this.openViewDropdown;
-    if (this.openViewDropdown) {
-      this.openEquipeDropdown = false;
-      this.openProjetDropdown = false;
-      this.openResourceDropdown = false;
-      this.openStatusDropdown = false;
-      this.openSizeDropdown = false;
-      this.showPeriodDropdown = false;
-      this.openJalonDropdown = false;
-      this.showActionsMenu = false;
-    }
-    this.cdr.markForCheck();
-  }
-
-  toggleDropdown(name: 'equipe' | 'projet' | 'resource' | 'statut' | 'size' | 'jalon', event: MouseEvent) {
-    event.stopPropagation();
-    this.openViewDropdown = false;
-    if (name === 'equipe') {
-      this.openEquipeDropdown = !this.openEquipeDropdown;
-      this.openProjetDropdown = false;
-      this.openResourceDropdown = false;
-      this.openStatusDropdown = false;
-      this.openSizeDropdown = false;
-      this.showPeriodDropdown = false;
-      this.openJalonDropdown = false;
-    } else if (name === 'projet') {
-      this.openProjetDropdown = !this.openProjetDropdown;
-      this.openEquipeDropdown = false;
-      this.openResourceDropdown = false;
-      this.openStatusDropdown = false;
-      this.openSizeDropdown = false;
-      this.showPeriodDropdown = false;
-      this.openJalonDropdown = false;
-    } else if (name === 'resource') {
-      this.openResourceDropdown = !this.openResourceDropdown;
-      this.openEquipeDropdown = false;
-      this.openProjetDropdown = false;
-      this.openStatusDropdown = false;
-      this.openSizeDropdown = false;
-      this.showPeriodDropdown = false;
-      this.openJalonDropdown = false;
-    } else if (name === 'statut') {
-      this.openStatusDropdown = !this.openStatusDropdown;
-      this.openEquipeDropdown = false;
-      this.openProjetDropdown = false;
-      this.openResourceDropdown = false;
-      this.openSizeDropdown = false;
-      this.showPeriodDropdown = false;
-      this.openJalonDropdown = false;
-    } else if (name === 'size') {
-      this.openSizeDropdown = !this.openSizeDropdown;
-      this.openEquipeDropdown = false;
-      this.openProjetDropdown = false;
-      this.openResourceDropdown = false;
-      this.openStatusDropdown = false;
-      this.showPeriodDropdown = false;
-      this.openJalonDropdown = false;
-    } else if (name === 'jalon') {
-      this.openJalonDropdown = !this.openJalonDropdown;
-      this.openEquipeDropdown = false;
-      this.openProjetDropdown = false;
-      this.openResourceDropdown = false;
-      this.openStatusDropdown = false;
-      this.openSizeDropdown = false;
-      this.showPeriodDropdown = false;
-    }
-    if (!this.openProjetDropdown) {
-      this.filterProjetSearch.set('');
-    }
-  }
-
-  toggleActionsSubmenu(menu: string, event: MouseEvent) {
-    event.stopPropagation();
-    this.activeActionsSubmenu = this.activeActionsSubmenu === menu ? null : menu;
-    this.cdr.markForCheck();
-  }
-
-  toggleActionsMenu(event: MouseEvent) {
-    event.stopPropagation();
-    this.openViewDropdown = false;
-    this.showActionsMenu = !this.showActionsMenu;
-    if (!this.showActionsMenu) {
-      this.activeActionsSubmenu = null;
-    }
-    this.cdr.markForCheck();
-  }
-
-  toggleLineMenu(rowId: string, event: MouseEvent) {
-    event.stopPropagation();
-    if (this.activeLineMenuId === rowId) {
-      this.activeLineMenuId = null;
-    } else {
-      this.activeLineMenuId = rowId;
-      // Position near the trigger button
-      const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-      this.lineMenuPosition = { x: rect.right, y: rect.bottom };
-    }
-    this.cdr.markForCheck();
-  }
-
-  closeLineMenu() {
-    this.activeLineMenuId = null;
-    this.cdr.markForCheck();
+  private toggleMultiFilter(sig: WritableSignal<string[]>, item: string | undefined, event: Event, rebuildInService = false) {
+    if (!item) return;
+    const checked = (event.target as HTMLInputElement).checked;
+    sig.update((ids) => (checked ? [...ids, item] : ids.filter((x) => x !== item)));
+    if (rebuildInService && this.viewMode() === 'service') this.buildTree();
+    else this.applyFilters();
   }
 
   onEquipeToggle(id: string | undefined, event: Event) {
-    if (!id) return;
-    const checked = (event.target as HTMLInputElement).checked;
-    this.filterEquipeIds.update((ids) => {
-      if (checked) return [...ids, id];
-      return ids.filter((x) => x !== id);
-    });
-    if (this.viewMode() === 'service') {
-      this.buildTree();
-    } else {
-      this.applyFilters();
-    }
+    this.toggleMultiFilter(this.filterEquipeIds, id, event, true);
   }
-
   onJalonTypeToggle(type: string, event: Event) {
-    const checked = (event.target as HTMLInputElement).checked;
-    this.filterJalonTypes.update((types) => {
-      if (checked) return [...types, type];
-      return types.filter((x) => x !== type);
-    });
-    this.applyFilters();
+    this.toggleMultiFilter(this.filterJalonTypes, type, event);
   }
-
   onProjetToggle(id: string | undefined, event: Event) {
-    if (!id) return;
-    const checked = (event.target as HTMLInputElement).checked;
-    this.filterProjetIds.update((ids) => {
-      if (checked) return [...ids, id];
-      return ids.filter((x) => x !== id);
-    });
-    this.applyFilters();
+    this.toggleMultiFilter(this.filterProjetIds, id, event);
   }
-
   onStatutToggle(statut: string, event: Event) {
-    const checked = (event.target as HTMLInputElement).checked;
-    this.filterStatusIds.update((ids) => {
-      if (checked) return [...ids, statut];
-      return ids.filter((x) => x !== statut);
-    });
-    this.applyFilters();
+    this.toggleMultiFilter(this.filterStatusIds, statut, event);
+  }
+  onResourceToggle(sel: string, event: Event) {
+    this.toggleMultiFilter(this.filterResourceIds, sel, event, true);
   }
 
-  get filteredProjectsForDropdown(): Projet[] {
-    if (!this.filterProjetSearch()) return this.allProjects;
+  get filteredProjectsForDropdown(): M.Projet[] {
     const search = this.filterProjetSearch();
+    if (!search) return this.allProjects;
     return this.allProjects.filter(
-      (p) =>
-        textContains(p.nom_projet, search) ||
-        textContains(p.code_projet, search) ||
-        textContains(p.reference_externe, search),
+      (p) => textContains(p.nom_projet, search) || textContains(p.code_projet, search) || textContains(p.reference_externe, search),
     );
   }
 
   selectFilteredProjects() {
-    const ids = this.filteredProjectsForDropdown.map((p) => p.id).filter((id) => !!id) as string[];
-    this.filterProjetIds.update((current) => {
-      const set = new Set([...current, ...ids]);
-      return Array.from(set);
-    });
+    const ids = this.filteredProjectsForDropdown.map((p) => p.id).filter((id): id is string => !!id);
+    this.filterProjetIds.update((current) => Array.from(new Set([...current, ...ids])));
     this.applyFilters();
   }
 
   deselectFilteredProjects() {
-    const ids = this.filteredProjectsForDropdown.map((p) => p.id).filter((id) => !!id) as string[];
+    const ids = this.filteredProjectsForDropdown.map((p) => p.id).filter((id): id is string => !!id);
     this.filterProjetIds.update((current) => current.filter((id) => !ids.includes(id)));
     this.applyFilters();
   }
 
-  onResourceToggle(sel: string, event: Event) {
-    const checked = (event.target as HTMLInputElement).checked;
-    this.filterResourceIds.update((ids) => {
-      if (checked) return [...ids, sel];
-      return ids.filter((x) => x !== sel);
-    });
-    if (this.viewMode() === 'service') {
-      this.buildTree();
-    } else {
-      this.applyFilters();
-    }
-  }
-
   getEquipeName(id: string) {
-    const e = this.allEquipes.find((x) => x.id === id);
-    return e ? e.nom : '—';
+    return this.allEquipes.find((x) => x.id === id)?.nom || '—';
   }
 
   getProjetLabel(id: string) {
@@ -4198,99 +601,29 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     return p ? `${p.prenom} ${p.nom} ` : 'Pers: —';
   }
 
-  // ─── Period filter helpers ───────────────────────────────────────────────
-
-  /** Lundi de la semaine courante (YYYY-MM-DD) */
   get defaultPeriodStart(): string {
-    const d = new Date();
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(d);
-    monday.setDate(diff);
-    return monday.toISOString().split('T')[0];
+    return M.getDefaultPeriodStart();
   }
-
-  /** Aujourd'hui + 6 mois (YYYY-MM-DD) */
   get defaultPeriodEnd(): string {
-    const d = new Date();
-    d.setMonth(d.getMonth() + 6);
-    return d.toISOString().split('T')[0];
+    return M.getDefaultPeriodEnd();
   }
-
   get effectivePeriodStart(): string {
     return this.filterPeriodStart() || this.defaultPeriodStart;
   }
-
   get effectivePeriodEnd(): string {
     return this.filterPeriodEnd() || this.defaultPeriodEnd;
   }
-
-  /** Vrai si le filtre période est actif */
   get isPeriodFilterActive(): boolean {
     return this.filterPeriodEnabled();
   }
-
-  /** Retourne le preset actif (3/6/12) ou null si période personnalisée */
   get activePeriodPreset(): number | null {
-    const start = this.effectivePeriodStart;
-    const end = this.effectivePeriodEnd;
-    for (const months of [3, 6, 12]) {
-      const d = new Date(start);
-      d.setMonth(d.getMonth() + months);
-      if (d.toISOString().split('T')[0] === end) return months;
-    }
-    return null;
+    return M.computeActivePeriodPreset(this.effectivePeriodStart, this.effectivePeriodEnd);
   }
-
-  /** Label affiché dans le pill */
   get periodLabel(): string {
-    if (!this.filterPeriodEnabled()) {
-      return 'Désactivé'; // Tout afficher
-    }
-    const fmt = (s: string) => {
-      const [y, m, day] = s.split('-');
-      return `${day}/${m}/${y.slice(2)}`;
-    };
-    return `${fmt(this.effectivePeriodStart)} → ${fmt(this.effectivePeriodEnd)}`;
+    return M.formatPeriodFilterLabel(this.filterPeriodEnabled(), this.effectivePeriodStart, this.effectivePeriodEnd);
   }
-
-  /** O(n) : retourne les IDs de projets ayant ≥1 charge dans [startDate, endDate] */
-  private getProjectsWithChargesInPeriod(startDate: string, endDate: string): Set<string> {
-    const result = new Set<string>();
-    for (const charge of this.allCharges) {
-      if (!charge.semaine_debut || !charge.projet_id) continue;
-      if ((charge.unite_ressource ?? 0) <= 0) continue;
-      const weekKey = charge.semaine_debut.split('T')[0];
-      if (weekKey >= startDate && weekKey <= endDate) {
-        result.add(charge.projet_id);
-      }
-    }
-    return result;
-  }
-
-  /** O(w) : retourne vrai si la map de charges contient ≥1 charge non nulle dans la période */
-  private hasChargesInPeriod(chargesMap: Map<string, number> | undefined, startDate: string, endDate: string): boolean {
-    if (!chargesMap || chargesMap.size === 0) return false;
-    for (const [weekKey, val] of chargesMap.entries()) {
-      if (val > 0 && weekKey >= startDate && weekKey <= endDate) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  togglePeriodDropdown(event: Event) {
-    event.stopPropagation();
-    this.showPeriodDropdown = !this.showPeriodDropdown;
-    if (this.showPeriodDropdown) {
-      this.openEquipeDropdown = false;
-      this.openProjetDropdown = false;
-      this.openResourceDropdown = false;
-      this.openStatusDropdown = false;
-      this.openSizeDropdown = false;
-      this.openJalonDropdown = false;
-    }
-    this.cdr.markForCheck();
+  get sizeFilterLabel(): string {
+    return M.formatSizeFilterLabel(this.filterSizeEnabled(), this.filterSizeCriterion(), this.filterSizeOperator(), this.filterSizeValue());
   }
 
   setPeriodPreset(months: number) {
@@ -4328,61 +661,19 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  // ─── Size filter helpers ─────────────────────────────────────────────────
-
-  get sizeFilterLabel(): string {
-    if (!this.filterSizeEnabled() || this.filterSizeValue() === null) {
-      return 'Désactivé';
-    }
-
-    let critLabel = '';
-    switch (this.filterSizeCriterion()) {
-      case 'charges_today':
-        critLabel = 'Charges RAF';
-        break;
-      case 'charges_all':
-        critLabel = 'Charges Tout';
-        break;
-      case 'charges_2025':
-        critLabel = 'Charges 2025';
-        break;
-      case 'charges_2026':
-        critLabel = 'Charges 2026';
-        break;
-      case 'chiffre_initial':
-        critLabel = 'Chiffre Init.';
-        break;
-      case 'chiffre_revise':
-        critLabel = 'Chiffre Rév.';
-        break;
-      case 'chiffre_previsionnel':
-        critLabel = 'Chiffre Prév.';
-        break;
-      case 'chiffre_consomme':
-        critLabel = 'Chiffre Conso.';
-        break;
-      case 'chiffre_restant':
-        critLabel = 'Chiffre Rest.';
-        break;
-    }
-
-    const opLabel = this.filterSizeOperator() === 'gte' ? '≥' : '≤';
-    return `${critLabel} ${opLabel} ${this.filterSizeValue()} j`;
-  }
-
   onSizeFilterToggle(enabled: boolean) {
     this.filterSizeEnabled.set(enabled);
     this.applyFilters();
     this.cdr.markForCheck();
   }
 
-  onSizeCriterionChange(val: any) {
+  onSizeCriterionChange(val: M.SizeFilterCriterion) {
     this.filterSizeCriterion.set(val);
     this.applyFilters();
     this.cdr.markForCheck();
   }
 
-  onSizeOperatorChange(val: 'gte' | 'lte') {
+  onSizeOperatorChange(val: M.SizeFilterOperator) {
     this.filterSizeOperator.set(val);
     this.applyFilters();
     this.cdr.markForCheck();
@@ -4392,992 +683,474 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.sizeValueSubject.next(val);
   }
 
-  formatLocalDate(d: Date): string {
-    const year = d.getFullYear();
-    const month = (d.getMonth() + 1).toString().padStart(2, '0');
-    const day = d.getDate().toString().padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
-
-  getPlannedDaysForResource(resource: ResourceRow, period: 'today' | 'all' | '2025' | '2026'): number {
-    let total = 0;
-    const todayWeekStart = this.calendarService.getWeekStart(new Date());
-    const todayWeekStartStr = this.formatLocalDate(todayWeekStart);
-    const sourceMap = resource.dailyCharges ?? resource.charges;
-    const useDirectDays = !!resource.dailyCharges;
-
-    sourceMap.forEach((val, weekStr) => {
-      let match = false;
-      if (period === 'today') {
-        match = weekStr >= todayWeekStartStr;
-      } else if (period === 'all') {
-        match = true;
-      } else {
-        const [y, m, d] = weekStr.split('-').map(Number);
-        const date = new Date(y, m - 1, d);
-        const isoYear = getISOWeekYear(date).toString();
-        match = isoYear === period;
-      }
-
-      if (match) {
-        total += useDirectDays ? val || 0 : (val || 0) * (resource.jours_par_semaine || 5);
-      }
-    });
-
-    return total;
-  }
-
-  getPlannedDaysForChildInTeam(child: ChildRow, period: 'today' | 'all' | '2025' | '2026'): number {
-    let total = 0;
-    for (const res of child.resources) {
-      total += this.getPlannedDaysForResource(res, period);
-    }
-    return total;
-  }
-
-  getPlannedDaysForProjectParent(parent: ParentRow, period: 'today' | 'all' | '2025' | '2026'): number {
-    let total = 0;
-    for (const teamChild of parent.children) {
-      if (this.filterEquipeIds().length > 0 && !this.filterEquipeIds().includes(teamChild.id)) {
-        continue;
-      }
-      for (const res of teamChild.resources) {
-        total += this.getPlannedDaysForResource(res, period);
-      }
-    }
-    return total;
-  }
-
-  getChiffreValueForTeamProject(
-    teamId: string,
-    projectId: string,
-    category: 'initial' | 'revise' | 'previsionnel' | 'consomme' | 'restant',
-  ): number | null {
-    const serviceIds = new Set<string>();
-    const team = this.allEquipes.find((e) => e.id === teamId);
-    if (team?.service_id) serviceIds.add(team.service_id);
-    for (const att of this.allRoleAttachments) {
-      if (att.equipe_id === teamId && att.service_id) serviceIds.add(att.service_id);
-    }
-    for (const pers of this.availablePersonnes) {
-      if (pers.equipe_id === teamId && pers.service_id) serviceIds.add(pers.service_id);
-    }
-
-    if (serviceIds.size === 0) return null;
-
-    let total = 0;
-    let found = false;
-    for (const sId of serviceIds) {
-      const c = this.allChiffres.find((ch) => ch.id_projet === projectId && ch.id_service === sId);
-      if (c) {
-        found = true;
-        if (category === 'restant') {
-          total += (c.previsionnel ?? 0) - (c.consomme ?? 0);
-        } else {
-          total += (c as any)[category] ?? 0;
-        }
-      }
-    }
-    return found ? total : null;
-  }
-
-  getChiffreValueForProjectParent(
-    parent: ParentRow,
-    category: 'initial' | 'revise' | 'previsionnel' | 'consomme' | 'restant',
-  ): number | null {
-    const serviceIds = new Set<string>();
-    for (const child of parent.children) {
-      if (this.filterEquipeIds().length > 0 && !this.filterEquipeIds().includes(child.id)) {
-        continue;
-      }
-      const team = this.allEquipes.find((e) => e.id === child.id);
-      if (team?.service_id) serviceIds.add(team.service_id);
-      for (const att of this.allRoleAttachments) {
-        if (att.equipe_id === child.id && att.service_id) serviceIds.add(att.service_id);
-      }
-      for (const pers of this.availablePersonnes) {
-        if (pers.equipe_id === child.id && pers.service_id) serviceIds.add(pers.service_id);
-      }
-    }
-
-    if (serviceIds.size === 0) return null;
-
-    let total = 0;
-    let found = false;
-    for (const sId of serviceIds) {
-      const c = this.allChiffres.find((ch) => ch.id_projet === parent.id && ch.id_service === sId);
-      if (c) {
-        found = true;
-        if (category === 'restant') {
-          total += (c.previsionnel ?? 0) - (c.consomme ?? 0);
-        } else {
-          total += (c as any)[category] ?? 0;
-        }
-      }
-    }
-    return found ? total : null;
-  }
-
-  checkSizeMatch(val: number | null, operator: 'gte' | 'lte', targetValue: number): boolean {
-    if (val === null) return false;
-    return operator === 'gte' ? val >= targetValue : val <= targetValue;
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────
-
-  applyFilters() {
-    this.calculateUsage();
-
-    const search = this.globalSearch().trim();
-
-    // Period filter – computed once, O(n) pass on allCharges
-    const periodStart = this.effectivePeriodStart;
-    const periodEnd = this.effectivePeriodEnd;
-    const periodEnabled = this.filterPeriodEnabled();
-    const activeProjectIds = periodEnabled
-      ? this.getProjectsWithChargesInPeriod(periodStart, periodEnd)
-      : new Set<string>();
-
-    // Size filter – computed once
-    const sizeEnabled = this.filterSizeEnabled() && this.filterSizeValue() !== null;
-    const sizeCriterion = this.filterSizeCriterion();
-    const sizeOperator = this.filterSizeOperator();
-    const sizeValue = this.filterSizeValue() ?? 0;
-
-    const hasSpecificFilter =
-      this.filterEquipeIds().length > 0 ||
-      this.filterProjetIds().length > 0 ||
-      this.filterResourceIds().length > 0 ||
-      this.filterStatusIds().length > 0 ||
-      periodEnabled ||
-      sizeEnabled;
-    const needsSearchFilter = search.length > 0;
-
-    // 1. Index search matches once for O(1) lookups
-    const matchingProjetIds = new Set<string>();
-    const matchingEquipeIds = new Set<string>();
-    const matchingRoleIds = new Set<string>();
-    const matchingPersonneIds = new Set<string>();
-
-    if (search) {
-      for (const p of this.allProjects) {
-        if (
-          textContains(p.nom_projet, search) ||
-          textContains(p.code_projet, search) ||
-          textContains(p.reference_externe, search)
-        ) {
-          matchingProjetIds.add(p.id!);
-        }
-      }
-      for (const e of this.allEquipes) {
-        if (textContains(e.nom, search) || textContains(e.code, search)) {
-          matchingEquipeIds.add(e.id!);
-        }
-      }
-      for (const r of this.availableRoles) {
-        if (textContains(r.nom, search)) matchingRoleIds.add(r.id!);
-      }
-      for (const p of this.availablePersonnes) {
-        if (textContains(`${p.prenom} ${p.nom}`, search)) matchingPersonneIds.add(p.id!);
-      }
-    }
-
-    const resourceMatchesSearchSelf = (res: ResourceRow): boolean => {
-      if (!search) return true;
-      if (textContains(res.label, search)) return true;
-      if (textContains(res.reference_externe, search)) return true;
-      if (res.type === 'role') return matchingRoleIds.has(res.resourceId || res.id);
-      return matchingPersonneIds.has(res.resourceId || res.id);
-    };
-
-    const parentMatchesSearch = (parent: ParentRow): boolean => {
-      if (!search) return true;
-      if (textContains(parent.label, search)) return true;
-      if (textContains(parent.code, search)) return true;
-      if (textContains(parent.reference_externe, search)) return true;
-      return false;
-    };
-
-    const childMatchesSearchSelf = (child: ChildRow): boolean => {
-      if (!search) return true;
-      if (textContains(child.label, search)) return true;
-      if (textContains(child.code, search)) return true;
-      if (textContains(child.reference_externe, search)) return true;
-      return false;
-    };
-
-    if (
-      !this.filterEquipeIds().length &&
-      !this.filterProjetIds().length &&
-      !this.filterResourceIds().length &&
-      !this.filterStatusIds().length &&
-      !search &&
-      !periodEnabled &&
-      !sizeEnabled
-    ) {
-      this.rows = [...this.rowsAll];
-      this.calculateFilteredMetrics();
-      if (this.displayFormat() === 'flat') this.buildFlatList();
-      return;
-    }
-
-    const filteredParents: ParentRow[] = [];
-    const isResourceMode = this.viewMode() === 'resource';
-    const isServiceMode = this.viewMode() === 'service';
-    const isProjectLeafMode = isResourceMode || isServiceMode;
-
-    for (const parent of this.rowsAll) {
-      const pMatches = parentMatchesSearch(parent);
-
-      let parentPassesEquipe = true;
-      if (this.filterEquipeIds().length) {
-        if (this.viewMode() === 'team') {
-          parentPassesEquipe = this.filterEquipeIds().includes(parent.id);
-        } else if (this.viewMode() === 'resource') {
-          const teamId = parent.id.split('_')[0];
-          parentPassesEquipe = this.filterEquipeIds().includes(teamId);
-        }
-      }
-
-      let parentPassesResource = true;
-      if (this.filterResourceIds().length && this.viewMode() === 'resource') {
-        parentPassesResource = this.filterResourceIds().some((sel) => {
-          const [t, id] = sel.split(':');
-          return parent.id.endsWith(`${t}_${id}`);
-        });
-      }
-
-      let parentPassesProjet = true;
-      if (this.filterProjetIds().length && this.viewMode() === 'project') {
-        parentPassesProjet = this.filterProjetIds().includes(parent.id);
-      }
-
-      let parentPassesStatut = true;
-      if (this.filterStatusIds().length) {
-        if (this.viewMode() === 'project' && parent.originalProject) {
-          parentPassesStatut = this.filterStatusIds().includes(parent.originalProject.statut);
-        } else if (this.viewMode() === 'team' || this.viewMode() === 'resource' || isServiceMode) {
-          parentPassesStatut = true;
-        }
-      }
-
-      // Period & Size filters – parent level
-      const parentPassesPeriod = !periodEnabled || this.hasChargesInPeriod(parent.totalCharges, periodStart, periodEnd);
-      let parentPassesLargeProject = true;
-      if (sizeEnabled && this.viewMode() === 'project') {
-        let val: number | null = null;
-        if (sizeCriterion.startsWith('charges_')) {
-          const period = sizeCriterion.substring(8) as 'today' | 'all' | '2025' | '2026';
-          val = this.getPlannedDaysForProjectParent(parent, period);
-        } else if (sizeCriterion.startsWith('chiffre_')) {
-          const category = sizeCriterion.substring(8) as 'initial' | 'revise' | 'previsionnel' | 'consomme' | 'restant';
-          val = this.getChiffreValueForProjectParent(parent, category);
-        }
-        parentPassesLargeProject = this.checkSizeMatch(val, sizeOperator, sizeValue);
-      }
-
-      if (!parentPassesPeriod || !parentPassesLargeProject) continue;
-
-      if (!pMatches && !parentPassesEquipe && !parentPassesResource && !parentPassesProjet && !parentPassesStatut) {
-        if (this.viewMode() === 'project' && (!parentPassesProjet || !parentPassesStatut)) continue;
-      }
-
-      const newParent: ParentRow = {
-        id: parent.id,
-        label: parent.label,
-        code: parent.code,
-        reference_externe: parent.reference_externe,
-        color: parent.color,
-        expanded: parent.expanded,
-        children: [],
-        totalCharges: parent.totalCharges,
-        originalProject: parent.originalProject,
-        metrics: new Map(),
-      };
-
-      let cMatchesAny = false;
-
-      for (const child of parent.children) {
-        const cMatchesSelf = childMatchesSearchSelf(child);
-        let gMatchesAny = false;
-
-        let childPassesStatut = true;
-        if (this.filterStatusIds().length && this.viewMode() === 'team' && child.originalProject) {
-          childPassesStatut = this.filterStatusIds().includes(child.originalProject.statut);
-        }
-
-        let childPassesLargeProject = true;
-        if (sizeEnabled && this.viewMode() === 'team') {
-          let val: number | null = null;
-          if (sizeCriterion.startsWith('charges_')) {
-            const period = sizeCriterion.substring(8) as 'today' | 'all' | '2025' | '2026';
-            val = this.getPlannedDaysForChildInTeam(child, period);
-          } else if (sizeCriterion.startsWith('chiffre_')) {
-            const category = sizeCriterion.substring(8) as 'initial' | 'revise' | 'previsionnel' | 'consomme' | 'restant';
-            val = this.getChiffreValueForTeamProject(parent.id, child.id, category);
-          }
-          childPassesLargeProject = this.checkSizeMatch(val, sizeOperator, sizeValue);
-        }
-
-        if (this.viewMode() === 'team' && (!childPassesStatut || !childPassesLargeProject)) continue;
-
-        // Period filter – Child level: check if this child row has charges in the period
-        if (periodEnabled) {
-          if (this.viewMode() === 'team' && !this.hasChargesInPeriod(child.charges, periodStart, periodEnd)) continue;
-          if (this.viewMode() === 'project' && !this.hasChargesInPeriod(child.charges, periodStart, periodEnd))
-            continue;
-        }
-
-        // Filter grandchildren
-        let grandchildrenMatch = child.resources;
-        if (hasSpecificFilter || needsSearchFilter) {
-          grandchildrenMatch = child.resources.filter((gr) => {
-            let passesLargeProject = true;
-            if (sizeEnabled) {
-              let teamId = '';
-              let projectId = '';
-              if (isResourceMode) {
-                teamId = parent.id.split('_')[0];
-                projectId = gr.projectId || gr.id;
-              } else if (isServiceMode) {
-                projectId = gr.projectId || gr.id;
-              } else if (this.viewMode() === 'project') {
-                teamId = child.id;
-                projectId = parent.id;
-              } else {
-                teamId = parent.id;
-                projectId = child.id;
-              }
-
-              let val: number | null = null;
-              if (sizeCriterion.startsWith('charges_')) {
-                const period = sizeCriterion.substring(8) as 'today' | 'all' | '2025' | '2026';
-                val = this.getPlannedDaysForResource(gr, period);
-              } else if (sizeCriterion.startsWith('chiffre_')) {
-                const category = sizeCriterion.substring(8) as 'initial' | 'revise' | 'previsionnel' | 'consomme' | 'restant';
-                val = isServiceMode
-                  ? this.getChiffreValueForServiceProject(parent.id, projectId, category)
-                  : this.getChiffreValueForMode(teamId, projectId, gr.resourceId, gr.type, category);
-              }
-              passesLargeProject = this.checkSizeMatch(val, sizeOperator, sizeValue);
-            }
-
-            let passesIdFilter = true;
-            if (
-              this.filterResourceIds().length ||
-              this.filterProjetIds().length ||
-              this.filterStatusIds().length ||
-              sizeEnabled
-            ) {
-              if (isProjectLeafMode) {
-                const project = this.allProjects.find((p) => p.id === gr.projectId);
-                const passesStatut =
-                  this.filterStatusIds().length === 0 || (!!project && this.filterStatusIds().includes(project.statut));
-                passesIdFilter =
-                  (this.filterProjetIds().length === 0 || this.filterProjetIds().includes(gr.projectId!)) &&
-                  passesStatut &&
-                  passesLargeProject;
-              } else {
-                const passesResourceFilter =
-                  this.filterResourceIds().length === 0 ||
-                  this.filterResourceIds().some((sel) => {
-                    const [t, id] = sel.split(':');
-                    return (
-                      (t === 'role' && gr.type === 'role' && gr.id === id) ||
-                      (t === 'personne' && gr.type === 'personne' && gr.id === id)
-                    );
-                  });
-                passesIdFilter = passesResourceFilter && passesLargeProject;
-              }
-            }
-
-            let passesSearch = true;
-            if (search) {
-              if (isResourceMode) {
-                passesSearch = matchingProjetIds.has(gr.id);
-              } else if (isServiceMode) {
-                passesSearch = pMatches || matchingProjetIds.has(gr.id);
-              } else if (!pMatches && !cMatchesSelf) {
-                passesSearch = resourceMatchesSearchSelf(gr);
-              }
-            }
-
-            // Period filter – Grandchild level: check if this grandchild row has charges in the period
-            const passesPeriod = !periodEnabled || this.hasChargesInPeriod(gr.charges, periodStart, periodEnd);
-
-            const isMatch = passesIdFilter && passesSearch && passesPeriod;
-            if (isMatch) gMatchesAny = true;
-            return isMatch;
-          });
-        } else if (search) {
-          for (const gr of child.resources) {
-            if (resourceMatchesSearchSelf(gr)) {
-              gMatchesAny = true;
-              break;
-            }
-          }
-        }
-
-        let childPassesEquipe = true;
-        let childPassesProjet = true;
-        let childPassesResource = true;
-
-        if (this.filterEquipeIds().length && this.viewMode() === 'project') {
-          childPassesEquipe = this.filterEquipeIds().includes(child.id);
-        }
-        if (this.filterProjetIds().length && this.viewMode() === 'team') {
-          childPassesProjet = this.filterProjetIds().includes(child.id);
-        }
-        if (this.filterResourceIds().length && this.viewMode() === 'resource') {
-          childPassesResource = parentPassesResource;
-        }
-
-        const hasGrandchildFilter = isProjectLeafMode
-          ? this.filterProjetIds().length > 0 || this.filterStatusIds().length > 0 || periodEnabled || sizeEnabled
-          : this.filterResourceIds().length > 0 || periodEnabled || sizeEnabled;
-        const hasGrandchildrenMatch = hasGrandchildFilter ? grandchildrenMatch.length > 0 : true;
-
-        const childMatches = cMatchesSelf || gMatchesAny;
-        const childPassesSearch = !search || (pMatches && !isResourceMode) || childMatches;
-
-        if (
-          childPassesEquipe &&
-          childPassesProjet &&
-          childPassesResource &&
-          hasGrandchildrenMatch &&
-          childPassesSearch
-        ) {
-          if (childMatches) cMatchesAny = true;
-          newParent.children.push({
-            id: child.id,
-            label: child.label,
-            code: child.code,
-            reference_externe: child.reference_externe,
-            color: child.color,
-            expanded: child.expanded,
-            resources: grandchildrenMatch,
-            charges: child.charges,
-            originalProject: child.originalProject,
-            metrics: new Map(),
-          });
-        }
-      }
-
-      const hasChildren = newParent.children.length > 0;
-      if (search && cMatchesAny) newParent.expanded = true;
-
-      let showEmptyParent = false;
-      if (this.viewMode() === 'project' && this.filterProjetIds().includes(parent.id)) {
-        if (this.filterEquipeIds().length === 0 && this.filterResourceIds().length === 0) showEmptyParent = true;
-      } else if (
-        (this.viewMode() === 'team' || this.viewMode() === 'resource') &&
-        this.filterEquipeIds().includes(parent.id)
-      ) {
-        if (this.filterProjetIds().length === 0 && this.filterResourceIds().length === 0) showEmptyParent = true;
-      }
-
-      if (
-        parentPassesEquipe &&
-        parentPassesResource &&
-        parentPassesProjet &&
-        parentPassesStatut &&
-        (hasChildren || showEmptyParent || (search && pMatches))
-      ) {
-        filteredParents.push(newParent);
-      }
-    }
-
-    this.rows = filteredParents;
-    this.calculateFilteredMetrics(); // Pre-calculate metrics for filtered view
-    if (this.displayFormat() === 'flat') this.buildFlatList();
-  }
-
-  // Calculate metrics for current visible rows (after filtering)
-  private calculateFilteredMetrics() {
-    this.rows.forEach((parent) => {
-      // Re-calculate Parent metrics based on its current children (which are already filtered)
-      const teamIdFromParent = this.viewMode() === 'resource' ? parent.id.split('_')[0] : parent.id;
-      const serviceResourceKeys =
-        this.viewMode() === 'service' ? this.getServiceResourceKeys(parent.id) : null;
-      this.displayedWeeks.forEach((week) => {
-        const weekKey = this.formatWeekStart(week);
-        let total = 0;
-        let totalCapacity = 0;
-
-        parent.children.forEach((child) => {
-          // Re-sum child totals
-          let childTotal = 0;
-          child.resources.forEach((res) => {
-            childTotal += res.metrics?.get(weekKey)?.total || 0;
-          });
-          child.metrics?.set(weekKey, { total: childTotal });
-          if (this.viewMode() === 'resource' || this.viewMode() === 'service') {
-            total = parent.totalCharges?.get(weekKey) || 0;
-          } else {
-            total += childTotal;
-          }
-        });
-
-        if (this.viewMode() === 'resource') {
-          const parts = parent.id.split('_');
-          const rType = parts[1];
-          const rId = parts.slice(2).join('_');
-          const capKey = `${teamIdFromParent}_${rType}_${rId}_${weekKey}`;
-          totalCapacity = this.capacityIndex.get(capKey) || 0;
-        } else if (this.viewMode() === 'service' && serviceResourceKeys) {
-          total = parent.totalCharges?.get(weekKey) || 0;
-          for (const resKey of serviceResourceKeys) {
-            totalCapacity += this.capacityIndex.get(`${resKey}_${weekKey}`) || 0;
-          }
-        }
-
-        const availability = totalCapacity - total;
-        let status: 'positive' | 'zero' | 'negative' | 'none' = 'none';
-        if (totalCapacity > 0 || total > 0) {
-          if (availability > 0) status = 'positive';
-          else if (availability === 0) status = 'zero';
-          else status = 'negative';
-        }
-
-        parent.metrics?.set(weekKey, {
-          total,
-          capacity: totalCapacity,
-          availability: availability,
-          status: status,
-        });
-      });
-    });
-  }
-
-  // Metrics calculation methods
-  getRowMetricsYear(row: ParentRow, year: number): number {
-    let total = 0;
-    for (const child of row.children) {
-      total += this.getChildMetricsYear(child, year);
-    }
-    return total;
-  }
-
-  getChildMetricsYear(child: ChildRow, year: number): number {
-    let total = 0;
-    for (const resource of child.resources) {
-      total += this.getResourceMetricsYear(resource, year);
-    }
-    return total;
-  }
-
-  getResourceMetricsYear(resource: ResourceRow, year: number): number {
-    let total = 0;
-    if (resource.dailyCharges) {
-      for (const [weekKey, days] of resource.dailyCharges) {
-        const weekDate = new Date(weekKey);
-        if (weekDate.getFullYear() === year) {
-          total += days;
-        }
-      }
-      return total;
-    }
-    for (const [weekKey, charge] of resource.charges) {
-      const weekDate = new Date(weekKey);
-      if (weekDate.getFullYear() === year) {
-        // Calculate days: charge (units per week) * jours_par_semaine
-        total += charge * resource.jours_par_semaine;
-      }
-    }
-    return total;
-  }
-
-  getFlatRowMetricsYear(row: FlatRow, year: number): number {
-    return this.getResourceMetricsYear(row.resource, year);
-  }
-
-  // Sum of days (charge * jours_par_semaine) for currently selected cells
-  get totalSelectedDays(): number {
-    let total = 0;
-    for (const cell of this.selectedCells) {
-      // Prioritize the bulk input value if it has been set by the user
-      const charge =
-        this.bulkChargeValue !== null ? this.bulkChargeValue : this.getResourceValue(cell.resource, cell.week) || 0;
-      const jours = cell.resource.jours_par_semaine || 0;
-      total += charge * jours;
-    }
-    return total;
-  }
-
-  async removeResource(resource: ResourceRow, child: ChildRow, parent: ParentRow) {
-    this.confirmTitle = 'Supprimer la ressource';
-    this.confirmMessage = `Êtes - vous sûr de vouloir supprimer "${resource.label}" ?\nCela supprimera toutes les charges associées à cette ressource.`;
-
-    this.pendingConfirmAction = async () => {
-      try {
-        let projetId: string;
-        let equipeId: string;
-        let roleId: string | undefined;
-        let personneId: string | undefined;
-
-        if (this.viewMode() === 'project') {
-          projetId = parent.id;
-          equipeId = child.id;
-          roleId = resource.type === 'role' ? resource.id : undefined;
-          personneId = resource.type === 'personne' ? resource.id : undefined;
-        } else if (this.viewMode() === 'team') {
-          equipeId = parent.id;
-          projetId = child.id;
-          roleId = resource.type === 'role' ? resource.id : undefined;
-          personneId = resource.type === 'personne' ? resource.id : undefined;
-        } else {
-          // resource view mode: parent=team, child=resource, resource=project
-          equipeId = parent.id.split('_')[0];
-          projetId = resource.id;
-          roleId = resource.type === 'role' ? resource.resourceId : undefined;
-          personneId = resource.type === 'personne' ? resource.resourceId : undefined;
-        }
-
-        await this.chargeService.deleteChargesForResource(projetId, equipeId, roleId, personneId);
-        await this.loadData({ showSkeleton: false });
-      } catch (error) {
-        console.error('Error removing resource:', error);
-        alert('Erreur lors de la suppression de la ressource.');
-      }
-    };
-    this.showConfirmModal = true;
-  }
-
-  async removeChild(child: ChildRow, parent: ParentRow) {
-    this.confirmTitle =
-      'Retirer ' +
-      (this.viewMode() === 'resource' ? 'la ressource' : this.viewMode() === 'project' ? "l'équipe" : 'le projet');
-    this.confirmMessage = `Êtes - vous sûr de vouloir retirer "${child.label}" ?\nCela supprimera toutes les charges associées.`;
-
-    this.pendingConfirmAction = async () => {
-      try {
-        if (this.viewMode() === 'resource') {
-          // Remove all charges for this resource in this team
-          const [type, resId] = child.id.split('_');
-          const roleId = type === 'role' ? resId : undefined;
-          const personneId = type === 'personne' ? resId : undefined;
-          const equipeId = parent.id.split('_')[0];
-
-          await this.chargeService.deleteChargesForResource(undefined, equipeId, roleId, personneId);
-
-          // Also remove the attachment from the team
-          if (type === 'role') {
-            await this.teamService.removeRoleFromEquipe(resId, equipeId);
-          } else {
-            await this.teamService.removePersonneFromEquipe(resId);
-          }
-        } else {
-          let projetId: string;
-          let equipeId: string;
-
-          if (this.viewMode() === 'project') {
-            projetId = parent.id;
-            equipeId = child.id;
-          } else {
-            equipeId = parent.id;
-            projetId = child.id;
-          }
-
-          await this.chargeService.deleteChargesForProjectTeam(projetId, equipeId);
-          await this.projetService.unlinkProjectFromTeam(projetId, equipeId);
-        }
-        await this.loadData({ showSkeleton: false });
-      } catch (error) {
-        console.error('Error removing child:', error);
-        alert(`Erreur lors de la suppression de l'association.`);
-      }
-    };
-    this.showConfirmModal = true;
-  }
-
-  getSelectedStartDateISO(): string {
-    if (!this.selectedStartDate) return '';
-    const d = this.selectedStartDate;
-    return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
-  }
-
-  getResourceTotalPlannedDays(resource: ResourceRow): number {
-    let total = 0;
-    const sourceMap = resource.dailyCharges ?? resource.charges;
-    const useDirectDays = !!resource.dailyCharges;
-
-    sourceMap.forEach((val, weekStr) => {
-      const yearSel = this.selectedCapacityYear();
-      const dayContribution = useDirectDays ? val : val * resource.jours_par_semaine;
-      if (yearSel === 'today') {
-        const todayWeekStart = this.calendarService.getWeekStart(new Date());
-        const todayWeekStartStr = this.formatLocalDate(todayWeekStart);
-        if (weekStr >= todayWeekStartStr) {
-          total += dayContribution;
-        }
-      } else if (yearSel === 'custom' && this.selectedStartDate) {
-        const selectedStartStr = this.formatLocalDate(this.selectedStartDate);
-        if (weekStr >= selectedStartStr) {
-          total += dayContribution;
-        }
-      } else {
-        const [y, m, d] = weekStr.split('-').map(Number);
-        const date = new Date(y, m - 1, d);
-        const isoYear = getISOWeekYear(date).toString();
-        if (yearSel === 'all' || isoYear === yearSel) {
-          total += dayContribution;
-        }
-      }
-    });
-    return total;
-  }
-
-  getBadgePrefix(): string {
-    const yearSel = this.selectedCapacityYear();
-    if (yearSel === 'today') {
-      const d = this.calendarService.getWeekStart(new Date());
-      const formatted = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`;
-      return `Dès le ${formatted} :`;
-    }
-    if (yearSel === 'all') return 'Tout :';
-    if (yearSel === 'custom' && this.selectedStartDate) {
-      const d = this.selectedStartDate;
-      const formatted = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`;
-      return `Dès le ${formatted} :`;
-    }
-    return `${yearSel} :`;
-  }
-
-  // --- Chiffres Triskell badge helpers ---
-
-  /** Résout le service_id UUID depuis l'UUID d'une équipe. */
-  private getServiceIdForTeam(teamId: string): string | null {
-    const team = this.allEquipes.find((e) => e.id === teamId);
-    return team?.service_id ?? null;
-  }
-
-  /**
-   * Retourne la valeur chiffre (selon chiffreMode) pour une équipe et un projet donnés (UUIDs).
-   * Peut aussi prendre en compte une ressource spécifique pour une résolution plus granulaire du service.
-   * Retourne null si aucun chiffre trouvé.
-   */
-  getChiffreValueForMode(
-    teamId: string,
-    projectId: string,
-    resourceId: string | undefined,
-    resourceType: 'role' | 'personne' | undefined,
-    mode: 'initial' | 'revise' | 'previsionnel' | 'consomme' | 'restant',
-  ): number | null {
-    let idService: string | null = null;
-
-    if (resourceType === 'personne' && resourceId) {
-      const personne = this.availablePersonnes.find((p) => p.id === resourceId);
-      idService = personne?.service_id ?? null;
-    } else if (resourceType === 'role' && resourceId) {
-      // Pour un rôle, on cherche l'attachement qui lie ce rôle à cette équipe
-      const attachment = this.allRoleAttachments.find((a) => a.role_id === resourceId && a.equipe_id === teamId);
-      idService = attachment?.service_id ?? null;
-    }
-
-    // Fallback sur le service de l'équipe si non résolu par la ressource (uniquement si ce n'est pas pour une ressource spécifique)
-    if (idService === null && !resourceId) {
-      idService = this.getServiceIdForTeam(teamId);
-    }
-
-    if (idService === null || !projectId) return null;
-
-    const chiffre = this.allChiffres.find((c) => c.id_projet === projectId && c.id_service === idService);
-    if (!chiffre) return null;
-
-    if (mode === 'restant') {
-      const previsionnel = chiffre.previsionnel ?? 0;
-      const consomme = chiffre.consomme ?? 0;
-      return previsionnel - consomme;
-    }
-    const value = (chiffre as any)[mode];
-    return value !== undefined ? value : null;
-  }
-
-  getChiffreValue(
-    teamId: string,
-    projectId: string,
-    resourceId?: string,
-    resourceType?: 'role' | 'personne',
-  ): number | null {
-    return this.getChiffreValueForMode(teamId, projectId, resourceId, resourceType, this.chiffreMode());
-  }
-
-  /**
-   * Retourne directement la valeur chiffre (selon mode ou chiffreMode courant)
-   * pour un couple (id_service, id_projet).
-   */
-  getChiffreValueForServiceProject(
-    serviceId: string,
-    projectId: string,
-    mode: 'initial' | 'revise' | 'previsionnel' | 'consomme' | 'restant' = this.chiffreMode(),
-  ): number | null {
-    if (!serviceId || !projectId) return null;
-    const chiffre = this.allChiffres.find((c) => c.id_projet === projectId && c.id_service === serviceId);
-    if (!chiffre) return null;
-    if (mode === 'restant') {
-      return (chiffre.previsionnel ?? 0) - (chiffre.consomme ?? 0);
-    }
-    const value = (chiffre as any)[mode];
-    return value !== undefined ? value : null;
-  }
-
-  getChiffrePreviewValue(mode: 'initial' | 'revise' | 'previsionnel' | 'consomme' | 'restant'): number | null {
-    if (!this.activeChiffrePopoverData) return null;
-    if (this.viewMode() === 'service') {
-      return this.getChiffreValueForServiceProject(
-        this.activeChiffrePopoverData.teamId,
-        this.activeChiffrePopoverData.projectId,
-        mode,
-      );
-    }
-    return this.getChiffreValueForMode(
-      this.activeChiffrePopoverData.teamId,
-      this.activeChiffrePopoverData.projectId,
-      this.activeChiffrePopoverData.resourceId,
-      this.activeChiffrePopoverData.resourceType,
-      mode,
-    );
-  }
-
-  /** Libellé court du mode actif pour le badge chiffre. */
-  getChiffreBadgeLabel(): string {
-    switch (this.chiffreMode()) {
-      case 'initial':
-        return 'Init.';
-      case 'revise':
-        return 'Rév.';
-      case 'previsionnel':
-        return 'Prév.';
-      case 'consomme':
-        return 'Conso.';
-      case 'restant':
-        return 'Rest.';
-    }
-  }
-
-  switchChiffreMode(mode: 'initial' | 'revise' | 'previsionnel' | 'consomme' | 'restant') {
-    this.chiffreMode.set(mode);
-    this.showChiffrePopover = false;
-    this.activeChiffrePopoverData = null;
-  }
-
-  openChiffrePopover(
-    event: MouseEvent,
-    anchorId: string,
-    teamId: string,
-    projectId: string,
-    resourceId?: string,
-    resourceType?: 'role' | 'personne',
-  ) {
+  // --- Modals & Mutations ---
+  openMilestoneModal(jalon: M.Jalon, event: Event) {
     event.stopPropagation();
-    const targetElement = event.currentTarget as HTMLElement;
+    this.selectedJalon = jalon;
+    this.showMilestoneModal = true;
+  }
 
-    if (this.showChiffrePopover && this.activeChiffreAnchorId === anchorId) {
-      this.showChiffrePopover = false;
-      this.activeChiffreAnchorId = null;
-      this.activeChiffrePopoverData = null;
+  async onMilestoneSaved() {
+    await this.loadData({ showSkeleton: false });
+  }
+
+  onOpenChiffresFromProject(idProjet: string | undefined) {
+    if (!idProjet) return;
+    this.selectedProjetId = idProjet;
+    this.showChiffresModal = true;
+  }
+
+  closeChiffresModal() {
+    this.showChiffresModal = false;
+    this.selectedProjetId = null;
+  }
+
+  async drop(event: CdkDragDrop<M.ParentRow[]>) {
+    if (this.viewMode() !== 'project' || this.displayFormat() !== 'tree' || event.previousIndex === event.currentIndex) return;
+    moveItemInArray(this.rows, event.previousIndex, event.currentIndex);
+    await this.updateRankAfterMove(event.currentIndex);
+  }
+
+  async moveToTop(row: M.ParentRow) {
+    if (this.viewMode() !== 'project') return;
+    const currentIndex = this.rows.indexOf(row);
+    if (currentIndex <= 0) return;
+    moveItemInArray(this.rows, currentIndex, 0);
+    await this.updateRankAfterMove(0);
+  }
+
+  async moveToBottom(row: M.ParentRow) {
+    if (this.viewMode() !== 'project') return;
+    const currentIndex = this.rows.indexOf(row);
+    if (currentIndex === -1 || currentIndex === this.rows.length - 1) return;
+    moveItemInArray(this.rows, currentIndex, this.rows.length - 1);
+    await this.updateRankAfterMove(this.rows.length - 1);
+  }
+
+  private async updateRankAfterMove(index: number) {
+    try {
+      this.rowsAll = await this.repo.updateProjectRank(this.rows, this.rowsAll, index);
+      this.cdr.markForCheck();
+    } catch (error) {
+      console.error('Error calculating rank:', error);
+      await this.loadData({ showSkeleton: false });
+    }
+  }
+
+  get filteredLinkableItems(): M.LinkableItem[] {
+    const q = this.linkModalSearchQuery.trim();
+    const s = this.linkModalStatusFilter;
+    return this.linkableItems.filter((item) => {
+      const proj = this.allProjects.find((p) => p.id === item.id);
+      const matchSearch = !q || textContains(item.label, q) || textContains(proj?.code_projet, q) || textContains(proj?.reference_externe, q);
+      const matchStatus = !s || (proj?.statut || '') === s;
+      return matchSearch && matchStatus;
+    });
+  }
+
+  get isAllFilteredSelected(): boolean {
+    const filtered = this.filteredLinkableItems;
+    return filtered.length > 0 && filtered.every((i) => this.selectedIdsToLink.has(i.id));
+  }
+
+  get isSelectionIndeterminate(): boolean {
+    const filtered = this.filteredLinkableItems;
+    const count = filtered.filter((i) => this.selectedIdsToLink.has(i.id)).length;
+    return count > 0 && count < filtered.length;
+  }
+
+  isLinkSelected(id: string): boolean {
+    return this.selectedIdsToLink.has(id);
+  }
+
+  toggleLinkSelection(id: string): void {
+    if (this.selectedIdsToLink.has(id)) this.selectedIdsToLink.delete(id);
+    else this.selectedIdsToLink.add(id);
+    this.selectedIdsToLink = new Set(this.selectedIdsToLink);
+  }
+
+  toggleAllLinkSelection(): void {
+    if (this.isAllFilteredSelected) this.filteredLinkableItems.forEach((i) => this.selectedIdsToLink.delete(i.id));
+    else this.filteredLinkableItems.forEach((i) => this.selectedIdsToLink.add(i.id));
+    this.selectedIdsToLink = new Set(this.selectedIdsToLink);
+  }
+
+  clearLinkSelection(): void {
+    this.selectedIdsToLink = new Set();
+  }
+
+  getLinkableProjectData(id: string): M.Projet | undefined {
+    return this.allProjects.find((p) => p.id === id);
+  }
+
+  openLinkModal(row: M.ParentRow, child?: M.ChildRow) {
+    this.selectedParentRow = row;
+    this.selectedChildRowToLink = child || null;
+    this.selectedIdToLink = '';
+    this.selectedIdsToLink = new Set();
+    this.linkModalSearchQuery = '';
+    this.linkModalStatusFilter = '';
+    this.linkModalIsSaving = false;
+
+    const mode = this.viewMode();
+    if (mode === 'project') {
+      const existing = new Set(row.children.map((c) => c.id));
+      this.linkableItems = this.allEquipes.filter((e) => !existing.has(e.id!)).map((e) => ({ id: e.id!, label: e.nom }));
+    } else if (mode === 'team') {
+      const existing = new Set(row.children.map((c) => c.id));
+      this.linkableItems = this.allProjects.filter((p) => !existing.has(p.id!)).map((p) => ({ id: p.id!, label: p.nom_projet }));
+    } else if (mode === 'resource') {
+      const existing = new Set((child ? child.resources : row.children[0]?.resources || []).map((r) => r.projectId));
+      this.linkableItems = this.allProjects.filter((p) => !existing.has(p.id!)).map((p) => ({ id: p.id!, label: p.nom_projet }));
+    }
+    this.showLinkModal = true;
+  }
+
+  closeLinkModal() {
+    this.showLinkModal = false;
+    this.selectedParentRow = null;
+    this.selectedChildRowToLink = null;
+    this.selectedIdToLink = '';
+    this.selectedIdsToLink = new Set();
+    this.linkModalSearchQuery = '';
+    this.linkModalStatusFilter = '';
+    this.linkModalIsSaving = false;
+  }
+
+  async linkItem() {
+    if (!this.selectedParentRow) return;
+    if (this.viewMode() === 'project') {
+      if (!this.selectedIdToLink) return;
+      try {
+        await this.repo.linkProjectAndAddTeamResources(this.selectedParentRow.id, this.selectedIdToLink);
+        await this.loadData({ showSkeleton: false });
+        this.closeLinkModal();
+      } catch (error: unknown) {
+        console.error('Error linking item:', error);
+        alert((error as Error)?.message || "Erreur lors de l'ajout du lien.");
+      }
       return;
     }
 
-    this.activeChiffreAnchorId = anchorId;
-    this.activeChiffrePopoverData = { teamId, projectId, resourceId, resourceType };
-    this.showChiffrePopover = true;
-
-    // Calculate best position
-    const rect = targetElement.getBoundingClientRect();
-    const pos = calculateBestPopoverPosition({
-      rect,
-      viewportHeight: window.innerHeight,
-      viewportWidth: window.innerWidth,
-      popoverHeight: 180, // Estimated height of the chiffre popover
-      popoverWidth: 210, // A bit wider to accommodate values
-    });
-    this.chiffrePopoverPosition = pos;
-    this.chiffrePopoverArrowSide = pos.arrowSide;
-
+    if (this.selectedIdsToLink.size === 0) return;
+    this.linkModalIsSaving = true;
     this.cdr.markForCheck();
 
-    const closeHandler = (e: MouseEvent | Event) => {
-      if (e instanceof MouseEvent && targetElement.contains(e.target as Node)) {
-        return;
-      }
-      this.showChiffrePopover = false;
-      this.activeChiffreAnchorId = null;
-      this.activeChiffrePopoverData = null;
-      this.cdr.markForCheck();
-      document.removeEventListener('click', closeHandler);
-    };
-    document.addEventListener('click', closeHandler);
+    const errors = await this.repo.linkBulkItems(
+      this.viewMode(),
+      this.selectedParentRow,
+      this.selectedChildRowToLink,
+      this.selectedIdsToLink,
+      this.allProjects,
+    );
+    await this.loadData({ showSkeleton: false });
+    this.linkModalIsSaving = false;
+    if (errors.length > 0) alert(`Erreur lors de l'ajout de : ${errors.join(', ')}`);
+    this.closeLinkModal();
   }
 
-  openYearPopover(event: MouseEvent, anchorId: string) {
-    event.stopPropagation();
-    const targetElement = event.currentTarget as HTMLElement;
-
-    if (this.showYearPopover && this.activeAnchorId === anchorId) {
-      this.showYearPopover = false;
-      this.activeAnchorId = null;
-      return;
+  getProjectForLinks(): M.Projet | undefined {
+    if (this.showLinkModal) {
+      if (!this.selectedParentRow && !this.selectedIdToLink) return undefined;
+      const projetId = this.viewMode() === 'project' ? this.selectedParentRow?.id : this.selectedIdToLink;
+      return this.allProjects.find((p) => p.id === projetId);
     }
-
-    this.activeAnchorId = anchorId;
-    this.showYearPopover = true;
-
-    // Calculate best position
-    const rect = targetElement.getBoundingClientRect();
-    const pos = calculateBestPopoverPosition({
-      rect,
-      viewportHeight: window.innerHeight,
-      viewportWidth: window.innerWidth,
-      popoverHeight: 200, // Estimated height of the popover
-      popoverWidth: 160,
-    });
-    this.popoverPosition = pos;
-    this.popoverArrowSide = pos.arrowSide;
-
-    // Close when clicking outside
-    const closeHandler = (e: MouseEvent | Event) => {
-      // Don't close if we clicked the toggle itself
-      if (e instanceof MouseEvent && targetElement.contains(e.target as Node)) {
-        return;
-      }
-      this.showYearPopover = false;
-      this.activeAnchorId = null;
-      document.removeEventListener('click', closeHandler);
-    };
-    document.addEventListener('click', closeHandler);
+    if (this.showAddResourceModal && this.viewMode() === 'team' && this.selectedChildRow) {
+      return this.allProjects.find((p) => p.id === this.selectedChildRow?.id);
+    }
+    return undefined;
   }
 
-  selectYear(year: 'today' | 'all' | '2025' | '2026') {
-    this.selectedCapacityYear.set(year);
-    this.selectedStartDate = null;
-    this.showYearPopover = false;
+  openProjectEditFromLink() {
+    const project = this.getProjectForLinks();
+    if (project) this.openProjectEdit(project);
   }
 
-  onDateSelected(event: any) {
-    const selectedDateStr = event.target.value;
-    if (!selectedDateStr) return;
-
-    const selectedDate = new Date(selectedDateStr);
-    const mondayOfSelectedWeek = this.calendarService.getWeekStart(selectedDate);
-
-    this.selectedStartDate = mondayOfSelectedWeek;
-    this.selectedCapacityYear.set('custom');
-    this.showYearPopover = false;
+  openNewProjectFromLink() {
+    this.projectToEdit = {};
+    this.isCreatingProjectFromLink = true;
+    this.showProjectModal = true;
   }
-  openProjectEdit(project: Projet) {
+
+  openProjectEdit(project: M.Projet) {
     if (project) {
       this.projectToEdit = { ...project };
       this.showProjectModal = true;
     }
   }
-  openProjectEditByResource(resource: ResourceRow) {
-    if (resource.projectId) {
-      const project = this.allProjects.find((p) => p.id === resource.projectId);
-      if (project) {
-        this.projectToEdit = { ...project };
-        this.showProjectModal = true;
+
+  openProjectEditByResource(resource: M.ResourceRow) {
+    const project = resource.projectId ? this.allProjects.find((p) => p.id === resource.projectId) : undefined;
+    if (project) this.openProjectEdit(project);
+  }
+
+  async onProjectSaved(newProject?: M.Projet) {
+    this.showProjectModal = false;
+    if (this.isCreatingProjectFromLink && newProject?.id && this.selectedParentRow) {
+      this.isCreatingProjectFromLink = false;
+      try {
+        await this.repo.linkNewlyCreatedProject(this.viewMode(), newProject.id, this.selectedParentRow, this.selectedChildRowToLink);
+        await this.loadData({ showSkeleton: false });
+        this.closeLinkModal();
+      } catch (error: unknown) {
+        console.error('Error linking newly created project:', error);
+        alert(`Le projet "${newProject.nom_projet}" a été créé, mais une erreur est survenue lors de son association : ${(error as Error)?.message || error}`);
       }
+    } else {
+      await this.loadData({ showSkeleton: false });
     }
+  }
+
+  closeProjectModal() {
+    this.showProjectModal = false;
+    this.isCreatingProjectFromLink = false;
+  }
+
+  async openAddResourceModal(child: M.ChildRow, parent: M.ParentRow) {
+    this.selectedChildRow = child;
+    this.selectedParentForResource = parent;
+    this.resourceTypeToAdd = 'role';
+    this.selectedResourceId = '';
+    this.showAddResourceModal = true;
+
+    try {
+      const { roles, personnes } = await this.repo.loadAvailableResourcesForProjectTeam(this.viewMode(), parent, child);
+      this.availableRoles = roles;
+      this.availablePersonnes = personnes;
+    } catch (error) {
+      console.error('Error loading available resources:', error);
+      this.availableRoles = [];
+      this.availablePersonnes = [];
+    }
+  }
+
+  closeAddResourceModal() {
+    this.showAddResourceModal = false;
+    this.selectedChildRow = null;
+    this.selectedParentForResource = null;
+    this.selectedResourceId = '';
+  }
+
+  async addResourceToCharge() {
+    if (!this.selectedChildRow || !this.selectedParentForResource || !this.selectedResourceId) return;
+    try {
+      await this.repo.addResourceToCharge(
+        this.viewMode(),
+        this.selectedParentForResource,
+        this.selectedChildRow,
+        this.resourceTypeToAdd,
+        this.selectedResourceId,
+      );
+      await this.loadData({ showSkeleton: false });
+      this.closeAddResourceModal();
+    } catch (error) {
+      console.error('Error adding resource:', error);
+      alert("Erreur lors de l'ajout de la ressource.");
+    }
+  }
+
+  onOverlayMouseDown(event: MouseEvent) {
+    if (event.target === event.currentTarget) this.isMouseDownOnOverlay = true;
+  }
+
+  onOverlayMouseUp(event: MouseEvent, modalType: 'link' | 'resource') {
+    if (this.isMouseDownOnOverlay && event.target === event.currentTarget) {
+      if (modalType === 'link') this.closeLinkModal();
+      else if (modalType === 'resource') this.closeAddResourceModal();
+    }
+    this.isMouseDownOnOverlay = false;
+  }
+
+  onConfirmAction() {
+    if (this.pendingConfirmAction) this.pendingConfirmAction();
+    this.showConfirmModal = false;
+  }
+
+  private promptConfirmAndReload(title: string, message: string, fn: () => Promise<void>, errorAlert: string) {
+    this.confirmTitle = title;
+    this.confirmMessage = message;
+    this.pendingConfirmAction = async () => {
+      try {
+        await fn();
+        await this.loadData({ showSkeleton: false });
+      } catch (error) {
+        console.error(errorAlert, error);
+        alert(errorAlert);
+      }
+    };
+    this.showConfirmModal = true;
+  }
+
+  async removeResource(resource: M.ResourceRow, child: M.ChildRow, parent: M.ParentRow) {
+    this.promptConfirmAndReload(
+      'Supprimer la ressource',
+      `Êtes - vous sûr de vouloir supprimer "${resource.label}" ?\nCela supprimera toutes les charges associées à cette ressource.`,
+      () => this.repo.removeResourceCharges(this.viewMode(), resource, child, parent),
+      'Erreur lors de la suppression de la ressource.',
+    );
+  }
+
+  async removeChild(child: M.ChildRow, parent: M.ParentRow) {
+    const label = this.viewMode() === 'resource' ? 'la ressource' : this.viewMode() === 'project' ? "l'équipe" : 'le projet';
+    this.promptConfirmAndReload(
+      `Retirer ${label}`,
+      `Êtes - vous sûr de vouloir retirer "${child.label}" ?\nCela supprimera toutes les charges associées.`,
+      () => this.repo.removeChildAssociation(this.viewMode(), child, parent),
+      "Erreur lors de la suppression de l'association.",
+    );
+  }
+
+  async executeMove() {
+    if (this.selectedCells.length === 0 || this.moveGhostOffset === 0) return;
+    this.isSaving = true;
+    this.cdr.markForCheck();
+    try {
+      await this.repo.moveSelectedCharges(this.viewMode(), this.selectedCells, this.displayedWeeks, this.moveGhostOffset);
+      await this.loadData({ showSkeleton: false });
+      this.clearSelection();
+    } catch (error) {
+      console.error('Error executing move:', error);
+      alert('Erreur lors du déplacement des charges.');
+    } finally {
+      this.isMovingSelection = false;
+      this.isMoveCommitting = false;
+      this.isSaving = false;
+      this.isOverSelectionBorder = false;
+      this.moveGhostOffset = 0;
+      this.cdr.markForCheck();
+    }
+  }
+
+  async applyBulkCharge(value: number | null, comment?: string) {
+    if (this.selectedCells.length === 0 || value == null) return;
+    this.bulkChargeValue = value;
+    const targetComment = comment !== undefined ? comment : this.bulkComment;
+    this.isCommittingSelection = true;
+    this.isSaving = true;
+    this.cdr.markForCheck();
+    try {
+      await this.repo.applyBulkCharges(this.viewMode(), this.selectedCells, value, targetComment);
+      await this.loadData({ showSkeleton: false });
+      this.clearSelection();
+    } catch (error) {
+      console.error('Error applying bulk charge:', error);
+      alert("Erreur lors de l'application des charges.");
+    } finally {
+      this.isCommittingSelection = false;
+      this.isSaving = false;
+      this.cdr.markForCheck();
+    }
+  }
+
+  async applyProjection(data: { resources: number; totalDays: number }) {
+    if (this.selectedCells.length === 0) return;
+    this.isSaving = true;
+    try {
+      const sortedCells = [...this.selectedCells].sort((a, b) => a.week.getTime() - b.week.getTime());
+      const firstCell = sortedCells[0];
+      const startWeekIdx = this.displayedWeeks.findIndex((w) => w.getTime() === firstCell.week.getTime());
+      if (startWeekIdx === -1) return;
+
+      const daysPerWeek = firstCell.resource.jours_par_semaine || 5;
+      const nbWeeks = Math.ceil(data.totalDays / (data.resources * daysPerWeek));
+      const resourceUniqueId = this.getResourceUniqueId(firstCell.resource, { id: firstCell.childId }, { id: firstCell.parentId });
+
+      this.projectionCommitting = { resourceUniqueId, startWeekIdx, nbWeeks };
+      this.isCommittingSelection = true;
+      this.cdr.markForCheck();
+
+      await this.repo.applyProjectedCharges(this.viewMode(), firstCell, startWeekIdx, nbWeeks, this.displayedWeeks, data.resources);
+      await this.loadData({ showSkeleton: false });
+      this.clearSelection();
+    } catch (error) {
+      console.error('Error applying projection:', error);
+      alert("Erreur lors de l'application de la projection.");
+    } finally {
+      this.projectionCommitting = null;
+      this.isCommittingSelection = false;
+      this.isSaving = false;
+      this.cdr.markForCheck();
+    }
+  }
+
+  // --- HostListeners & Tutorial ---
+  @HostListener('document:mousemove', ['$event'])
+  onResizing(event: MouseEvent) {
+    if (!this.isResizing) return;
+    const newWidth = Math.max(150, Math.min(600, this.startWidth + (event.clientX - this.startX)));
+    this.labelColumnWidth.set(newWidth);
+  }
+
+  @HostListener('document:mouseup')
+  onResizeEnd() {
+    this.isResizing = false;
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape() {
+    this.closeAllFilterDropdowns();
+    this.showYearPopover = false;
+    this.showChiffrePopover = false;
+    this.activeChiffreAnchorId = null;
+    this.activeChiffrePopoverData = null;
+    this.clearSelection();
+    this.cdr.markForCheck();
+  }
+
+  @HostListener('document:mousedown', ['$event'])
+  onDocumentMouseDown(event: MouseEvent) {
+    this.lastMouseDownTarget = event.target as HTMLElement;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event) {
+    const target = event.target as HTMLElement;
+    const mouseDownTarget = this.lastMouseDownTarget;
+
+    const isInsideFilters =
+      !!(target?.closest('.filters-bar') || mouseDownTarget?.closest('.filters-bar')) ||
+      !!(target?.closest('.milestone-filter-group') || mouseDownTarget?.closest('.milestone-filter-group'));
+    if (!isInsideFilters) {
+      this.closeAllFilterDropdowns();
+      this.filterProjetSearch.set('');
+    }
+    if (!(target?.closest('.actions-menu-wrapper') || mouseDownTarget?.closest('.actions-menu-wrapper'))) {
+      this.showActionsMenu = false;
+    }
+    if (!(target?.closest('.view-mode-popover-wrapper') || mouseDownTarget?.closest('.view-mode-popover-wrapper'))) {
+      this.openViewDropdown = false;
+    }
+    const isInsideLineMenu =
+      !!(target?.closest('.line-menu-wrapper') || mouseDownTarget?.closest('.line-menu-wrapper')) ||
+      !!(target?.closest('.line-menu-trigger') || mouseDownTarget?.closest('.line-menu-trigger'));
+    if (!isInsideLineMenu) {
+      this.activeLineMenuId = null;
+    }
+
+    this.lastMouseDownTarget = null;
+    this.cdr.markForCheck();
+  }
+
+  restartTutorial() {
+    this.showActionsMenu = false;
+    this.startTutorial(true);
+  }
+
+  private startTutorial(force = false) {
+    const hasSeenActions = !!localStorage.getItem('tutorial-actions-menu-v1');
+    const hasSeenVue = !!localStorage.getItem('tutorial-view-mode-selector-v1');
+    if (!force && hasSeenActions && hasSeenVue) return;
+
+    const mode: 'full' | 'vue-only' = !force && hasSeenActions && !hasSeenVue ? 'vue-only' : 'full';
+    const launch = () => {
+      if (!this.showGlobalFilters()) {
+        this.showGlobalFilters.set(true);
+        this.cdr.detectChanges();
+      }
+      this.repo.runDriverTutorial(mode);
+    };
+
+    if (force) launch();
+    else setTimeout(launch, 2000);
   }
 }

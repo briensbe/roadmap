@@ -5,7 +5,10 @@
   [attr.data-view-mode]="viewMode()"
   [style.--total-weeks]="displayedWeeks.length">
   <!-- Sexy Tooltip Singleton -->
-  <div #tooltipElement class="sexy-tooltip" [class.visible]="activeTooltip">
+  <div
+    #tooltipElement
+    class="sexy-tooltip"
+    [class.visible]="activeTooltip && !isDragging && !isMovingSelection && selectedCells.length === 0">
     {{ activeTooltip }}
   </div>
 
@@ -1056,7 +1059,11 @@
           @if (displayFormat() === 'tree') {
           <div cdkDropList (cdkDropListDropped)="drop($event)">
             @for (row of rows; track trackByRow($index, row)) {
-              <div cdkDrag [cdkDragDisabled]="viewMode() !== 'project'" class="project-draggable-group">
+              <div
+                cdkDrag
+                [cdkDragDisabled]="viewMode() !== 'project'"
+                (cdkDragStarted)="hideTooltip()"
+                class="project-draggable-group">
                 <!-- Parent Row -->
                 <div class="calendar-row" [style.z-index]="activeLineMenuId === 'parent-' + row.id ? 1700 : null">
                   <div

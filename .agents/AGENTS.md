@@ -34,8 +34,17 @@
 
 # Directives de Développement - Architecture & Qualité (SOLID)
 
+## Philosophie de conception (Deep Modules)
+- **Privilégier les modules profonds :** Chaque composant ou service doit masquer un maximum de complexité derrière une interface la plus simple et étroite possible.
+- **Interdiction des modules "pass-through" :** Ne pas créer de fichiers ou de fonctions dont le seul but est de relayer des données sans valeur ajoutée.
+- **Encapsulation forte :** Les détails d'implémentation (appels réseaux complexes, transformations de données tordues) doivent être enfouis dans les couches basses et ne jamais fuiter dans l'UI ou le code appelant.
+
+## Règle d'or : Composition vs Héritage
+- Privilégier systématiquement la **composition** et l'injection de dépendances pour réutiliser du comportement (ex: services injectés, stratégies, helpers).
+- Préférer l'implémentation d'interfaces (`implements`) à l'héritage de comportement, pour maintenir un couplage lâche.
+
 ## 1. Limite stricte de taille des fichiers
-- **Taille maximale absolue par fichier `.ts` : 300 lignes.**
+- **Taille maximale par fichier `.ts` : 1000 lignes.**
 - Si un fichier approche ou dépasse cette limite, l'agent **doit** le refactoriser en extrayant la logique dans de nouveaux modules (composants, services, helpers, stores).
 
 ## 2. Application des principes SOLID

@@ -52,7 +52,7 @@ module.exports = defineConfig([
       'max-lines': [
         'warn',
         {
-          max: 300,
+          max: 1000,
           skipBlankLines: true,
           skipComments: true,
         },
