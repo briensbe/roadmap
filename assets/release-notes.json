@@ -1,5 +1,26 @@
 [
   {
+    "version": "2026.10.23",
+    "date": "2026-10-23",
+    "news": [
+      {
+        "title": "Nouvelle vue « Par Services » dans la Planification",
+        "items": [
+          "Introduction du 4ᵉ mode de vue « Par Services » permettant de consolider la charge planifiée.",
+          "Modale d'analyse et de sélection par glisser-déposer, avec visualisation des capacités disponible"
+        ],
+        "imageUrl": "assets/release-notes/2026-10-24-service-modale.png",
+        "imageMaxHeight": 150
+      },
+      {
+        "title": "Refonte architecturale majeure de PlanView (Deep Modules)",
+        "items": [
+          "Découpage et modularisation du composant PlanView (+5 500 lignes initiales) en plusieurs deep modules spécialisés et respectant les principes SOLID."
+        ]
+      }
+    ]
+  },
+  {
     "version": "2026.10.21",
     "date": "2026-10-21",
     "news": [
