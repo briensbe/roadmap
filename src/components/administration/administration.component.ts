@@ -10,6 +10,8 @@ import { ExcelReader } from '../../services/import/ExcelReader';
 import { ReconciliationResult } from '../../services/import/RoadmapReconciliator';
 import { Service } from '../../models/types';
 import { ConfirmModalComponent } from '../confirm-modal.component';
+import { ToastService } from '../../services/toast.service';
+import { toErrorMessage } from '../../utils/error-message';
 import {
   LucideAngularModule,
   Shield,
@@ -43,6 +45,7 @@ export class AdministrationComponent implements OnInit {
   private importService = inject(ImportService);
   private servicesService = inject(ServicesService);
   private projetService = inject(ProjetService);
+  private readonly toast = inject(ToastService);
 
   // Lucide Icons
   Shield = Shield;
@@ -288,8 +291,8 @@ export class AdministrationComponent implements OnInit {
           this.showConfirmDeleteMapping.set(false);
           this.mappingIdToDelete.set(null);
         },
-        onError: (err: any) => {
-          alert('Erreur lors de la suppression : ' + (err.message || err));
+        onError: (err: unknown) => {
+          this.toast.error('Erreur lors de la suppression : ' + toErrorMessage(err));
           this.showConfirmDeleteMapping.set(false);
           this.mappingIdToDelete.set(null);
         },
@@ -314,8 +317,8 @@ export class AdministrationComponent implements OnInit {
           this.showConfirmActivate.set(false);
           this.batchIdToActivate.set(null);
         },
-        onError: (err: any) => {
-          alert('Erreur lors de l\'activation : ' + (err.message || err));
+        onError: (err: unknown) => {
+          this.toast.error("Erreur lors de l'activation : " + toErrorMessage(err));
           this.showConfirmActivate.set(false);
           this.batchIdToActivate.set(null);
         },
@@ -345,8 +348,8 @@ export class AdministrationComponent implements OnInit {
           this.showConfirmDeactivate.set(false);
           this.batchIdToDeactivate.set(null);
         },
-        onError: (err: any) => {
-          alert('Erreur lors de la désactivation : ' + (err.message || err));
+        onError: (err: unknown) => {
+          this.toast.error('Erreur lors de la désactivation : ' + toErrorMessage(err));
           this.showConfirmDeactivate.set(false);
           this.batchIdToDeactivate.set(null);
         },
@@ -371,8 +374,8 @@ export class AdministrationComponent implements OnInit {
           this.showConfirmDelete.set(false);
           this.batchIdToDelete.set(null);
         },
-        onError: (err: any) => {
-          alert('Erreur lors de la suppression : ' + (err.message || err));
+        onError: (err: unknown) => {
+          this.toast.error('Erreur lors de la suppression : ' + toErrorMessage(err));
           this.showConfirmDelete.set(false);
           this.batchIdToDelete.set(null);
         },
@@ -410,8 +413,8 @@ export class AdministrationComponent implements OnInit {
           onSuccess: (result) => {
             this.reconciliationResult.set(result);
           },
-          onError: (err: any) => {
-            alert('Erreur lors de la réconciliation : ' + (err.message || err));
+          onError: (err: unknown) => {
+            this.toast.error('Erreur lors de la réconciliation : ' + toErrorMessage(err));
             this.closeReconcileOverlay();
           },
         }

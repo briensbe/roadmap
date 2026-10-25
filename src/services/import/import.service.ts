@@ -291,31 +291,15 @@ export class ImportService {
     return injectQuery(() => ({
       queryKey: ['triskell-service-names'],
       queryFn: async () => {
-        let allRows: { service_name: string }[] = [];
-        let from = 0;
-        const pageSize = 1000;
-        let hasMore = true;
-
-        while (hasMore) {
-          const { data, error } = await this.supabase.client
+        const allRows = await paginateQuery<{ service_name: string }>(() =>
+          this.supabase.client
             .from(DB_TABLES.IMPORT_BUDGET)
             .select('service_name')
-            .range(from, from + pageSize - 1);
+            .order('service_name', { ascending: true })
+            .order('id', { ascending: true }),
+        );
 
-          if (error) throw error;
-
-          if (data && data.length > 0) {
-            allRows = allRows.concat(data);
-            from += pageSize;
-            hasMore = data.length === pageSize;
-          } else {
-            hasMore = false;
-          }
-        }
-
-        const names = allRows
-          .map((r) => r.service_name)
-          .filter((v, i, self) => v && self.indexOf(v) === i);
+        const names = [...new Set(allRows.map((r) => r.service_name).filter(Boolean))];
         names.sort();
         return names;
       },

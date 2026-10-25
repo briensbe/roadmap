@@ -27,6 +27,9 @@ import {
 } from 'lucide-angular';
 import { getISOWeekYear } from 'date-fns';
 import { storageSignal } from '../../utils/storage-signal';
+import { YearKey, YearPeriod, getSelectableYears } from '../../utils/year-selection';
+import { ToastService } from '../../services/toast.service';
+import { toErrorMessage } from '../../utils/error-message';
 import {
   calculateBestToolbarPosition,
   calculateBestPopoverPosition,
@@ -168,7 +171,9 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   private isDefaultExpanded = true;
   private manualStates = new Map<string, boolean>();
 
-  selectedCapacityYear: 'today' | 'all' | '2025' | '2026' | 'custom' = 'today';
+  selectedCapacityYear: YearPeriod | 'custom' = 'today';
+  /** Années proposées dans le sélecteur de période (calculées à partir de l'année courante). */
+  readonly selectableYears: readonly YearKey[] = getSelectableYears();
   selectedStartDate: Date | null = null;
   showYearPopover = false;
   popoverPosition: PopoverPosition | null = null;
@@ -194,6 +199,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
     private crewdayzService: CrewdayzIntegrationService,
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone,
+    private toast: ToastService,
   ) {}
 
   expandAll() {
@@ -647,9 +653,9 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
       console.error('Error adding resource:', error);
       // Display user-friendly error message
       if (error.message && error.message.includes('déjà attaché')) {
-        alert(error.message);
+        this.toast.warning(error.message);
       } else {
-        alert("Erreur lors de l'ajout de la ressource. Veuillez réessayer.");
+        this.toast.error("Erreur lors de l'ajout de la ressource. Veuillez réessayer.");
       }
     }
   }
@@ -1195,7 +1201,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
       this.clearSelection();
     } catch (error) {
       console.error('Error applying generic capacity projection:', error);
-      alert("Erreur lors de l'application de la projection.");
+      this.toast.error("Erreur lors de l'application de la projection.");
     } finally {
       this.isSaving = false;
       this.cdr.markForCheck();
@@ -1327,7 +1333,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
       rect,
       viewportHeight: window.innerHeight,
       viewportWidth: window.innerWidth,
-      popoverHeight: 200, // Estimated height of the popover
+      popoverHeight: 230, // Estimated height of the popover
       popoverWidth: 160,
     });
     this.popoverPosition = pos;
@@ -1346,7 +1352,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
     document.addEventListener('click', closeHandler);
   }
 
-  selectYear(year: 'today' | 'all' | '2025' | '2026') {
+  selectYear(year: YearPeriod) {
     this.selectedCapacityYear = year;
     this.selectedStartDate = null;
     this.showYearPopover = false;

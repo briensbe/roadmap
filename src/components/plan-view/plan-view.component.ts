@@ -27,6 +27,8 @@ import * as M from './plan-view.models';
 import * as Projection from './plan-projection.engine';
 import { PlanGridInteractionController, generateWeeksTimeline } from './plan-grid-interaction.controller';
 import { PlanDataRepository } from './plan-data.repository';
+import { ToastService } from '../../services/toast.service';
+import { toErrorMessage } from '../../utils/error-message';
 
 export { LucideIconsModule } from './plan-view.models';
 
@@ -51,6 +53,7 @@ export { LucideIconsModule } from './plan-view.models';
 })
 export class PlanViewComponent extends PlanGridInteractionController implements OnInit, AfterViewInit, OnDestroy {
   private readonly repo = inject(PlanDataRepository);
+  private readonly toast = inject(ToastService);
 
   showSkeleton = false;
   showMilestoneModal = false;
@@ -829,7 +832,7 @@ export class PlanViewComponent extends PlanGridInteractionController implements 
         this.closeLinkModal();
       } catch (error: unknown) {
         console.error('Error linking item:', error);
-        alert((error as Error)?.message || "Erreur lors de l'ajout du lien.");
+        this.toast.error(toErrorMessage(error, "Erreur lors de l'ajout du lien."));
       }
       return;
     }
@@ -847,7 +850,7 @@ export class PlanViewComponent extends PlanGridInteractionController implements 
     );
     await this.loadData({ showSkeleton: false });
     this.linkModalIsSaving = false;
-    if (errors.length > 0) alert(`Erreur lors de l'ajout de : ${errors.join(', ')}`);
+    if (errors.length > 0) this.toast.error(`Erreur lors de l'ajout de : ${errors.join(', ')}`);
     this.closeLinkModal();
   }
 
@@ -896,7 +899,7 @@ export class PlanViewComponent extends PlanGridInteractionController implements 
         this.closeLinkModal();
       } catch (error: unknown) {
         console.error('Error linking newly created project:', error);
-        alert(`Le projet "${newProject.nom_projet}" a été créé, mais une erreur est survenue lors de son association : ${(error as Error)?.message || error}`);
+        this.toast.error(`Le projet "${newProject.nom_projet}" a été créé, mais une erreur est survenue lors de son association : ${toErrorMessage(error)}`);
       }
     } else {
       await this.loadData({ showSkeleton: false });
@@ -947,7 +950,7 @@ export class PlanViewComponent extends PlanGridInteractionController implements 
       this.closeAddResourceModal();
     } catch (error) {
       console.error('Error adding resource:', error);
-      alert("Erreur lors de l'ajout de la ressource.");
+      this.toast.error("Erreur lors de l'ajout de la ressource : " + toErrorMessage(error));
     }
   }
 
@@ -977,7 +980,7 @@ export class PlanViewComponent extends PlanGridInteractionController implements 
         await this.loadData({ showSkeleton: false });
       } catch (error) {
         console.error(errorAlert, error);
-        alert(errorAlert);
+        this.toast.error(errorAlert + ' : ' + toErrorMessage(error));
       }
     };
     this.showConfirmModal = true;
@@ -1012,7 +1015,7 @@ export class PlanViewComponent extends PlanGridInteractionController implements 
       this.clearSelection();
     } catch (error) {
       console.error('Error executing move:', error);
-      alert('Erreur lors du déplacement des charges.');
+      this.toast.error('Erreur lors du déplacement des charges : ' + toErrorMessage(error));
     } finally {
       this.isMovingSelection = false;
       this.isMoveCommitting = false;
@@ -1036,7 +1039,7 @@ export class PlanViewComponent extends PlanGridInteractionController implements 
       this.clearSelection();
     } catch (error) {
       console.error('Error applying bulk charge:', error);
-      alert("Erreur lors de l'application des charges.");
+      this.toast.error("Erreur lors de l'application des charges : " + toErrorMessage(error));
     } finally {
       this.isCommittingSelection = false;
       this.isSaving = false;
@@ -1066,7 +1069,7 @@ export class PlanViewComponent extends PlanGridInteractionController implements 
       this.clearSelection();
     } catch (error) {
       console.error('Error applying projection:', error);
-      alert("Erreur lors de l'application de la projection.");
+      this.toast.error("Erreur lors de l'application de la projection : " + toErrorMessage(error));
     } finally {
       this.projectionCommitting = null;
       this.isCommittingSelection = false;

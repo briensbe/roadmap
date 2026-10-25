@@ -1,7 +1,9 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges, ChangeDetectorRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CrewdayzIntegrationService } from '../../services/crewdayz-integration.service';
+import { ToastService } from '../../services/toast.service';
+import { toErrorMessage } from '../../utils/error-message';
 import {
   CapacitySource,
   CapacitySourceConfig,
@@ -73,6 +75,8 @@ export class CrewdayzMappingModalComponent implements OnInit, OnChanges {
   Zap = Zap;
   Database = Database;
 
+  private readonly toast = inject(ToastService);
+
   constructor(
     private crewdayzService: CrewdayzIntegrationService,
     private cdr: ChangeDetectorRef
@@ -138,7 +142,7 @@ export class CrewdayzMappingModalComponent implements OnInit, OnChanges {
       this.mappingSaved.emit();
     } catch (err: any) {
       console.error('[CrewdayzMappingModal] Error saving source config:', err);
-      alert('Erreur lors de la sauvegarde de la source : ' + (err.message || err));
+      this.toast.error('Erreur lors de la sauvegarde de la source : ' + toErrorMessage(err));
     } finally {
       this.savingSource = null;
       this.cdr.markForCheck();
@@ -230,12 +234,12 @@ export class CrewdayzMappingModalComponent implements OnInit, OnChanges {
 
   async saveMapping() {
     if (!this.selectedCrewdayzTeamName || !this.selectedCrewdayzProfileName) {
-      alert('Veuillez sélectionner une équipe et un profil Crewdayz.');
+      this.toast.warning('Veuillez sélectionner une équipe et un profil Crewdayz.');
       return;
     }
 
     if (!this.selectedRoadmapRoleAttachmentId && !this.selectedRoadmapPersonneId && !this.selectedRoadmapTeamId) {
-      alert('Veuillez associer à au moins une équipe, un rôle ou une ressource Roadmap.');
+      this.toast.warning('Veuillez associer à au moins une équipe, un rôle ou une ressource Roadmap.');
       return;
     }
 
@@ -258,7 +262,7 @@ export class CrewdayzMappingModalComponent implements OnInit, OnChanges {
       this.mappingSaved.emit();
     } catch (err: any) {
       console.error('[CrewdayzMappingModal] Error saving mapping:', err);
-      alert("Erreur lors de l'enregistrement du mapping: " + (err.message || err));
+      this.toast.error("Erreur lors de l'enregistrement du mapping : " + toErrorMessage(err));
     } finally {
       this.saving = false;
       this.cdr.markForCheck();
@@ -274,7 +278,7 @@ export class CrewdayzMappingModalComponent implements OnInit, OnChanges {
       this.mappingSaved.emit();
     } catch (err: any) {
       console.error('[CrewdayzMappingModal] Error deleting mapping:', err);
-      alert('Erreur lors de la suppression: ' + (err.message || err));
+      this.toast.error('Erreur lors de la suppression : ' + toErrorMessage(err));
     }
   }
 

@@ -52,19 +52,17 @@ import {
 } from 'lucide-angular';
 import { Equipe, Projet, Charge, Role, Personne, Capacite, Jalon, Service } from '../../models/types';
 import { Chiffre } from '../../models/chiffres.type';
+import { YearKey, YearPeriod } from '../../utils/year-selection';
 
 export type PlanViewMode = 'project' | 'team' | 'resource' | 'service';
 export type ZoomLevel = 'compact' | 'normal';
 export type PlanningMode = 'saisie' | 'visualisation';
 export type ChiffreCategory = 'initial' | 'revise' | 'previsionnel' | 'consomme' | 'restant';
-export type CapacityYearSelection = 'today' | 'all' | '2025' | '2026' | 'custom';
-export type PlannedDaysPeriod = 'today' | 'all' | '2025' | '2026';
+export type CapacityYearSelection = YearPeriod | 'custom';
+export type PlannedDaysPeriod = YearPeriod;
 export type SizeFilterOperator = 'gte' | 'lte';
 export type SizeFilterCriterion =
-  | 'charges_today'
-  | 'charges_all'
-  | 'charges_2025'
-  | 'charges_2026'
+  | `charges_${PlannedDaysPeriod}`
   | 'chiffre_initial'
   | 'chiffre_revise'
   | 'chiffre_previsionnel'
@@ -299,17 +297,23 @@ export {
 } from '../../models/types';
 export type { Chiffre } from '../../models/chiffres.type';
 
-export const SIZE_FILTER_LABELS: Record<SizeFilterCriterion, string> = {
+export const SIZE_FILTER_LABELS: Record<Exclude<SizeFilterCriterion, `charges_${YearKey}`>, string> = {
   charges_today: 'Charges RAF',
   charges_all: 'Charges Tout',
-  charges_2025: 'Charges 2025',
-  charges_2026: 'Charges 2026',
   chiffre_initial: 'Chiffre Init.',
   chiffre_revise: 'Chiffre Rév.',
   chiffre_previsionnel: 'Chiffre Prév.',
   chiffre_consomme: 'Chiffre Conso.',
   chiffre_restant: 'Chiffre Rest.',
 };
+
+/** Libellé court d'un critère de taille (les critères annuels `charges_<année>` sont générés dynamiquement). */
+export function getSizeFilterLabel(criterion: SizeFilterCriterion): string {
+  if (criterion in SIZE_FILTER_LABELS) {
+    return SIZE_FILTER_LABELS[criterion as keyof typeof SIZE_FILTER_LABELS];
+  }
+  return `Charges ${criterion.substring('charges_'.length)}`;
+}
 
 export function getDefaultPeriodStart(): string {
   const d = new Date();
@@ -351,7 +355,7 @@ export function formatSizeFilterLabel(
 ): string {
   if (!enabled || value === null) return 'Désactivé';
   const opLabel = operator === 'gte' ? '≥' : '≤';
-  return `${SIZE_FILTER_LABELS[criterion]} ${opLabel} ${value} j`;
+  return `${getSizeFilterLabel(criterion)} ${opLabel} ${value} j`;
 }
 
 export function computeActiveFiltersCount(params: {

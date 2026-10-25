@@ -431,12 +431,11 @@
         <button class="popover-item" [class.active]="selectedCapacityYear === 'all'" (click)="selectYear('all')">
           Tout cumulé
         </button>
-        <button class="popover-item" [class.active]="selectedCapacityYear === '2025'" (click)="selectYear('2025')">
-          Année 2025
-        </button>
-        <button class="popover-item" [class.active]="selectedCapacityYear === '2026'" (click)="selectYear('2026')">
-          Année 2026
-        </button>
+        @for (year of selectableYears; track year) {
+          <button class="popover-item" [class.active]="selectedCapacityYear === year" (click)="selectYear(year)">
+            Année {{ year }}
+          </button>
+        }
         <div class="popover-date-jump">
           <input type="date" class="jump-input" [value]="getSelectedStartDateISO()" (change)="onDateSelected($event)" />
         </div>

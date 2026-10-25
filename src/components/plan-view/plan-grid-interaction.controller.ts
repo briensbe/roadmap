@@ -18,6 +18,7 @@ import {
   PopoverPosition,
 } from '../../utils/selection-positioning';
 import { storageSignal } from '../../utils/storage-signal';
+import { YearKey, YearPeriod, getSelectableYears } from '../../utils/year-selection';
 import { Projet, Jalon } from '../../models/types';
 import {
   PLAN_VIEW_ICONS,
@@ -168,6 +169,8 @@ export abstract class PlanGridInteractionController {
   chiffreMode = storageSignal<ChiffreCategory>('plan-view-chiffre-mode', 'previsionnel');
   planningMode = storageSignal<PlanningMode>('plan-view-planning-mode', 'saisie');
   selectedCapacityYear = storageSignal<CapacityYearSelection>('plan-view-capacity-year', 'today');
+  /** Années proposées dans les sélecteurs de période (calculées à partir de l'année courante). */
+  readonly selectableYears: readonly YearKey[] = getSelectableYears();
   labelColumnWidth = storageSignal<number>('plan-view-label-column-width', 300);
   showGlobalFilters = signal<boolean>(false);
   filterJalonTypes = storageSignal<string[]>('plan-view-filter-jalon-types', []);
@@ -697,7 +700,7 @@ export abstract class PlanGridInteractionController {
       rect: targetElement.getBoundingClientRect(),
       viewportHeight: window.innerHeight,
       viewportWidth: window.innerWidth,
-      popoverHeight: 200,
+      popoverHeight: 230,
       popoverWidth: 160,
     });
     this.popoverPosition = pos;
@@ -712,7 +715,7 @@ export abstract class PlanGridInteractionController {
     document.addEventListener('click', closeHandler);
   }
 
-  selectYear(year: 'today' | 'all' | '2025' | '2026') {
+  selectYear(year: YearPeriod) {
     this.selectedCapacityYear.set(year);
     this.selectedStartDate = null;
     this.showYearPopover = false;

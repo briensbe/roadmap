@@ -4,18 +4,31 @@ export interface PaginateOptions {
 }
 
 /**
+ * Contrat minimal d'un query builder Supabase paginable via `.range()`.
+ * Typé structurellement pour ne pas dépendre des génériques internes de PostgREST.
+ */
+export interface RangeableQuery<T> {
+  range(from: number, to: number): PromiseLike<{ data: T[] | null; error: unknown }>;
+}
+
+/**
  * Executes a Supabase query with pagination loop using `.range()` to bypass the 1000 row limit.
- * @param queryFn A function returning a fresh query builder.
+ *
+ * ⚠️ La requête retournée par `queryFn` DOIT inclure un `.order()` déterministe et unique
+ * (ex: `.order('id', { ascending: true })` en tie-breaker), sans quoi PostgreSQL peut renvoyer
+ * des doublons ou omettre des lignes entre deux pages.
+ *
+ * @param queryFn A function returning a fresh, ordered query builder.
  * @param options Configuration options.
  */
 export async function paginateQuery<T>(
-  queryFn: () => any,
+  queryFn: () => RangeableQuery<T>,
   options?: PaginateOptions
 ): Promise<T[]> {
   const limit = options?.limit ?? 1000;
   const maxIterations = options?.maxIterations ?? 200;
 
-  let allData: T[] = [];
+  const allData: T[] = [];
   let from = 0;
   let hasMore = true;
   

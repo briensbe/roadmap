@@ -528,8 +528,9 @@
                     <optgroup label="Charges planifiées (jours)">
                       <option value="charges_today">RAF (Dès cette sem.)</option>
                       <option value="charges_all">Tout cumulé</option>
-                      <option value="charges_2025">Année 2025</option>
-                      <option value="charges_2026">Année 2026</option>
+                      @for (year of selectableYears; track year) {
+                        <option [value]="'charges_' + year">Année {{ year }}</option>
+                      }
                     </optgroup>
                     <optgroup label="Chiffres Triskell (jours)">
                       <option value="chiffre_initial">Initial</option>
@@ -2334,12 +2335,11 @@
         <button class="popover-item" [class.active]="selectedCapacityYear() === 'all'" (click)="selectYear('all')">
           Tout cumulé
         </button>
-        <button class="popover-item" [class.active]="selectedCapacityYear() === '2025'" (click)="selectYear('2025')">
-          Année 2025
-        </button>
-        <button class="popover-item" [class.active]="selectedCapacityYear() === '2026'" (click)="selectYear('2026')">
-          Année 2026
-        </button>
+        @for (year of selectableYears; track year) {
+          <button class="popover-item" [class.active]="selectedCapacityYear() === year" (click)="selectYear(year)">
+            Année {{ year }}
+          </button>
+        }
         <div class="popover-date-jump">
           <input type="date" class="jump-input" [value]="getSelectedStartDateISO()" (change)="onDateSelected($event)" />
         </div>

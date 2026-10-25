@@ -69,6 +69,7 @@ export class ChiffresService {
         .select('*')
         .eq('id_projet', idProjet)
         .order('id_service', { ascending: true })
+        .order('source_donnee', { ascending: true })
     );
   }
 
