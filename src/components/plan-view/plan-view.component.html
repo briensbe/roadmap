@@ -1517,9 +1517,11 @@
                     <!-- CASE 2: Standard/Other Views (Team view, or Project view with no resources, or Resource/Service view projects) -->
                     @if (viewMode() !== 'project' || child.resources.length === 0) {
                       <!-- Standard Child Row -->
-                      @if (viewMode() !== 'resource' && viewMode() !== 'service') {
+                      @if (viewMode() !== 'resource') {
                         <div
                           class="calendar-row"
+                          [attr.data-resource-id]="viewMode() === 'service' && child.summaryResource ? getResourceUniqueId(child.summaryResource, child, row) : null"
+                          (mousedown)="viewMode() === 'service' && child.summaryResource ? onMouseDown($event, child.summaryResource, child, row) : null"
                           [style.z-index]="activeLineMenuId === 'child-' + child.id + '-' + row.id ? 1700 : null">
                           <div
                             class="label-cell row-label-child"
@@ -1531,7 +1533,7 @@
                               style="padding-left: 24px">
                               <div class="color-bar-container">
                                 <div
-                                  class="color-bar-v small"
+                                   class="color-bar-v small"
                                   [style.background-color]="child.color || '#cbd5e1'"></div>
                               </div>
                               @if (child.resources.length > 0) {
@@ -1546,7 +1548,7 @@
                                     <div class="info-meta" style="display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap;">
                                       @if (child.code) {
                                         <span class="info-code">{{ child.code }}</span>
-                                        @if (viewMode() === 'team') {
+                                        @if (viewMode() === 'team' || viewMode() === 'service') {
                                           <button
                                             (click)="copyToClipboard($event, child.code, 'child-' + child.id + '-' + row.id)"
                                             class="btn-copy-code"
@@ -1559,7 +1561,7 @@
                                       }
                                       @if (child.reference_externe) {
                                         <span class="info-code" style="margin-left: 2px;">{{ child.code ? ' / ' : '' }}{{ child.reference_externe }}</span>
-                                        @if (viewMode() === 'team') {
+                                        @if (viewMode() === 'team' || viewMode() === 'service') {
                                           @if (externalReferenceUrl(); as baseUrl) {
                                             <a
                                               [href]="baseUrl + cleanJiraRef(child.reference_externe)"
@@ -1582,6 +1584,29 @@
                                     >{{ child.label }}</span
                                   >
                                 </div>
+                                @if (viewMode() === 'service') {
+                                  <div
+                                    class="resource-total-badge"
+                                    [class.anchor-active]="activeAnchorId === 'child-' + child.id + '-' + row.id"
+                                    (click)="openYearPopover($event, 'child-' + child.id + '-' + row.id)"
+                                    title="Cliquer pour filtrer par année">
+                                    <span class="badge-prefix">{{ getBadgePrefix() }}</span>
+                                    <span class="badge-val">{{ getChildTotalPlannedDays(child) | number: '1.0-1' }}</span>
+                                    <span class="badge-unit">j</span>
+                                  </div>
+                                  @if (getChiffreValueForServiceProject(row.id, child.id) !== null) {
+                                    <span class="chiffre-badge-sep">/</span>
+                                    <div
+                                      class="chiffre-badge"
+                                      [class.anchor-active-chiffre]="activeChiffreAnchorId === 'chiffre-child-' + child.id + '-' + row.id"
+                                      (click)="openChiffrePopover($event, 'chiffre-child-' + child.id + '-' + row.id, row.id, child.id)"
+                                      title="Cliquer pour changer la catégorie">
+                                      <span class="chiffre-badge-prefix">{{ getChiffreBadgeLabel() }}</span>
+                                      <span class="chiffre-badge-val">{{ getChiffreValueForServiceProject(row.id, child.id) | number: '1.0-1' }}</span>
+                                      <span class="chiffre-badge-unit">j</span>
+                                    </div>
+                                  }
+                                }
                               </div>
                               <button
                                 class="line-menu-trigger btn-icon-s"
@@ -1592,19 +1617,21 @@
                               <!-- Line menu -->
                               @if (activeLineMenuId === 'child-' + child.id + '-' + row.id) {
                                 <div class="line-menu-wrapper" (click)="$event.stopPropagation()">
-                                  <button
-                                    class="line-menu-item"
-                                    (click)="
-                                      viewMode() === 'resource'
-                                        ? openLinkModal(row, child)
-                                        : openAddResourceModal(child, row);
-                                      closeLineMenu();
-                                      $event.stopPropagation()
-                                    ">
-                                    <lucide-icon [img]="Plus" [size]="14"></lucide-icon>
-                                    {{ viewMode() === 'resource' ? 'Ajouter Projet(s)' : 'Ajouter une ressource' }}
-                                  </button>
-                                  @if (viewMode() === 'team' && child.originalProject) {
+                                  @if (viewMode() !== 'service') {
+                                    <button
+                                      class="line-menu-item"
+                                      (click)="
+                                        viewMode() === 'resource'
+                                          ? openLinkModal(row, child)
+                                          : openAddResourceModal(child, row);
+                                        closeLineMenu();
+                                        $event.stopPropagation()
+                                      ">
+                                      <lucide-icon [img]="Plus" [size]="14"></lucide-icon>
+                                      {{ viewMode() === 'resource' ? 'Ajouter Projet(s)' : 'Ajouter une ressource' }}
+                                    </button>
+                                  }
+                                  @if ((viewMode() === 'team' || viewMode() === 'service') && child.originalProject) {
                                     <button
                                       class="line-menu-item"
                                       (click)="
@@ -1616,18 +1643,20 @@
                                       Modifier projet
                                     </button>
                                   }
-                                  <button
-                                    class="line-menu-item danger"
-                                    (click)="removeChild(child, row); closeLineMenu(); $event.stopPropagation()">
-                                    <lucide-icon [img]="X" [size]="14"></lucide-icon>
-                                    {{
-                                      viewMode() === 'project'
-                                        ? 'Retirer cette équipe'
-                                        : viewMode() === 'team'
-                                          ? 'Retirer ce projet'
-                                          : 'Retirer cette ressource'
-                                    }}
-                                  </button>
+                                  @if (viewMode() !== 'service') {
+                                    <button
+                                      class="line-menu-item danger"
+                                      (click)="removeChild(child, row); closeLineMenu(); $event.stopPropagation()">
+                                      <lucide-icon [img]="X" [size]="14"></lucide-icon>
+                                      {{
+                                        viewMode() === 'project'
+                                          ? 'Retirer cette équipe'
+                                          : viewMode() === 'team'
+                                            ? 'Retirer ce projet'
+                                            : 'Retirer cette ressource'
+                                      }}
+                                    </button>
+                                  }
                                 </div>
                               }
                             </div>
@@ -1635,7 +1664,18 @@
                           @if (planningMode() === 'saisie') {
                             <div class="weeks-container">
                               @for (week of displayedWeeks; track trackByWeek($index, week)) {
-                                <div class="week-cell team-cell" [class.is-year-change]="isFirstWeekOfYear($index)"></div>
+                                @let chargeVal = child.charges.get(formatWeekStart(week));
+                                <div
+                                  class="week-cell team-cell"
+                                  [attr.data-week-index]="$index"
+                                  [ngClass]="viewMode() === 'service' && child.summaryResource ? getCellSelectionClasses(child.summaryResource, week, $index, child, row) : null"
+                                  [class.is-year-change]="isFirstWeekOfYear($index)">
+                                  @if (viewMode() === 'service' && chargeVal && chargeVal > 0) {
+                                    <div class="capacity-value">
+                                      {{ chargeVal | number: '1.0-1' }}
+                                    </div>
+                                  }
+                                </div>
                               }
                             </div>
                           }
@@ -1695,8 +1735,8 @@
                               [style.minWidth.px]="labelColumnWidth()">
                               <div
                                 class="row-label-content resource-row"
-                                [style.padding-left.px]="viewMode() === 'resource' || viewMode() === 'service' ? 24 : 0">
-                                @if (viewMode() === 'resource' || viewMode() === 'service') {
+                                [style.padding-left.px]="viewMode() === 'resource' ? 24 : 0">
+                                @if (viewMode() === 'resource') {
                                   <div class="color-bar-container">
                                     <div
                                       class="color-bar-v small"
@@ -1705,8 +1745,8 @@
                                 }
                                 <div
                                   class="resource-detail-label"
-                                  [style.padding-left.px]="viewMode() === 'resource' || viewMode() === 'service' ? 0 : 40">
-                                  @if (viewMode() === 'resource' || viewMode() === 'service') {
+                                  [style.padding-left.px]="viewMode() === 'resource' ? 0 : 40">
+                                  @if (viewMode() === 'resource') {
                                     <div class="info-stack">
                                       @if (resource.code || resource.reference_externe) {
                                         <div class="info-meta" style="display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap;">
@@ -1839,32 +1879,6 @@
                                       <span class="chiffre-badge-unit">j</span>
                                     </div>
                                   }
-                                  @if (
-                                    viewMode() === 'service' &&
-                                    getChiffreValueForServiceProject(row.id, resource.id) !== null
-                                  ) {
-                                    <span class="chiffre-badge-sep">/</span>
-                                    <div
-                                      class="chiffre-badge"
-                                      [class.anchor-active-chiffre]="
-                                        activeChiffreAnchorId === 'chiffre-' + getResourceUniqueId(resource, child, row)
-                                      "
-                                      (click)="
-                                        openChiffrePopover(
-                                          $event,
-                                          'chiffre-' + getResourceUniqueId(resource, child, row),
-                                          row.id,
-                                          resource.id
-                                        )
-                                      "
-                                      title="Cliquer pour changer la catégorie">
-                                      <span class="chiffre-badge-prefix">{{ getChiffreBadgeLabel() }}</span>
-                                      <span class="chiffre-badge-val">{{
-                                        getChiffreValueForServiceProject(row.id, resource.id) | number: '1.0-1'
-                                      }}</span>
-                                      <span class="chiffre-badge-unit">j</span>
-                                    </div>
-                                  }
                                 </div>
                                 <button
                                   class="line-menu-trigger btn-icon-s"
@@ -1883,18 +1897,16 @@
                                       <lucide-icon [img]="Search" [size]="14"></lucide-icon>
                                       Modifier le projet
                                     </button>
-                                    @if (viewMode() !== 'service') {
-                                      <button
-                                        class="line-menu-item danger"
-                                        (click)="
-                                          removeResource(resource, child, row); closeLineMenu(); $event.stopPropagation()
-                                        ">
-                                        <lucide-icon [img]="X" [size]="14"></lucide-icon>
-                                        {{
-                                          viewMode() === 'resource' ? 'Retirer ce projet' : 'Supprimer cette ressource'
-                                        }}
-                                      </button>
-                                    }
+                                    <button
+                                      class="line-menu-item danger"
+                                      (click)="
+                                        removeResource(resource, child, row); closeLineMenu(); $event.stopPropagation()
+                                      ">
+                                      <lucide-icon [img]="X" [size]="14"></lucide-icon>
+                                      {{
+                                        viewMode() === 'resource' ? 'Retirer ce projet' : 'Supprimer cette ressource'
+                                      }}
+                                    </button>
                                   </div>
                                 }
                               </div>
@@ -2314,7 +2326,7 @@
         }
       </div>
     </div>
-    @if (selectedCells.length > 0 && isSelectionFinished && !isMovingSelection && !isSaving && viewMode() !== 'service') {
+    @if (selectedCells.length > 0 && isSelectionFinished && !isMovingSelection && !isSaving && (viewMode() !== 'service' || !isServiceSummarySelected())) {
       <app-selection-toolbar
         [position]="toolbarPosition"
         [visible]="toolbarVisible"

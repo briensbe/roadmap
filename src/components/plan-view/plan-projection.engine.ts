@@ -11,7 +11,7 @@
  * - Appliquer le filtrage multicritères hiérarchique (`applyPlanFilters`).
  */
 import { getISOWeekYear } from 'date-fns';
-import { Charge } from '../../models/types';
+import { Charge, Projet } from '../../models/types';
 import { Chiffre } from '../../models/chiffres.type';
 import { textContains } from '../../utils/text.utils';
 import { sortByRank } from '../../utils/lexorank.utils';
@@ -392,7 +392,15 @@ export function buildPlanTree(
     for (const service of sortedServices) {
       const parentTotal = new Map<string, number>();
       const parentDailyCharges = new Map<string, number>();
-      const projectDetailedMap = new Map<string, ResourceRow>();
+      const projectMap = new Map<
+        string,
+        {
+          project?: Projet;
+          childCharges: Map<string, number>;
+          childDailyCharges: Map<string, number>;
+          resourceMap: Map<string, ResourceRow>;
+        }
+      >();
 
       for (const charge of dataset.allCharges) {
         const actor = resolveChargeActor(dataset, charge, 5);
@@ -402,51 +410,110 @@ export function buildPlanTree(
         if (getResourceServiceId(dataset, actor.type, actor.id, charge.equipe_id) !== service.id) continue;
 
         const pId = charge.projet_id || 'no_project';
-        if (!projectDetailedMap.has(pId)) {
+        if (!projectMap.has(pId)) {
           const project = dataset.allProjects.find((p) => p.id === pId);
-          projectDetailedMap.set(pId, {
-            id: pId,
-            uniqueId: `service_${service.id}_${pId}`,
-            label: project ? project.nom_projet : 'Sans projet',
-            code: project?.code_projet,
-            reference_externe: project?.reference_externe,
-            type: 'role',
-            jours_par_semaine: 5,
+          projectMap.set(pId, {
+            project,
+            childCharges: new Map<string, number>(),
+            childDailyCharges: new Map<string, number>(),
+            resourceMap: new Map<string, ResourceRow>(),
+          });
+        }
+
+        const projEntry = projectMap.get(pId)!;
+        const equipe = dataset.allEquipes.find((e) => e.id === charge.equipe_id);
+        const resKey = `${charge.equipe_id || 'no_team'}_${actor.key}`;
+
+        if (!projEntry.resourceMap.has(resKey)) {
+          projEntry.resourceMap.set(resKey, {
+            id: actor.id,
+            uniqueId: `service_${service.id}_${pId}_${charge.equipe_id || 'no_team'}_${actor.key}`,
+            label: `${equipe?.nom || 'Équipe'} - ${actor.label}`,
+            type: actor.type,
+            jours_par_semaine: actor.jours,
             charges: new Map<string, number>(),
             dailyCharges: new Map<string, number>(),
             comments: new Map<string, string>(),
-            color: project?.color,
-            resourceId: service.id,
+            color: actor.color || equipe?.color,
+            resourceId: actor.id,
             projectId: pId,
+            equipeId: charge.equipe_id,
           });
         }
+
+        const resRow = projEntry.resourceMap.get(resKey)!;
         const weekKey = charge.semaine_debut?.split('T')[0];
         if (weekKey) {
           parentTotal.set(weekKey, (parentTotal.get(weekKey) || 0) + charge.unite_ressource);
           parentDailyCharges.set(weekKey, (parentDailyCharges.get(weekKey) || 0) + charge.unite_ressource * actor.jours);
-          const detRow = projectDetailedMap.get(pId)!;
-          detRow.charges.set(weekKey, (detRow.charges.get(weekKey) || 0) + charge.unite_ressource);
-          detRow.dailyCharges!.set(weekKey, (detRow.dailyCharges!.get(weekKey) || 0) + charge.unite_ressource * actor.jours);
+
+          projEntry.childCharges.set(weekKey, (projEntry.childCharges.get(weekKey) || 0) + charge.unite_ressource);
+          projEntry.childDailyCharges.set(weekKey, (projEntry.childDailyCharges.get(weekKey) || 0) + charge.unite_ressource * actor.jours);
+
+          resRow.charges.set(weekKey, (resRow.charges.get(weekKey) || 0) + charge.unite_ressource);
+          resRow.dailyCharges!.set(weekKey, (resRow.dailyCharges!.get(weekKey) || 0) + charge.unite_ressource * actor.jours);
           if (charge.comment) {
-            const existing = detRow.comments?.get(weekKey);
-            const entry = `${actor.label}: ${charge.comment}`;
-            detRow.comments?.set(weekKey, existing ? `${existing} | ${entry}` : entry);
+            resRow.comments?.set(weekKey, charge.comment);
           }
         }
       }
 
-      const filteredProjectResources = sortByRank(
-        Array.from(projectDetailedMap.values()),
-        (r) => dataset.allProjects.find((p) => p.id === r.projectId)?.rank,
-        (a, b) => a.label.localeCompare(b.label),
-      ).filter((r) => shouldShowResourceByWeekFilters(r, weekFilters, displayedWeeks));
+      const children: ChildRow[] = [];
+      const sortedProjectEntries = Array.from(projectMap.entries()).sort(([_pIdA, a], [_pIdB, b]) => {
+        const rankA = a.project?.rank;
+        const rankB = b.project?.rank;
+        if (rankA !== undefined && rankB !== undefined) {
+          const c = rankA.localeCompare(rankB);
+          if (c !== 0) return c;
+        }
+        const nameA = a.project?.nom_projet || 'Sans projet';
+        const nameB = b.project?.nom_projet || 'Sans projet';
+        return nameA.localeCompare(nameB);
+      });
+
+      for (const [pId, entry] of sortedProjectEntries) {
+        const sortedResources = Array.from(entry.resourceMap.values())
+          .filter((r) => shouldShowResourceByWeekFilters(r, weekFilters, displayedWeeks))
+          .sort((a, b) => a.label.localeCompare(b.label));
+
+        const isChildExpanded = manualStates.get(`${service.id}_${pId}`) ?? isDefaultExpanded;
+
+        const projectSummaryResource: ResourceRow = {
+          id: pId,
+          uniqueId: `service_project_${service.id}_${pId}`,
+          label: entry.project ? entry.project.nom_projet : 'Sans projet',
+          code: entry.project?.code_projet,
+          reference_externe: entry.project?.reference_externe,
+          type: 'role',
+          jours_par_semaine: 5,
+          charges: entry.childCharges,
+          dailyCharges: entry.childDailyCharges,
+          color: entry.project?.color,
+          projectId: pId,
+          resourceId: service.id,
+        };
+
+        children.push({
+          id: pId,
+          label: entry.project ? entry.project.nom_projet : 'Sans projet',
+          code: entry.project?.code_projet,
+          reference_externe: entry.project?.reference_externe,
+          color: entry.project?.color,
+          expanded: isChildExpanded,
+          resources: sortedResources,
+          charges: entry.childCharges,
+          dailyCharges: entry.childDailyCharges,
+          originalProject: entry.project,
+          summaryResource: projectSummaryResource,
+        });
+      }
 
       const isExpanded = manualStates.get(service.id!) ?? isDefaultExpanded;
       rows.push({
         id: service.id!,
         label: service.nom,
         expanded: isExpanded,
-        children: [{ id: `service_children_${service.id}`, label: service.nom, expanded: isExpanded, charges: parentTotal, resources: filteredProjectResources }],
+        children,
         totalCharges: parentTotal,
         summaryResource: {
           id: service.id!,
@@ -472,8 +539,10 @@ export function buildFlatList(rows: ParentRow[], viewMode: PlanViewMode): FlatRo
       for (const resource of child.resources) {
         const fullLabel =
           viewMode === 'service'
-            ? `${parent.label} > ${resource.label} ${resource.code || ''} ${resource.reference_externe || ''}`.toLowerCase()
-            : `${parent.label} > ${child.label} > ${resource.label} ${parent.code || ''} ${parent.reference_externe || ''} ${child.code || ''} ${child.reference_externe || ''}`.toLowerCase();
+            ? `${parent.label} > ${child.label} > ${resource.label} ${child.code || ''} ${child.reference_externe || ''}`.toLowerCase()
+            : viewMode === 'resource'
+              ? `${parent.label} > ${resource.label} ${resource.code || ''} ${resource.reference_externe || ''}`.toLowerCase()
+              : `${parent.label} > ${child.label} > ${resource.label} ${parent.code || ''} ${parent.reference_externe || ''} ${child.code || ''} ${child.reference_externe || ''}`.toLowerCase();
         flatRows.push({ uniqueId: resource.uniqueId, fullLabel, resource, child, parent });
       }
     }
@@ -529,39 +598,24 @@ export function precalculateResource(
   teamId: string,
 ): void {
   resource.cellData = [];
-  if (viewMode === 'service') {
-    for (const week of displayedWeeks) {
-      const weekKey = formatWeekStart(week);
-      resource.cellData.push({
-        value: resource.charges.get(weekKey) || 0,
-        availability: 0,
-        showAvailability: false,
-        isPositive: false,
-        isZero: false,
-        isNegative: false,
-        hasCapRecord: false,
-        comment: resource.comments?.get(weekKey) || null,
-      });
-    }
-    return;
-  }
+  const effectiveTeamId = resource.equipeId || teamId;
 
   for (const week of displayedWeeks) {
     const weekKey = formatWeekStart(week);
     const value = resource.charges.get(weekKey) || 0;
-    const availability = getAvailability(dataset, resource, week, teamId);
+    const availability = getAvailability(dataset, resource, week, effectiveTeamId);
     const rId = resource.resourceId || resource.id;
     const hasCapRecord =
-      dataset.capacityIndex.has(`${teamId}_${resource.type}_${rId}_${weekKey}`) ||
+      dataset.capacityIndex.has(`${effectiveTeamId}_${resource.type}_${rId}_${weekKey}`) ||
       dataset.allCapacities.some(
         (c) =>
-          c.equipe_id === teamId &&
+          c.equipe_id === effectiveTeamId &&
           c.semaine_debut.startsWith(weekKey) &&
           (resource.type === 'role' ? c.role_id === rId : c.personne_id === rId),
       );
     const isRelevant =
       resource.type === 'personne'
-        ? (dataset.availablePersonnes.find((p) => p.id === rId)?.equipe_id === teamId)
+        ? (dataset.availablePersonnes.find((p) => p.id === rId)?.equipe_id === effectiveTeamId)
         : true;
 
     resource.cellData.push({
@@ -588,7 +642,8 @@ export function precalculateAllResources(
     for (const child of parent.children) {
       const teamId = viewMode === 'project' ? child.id : teamIdFromParent;
       for (const resource of child.resources) {
-        precalculateResource(dataset, viewMode, displayedWeeks, resource, teamId);
+        const effectiveTeamId = viewMode === 'service' ? (resource.equipeId || teamId) : teamId;
+        precalculateResource(dataset, viewMode, displayedWeeks, resource, effectiveTeamId);
       }
     }
   }
@@ -742,6 +797,39 @@ export function getResourceTotalPlannedDays(
 
   sourceMap.forEach((val, weekStr) => {
     const dayContribution = useDirectDays ? val : val * resource.jours_par_semaine;
+    if (yearSel === 'today') {
+      if (weekStr >= todayWeekStartStr) total += dayContribution;
+    } else if (yearSel === 'custom' && selectedStartDate) {
+      if (weekStr >= selectedStartStr) total += dayContribution;
+    } else {
+      const [y, m, d] = weekStr.split('-').map(Number);
+      const isoYear = getISOWeekYear(new Date(y, m - 1, d)).toString();
+      if (yearSel === 'all' || isoYear === yearSel) total += dayContribution;
+    }
+  });
+  return total;
+}
+
+export function getChildTotalPlannedDays(
+  child: ChildRow,
+  yearSel: CapacityYearSelection,
+  selectedStartDate: Date | null,
+  todayWeekStart: Date,
+): number {
+  if (child.resources && child.resources.length > 0) {
+    return child.resources.reduce(
+      (sum, res) => sum + getResourceTotalPlannedDays(res, yearSel, selectedStartDate, todayWeekStart),
+      0,
+    );
+  }
+  let total = 0;
+  const sourceMap = child.dailyCharges ?? child.charges;
+  const useDirectDays = !!child.dailyCharges;
+  const todayWeekStartStr = formatLocalDate(todayWeekStart);
+  const selectedStartStr = selectedStartDate ? formatLocalDate(selectedStartDate) : '';
+
+  sourceMap.forEach((val, weekStr) => {
+    const dayContribution = useDirectDays ? val : val * 5;
     if (yearSel === 'today') {
       if (weekStr >= todayWeekStartStr) total += dayContribution;
     } else if (yearSel === 'custom' && selectedStartDate) {
@@ -911,8 +999,7 @@ export function applyPlanFilters(
   const filteredParents: ParentRow[] = [];
   const viewMode = criteria.viewMode;
   const isResourceMode = viewMode === 'resource';
-  const isServiceMode = viewMode === 'service';
-  const isProjectLeafMode = isResourceMode || isServiceMode;
+  const isProjectLeafMode = isResourceMode;
 
   for (const parent of rowsAll) {
     const pMatches = matchesRowText(parent);
@@ -951,36 +1038,36 @@ export function applyPlanFilters(
       const cMatchesSelf = matchesRowText(child);
       let gMatchesAny = false;
       const childPassesStatut =
-        !criteria.filterStatusIds.length || viewMode !== 'team' || !child.originalProject || criteria.filterStatusIds.includes(child.originalProject.statut);
+        !criteria.filterStatusIds.length || (viewMode !== 'team' && viewMode !== 'service') || !child.originalProject || criteria.filterStatusIds.includes(child.originalProject.statut);
 
       let childPassesLargeProject = true;
-      if (sizeEnabled && viewMode === 'team') {
+      if (sizeEnabled && (viewMode === 'team' || viewMode === 'service')) {
         const val = sizeCriterion.startsWith('charges_')
-          ? getPlannedDaysForChildInTeam(child, sizeCriterion.substring(8) as PlannedDaysPeriod, todayWeekStart)
-          : getChiffreValueForTeamProject(dataset, parent.id, child.id, sizeCriterion.substring(8) as ChiffreCategory);
+          ? getChildTotalPlannedDays(child, sizeCriterion.substring(8) as PlannedDaysPeriod, null, todayWeekStart)
+          : viewMode === 'service'
+            ? getChiffreValueForServiceProject(dataset.allChiffres, parent.id, child.id, sizeCriterion.substring(8) as ChiffreCategory)
+            : getChiffreValueForTeamProject(dataset, parent.id, child.id, sizeCriterion.substring(8) as ChiffreCategory);
         childPassesLargeProject = checkSizeMatch(val, sizeOperator, sizeValue);
       }
 
-      if (viewMode === 'team' && (!childPassesStatut || !childPassesLargeProject)) continue;
-      if (periodEnabled && (viewMode === 'team' || viewMode === 'project') && !hasChargesInPeriod(child.charges, periodStart, periodEnd)) continue;
+      if ((viewMode === 'team' || viewMode === 'service') && (!childPassesStatut || !childPassesLargeProject)) continue;
+      if (periodEnabled && (viewMode === 'team' || viewMode === 'project' || viewMode === 'service') && !hasChargesInPeriod(child.charges, periodStart, periodEnd)) continue;
 
       let grandchildrenMatch = child.resources;
       if (hasSpecificFilter || search.length > 0) {
         grandchildrenMatch = child.resources.filter((gr) => {
           let passesLargeProject = true;
-          if (sizeEnabled) {
-            const teamId = isResourceMode ? parent.id.split('_')[0] : viewMode === 'project' ? child.id : parent.id;
-            const projectId = isProjectLeafMode ? gr.projectId || gr.id : viewMode === 'project' ? parent.id : child.id;
+          if (sizeEnabled && isProjectLeafMode) {
+            const teamId = parent.id.split('_')[0];
+            const projectId = gr.projectId || gr.id;
             const val = sizeCriterion.startsWith('charges_')
               ? getPlannedDaysForResource(gr, sizeCriterion.substring(8) as PlannedDaysPeriod, todayWeekStart)
-              : isServiceMode
-                ? getChiffreValueForServiceProject(dataset.allChiffres, parent.id, projectId, sizeCriterion.substring(8) as ChiffreCategory)
-                : getChiffreValueForMode(dataset, teamId, projectId, gr.resourceId, gr.type, sizeCriterion.substring(8) as ChiffreCategory);
+              : getChiffreValueForMode(dataset, teamId, projectId, gr.resourceId, gr.type, sizeCriterion.substring(8) as ChiffreCategory);
             passesLargeProject = checkSizeMatch(val, sizeOperator, sizeValue);
           }
 
           let passesIdFilter = true;
-          if (criteria.filterResourceIds.length || criteria.filterProjetIds.length || criteria.filterStatusIds.length || sizeEnabled) {
+          if (criteria.filterResourceIds.length || criteria.filterEquipeIds.length || criteria.filterProjetIds.length || criteria.filterStatusIds.length || sizeEnabled) {
             if (isProjectLeafMode) {
               const project = dataset.allProjects.find((p) => p.id === gr.projectId);
               const passesStatut = criteria.filterStatusIds.length === 0 || (!!project && criteria.filterStatusIds.includes(project.statut));
@@ -990,16 +1077,19 @@ export function applyPlanFilters(
                 criteria.filterResourceIds.length === 0 ||
                 criteria.filterResourceIds.some((sel) => {
                   const [t, id] = sel.split(':');
-                  return gr.type === t && gr.id === id;
+                  return gr.type === t && (gr.resourceId === id || gr.id === id);
                 });
-              passesIdFilter = passesResourceFilter && passesLargeProject;
+              const passesEquipeFilter =
+                criteria.filterEquipeIds.length === 0 ||
+                !gr.equipeId ||
+                criteria.filterEquipeIds.includes(gr.equipeId);
+              passesIdFilter = passesResourceFilter && passesEquipeFilter && passesLargeProject;
             }
           }
 
           let passesSearch = true;
           if (search) {
             if (isResourceMode) passesSearch = matchingProjetIds.has(gr.id);
-            else if (isServiceMode) passesSearch = pMatches || matchingProjetIds.has(gr.id);
             else if (!pMatches && !cMatchesSelf) passesSearch = resourceMatchesSearchSelf(gr);
           }
 
@@ -1011,11 +1101,11 @@ export function applyPlanFilters(
       }
 
       const childPassesEquipe = !criteria.filterEquipeIds.length || viewMode !== 'project' || criteria.filterEquipeIds.includes(child.id);
-      const childPassesProjet = !criteria.filterProjetIds.length || viewMode !== 'team' || criteria.filterProjetIds.includes(child.id);
+      const childPassesProjet = !criteria.filterProjetIds.length || (viewMode !== 'team' && viewMode !== 'service') || criteria.filterProjetIds.includes(child.id);
       const childPassesResource = !criteria.filterResourceIds.length || !isResourceMode || parentPassesResource;
       const hasGrandchildFilter = isProjectLeafMode
         ? criteria.filterProjetIds.length > 0 || criteria.filterStatusIds.length > 0 || periodEnabled || sizeEnabled
-        : criteria.filterResourceIds.length > 0 || periodEnabled || sizeEnabled;
+        : criteria.filterResourceIds.length > 0 || criteria.filterEquipeIds.length > 0 || periodEnabled || sizeEnabled;
       const hasGrandchildrenMatch = hasGrandchildFilter ? grandchildrenMatch.length > 0 : true;
       const childMatches = cMatchesSelf || gMatchesAny;
       const childPassesSearch = !search || (pMatches && !isResourceMode) || childMatches;

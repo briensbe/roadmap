@@ -95,6 +95,7 @@ export interface ResourceRow {
   color?: string;
   resourceId?: string;
   projectId?: string;
+  equipeId?: string;
   code?: string;
   reference_externe?: string;
   cellData?: ResourceCellData[];
@@ -110,8 +111,10 @@ export interface ChildRow {
   expanded: boolean;
   resources: ResourceRow[];
   charges: Map<string, number>;
+  dailyCharges?: Map<string, number>;
   originalProject?: Projet;
   metrics?: Map<string, { total: number }>;
+  summaryResource?: ResourceRow;
 }
 
 export interface ParentMetricItem {

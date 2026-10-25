@@ -228,7 +228,7 @@ describe('PlanViewComponent - Vue Par Service', () => {
     expect(component.getResourceServiceId('role', 'role-unassigned', 'team-1')).toBeNull();
   });
 
-  it('should display all services sorted alphabetically and consolidate project charges, exact days, and X/Y (+/- delta)', () => {
+  it('should display all services sorted alphabetically and consolidate project charges, exact days, and X/Y (+/- delta) with editable sub-level Equipe - Ressource', () => {
     component.switchViewMode('service');
 
     // All 3 services displayed, sorted alphabetically
@@ -236,7 +236,7 @@ describe('PlanViewComponent - Vue Par Service', () => {
 
     // 1. Architecture: no planned charges (X = 0), capacity Y = 1.5 -> delta = +1.5 (positive)
     const archRow = component.rows.find((r) => r.id === 'srv-arch')!;
-    expect(archRow.children[0].resources.length).toBe(0);
+    expect(archRow.children.length).toBe(0);
     const archMetrics = archRow.metrics?.get(week1);
     expect(archMetrics).toEqual({
       total: 0,
@@ -247,7 +247,7 @@ describe('PlanViewComponent - Vue Par Service', () => {
 
     // 2. Support Vide: unassigned role in team-1 must NOT leak into srv-empty via equipe.service_id
     const emptyRow = component.rows.find((r) => r.id === 'srv-empty')!;
-    expect(emptyRow.children[0].resources.length).toBe(0);
+    expect(emptyRow.children.length).toBe(0);
     expect(emptyRow.metrics?.get(week1)?.total).toBe(0);
 
     // 3. Développement: X = 2 + 0.5 + 1 = 3.5 ETP, Y = 3 + 1 + 2 = 6 ETP -> delta = +2.5
@@ -260,24 +260,29 @@ describe('PlanViewComponent - Vue Par Service', () => {
       status: 'positive',
     });
 
-    // Project leaf row under Développement
-    const devProjects = devRow.children[0].resources;
-    expect(devProjects.length).toBe(1);
-    const proj1Row = devProjects[0];
-    expect(proj1Row.id).toBe('proj-1');
-    expect(proj1Row.charges.get(week1)).toBe(3.5);
+    // Project child row under Développement (Level 2)
+    expect(devRow.children.length).toBe(1);
+    const proj1Child = devRow.children[0];
+    expect(proj1Child.id).toBe('proj-1');
+    expect(proj1Child.charges.get(week1)).toBe(3.5);
 
-    // Exact planned days: (2 * 5) + (0.5 * 4) + (1 * 5) = 10 + 2 + 5 = 17 days
-    expect(proj1Row.dailyCharges?.get(week1)).toBe(17);
-    expect(component.getResourceTotalPlannedDays(proj1Row)).toBe(17);
-    expect(component.getPlannedDaysForResource(proj1Row, 'all')).toBe(17);
-    expect(component.getResourceMetricsYear(proj1Row, 2026)).toBe(17);
+    // Exact planned days on project: (2 * 5) + (0.5 * 4) + (1 * 5) = 10 + 2 + 5 = 17 days
+    expect(proj1Child.dailyCharges?.get(week1)).toBe(17);
+    expect(component.getChildTotalPlannedDays(proj1Child)).toBe(17);
 
-    // Leaf cell data must NOT show availability or capacity record coloring
-    const cell0 = proj1Row.cellData?.[0];
-    expect(cell0?.value).toBe(3.5);
-    expect(cell0?.showAvailability).toBeFalse();
-    expect(cell0?.hasCapRecord).toBeFalse();
+    // Sub-level Equipe - Ressource rows under Project (Level 3)
+    expect(proj1Child.resources.length).toBe(3);
+    const r1 = proj1Child.resources.find((r) => r.uniqueId.includes('team-1') && r.type === 'role')!;
+    expect(r1.label).toBe('Squad Alpha - Développeur Backend');
+    expect(r1.charges.get(week1)).toBe(2);
+    expect(r1.dailyCharges?.get(week1)).toBe(10);
+    expect(component.getResourceTotalPlannedDays(r1)).toBe(10);
+
+    // Equipe - Ressource cell data is editable and shows availability / capacity
+    const cellR1 = r1.cellData?.[0];
+    expect(cellR1?.value).toBe(2);
+    expect(cellR1?.showAvailability).toBeTrue();
+    expect(cellR1?.hasCapRecord).toBeTrue();
   });
 
   it('should recalculate consolidated X and Y when Equipes filter is active in service view', () => {
@@ -296,10 +301,11 @@ describe('PlanViewComponent - Vue Par Service', () => {
       status: 'positive',
     });
 
-    const proj1Row = devRow.children[0].resources[0];
-    expect(proj1Row.charges.get(week1)).toBe(2.5);
+    const proj1Child = devRow.children[0];
+    expect(proj1Child.charges.get(week1)).toBe(2.5);
     // Exact days in team-1: (2 * 5) + (0.5 * 4) = 12 days
-    expect(component.getResourceTotalPlannedDays(proj1Row)).toBe(12);
+    expect(component.getChildTotalPlannedDays(proj1Child)).toBe(12);
+    expect(proj1Child.resources.length).toBe(2);
   });
 
   it('should resolve Chiffres directly for (serviceId, projectId) in service mode', () => {
@@ -325,5 +331,34 @@ describe('PlanViewComponent - Vue Par Service', () => {
     component.selectedCells = [{ resource: {} as any, week: new Date(), childId: 'c1', parentId: 'p1' }];
     component.switchViewMode('service');
     expect(component.selectedCells.length).toBe(0);
+  });
+
+  it('should allow selecting Level 2 project row and show service-selection-modal for that project', () => {
+    component.switchViewMode('service');
+    const devRow = component.rows.find((r) => r.id === 'srv-dev')!;
+    const proj1Child = devRow.children[0];
+
+    expect(proj1Child.summaryResource).toBeDefined();
+    expect(proj1Child.summaryResource?.uniqueId).toBe('service_project_srv-dev_proj-1');
+
+    component.selectedCells = [
+      {
+        resource: proj1Child.summaryResource!,
+        week: component.displayedWeeks[0],
+        childId: proj1Child.id,
+        parentId: devRow.id,
+      },
+    ];
+
+    expect(component.isServiceSummarySelected()).toBeTrue();
+
+    component.isDragging = true;
+    component.dragStartParent = devRow;
+    component.onGlobalMouseUp();
+
+    expect(component.showServiceSelectionModal).toBeTrue();
+    expect(component.serviceSelectionSummary.rowLabel).toBe('Projet Alpha');
+    expect(component.serviceSelectionSummary.units).toBe(3.5);
+    expect(component.serviceSelectionSummary.days).toBe(17);
   });
 });

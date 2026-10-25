@@ -417,6 +417,10 @@ export class PlanViewComponent extends PlanGridInteractionController implements 
     return Projection.getResourceTotalPlannedDays(resource, this.selectedCapacityYear(), this.selectedStartDate, this.getTodayWeekStart());
   }
 
+  getChildTotalPlannedDays(child: M.ChildRow): number {
+    return Projection.getChildTotalPlannedDays(child, this.selectedCapacityYear(), this.selectedStartDate, this.getTodayWeekStart());
+  }
+
   getChiffreValueForServiceProject(serviceId: string, projectId: string, mode: M.ChiffreCategory = this.chiffreMode()): number | null {
     return Projection.getChiffreValueForServiceProject(this.allChiffres, serviceId, projectId, mode);
   }

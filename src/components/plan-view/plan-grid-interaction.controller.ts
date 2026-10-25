@@ -822,8 +822,20 @@ export abstract class PlanGridInteractionController {
     return total;
   }
 
-  getResourceUniqueId(resource: Pick<ResourceRow, 'id' | 'type'>, child: Pick<ChildRow, 'id'>, parent: Pick<ParentRow, 'id'>): string {
-    return `${parent.id}_${child.id}_${resource.id}_${resource.type} `;
+  getResourceUniqueId(resource: Pick<ResourceRow, 'id' | 'type'> & { uniqueId?: string }, child: Pick<ChildRow, 'id'>, parent: Pick<ParentRow, 'id'>): string {
+    if (resource.uniqueId) return resource.uniqueId;
+    return `${parent.id}_${child.id}_${resource.id}_${resource.type}`;
+  }
+
+  isServiceSummarySelected(): boolean {
+    if (this.viewMode() !== 'service' || this.selectedCells.length === 0) return false;
+    const firstCell = this.selectedCells[0];
+    const uid = firstCell.resource.uniqueId;
+    return (
+      !!uid?.startsWith('service_summary_') ||
+      !!uid?.startsWith('service_project_') ||
+      firstCell.resource.id === firstCell.parentId
+    );
   }
 
   isCellSelected(resource: ResourceRow, week: Date): boolean {
@@ -929,7 +941,7 @@ export abstract class PlanGridInteractionController {
     this.activeTooltip = null;
     this.hideTooltip();
     if (this.isOverSelectionBorder) {
-      if (this.viewMode() === 'service') return;
+      if (this.viewMode() === 'service' && this.isServiceSummarySelected()) return;
       this.isMovingSelection = true;
       this.moveGhostOffset = 0;
       this.moveStartClientX = event.clientX;
@@ -957,7 +969,10 @@ export abstract class PlanGridInteractionController {
     const cell = (event.target as HTMLElement).closest('.week-cell');
     const indexStr = cell?.getAttribute('data-week-index');
     if (indexStr) {
-      if (this.viewMode() === 'service') {
+      if (
+        this.viewMode() === 'service' &&
+        (resource === parent.summaryResource || (child && resource === child.summaryResource))
+      ) {
         event.preventDefault();
       }
       this.dragStartWeekIndex = parseInt(indexStr, 10);
@@ -993,7 +1008,7 @@ export abstract class PlanGridInteractionController {
             }
           }
         }
-        if (this.viewMode() !== 'service' && this.dragStartCellValue && this.dragStartCellValue > 0) {
+        if ((this.viewMode() !== 'service' || !this.isServiceSummarySelected()) && this.dragStartCellValue && this.dragStartCellValue > 0) {
           updateDragProjectionTooltipDomPosition(event, this.dragProjectionTooltip?.nativeElement);
           const shouldShow = this.shouldShowProjectionTooltip();
           if (shouldShow !== this.dragProjectionTooltipVisible) {
@@ -1016,7 +1031,7 @@ export abstract class PlanGridInteractionController {
       }
     }
 
-    if (this.viewMode() !== 'service' && !this.isDragging && !this.isMovingSelection && this.selectedCells.length > 0 && this.isSelectionFinished) {
+    if ((this.viewMode() !== 'service' || !this.isServiceSummarySelected()) && !this.isDragging && !this.isMovingSelection && this.selectedCells.length > 0 && this.isSelectionFinished) {
       const target = event.target as HTMLElement;
       const cell = target.closest('.week-cell');
       let isBorder = false;
@@ -1070,7 +1085,7 @@ export abstract class PlanGridInteractionController {
       this.dragProjectionTooltipVisible = false;
       if (this.selectedCells.length > 0) {
         this.isSelectionFinished = true;
-        if (this.viewMode() === 'service') {
+        if (this.viewMode() === 'service' && this.isServiceSummarySelected()) {
           let units = 0;
           let days = 0;
           let remainingCapacityUnits = 0;
@@ -1114,7 +1129,7 @@ export abstract class PlanGridInteractionController {
             const relevantProjectIds = projId
               ? new Set([projId])
               : new Set(
-                  (parentRow?.children[0]?.resources?.map((r) => r.projectId).filter(Boolean) as string[]) || []
+                  (parentRow?.children?.map((c) => c.id).filter(Boolean) as string[]) || []
                 );
 
             const activeTypes = this.filterJalonTypes();

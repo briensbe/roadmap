@@ -225,6 +225,9 @@ export class PlanDataRepository {
     } else if (viewMode === 'team') {
       equipeId = parentId;
       projetId = childId;
+    } else if (viewMode === 'service') {
+      projetId = childId;
+      equipeId = resource.equipeId || parentId;
     } else {
       equipeId = parentId.split('_')[0];
       projetId = resource.projectId || resource.id;
@@ -608,11 +611,11 @@ export class PlanDataRepository {
                 ? [child.label, child.code || '', child.reference_externe || '', parent.label, resource.label]
                 : viewMode === 'service'
                   ? [
-                      resource.label,
-                      resource.code || '',
-                      resource.reference_externe || '',
-                      parent.label,
-                      'Consolidé Service',
+                      child.label,
+                      child.code || '',
+                      child.reference_externe || '',
+                      resource.label.split(' - ')[0] || parent.label,
+                      resource.label.split(' - ').slice(1).join(' - ') || resource.label,
                     ]
                   : [resource.label, resource.code || '', resource.reference_externe || '', parent.label, child.label];
 
