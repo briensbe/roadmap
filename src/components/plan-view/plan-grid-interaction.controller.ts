@@ -22,7 +22,6 @@ import { Projet, Jalon } from '../../models/types';
 import {
   PLAN_VIEW_ICONS,
   PlanViewMode,
-  DisplayFormat,
   ZoomLevel,
   PlanningMode,
   ChiffreCategory,
@@ -31,7 +30,6 @@ import {
   ResourceRow,
   ChildRow,
   ParentRow,
-  FlatRow,
   DisplayedMonth,
   DisplayedQuarter,
   DisplayedYear,
@@ -164,7 +162,6 @@ export abstract class PlanGridInteractionController {
   protected resizeObserver?: ResizeObserver;
 
   viewMode = storageSignal<PlanViewMode>('plan-view-mode', 'resource');
-  displayFormat = storageSignal<DisplayFormat>('plan-view-display-format', 'tree');
   zoomLevel = storageSignal<ZoomLevel>('plan-view-zoom-level', 'normal');
   showAvailability = storageSignal<boolean>('plan-view-show-availability', false);
   weekFilters = storageSignal<number[]>('plan-view-week-filters', []);
@@ -493,10 +490,6 @@ export abstract class PlanGridInteractionController {
     return total;
   }
 
-  getFlatRowMetricsYear(row: FlatRow, year: number): number {
-    return this.getResourceMetricsYear(row.resource, year);
-  }
-
   getBadgePrefix(): string {
     const yearSel = this.selectedCapacityYear();
     if (yearSel === 'today') {
@@ -541,9 +534,6 @@ export abstract class PlanGridInteractionController {
   }
   trackByWeek(_index: number, week: Date) {
     return week.getTime();
-  }
-  trackByFlatRow(_index: number, row: FlatRow) {
-    return row.uniqueId;
   }
 
   copyToClipboard(event: MouseEvent, text: string, key?: string) {

@@ -1411,11 +1411,6 @@
   color: var(--text-main);
 }
 
-.row-label-flat {
-  background: var(--bg-surface);
-  color: var(--text-main);
-}
-
 /* Weeks header wrapper & years row */
 .weeks-header-wrapper {
   display: flex;

@@ -3,7 +3,7 @@
  * @description Modèles, contrats de données et helpers purs de formatage de la vue Planification.
  *
  * Responsabilités :
- * - Définir les structures de l'arbre de planification (`ParentRow`, `ChildRow`, `ResourceRow`, `FlatRow`).
+ * - Définir les structures de l'arbre de planification (`ParentRow`, `ChildRow`, `ResourceRow`).
  * - Définir les contrats d'entrée/sortie entre les modules (`PlanRawDataset`, `PlanFilterCriteria`, `SelectedCell`).
  * - Centraliser l'enregistrement des icônes Lucide (`PLAN_VIEW_ICONS`, `LucideIconsModule`).
  * - Fournir les fonctions pures de formatage et de résumé des filtres (période, taille, compteur de filtres actifs).
@@ -54,7 +54,6 @@ import { Equipe, Projet, Charge, Role, Personne, Capacite, Jalon, Service } from
 import { Chiffre } from '../../models/chiffres.type';
 
 export type PlanViewMode = 'project' | 'team' | 'resource' | 'service';
-export type DisplayFormat = 'tree' | 'flat';
 export type ZoomLevel = 'compact' | 'normal';
 export type PlanningMode = 'saisie' | 'visualisation';
 export type ChiffreCategory = 'initial' | 'revise' | 'previsionnel' | 'consomme' | 'restant';
@@ -136,14 +135,6 @@ export interface ParentRow {
   originalProject?: Projet;
   metrics?: Map<string, ParentMetricItem>;
   summaryResource?: ResourceRow;
-}
-
-export interface FlatRow {
-  uniqueId: string;
-  fullLabel: string;
-  resource: ResourceRow;
-  child: ChildRow;
-  parent: ParentRow;
 }
 
 export interface DisplayedMonth {
@@ -231,7 +222,6 @@ export interface PlanRawDataset {
 
 export interface PlanFilterCriteria {
   viewMode: PlanViewMode;
-  displayFormat: DisplayFormat;
   globalSearch: string;
   filterEquipeIds: string[];
   filterProjetIds: string[];

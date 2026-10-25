@@ -64,7 +64,6 @@ export class PlanViewComponent extends PlanGridInteractionController implements 
   private globalMouseUpListener?: () => void;
   private scrollCloseListener?: () => void;
 
-  flatRows: M.FlatRow[] = [];
   rows: M.ParentRow[] = [];
   rowsAll: M.ParentRow[] = [];
 
@@ -372,15 +371,10 @@ export class PlanViewComponent extends PlanGridInteractionController implements 
     this.applyFilters();
   }
 
-  buildFlatList() {
-    this.flatRows = Projection.buildFlatList(this.rows, this.viewMode());
-  }
-
   applyFilters() {
     this.calculateUsage();
     const criteria: M.PlanFilterCriteria = {
       viewMode: this.viewMode(),
-      displayFormat: this.displayFormat(),
       globalSearch: this.globalSearch(),
       filterEquipeIds: this.filterEquipeIds(),
       filterProjetIds: this.filterProjetIds(),
@@ -398,7 +392,6 @@ export class PlanViewComponent extends PlanGridInteractionController implements 
     };
     this.rows = Projection.applyPlanFilters(this.dataset, this.rowsAll, criteria, this.getTodayWeekStart());
     Projection.calculateFilteredTreeMetrics(this.dataset, this.rows, this.viewMode(), this.displayedWeeks, this.filterEquipeIds(), this.filterResourceIds());
-    if (this.displayFormat() === 'flat') this.buildFlatList();
   }
 
   getPlannedDaysForResource(resource: M.ResourceRow, period: M.PlannedDaysPeriod): number {
@@ -502,11 +495,6 @@ export class PlanViewComponent extends PlanGridInteractionController implements 
     this.buildTree();
   }
 
-  toggleDisplayFormat(format: M.DisplayFormat) {
-    this.displayFormat.set(format);
-    if (format === 'flat') this.buildFlatList();
-  }
-
   // --- Filter Controls ---
   clearAllFilters() {
     this.globalSearch.set('');
@@ -535,14 +523,12 @@ export class PlanViewComponent extends PlanGridInteractionController implements 
     const index = current.indexOf(weekIndex);
     this.weekFilters.set(index > -1 ? current.filter((i) => i !== weekIndex) : [...current, weekIndex]);
     this.buildTree();
-    this.buildFlatList();
     this.cdr.markForCheck();
   }
 
   clearAllWeekFilters() {
     this.weekFilters.set([]);
     this.buildTree();
-    this.buildFlatList();
     this.cdr.markForCheck();
   }
 
@@ -722,7 +708,7 @@ export class PlanViewComponent extends PlanGridInteractionController implements 
   }
 
   async drop(event: CdkDragDrop<M.ParentRow[]>) {
-    if (this.viewMode() !== 'project' || this.displayFormat() !== 'tree' || event.previousIndex === event.currentIndex) return;
+    if (this.viewMode() !== 'project' || event.previousIndex === event.currentIndex) return;
     moveItemInArray(this.rows, event.previousIndex, event.currentIndex);
     await this.updateRankAfterMove(event.currentIndex);
   }

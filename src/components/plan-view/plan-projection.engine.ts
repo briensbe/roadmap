@@ -3,8 +3,7 @@
  * @description Moteur de calcul et de projection métier pur (Deep Module sans dépendance Angular ni DOM).
  *
  * Responsabilités :
- * - Construire l'arbre hiérarchique (`buildPlanTree`) selon les 4 modes de vue (`project`, `team`, `resource`, `service`)
- *   ainsi que la projection à plat (`buildFlatList`).
+ * - Construire l'arbre hiérarchique (`buildPlanTree`) selon les 4 modes de vue (`project`, `team`, `resource`, `service`).
  * - Calculer l'utilisation, la disponibilité nette (`capacité - charge`), les cellules pré-calculées
  *   et les métriques hebdomadaires agrégées (`calculateTreeMetrics`, `calculateFilteredTreeMetrics`).
  * - Agréger les jours planifiés (RAF, année, tout) et résoudre les chiffres budgétaires par service, équipe et projet.
@@ -24,7 +23,6 @@ import {
   ResourceRow,
   ChildRow,
   ParentRow,
-  FlatRow,
   PlanRawDataset,
   PlanFilterCriteria,
 } from './plan-view.models';
@@ -529,26 +527,6 @@ export function buildPlanTree(
   }
 
   return rows;
-}
-
-export function buildFlatList(rows: ParentRow[], viewMode: PlanViewMode): FlatRow[] {
-  const flatRows: FlatRow[] = [];
-  const collator = new Intl.Collator('fr-FR', { numeric: true, sensitivity: 'base' });
-  for (const parent of rows) {
-    for (const child of parent.children) {
-      for (const resource of child.resources) {
-        const fullLabel =
-          viewMode === 'service'
-            ? `${parent.label} > ${child.label} > ${resource.label} ${child.code || ''} ${child.reference_externe || ''}`.toLowerCase()
-            : viewMode === 'resource'
-              ? `${parent.label} > ${resource.label} ${resource.code || ''} ${resource.reference_externe || ''}`.toLowerCase()
-              : `${parent.label} > ${child.label} > ${resource.label} ${parent.code || ''} ${parent.reference_externe || ''} ${child.code || ''} ${child.reference_externe || ''}`.toLowerCase();
-        flatRows.push({ uniqueId: resource.uniqueId, fullLabel, resource, child, parent });
-      }
-    }
-  }
-  flatRows.sort((a, b) => collator.compare(a.fullLabel, b.fullLabel));
-  return flatRows;
 }
 
 export function calculateUsageMap(dataset: Pick<PlanRawDataset, 'allCharges' | 'usageMap'>): void {

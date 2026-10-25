@@ -92,41 +92,6 @@
 
         @if (showActionsMenu) {
           <div class="actions-dropdown" (click)="$event.stopPropagation()">
-            <!-- Format arborescence/plat -->
-            <div class="actions-dropdown-section">
-              <div class="actions-dropdown-item has-submenu" (click)="toggleActionsSubmenu('affichage', $event)">
-                <lucide-icon [img]="ListTree" [size]="15"></lucide-icon>
-                Affichage
-                <span class="actions-selected-text">{{ displayFormat() === 'tree' ? 'Arborescence' : 'À plat' }}</span>
-                <lucide-icon [img]="ChevronLeft" [size]="15" class="submenu-arrow"></lucide-icon>
-                @if (activeActionsSubmenu === 'affichage') {
-                  <div class="actions-submenu left-submenu" (click)="$event.stopPropagation()">
-                    <div class="actions-section-label">Sélectionner l'Affichage</div>
-                    <button
-                      class="actions-dropdown-item"
-                      [class.active]="displayFormat() === 'tree'"
-                      (click)="toggleDisplayFormat('tree')">
-                      <lucide-icon [img]="ListTree" [size]="15"></lucide-icon>
-                      Arborescence
-                      @if (displayFormat() === 'tree') {
-                        <span class="actions-check">✓</span>
-                      }
-                    </button>
-                    <button
-                      class="actions-dropdown-item"
-                      [class.active]="displayFormat() === 'flat'"
-                      (click)="toggleDisplayFormat('flat')">
-                      <lucide-icon [img]="AlignJustify" [size]="15"></lucide-icon>
-                      À plat
-                      @if (displayFormat() === 'flat') {
-                        <span class="actions-check">✓</span>
-                      }
-                    </button>
-                  </div>
-                }
-              </div>
-            </div>
-            <div class="actions-dropdown-divider"></div>
             <!-- Densité -->
             <div class="actions-dropdown-section">
               <div class="actions-dropdown-item has-submenu" (click)="toggleActionsSubmenu('densite', $event)">
@@ -958,16 +923,14 @@
             <div class="calendar-row skeleton-row">
               <!-- Label cell matching current format -->
               <div
-                [class]="displayFormat() === 'tree' ? 'label-cell row-label-parent' : 'label-cell row-label-flat'"
+                class="label-cell row-label-parent"
                 [style.width.px]="labelColumnWidth()"
                 [style.minWidth.px]="labelColumnWidth()">
                 <div class="row-label-content" style="display: flex; align-items: center; gap: 8px;">
                   <div class="color-bar-container">
                     <div class="color-bar-v" style="background-color: #e2e8f0"></div>
                   </div>
-                  @if (displayFormat() === 'tree') {
-                    <div style="width: 16px; height: 16px; background-color: #f1f5f9; border-radius: 4px;"></div>
-                  }
+                  <div style="width: 16px; height: 16px; background-color: #f1f5f9; border-radius: 4px;"></div>
                   <div class="skeleton-line" style="width: 130px; height: 16px; border-radius: 4px;"></div>
                 </div>
               </div>
@@ -1010,7 +973,7 @@
             </div>
 
             <!-- Nested rows in tree mode for child/resources -->
-            @if (displayFormat() === 'tree' && (placeholder === 1 || placeholder === 3)) {
+            @if (placeholder === 1 || placeholder === 3) {
               <div class="calendar-row skeleton-row" style="opacity: 0.85;">
                 <div
                   class="label-cell row-label-child"
@@ -1055,8 +1018,6 @@
           }
         } @else {
           <!-- Tree View -->
-          <!-- Tree View -->
-          @if (displayFormat() === 'tree') {
           <div cdkDropList (cdkDropListDropped)="drop($event)">
             @for (row of rows; track trackByRow($index, row)) {
               <div
@@ -2042,281 +2003,6 @@
               </div>
             }
           </div>
-        }
-
-        <!-- Flat View -->
-        @if (displayFormat() === 'flat') {
-          @for (row of flatRows; track trackByFlatRow($index, row)) {
-            <div
-              class="calendar-row"
-              [attr.data-resource-id]="getResourceUniqueId(row.resource, row.child, row.parent)"
-              (mousedown)="onMouseDown($event, row.resource, row.child, row.parent)">
-              <div
-                class="label-cell row-label-flat"
-                [style.width.px]="labelColumnWidth()"
-                [style.minWidth.px]="labelColumnWidth()">
-                <div
-                  style="
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    padding: 0 16px;
-                    font-weight: 500;
-                    font-size: 13px;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                  "
-                  (mouseenter)="showTooltip($event, row.fullLabel)"
-                  (mouseleave)="hideTooltip()">
-                  {{ row.fullLabel }}
-                  <div
-                    class="resource-total-badge"
-                    [class.anchor-active]="activeAnchorId === getResourceUniqueId(row.resource, row.child, row.parent)"
-                    (click)="openYearPopover($event, getResourceUniqueId(row.resource, row.child, row.parent))"
-                    (mouseenter)="$event.stopPropagation(); showTooltip($event, 'Cliquer pour filtrer par année')"
-                    (mouseleave)="hideTooltip()">
-                    <span class="badge-prefix">{{ getBadgePrefix() }}</span>
-                    <span class="badge-val">{{ getResourceTotalPlannedDays(row.resource) | number: '1.0-1' }}</span>
-                    <span class="badge-unit">j</span>
-                  </div>
-                  <!-- Chiffre Badge (flat view) -->
-                  @if (
-                    viewMode() === 'project' &&
-                    getChiffreValue(row.child.id, row.parent.id, row.resource.resourceId, row.resource.type) !== null
-                  ) {
-                    <span class="chiffre-badge-sep">/</span>
-                    <div
-                      class="chiffre-badge"
-                      [class.anchor-active-chiffre]="
-                        activeChiffreAnchorId === 'chiffre-' + getResourceUniqueId(row.resource, row.child, row.parent)
-                      "
-                      (click)="
-                        openChiffrePopover(
-                          $event,
-                          'chiffre-' + getResourceUniqueId(row.resource, row.child, row.parent),
-                          row.child.id,
-                          row.parent.id,
-                          row.resource.resourceId,
-                          row.resource.type
-                        )
-                      "
-                      title="Cliquer pour changer la catégorie">
-                      <span class="chiffre-badge-prefix">{{ getChiffreBadgeLabel() }}</span>
-                      <span class="chiffre-badge-val">{{
-                        getChiffreValue(row.child.id, row.parent.id, row.resource.resourceId, row.resource.type)
-                          | number: '1.0-1'
-                      }}</span>
-                      <span class="chiffre-badge-unit">j</span>
-                    </div>
-                  }
-                  @if (
-                    viewMode() === 'team' &&
-                    getChiffreValue(row.parent.id, row.child.id, row.resource.resourceId, row.resource.type) !== null
-                  ) {
-                    <span class="chiffre-badge-sep">/</span>
-                    <div
-                      class="chiffre-badge"
-                      [class.anchor-active-chiffre]="
-                        activeChiffreAnchorId === 'chiffre-' + getResourceUniqueId(row.resource, row.child, row.parent)
-                      "
-                      (click)="
-                        openChiffrePopover(
-                          $event,
-                          'chiffre-' + getResourceUniqueId(row.resource, row.child, row.parent),
-                          row.parent.id,
-                          row.child.id,
-                          row.resource.resourceId,
-                          row.resource.type
-                        )
-                      "
-                      title="Cliquer pour changer la catégorie">
-                      <span class="chiffre-badge-prefix">{{ getChiffreBadgeLabel() }}</span>
-                      <span class="chiffre-badge-val">{{
-                        getChiffreValue(row.parent.id, row.child.id, row.resource.resourceId, row.resource.type)
-                          | number: '1.0-1'
-                      }}</span>
-                      <span class="chiffre-badge-unit">j</span>
-                    </div>
-                  }
-                  @if (
-                    viewMode() === 'resource' &&
-                    getChiffreValue(
-                      row.parent.id.split('_')[0],
-                      row.resource.id,
-                      row.resource.resourceId,
-                      row.resource.type
-                    ) !== null
-                  ) {
-                    <span class="chiffre-badge-sep">/</span>
-                    <div
-                      class="chiffre-badge"
-                      [class.anchor-active-chiffre]="
-                        activeChiffreAnchorId === 'chiffre-' + getResourceUniqueId(row.resource, row.child, row.parent)
-                      "
-                      (click)="
-                        openChiffrePopover(
-                          $event,
-                          'chiffre-' + getResourceUniqueId(row.resource, row.child, row.parent),
-                          row.parent.id.split('_')[0],
-                          row.resource.id,
-                          row.resource.resourceId,
-                          row.resource.type
-                        )
-                      "
-                      title="Cliquer pour changer la catégorie">
-                      <span class="chiffre-badge-prefix">{{ getChiffreBadgeLabel() }}</span>
-                      <span class="chiffre-badge-val">{{
-                        getChiffreValue(
-                          row.parent.id.split('_')[0],
-                          row.resource.id,
-                          row.resource.resourceId,
-                          row.resource.type
-                        ) | number: '1.0-1'
-                      }}</span>
-                      <span class="chiffre-badge-unit">j</span>
-                    </div>
-                  }
-                  @if (
-                    viewMode() === 'service' &&
-                    getChiffreValueForServiceProject(row.parent.id, row.resource.id) !== null
-                  ) {
-                    <span class="chiffre-badge-sep">/</span>
-                    <div
-                      class="chiffre-badge"
-                      [class.anchor-active-chiffre]="
-                        activeChiffreAnchorId === 'chiffre-' + getResourceUniqueId(row.resource, row.child, row.parent)
-                      "
-                      (click)="
-                        openChiffrePopover(
-                          $event,
-                          'chiffre-' + getResourceUniqueId(row.resource, row.child, row.parent),
-                          row.parent.id,
-                          row.resource.id
-                        )
-                      "
-                      title="Cliquer pour changer la catégorie">
-                      <span class="chiffre-badge-prefix">{{ getChiffreBadgeLabel() }}</span>
-                      <span class="chiffre-badge-val">{{
-                        getChiffreValueForServiceProject(row.parent.id, row.resource.id) | number: '1.0-1'
-                      }}</span>
-                      <span class="chiffre-badge-unit">j</span>
-                    </div>
-                  }
-                </div>
-              </div>
-              @if (planningMode() === 'saisie') {
-                <div class="weeks-container">
-                  @for (week of displayedWeeks; track week.getTime(); let i = $index) {
-                    @let cell = row.resource.cellData?.[i];
-                    <div
-                      class="week-cell resource-detail-cell"
-                      [class.is-year-change]="isFirstWeekOfYear(i)"
-                      [ngClass]="getCellSelectionClasses(row.resource, week, i, row.child, row.parent)"
-                      [class.has-capacity]="cell?.value! > 0"
-                      [class.has-comment]="!!cell?.comment"
-                      [class.cell-positive]="
-                        cell?.showAvailability &&
-                        cell?.hasCapRecord &&
-                        (cell?.value! > 0 || showAvailability()) &&
-                        cell?.isPositive
-                      "
-                      [class.cell-zero]="
-                        cell?.showAvailability &&
-                        cell?.hasCapRecord &&
-                        (cell?.value! > 0 || showAvailability()) &&
-                        cell?.isZero
-                      "
-                      [class.cell-negative]="
-                        cell?.showAvailability &&
-                        cell?.hasCapRecord &&
-                        (cell?.value! > 0 || showAvailability()) &&
-                        cell?.isNegative
-                      "
-                      [attr.data-week-index]="i"
-                      (mouseenter)="showTooltip($event, getCellTooltip(row.resource, week, cell))"
-                      (mouseleave)="hideTooltip()">
-                      <div class="cell-content">
-                        @if (
-                          (cell?.value! > 0 &&
-                            (!isMovingSelection || moveGhostOffset === 0 || !isCellSelected(row.resource, week))) ||
-                          getGhostValue(row.resource, i) !== null
-                        ) {
-                          <div class="capacity-value">
-                            {{
-                              (getGhostValue(row.resource, i) !== null ? getGhostValue(row.resource, i) : cell?.value)
-                                | number: '1.0-1'
-                            }}
-                          </div>
-                        }
-                        @if (cell?.comment) {
-                          <div class="cell-comment-badge" [title]="'Note : ' + cell?.comment">
-                            <span class="comment-dot"></span>
-                          </div>
-                        }
-                        @if (
-                          (!isMovingSelection || moveGhostOffset === 0 || !isCellSelected(row.resource, week)) &&
-                          cell?.showAvailability &&
-                          (cell?.value! > 0 || (showAvailability() && (cell?.availability !== 0 || cell?.hasCapRecord)))
-                        ) {
-                          <div
-                            class="availability-indicator"
-                            [ngClass]="{
-                              'availability-positive': cell?.isPositive,
-                              'availability-zero': cell?.isZero,
-                              'availability-negative': cell?.isNegative,
-                            }">
-                            {{ cell?.isPositive ? '+' : '' }}{{ cell?.availability | number: '1.0-1' }}
-                          </div>
-                        }
-                      </div>
-                    </div>
-                  }
-                </div>
-              }
-              <!-- Visualisation Mode (Gantt) -->
-              @if (planningMode() === 'visualisation') {
-                <div class="weeks-container gantt-weeks-container">
-                  <!-- Grille d'arrière-plan -->
-                  <div class="gantt-grid-bg">
-                    @for (m of displayedMonths; track m) {
-                      <div
-                        class="gantt-grid-col"
-                        [style.flex-grow]="m.weeks.length"
-                        [style.flex-basis]="'calc(var(--cell-width, 80px) * ' + m.weeks.length + ')'"
-                        [style.min-width]="'calc(var(--cell-width, 80px) * ' + m.weeks.length + ')'"></div>
-                    }
-                  </div>
-                  <!-- Gantt Bar -->
-                  @if (getGanttBar(row.resource.charges); as bar) {
-                    <div class="gantt-bar-wrapper" [style.left.%]="bar.left" [style.width.%]="bar.width">
-                      <div
-                        class="gantt-bar"
-                        [style.background-color]="getGanttBarColor(row.resource, row.parent, row.child)"
-                        [title]="row.resource.label">
-                        <span class="gantt-bar-label">{{ row.resource.label }}</span>
-                      </div>
-                    </div>
-                  }
-                  <!-- Milestones sur la ligne -->
-                  @for (jalon of getGanttJalons(row.resource, row.parent, row.child); track jalon) {
-                    <div
-                      class="gantt-milestone"
-                      [style.left.%]="getJalonLeftPercentage(jalon)"
-                      [style.background-color]="getJalonColor(jalon.event_type)"
-                      [style.color]="getJalonTextColor(jalon.event_type)"
-                      [title]="jalon.title + ' - ' + jalon.event_date"
-                      [class.jalon-delivery]="jalon.event_type === 'LV' || jalon.event_type === 'livraison'"
-                      [class.jalon-diamond]="jalon.event_type !== 'LV' && jalon.event_type !== 'livraison'"
-                      (click)="openMilestoneModal(jalon, $event); $event.stopPropagation()">
-                      <span class="gantt-milestone-text">{{ jalon.title || '★' }}</span>
-                    </div>
-                  }
-                </div>
-              }
-            </div>
-          }
-        }
 
         @if (rows.length === 0) {
           <div class="empty-state">
