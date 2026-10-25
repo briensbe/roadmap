@@ -73,6 +73,7 @@ export function formatWeekHeaderNumeric(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   return `${day}/${month}`;
 }
+export const formatWeekHeader = formatWeekHeaderNumeric;
 
 /**
  * Retourne le numéro de semaine ISO (1..53).
