@@ -9,7 +9,22 @@
  * - Orchestrer l'ouverture et la validation des modales métier (liaison projet/équipe, ajout de ressource,
  *   édition de projet, jalons, chiffres, confirmation de suppression) en déléguant la persistance à `PlanDataRepository`.
  */
-import { Component, OnInit, AfterViewInit, HostListener, ChangeDetectionStrategy, OnDestroy, computed, signal, inject, WritableSignal } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  AfterViewInit,
+  HostListener,
+  ChangeDetectionStrategy,
+  OnDestroy,
+  computed,
+  signal,
+  inject,
+  WritableSignal,
+  ElementRef,
+  ViewChild,
+  ChangeDetectorRef,
+  NgZone,
+} from '@angular/core';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
@@ -25,10 +40,15 @@ import { ChiffresModalComponent } from '../chiffres/chiffres-modal.component';
 import { ServiceSelectionModalComponent } from './service-selection-modal.component';
 import * as M from './plan-view.models';
 import * as Projection from './plan-projection.engine';
-import { PlanGridInteractionController, generateWeeksTimeline } from './plan-grid-interaction.controller';
+import {
+  PlanGridInteractionController,
+  generateWeeksTimeline,
+} from './plan-grid-interaction.controller';
 import { PlanDataRepository } from './plan-data.repository';
 import { ToastService } from '../../services/toast.service';
 import { toErrorMessage } from '../../utils/error-message';
+import { GridSelectionController } from '../../shared/grid/grid-selection.controller';
+import { HoverTooltipController } from '../../shared/grid/hover-tooltip.controller';
 
 export { LucideIconsModule } from './plan-view.models';
 
@@ -47,13 +67,244 @@ export { LucideIconsModule } from './plan-view.models';
     ChiffresModalComponent,
     ServiceSelectionModalComponent,
   ],
+  providers: [
+    GridSelectionController,
+    HoverTooltipController,
+    PlanGridInteractionController,
+  ],
   templateUrl: './plan-view.component.html',
   styleUrl: './plan-view.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PlanViewComponent extends PlanGridInteractionController implements OnInit, AfterViewInit, OnDestroy {
+export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly repo = inject(PlanDataRepository);
   private readonly toast = inject(ToastService);
+  protected readonly cdr = inject(ChangeDetectorRef);
+  protected readonly ngZone = inject(NgZone);
+  readonly gridCtrl = inject(PlanGridInteractionController);
+
+  @ViewChild('tooltipElement') tooltipElement?: ElementRef<HTMLElement>;
+  @ViewChild('dragProjectionTooltip') dragProjectionTooltip?: ElementRef<HTMLElement>;
+  @ViewChild('headerRow') headerRowElement?: ElementRef<HTMLElement>;
+  @ViewChild('milestonesRow') milestonesRowElement?: ElementRef<HTMLElement>;
+
+  // Icônes exposées pour le template HTML
+  readonly Plus = this.gridCtrl.Plus;
+  readonly X = this.gridCtrl.X;
+  readonly Contact = this.gridCtrl.Contact;
+  readonly User = this.gridCtrl.User;
+  readonly FileDown = this.gridCtrl.FileDown;
+  readonly MoreVertical = this.gridCtrl.MoreVertical;
+  readonly ListTree = this.gridCtrl.ListTree;
+  readonly AlignJustify = this.gridCtrl.AlignJustify;
+  readonly Eye = this.gridCtrl.Eye;
+  readonly EyeOff = this.gridCtrl.EyeOff;
+  readonly Calendar = this.gridCtrl.Calendar;
+  readonly ChevronLeft = this.gridCtrl.ChevronLeft;
+  readonly ChevronDown = this.gridCtrl.ChevronDown;
+  readonly ChevronRight = this.gridCtrl.ChevronRight;
+  readonly Network = this.gridCtrl.Network;
+  readonly Users = this.gridCtrl.Users;
+  readonly BookUser = this.gridCtrl.BookUser;
+  readonly Settings2 = this.gridCtrl.Settings2;
+  readonly Search = this.gridCtrl.Search;
+  readonly LucideCalculator = this.gridCtrl.LucideCalculator;
+  readonly GripVertical = this.gridCtrl.GripVertical;
+  readonly ArrowUp = this.gridCtrl.ArrowUp;
+  readonly ArrowDown = this.gridCtrl.ArrowDown;
+  readonly Play = this.gridCtrl.Play;
+  readonly Filter = this.gridCtrl.Filter;
+  readonly Trash2 = this.gridCtrl.Trash2;
+  readonly Copy = this.gridCtrl.Copy;
+  readonly Check = this.gridCtrl.Check;
+  readonly Layers = this.gridCtrl.Layers;
+  readonly Building2 = this.gridCtrl.Building2;
+  readonly LoaderCircle = this.gridCtrl.LoaderCircle;
+  readonly AlertTriangle = this.gridCtrl.AlertTriangle;
+  readonly Info = this.gridCtrl.Info;
+  readonly SquarePlus = this.gridCtrl.SquarePlus;
+  readonly SquareMinus = this.gridCtrl.SquareMinus;
+  readonly ExternalLink = this.gridCtrl.ExternalLink;
+
+  // Accesseurs de délégation vers le contrôleur de grille
+  get viewMode() { return this.gridCtrl.viewMode; }
+  get zoomLevel() { return this.gridCtrl.zoomLevel; }
+  get showAvailability() { return this.gridCtrl.showAvailability; }
+  get weekFilters() { return this.gridCtrl.weekFilters; }
+  get chiffreMode() { return this.gridCtrl.chiffreMode; }
+  get planningMode() { return this.gridCtrl.planningMode; }
+  get selectedCapacityYear() { return this.gridCtrl.selectedCapacityYear; }
+  get selectableYears() { return this.gridCtrl.selectableYears; }
+  get labelColumnWidth() { return this.gridCtrl.labelColumnWidth; }
+  get filterJalonTypes() { return this.gridCtrl.filterJalonTypes; }
+  get filterProjetSearch() { return this.gridCtrl.filterProjetSearch; }
+
+  get displayedWeeks() { return this.gridCtrl.displayedWeeks; }
+  set displayedWeeks(v: Date[]) { this.gridCtrl.displayedWeeks = v; }
+  get displayedMonths() { return this.gridCtrl.displayedMonths; }
+  set displayedMonths(v: M.DisplayedMonth[]) { this.gridCtrl.displayedMonths = v; }
+  get displayedYears() { return this.gridCtrl.displayedYears; }
+  set displayedYears(v: M.DisplayedYear[]) { this.gridCtrl.displayedYears = v; }
+  get displayedQuarters() { return this.gridCtrl.displayedQuarters; }
+  get isYearChangeMap() { return this.gridCtrl.isYearChangeMap; }
+  set isYearChangeMap(v: boolean[]) { this.gridCtrl.isYearChangeMap = v; }
+  get currentDate() { return this.gridCtrl.currentDate; }
+  set currentDate(v: Date) { this.gridCtrl.currentDate = v; }
+  get allProjects() { return this.gridCtrl.allProjects; }
+  set allProjects(v: M.Projet[]) { this.gridCtrl.allProjects = v; }
+  get allJalons() { return this.gridCtrl.allJalons; }
+  set allJalons(v: M.Jalon[]) { this.gridCtrl.allJalons = v; }
+
+  get selectedStartDate() { return this.gridCtrl.selectedStartDate; }
+  set selectedStartDate(v: Date | null) { this.gridCtrl.selectedStartDate = v; }
+  get showYearPopover() { return this.gridCtrl.showYearPopover; }
+  set showYearPopover(v: boolean) { this.gridCtrl.showYearPopover = v; }
+  get showChiffrePopover() { return this.gridCtrl.showChiffrePopover; }
+  set showChiffrePopover(v: boolean) { this.gridCtrl.showChiffrePopover = v; }
+  get popoverPosition() { return this.gridCtrl.popoverPosition; }
+  get popoverArrowSide() { return this.gridCtrl.popoverArrowSide; }
+  get activeAnchorId() { return this.gridCtrl.activeAnchorId; }
+  set activeAnchorId(v: string | null) { this.gridCtrl.activeAnchorId = v; }
+  get chiffrePopoverPosition() { return this.gridCtrl.chiffrePopoverPosition; }
+  get chiffrePopoverArrowSide() { return this.gridCtrl.chiffrePopoverArrowSide; }
+  get activeChiffreAnchorId() { return this.gridCtrl.activeChiffreAnchorId; }
+  set activeChiffreAnchorId(v: string | null) { this.gridCtrl.activeChiffreAnchorId = v; }
+  get activeChiffrePopoverData() { return this.gridCtrl.activeChiffrePopoverData; }
+  set activeChiffrePopoverData(v: M.ChiffrePopoverData | null) { this.gridCtrl.activeChiffrePopoverData = v; }
+
+  get openEquipeDropdown() { return this.gridCtrl.openEquipeDropdown; }
+  get openProjetDropdown() { return this.gridCtrl.openProjetDropdown; }
+  get openResourceDropdown() { return this.gridCtrl.openResourceDropdown; }
+  get openStatusDropdown() { return this.gridCtrl.openStatusDropdown; }
+  get showPeriodDropdown() { return this.gridCtrl.showPeriodDropdown; }
+  get openSizeDropdown() { return this.gridCtrl.openSizeDropdown; }
+  get openJalonDropdown() { return this.gridCtrl.openJalonDropdown; }
+  get openViewDropdown() { return this.gridCtrl.openViewDropdown; }
+  set openViewDropdown(v: boolean) { this.gridCtrl.openViewDropdown = v; }
+  get showActionsMenu() { return this.gridCtrl.showActionsMenu; }
+  set showActionsMenu(v: boolean) { this.gridCtrl.showActionsMenu = v; }
+  get activeActionsSubmenu() { return this.gridCtrl.activeActionsSubmenu; }
+  get activeLineMenuId() { return this.gridCtrl.activeLineMenuId; }
+  set activeLineMenuId(v: string | null) { this.gridCtrl.activeLineMenuId = v; }
+  get lineMenuPosition() { return this.gridCtrl.lineMenuPosition; }
+
+  get showServiceSelectionModal() { return this.gridCtrl.showServiceSelectionModal; }
+  set showServiceSelectionModal(v: boolean) { this.gridCtrl.showServiceSelectionModal = v; }
+  get serviceSelectionSummary() { return this.gridCtrl.serviceSelectionSummary; }
+  set serviceSelectionSummary(v: any) { this.gridCtrl.serviceSelectionSummary = v; }
+
+  get selectedCells() { return this.gridCtrl.selectedCells; }
+  set selectedCells(v: M.SelectedCell[]) { this.gridCtrl.selectedCells = v; }
+  get isDragging() { return this.gridCtrl.isDragging; }
+  set isDragging(v: boolean) { this.gridCtrl.isDragging = v; }
+  get isSelectionFinished() { return this.gridCtrl.isSelectionFinished; }
+  set isSelectionFinished(v: boolean) { this.gridCtrl.isSelectionFinished = v; }
+  get isMovingSelection() { return this.gridCtrl.isMovingSelection; }
+  set isMovingSelection(v: boolean) { this.gridCtrl.isMovingSelection = v; }
+  get isOverSelectionBorder() { return this.gridCtrl.isOverSelectionBorder; }
+  set isOverSelectionBorder(v: boolean) { this.gridCtrl.isOverSelectionBorder = v; }
+  get moveGhostOffset() { return this.gridCtrl.moveGhostOffset; }
+  set moveGhostOffset(v: number) { this.gridCtrl.moveGhostOffset = v; }
+  get isMoveCommitting() { return this.gridCtrl.isMoveCommitting; }
+  set isMoveCommitting(v: boolean) { this.gridCtrl.isMoveCommitting = v; }
+  get isCommittingSelection() { return this.gridCtrl.isCommittingSelection; }
+  set isCommittingSelection(v: boolean) { this.gridCtrl.isCommittingSelection = v; }
+  get projectionCommitting() { return this.gridCtrl.projectionCommitting; }
+  set projectionCommitting(v: M.ProjectionCommittingState | null) { this.gridCtrl.projectionCommitting = v; }
+  get toolbarVisible() { return this.gridCtrl.toolbarVisible; }
+  set toolbarVisible(v: boolean) { this.gridCtrl.toolbarVisible = v; }
+  get toolbarPosition() { return this.gridCtrl.toolbarPosition; }
+  set toolbarPosition(v: any) { this.gridCtrl.toolbarPosition = v; }
+  get dragProjectionTooltipVisible() { return this.gridCtrl.dragProjectionTooltipVisible; }
+  set dragProjectionTooltipVisible(v: boolean) { this.gridCtrl.dragProjectionTooltipVisible = v; }
+
+  get dragStartCellValue() { return this.gridCtrl.dragStartCellValue; }
+  set dragStartCellValue(v: number | null) { this.gridCtrl.dragStartCellValue = v; }
+  get isSaving() { return this.gridCtrl.isSaving; }
+  set isSaving(v: boolean) { this.gridCtrl.isSaving = v; }
+  get showGlobalFilters() { return this.gridCtrl.showGlobalFilters; }
+  get copiedCodes() { return this.gridCtrl.copiedCodes; }
+
+  get bulkChargeValue() { return this.gridCtrl.bulkChargeValue; }
+  set bulkChargeValue(v: number | null) { this.gridCtrl.bulkChargeValue = v; }
+  get bulkComment() { return this.gridCtrl.bulkComment; }
+  set bulkComment(v: string) { this.gridCtrl.bulkComment = v; }
+  get activeTooltip() { return this.gridCtrl.activeTooltip; }
+  set activeTooltip(v: string | null) { this.gridCtrl.activeTooltip = v; }
+
+  get moveDragBadgeX() { return this.gridCtrl.moveDragBadgeX; }
+  set moveDragBadgeX(v: number) { this.gridCtrl.moveDragBadgeX = v; }
+  get moveDragBadgeY() { return this.gridCtrl.moveDragBadgeY; }
+  set moveDragBadgeY(v: number) { this.gridCtrl.moveDragBadgeY = v; }
+  get selectionStartWeekDate() { return this.gridCtrl.selectionStartWeekDate; }
+  get selectionDaysPerWeek() { return this.gridCtrl.selectionDaysPerWeek; }
+  get dragProjectionDays() { return this.gridCtrl.dragProjectionDays; }
+  get totalSelectedDays() { return this.gridCtrl.totalSelectedDays; }
+  get visibleJalons() { return this.gridCtrl.visibleJalons; }
+  get uniqueJalonTypes() { return this.gridCtrl.uniqueJalonTypes; }
+  get isResizing() { return this.gridCtrl.isResizing; }
+  set isResizing(v: boolean) { this.gridCtrl.isResizing = v; }
+  get startX() { return (this.gridCtrl as any).startX; }
+  set startX(v: number) { (this.gridCtrl as any).startX = v; }
+  get startWidth() { return (this.gridCtrl as any).startWidth; }
+  set startWidth(v: number) { (this.gridCtrl as any).startWidth = v; }
+
+  // Méthodes de délégation vers le contrôleur
+  toggleGlobalFilters() { this.gridCtrl.toggleGlobalFilters(); }
+  copyToClipboard(event: MouseEvent, text: string, key?: string) { this.gridCtrl.copyToClipboard(event, text, key); }
+  selectYear(year: any) { this.gridCtrl.selectYear(year); }
+  showTooltip(event: MouseEvent, text: string) { this.gridCtrl.showTooltip(event, text); }
+  hideTooltip() { this.gridCtrl.hideTooltip(); }
+  onMouseDown(event: MouseEvent, res: any, child: any, parent: any) { this.gridCtrl.onMouseDown(event, res, child, parent); }
+  onGlobalMouseMove(event: MouseEvent) { this.gridCtrl.onGlobalMouseMove(event); }
+  onGlobalMouseUp(event?: MouseEvent) { return this.gridCtrl.onGlobalMouseUp(event); }
+  clearSelection() { this.gridCtrl.clearSelection(); }
+  isCellSelected(res: any, week: any) { return this.gridCtrl.isCellSelected(res, week); }
+  getCellSelectionClasses(res: any, week: any, idx: number, child: any, parent: any) { return this.gridCtrl.getCellSelectionClasses(res, week, idx, child, parent); }
+  isCellGhostSelected(res: any, idx: number, child: any, parent: any) { return this.gridCtrl.isCellGhostSelected(res, idx, child, parent); }
+  getGhostValue(res: any, idx: number) { return this.gridCtrl.getGhostValue(res, idx); }
+  isProjectionCommitting(res: any, idx: number, child: any, parent: any) { return this.gridCtrl.isProjectionCommitting(res, idx, child, parent); }
+  getResourceUniqueId(res: any, child: any, parent: any) { return this.gridCtrl.getResourceUniqueId(res, child, parent); }
+  isServiceSummarySelected() { return this.gridCtrl.isServiceSummarySelected(); }
+  getGanttBar(charges: any) { return this.gridCtrl.getGanttBar(charges); }
+  getGanttBarColor(row?: any, parent?: any, child?: any) { return this.gridCtrl.getGanttBarColor(row, parent, child); }
+  getGanttJalons(row?: any, parent?: any, child?: any) { return this.gridCtrl.getGanttJalons(row, parent, child); }
+  getJalonLeftPercentage(jalon: any) { return this.gridCtrl.getJalonLeftPercentage(jalon); }
+  getJalonBadgeColor(type: string) { return this.gridCtrl.getJalonBadgeColor(type); }
+  getJalonColor(type: string) { return this.gridCtrl.getJalonColor(type); }
+  getJalonTextColor(type: string) { return this.gridCtrl.getJalonTextColor(type); }
+  getJalonBorderColor(type: string) { return this.gridCtrl.getJalonBorderColor(type); }
+  getJalonsForWeek(week: Date) { return this.gridCtrl.getJalonsForWeek(week); }
+  formatWeekHeader(date: Date) { return this.gridCtrl.formatWeekHeader(date); }
+  formatWeekStart(date: Date) { return this.gridCtrl.formatWeekStart(date); }
+  formatLocalDate(d: Date) { return this.gridCtrl.formatLocalDate(d); }
+  isFirstWeekOfYear(idx: number) { return this.gridCtrl.isFirstWeekOfYear(idx); }
+  cleanJiraRef(ref: any) { return this.gridCtrl.cleanJiraRef(ref); }
+  getCellTooltip(res: any, week: any, cell?: any) { return this.gridCtrl.getCellTooltip(res, week, cell); }
+  getBadgePrefix() { return this.gridCtrl.getBadgePrefix(); }
+  getChiffreBadgeLabel() { return this.gridCtrl.getChiffreBadgeLabel(); }
+  getChildValue(child: any, week: any) { return this.gridCtrl.getChildValue(child, week); }
+  getResourceValue(res: any, week: any) { return this.gridCtrl.getResourceValue(res, week); }
+  trackByRow(idx: number, row: any) { return this.gridCtrl.trackByRow(idx, row); }
+  trackByChild(idx: number, child: any) { return this.gridCtrl.trackByChild(idx, child); }
+  trackByResource(idx: number, res: any) { return this.gridCtrl.trackByResource(idx, res); }
+  trackByWeek(idx: number, week: any) { return this.gridCtrl.trackByWeek(idx, week); }
+  toggleDropdown(name: any, event: MouseEvent) { this.gridCtrl.toggleDropdown(name, event); }
+  toggleViewDropdown(event: MouseEvent) { this.gridCtrl.toggleViewDropdown(event); }
+  togglePeriodDropdown(event: Event) { this.gridCtrl.togglePeriodDropdown(event); }
+  toggleActionsMenu(event: MouseEvent) { this.gridCtrl.toggleActionsMenu(event); }
+  toggleActionsSubmenu(menu: string, event: MouseEvent) { this.gridCtrl.toggleActionsSubmenu(menu, event); }
+  toggleLineMenu(rowId: string, event: MouseEvent) { this.gridCtrl.toggleLineMenu(rowId, event); }
+  closeLineMenu() { this.gridCtrl.closeLineMenu(); }
+  switchChiffreMode(mode: any) { this.gridCtrl.switchChiffreMode(mode); }
+  openChiffrePopover(event: any, aId: any, tId: any, pId: any, rId?: any, rType?: any) { this.gridCtrl.openChiffrePopover(event, aId, tId, pId, rId, rType); }
+  openYearPopover(event: any, aId: any) { this.gridCtrl.openYearPopover(event, aId); }
+  getSelectedStartDateISO() { return this.gridCtrl.getSelectedStartDateISO(); }
+  onResizeStart(event: MouseEvent) { this.gridCtrl.onResizeStart(event); }
+  closeAllFilterDropdowns() { this.gridCtrl.closeAllFilterDropdowns(); }
+  closeServiceSelectionModal() { this.gridCtrl.closeServiceSelectionModal(); }
+  updateToolbarPosition() { this.gridCtrl.updateToolbarPosition(); }
+  checkToolbarVisibilityOnScroll() { this.gridCtrl.checkToolbarVisibilityOnScroll(); }
 
   showSkeleton = false;
   showMilestoneModal = false;
@@ -133,11 +384,11 @@ export class PlanViewComponent extends PlanGridInteractionController implements 
   private externalReferenceUrlQuery = this.repo.settingsService.getSettingQuery('external_reference_url', 'global');
   externalReferenceUrl = computed(() => this.externalReferenceUrlQuery.data()?.value || null);
 
-  protected override isDarkMode(): boolean {
+  protected isDarkMode(): boolean {
     return this.repo.themeService.isDarkMode();
   }
 
-  protected override getTodayWeekStart(): Date {
+  protected getTodayWeekStart(): Date {
     return this.repo.calendarService.getWeekStart(new Date());
   }
 
@@ -176,6 +427,10 @@ export class PlanViewComponent extends PlanGridInteractionController implements 
   activeFiltersSummary = computed(() => M.computeActiveFiltersSummary(this.filterSummaryState));
 
   ngOnInit() {
+    this.gridCtrl.onExecuteMove = () => this.executeMove();
+    this.gridCtrl.checkDarkMode = () => this.repo.themeService.isDarkMode();
+    this.gridCtrl.getTodayWeekStartFn = () => this.repo.calendarService.getWeekStart(new Date());
+
     this.generateWeeks();
     this.loadData({ showSkeleton: true });
 
@@ -224,11 +479,15 @@ export class PlanViewComponent extends PlanGridInteractionController implements 
 
   ngAfterViewInit() {
     this.startTutorial();
-    this.setupResizeObserver();
+    this.gridCtrl.tooltipElement = this.tooltipElement;
+    this.gridCtrl.dragProjectionTooltip = this.dragProjectionTooltip;
+    this.gridCtrl.headerRowElement = this.headerRowElement;
+    this.gridCtrl.milestonesRowElement = this.milestonesRowElement;
+    this.gridCtrl.setupResizeObserver();
   }
 
   ngOnDestroy() {
-    this.resizeObserver?.disconnect();
+    this.gridCtrl.destroy();
     this.globalMouseMoveListener?.();
     this.globalMouseUpListener?.();
     this.scrollCloseListener?.();

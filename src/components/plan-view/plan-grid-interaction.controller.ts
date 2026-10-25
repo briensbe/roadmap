@@ -1,22 +1,15 @@
 /**
  * @file plan-grid-interaction.controller.ts
- * @description Contrôleur des interactions physiques de la grille, des overlays DOM et du rendu visuel Timeline/Gantt (Deep Module).
+ * @description Contrôleur injectable des interactions de grille, popovers, menus et overlays DOM (Deep Module).
  *
  * Responsabilités :
- * - Gérer la machine à états de sélection rectangulaire à la souris (drag-select), la détection des bordures à 5px
- *   et le déplacement fantôme de sélection (`moveGhostOffset`).
- * - Calculer le positionnement dynamique dans le viewport de la `SelectionToolbar`, des popovers et des tooltips,
- *   ainsi que le redimensionnement de la colonne de libellés et l'observation des hauteurs d'en-tête (`ResizeObserver`).
- * - Gérer l'ouverture/fermeture des menus déroulants, popovers d'année/chiffres et menus contextuels de ligne.
- * - Fournir les helpers visuels de la Timeline (semaines, mois, trimestres, années), des barres Gantt et des jalons.
+ * - Gérer les menus contextuels, menus déroulants de filtre et popovers (Années, Chiffres Triskell).
+ * - Coordonner la machine à états de drag-selection et le positionnement dynamique de la toolbar flottante.
+ * - Piloter l'observation du redimensionnement de l'en-tête (ResizeObserver).
  */
-import { Directive, ElementRef, ViewChild, ChangeDetectorRef, NgZone, inject, signal } from '@angular/core';
-import {
-  calculateBestToolbarPosition,
-  calculateBestPopoverPosition,
-  ToolbarPosition,
-  PopoverPosition,
-} from '../../utils/selection-positioning';
+
+import { Injectable, ElementRef, ChangeDetectorRef, NgZone, inject, signal } from '@angular/core';
+import { calculateBestPopoverPosition, PopoverPosition } from '../../utils/selection-positioning';
 import { storageSignal } from '../../utils/storage-signal';
 import { YearKey, YearPeriod, getSelectableYears } from '../../utils/year-selection';
 import { Projet, Jalon } from '../../models/types';
@@ -39,98 +32,23 @@ import {
   ProjectionCommittingState,
   ChiffrePopoverData,
 } from './plan-view.models';
-import { formatWeekStart, formatLocalDate, cleanJiraRef } from './plan-projection.engine';
 import { ServiceSelectionJalon } from './service-selection-modal.component';
-
-const MONTH_NAMES = [
-  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
-];
-
-const JALON_PALETTE: Record<string, { badge: [string, string]; bg: [string, string]; text: [string, string]; border: [string, string] }> = {
-  livraison: { badge: ['#10b981', '#059669'], bg: ['#064e3b', '#d1fae5'], text: ['#a7f3d0', '#065f46'], border: ['#10b981', '#34d399'] },
-  lv: { badge: ['#10b981', '#059669'], bg: ['#064e3b', '#d1fae5'], text: ['#a7f3d0', '#065f46'], border: ['#10b981', '#34d399'] },
-  maintenance: { badge: ['#c084fc', '#9333ea'], bg: ['#581c87', '#f3e8ff'], text: ['#f3e8ff', '#6b21a8'], border: ['#a855f7', '#c084fc'] },
-  lvm: { badge: ['#c084fc', '#9333ea'], bg: ['#581c87', '#f3e8ff'], text: ['#f3e8ff', '#6b21a8'], border: ['#a855f7', '#c084fc'] },
-  mep: { badge: ['#60a5fa', '#2563eb'], bg: ['#1e3a8a', '#dbeafe'], text: ['#bfdbfe', '#1e40af'], border: ['#3b82f6', '#60a5fa'] },
-  sprint: { badge: ['#fbbf24', '#d97706'], bg: ['#78350f', '#fef3c7'], text: ['#fef3c7', '#92400e'], border: ['#f59e0b', '#fbbf24'] },
-  sp: { badge: ['#fbbf24', '#d97706'], bg: ['#78350f', '#fef3c7'], text: ['#fef3c7', '#92400e'], border: ['#f59e0b', '#fbbf24'] },
-  default: { badge: ['#94a3b8', '#6b7280'], bg: ['#334155', '#f3f4f6'], text: ['#f1f5f9', '#374151'], border: ['#64748b', '#cbd5e1'] },
-};
-
-export function generateWeeksTimeline(
-  currentDate: Date,
-  getWeekStartFn: (d: Date) => Date,
-  getWeekNumberFn: (d: Date) => number,
-  getWeekYearFn: (d: Date) => number,
-): {
-  displayedWeeks: Date[];
-  displayedMonths: DisplayedMonth[];
-  displayedYears: DisplayedYear[];
-  isYearChangeMap: boolean[];
-} {
-  const displayedWeeks: Date[] = [];
-  const startDate = new Date(currentDate);
-  startDate.setDate(1);
-  const firstWeek = getWeekStartFn(startDate);
-
-  for (let i = 0; i < 53; i++) {
-    const week = new Date(firstWeek);
-    week.setDate(week.getDate() + i * 7);
-    displayedWeeks.push(week);
-  }
-
-  const monthGroups: Record<string, { key: string; label: string; year: number; monthNum: number; weeks: Date[]; startWeekNum: number }> = {};
-  const monthKeysOrder: string[] = [];
-
-  for (const week of displayedWeeks) {
-    const monthNum = week.getMonth();
-    const year = week.getFullYear();
-    const key = `${year}-${monthNum}`;
-    if (!monthGroups[key]) {
-      monthGroups[key] = { key, label: MONTH_NAMES[monthNum], year, monthNum, weeks: [], startWeekNum: getWeekNumberFn(week) };
-      monthKeysOrder.push(key);
-    }
-    monthGroups[key].weeks.push(week);
-  }
-
-  const displayedMonths: DisplayedMonth[] = monthKeysOrder.map((key) => {
-    const g = monthGroups[key];
-    return {
-      key: g.key,
-      label: g.label,
-      year: g.year,
-      quarterLabel: `T${Math.floor(g.monthNum / 3) + 1} ${g.year}`,
-      startWeekNum: g.startWeekNum,
-      weeks: g.weeks,
-    };
-  });
-
-  const displayedYears: DisplayedYear[] = [];
-  const isYearChangeMap: boolean[] = [];
-
-  displayedWeeks.forEach((week, index) => {
-    const year = getWeekYearFn(week);
-    const last = displayedYears[displayedYears.length - 1];
-    if (last && last.year === year) last.weeksCount++;
-    else displayedYears.push({ year, weeksCount: 1 });
-    isYearChangeMap.push(index === 0 ? false : year !== getWeekYearFn(displayedWeeks[index - 1]));
-  });
-
-  return { displayedWeeks, displayedMonths, displayedYears, isYearChangeMap };
-}
-
-export function updateTooltipDomPosition(event: MouseEvent, tooltipEl?: HTMLElement): void {
-  if (!tooltipEl) return;
-  const offsetX = 15;
-  const offsetY = 15;
-  const tooltipWidth = 200;
-  const tooltipHeight = 40;
-  const x = event.clientX + offsetX + tooltipWidth > window.innerWidth ? event.clientX - tooltipWidth - offsetX : event.clientX + offsetX;
-  const y = event.clientY + offsetY + tooltipHeight > window.innerHeight ? event.clientY - tooltipHeight - offsetY : event.clientY + offsetY;
-  tooltipEl.style.left = `${x}px`;
-  tooltipEl.style.top = `${y}px`;
-}
+import { GridSelectionController } from '../../shared/grid/grid-selection.controller';
+import { HoverTooltipController, updateTooltipDomPosition } from '../../shared/grid/hover-tooltip.controller';
+import { computeFloatingToolbarPosition } from '../../shared/grid/floating-toolbar-positioner';
+import {
+  formatLocalDate,
+  formatWeekStart,
+  formatWeekHeaderFrench,
+  generateWeeksTimeline,
+  buildDisplayedQuarters,
+} from '../../shared/grid/week-calendar.utils';
+import {
+  calculateGanttBar,
+  resolveAssociatedProject,
+  calculateJalonLeftPercentage,
+  pickJalonColor,
+} from './plan-gantt.utils';
 
 export function updateDragProjectionTooltipDomPosition(event: MouseEvent, tooltipEl?: HTMLElement): void {
   if (!tooltipEl) return;
@@ -150,18 +68,23 @@ export function updateGridHeaderHeights(headerEl?: HTMLElement, milestonesEl?: H
   }
 }
 
-@Directive()
-export abstract class PlanGridInteractionController {
-  protected readonly cdr = inject(ChangeDetectorRef);
-  protected readonly ngZone = inject(NgZone);
+export { generateWeeksTimeline };
 
-  @ViewChild('tooltipElement') tooltipElement?: ElementRef<HTMLElement>;
-  @ViewChild('dragProjectionTooltip') dragProjectionTooltip?: ElementRef<HTMLElement>;
-  @ViewChild('headerRow') headerRowElement?: ElementRef<HTMLElement>;
-  @ViewChild('milestonesRow') milestonesRowElement?: ElementRef<HTMLElement>;
+@Injectable()
+export class PlanGridInteractionController {
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly ngZone = inject(NgZone);
+  readonly selection = inject(GridSelectionController);
+  readonly tooltip = inject(HoverTooltipController);
 
-  protected resizeObserver?: ResizeObserver;
+  tooltipElement?: ElementRef<HTMLElement>;
+  dragProjectionTooltip?: ElementRef<HTMLElement>;
+  headerRowElement?: ElementRef<HTMLElement>;
+  milestonesRowElement?: ElementRef<HTMLElement>;
 
+  resizeObserver?: ResizeObserver;
+
+  // Signaux d'état de vue et filtres
   viewMode = storageSignal<PlanViewMode>('plan-view-mode', 'resource');
   zoomLevel = storageSignal<ZoomLevel>('plan-view-zoom-level', 'normal');
   showAvailability = storageSignal<boolean>('plan-view-show-availability', false);
@@ -169,13 +92,13 @@ export abstract class PlanGridInteractionController {
   chiffreMode = storageSignal<ChiffreCategory>('plan-view-chiffre-mode', 'previsionnel');
   planningMode = storageSignal<PlanningMode>('plan-view-planning-mode', 'saisie');
   selectedCapacityYear = storageSignal<CapacityYearSelection>('plan-view-capacity-year', 'today');
-  /** Années proposées dans les sélecteurs de période (calculées à partir de l'année courante). */
   readonly selectableYears: readonly YearKey[] = getSelectableYears();
   labelColumnWidth = storageSignal<number>('plan-view-label-column-width', 300);
-  showGlobalFilters = signal<boolean>(false);
   filterJalonTypes = storageSignal<string[]>('plan-view-filter-jalon-types', []);
   filterProjetSearch = storageSignal<string>('plan-view-filter-search', '');
+  showGlobalFilters = signal<boolean>(false);
   copiedCodes = signal<Set<string>>(new Set());
+  isSaving = false;
 
   displayedMonths: DisplayedMonth[] = [];
   displayedWeeks: Date[] = [];
@@ -201,10 +124,6 @@ export abstract class PlanGridInteractionController {
   protected startX = 0;
   protected startWidth = 0;
 
-  activeTooltip: string | null = null;
-  private tooltipShowTimer: ReturnType<typeof setTimeout> | null = null;
-  private tooltipHideTimer: ReturnType<typeof setTimeout> | null = null;
-
   openEquipeDropdown = false;
   openProjetDropdown = false;
   openResourceDropdown = false;
@@ -218,14 +137,6 @@ export abstract class PlanGridInteractionController {
   activeLineMenuId: string | null = null;
   lineMenuPosition = { x: 0, y: 0 };
 
-  isDragging = false;
-  dragStartResource: ResourceRow | null = null;
-  protected dragStartChild?: ChildRow;
-  protected dragStartParent?: ParentRow;
-  dragStartWeekIndex = -1;
-  dragEndWeekIndex = -1;
-  selectedCells: SelectedCell[] = [];
-  isSelectionFinished = false;
   showServiceSelectionModal = false;
   serviceSelectionSummary = {
     units: 0,
@@ -238,26 +149,163 @@ export abstract class PlanGridInteractionController {
     endDate: null as Date | null,
     jalons: [] as ServiceSelectionJalon[],
   };
-  toolbarPosition: ToolbarPosition | null = null;
-  toolbarVisible = false;
-  dragStartCellValue: number | null = null;
-  dragProjectionTooltipVisible = false;
 
-  bulkChargeValue: number | null = null;
-  bulkComment = '';
-  isSaving = false;
-  isCommittingSelection = false;
-  projectionCommitting: ProjectionCommittingState | null = null;
+  /** Callback injecté par PlanViewComponent pour exécuter le déplacement effectif */
+  onExecuteMove: (() => Promise<void>) | null = null;
+  /** Prédicat pour savoir si le thème sombre est actif */
+  checkDarkMode: (() => boolean) | null = null;
+  /** Détermination de la date de début de la semaine en cours */
+  getTodayWeekStartFn: (() => Date) | null = null;
 
-  isMovingSelection = false;
-  isMoveCommitting = false;
-  isOverSelectionBorder = false;
-  moveStartWeekIndex = -1;
-  moveGhostOffset = 0;
+  // Délégations vers GridSelectionController
+  get selectedCells(): SelectedCell[] {
+    return this.selection.selectedCells();
+  }
+  set selectedCells(cells: SelectedCell[]) {
+    this.selection.selectedCells.set(cells);
+  }
+  get isDragging(): boolean {
+    return this.selection.isDragging();
+  }
+  set isDragging(v: boolean) {
+    this.selection.isDragging.set(v);
+  }
+  get isSelectionFinished(): boolean {
+    return this.selection.isSelectionFinished();
+  }
+  set isSelectionFinished(v: boolean) {
+    this.selection.isSelectionFinished.set(v);
+  }
+  get isMovingSelection(): boolean {
+    return this.selection.isMovingSelection();
+  }
+  set isMovingSelection(v: boolean) {
+    this.selection.isMovingSelection.set(v);
+  }
+  get isOverSelectionBorder(): boolean {
+    return this.selection.isOverSelectionBorder();
+  }
+  set isOverSelectionBorder(v: boolean) {
+    this.selection.isOverSelectionBorder.set(v);
+  }
+  get moveGhostOffset(): number {
+    return this.selection.moveGhostOffset();
+  }
+  set moveGhostOffset(v: number) {
+    this.selection.moveGhostOffset.set(v);
+  }
+  get isMoveCommitting(): boolean {
+    return this.selection.isMoveCommitting();
+  }
+  set isMoveCommitting(v: boolean) {
+    this.selection.isMoveCommitting.set(v);
+  }
+  get isCommittingSelection(): boolean {
+    return this.selection.isCommittingSelection();
+  }
+  set isCommittingSelection(v: boolean) {
+    this.selection.isCommittingSelection.set(v);
+  }
+  get projectionCommitting(): ProjectionCommittingState | null {
+    return this.selection.projectionCommitting();
+  }
+  set projectionCommitting(v: ProjectionCommittingState | null) {
+    this.selection.projectionCommitting.set(v);
+  }
+  get toolbarVisible(): boolean {
+    return this.selection.toolbarVisible();
+  }
+  set toolbarVisible(v: boolean) {
+    this.selection.toolbarVisible.set(v);
+  }
+  get toolbarPosition(): any {
+    return this.selection.toolbarPosition();
+  }
+  set toolbarPosition(v: any) {
+    this.selection.toolbarPosition.set(v);
+  }
+  get dragProjectionTooltipVisible(): boolean {
+    return this.selection.dragProjectionTooltipVisible();
+  }
+  set dragProjectionTooltipVisible(v: boolean) {
+    this.selection.dragProjectionTooltipVisible.set(v);
+  }
+
+  get dragStartResource(): ResourceRow | null {
+    return this.selection.dragStartResource;
+  }
+  set dragStartResource(r: ResourceRow | null) {
+    this.selection.dragStartResource = r;
+  }
+  get dragStartChild(): ChildRow | undefined {
+    return this.selection.dragStartChild;
+  }
+  set dragStartChild(c: ChildRow | undefined) {
+    this.selection.dragStartChild = c;
+  }
+  get dragStartParent(): ParentRow | undefined {
+    return this.selection.dragStartParent;
+  }
+  set dragStartParent(p: ParentRow | undefined) {
+    this.selection.dragStartParent = p;
+  }
+  get dragStartWeekIndex(): number {
+    return this.selection.dragStartWeekIndex;
+  }
+  set dragStartWeekIndex(i: number) {
+    this.selection.dragStartWeekIndex = i;
+  }
+  get dragEndWeekIndex(): number {
+    return this.selection.dragEndWeekIndex;
+  }
+  set dragEndWeekIndex(i: number) {
+    this.selection.dragEndWeekIndex = i;
+  }
+  get dragStartCellValue(): number | null {
+    return this.selection.dragStartCellValue;
+  }
+  set dragStartCellValue(v: number | null) {
+    this.selection.dragStartCellValue = v;
+  }
+  get bulkChargeValue(): number | null {
+    return this.selection.bulkChargeValue;
+  }
+  set bulkChargeValue(v: number | null) {
+    this.selection.bulkChargeValue = v;
+  }
+  get bulkComment(): string {
+    return this.selection.bulkComment;
+  }
+  set bulkComment(v: string) {
+    this.selection.bulkComment = v;
+  }
+  get moveStartWeekIndex(): number {
+    return this.selection.moveStartWeekIndex;
+  }
+  set moveStartWeekIndex(v: number) {
+    this.selection.moveStartWeekIndex = v;
+  }
+  get moveStartClientX(): number {
+    return this.selection.moveStartClientX;
+  }
+  set moveStartClientX(v: number) {
+    this.selection.moveStartClientX = v;
+  }
+  get cellWidthPx(): number {
+    return this.selection.cellWidthPx;
+  }
+  set cellWidthPx(v: number) {
+    this.selection.cellWidthPx = v;
+  }
+  get activeTooltip(): string | null {
+    return this.tooltip.activeTooltip();
+  }
+  set activeTooltip(v: string | null) {
+    this.tooltip.activeTooltip.set(v);
+  }
+
   moveDragBadgeX = 0;
   moveDragBadgeY = 0;
-  private moveStartClientX = 0;
-  private cellWidthPx = 80;
 
   readonly Plus = PLAN_VIEW_ICONS.Plus;
   readonly X = PLAN_VIEW_ICONS.X;
@@ -296,23 +344,8 @@ export abstract class PlanGridInteractionController {
   readonly SquareMinus = PLAN_VIEW_ICONS.SquareMinus;
   readonly ExternalLink = PLAN_VIEW_ICONS.ExternalLink;
 
-  protected abstract isDarkMode(): boolean;
-  protected abstract getTodayWeekStart(): Date;
-  abstract executeMove(): Promise<void>;
-
-  // --- Timeline, Gantt & Jalons Visual Helpers ---
   get displayedQuarters(): DisplayedQuarter[] {
-    const quarters: DisplayedQuarter[] = [];
-    for (const m of this.displayedMonths) {
-      let q = quarters.find((x) => x.label === m.quarterLabel);
-      if (!q) {
-        q = { label: m.quarterLabel, year: m.year, weeksCount: 0, months: [] };
-        quarters.push(q);
-      }
-      q.months.push(m);
-      q.weeksCount += m.weeks.length;
-    }
-    return quarters;
+    return buildDisplayedQuarters(this.displayedMonths);
   }
 
   formatWeekStart(date: Date): string {
@@ -324,7 +357,7 @@ export abstract class PlanGridInteractionController {
   }
 
   formatWeekHeader(date: Date): string {
-    return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+    return formatWeekHeaderFrench(date);
   }
 
   isFirstWeekOfYear(index: number): boolean {
@@ -332,38 +365,24 @@ export abstract class PlanGridInteractionController {
   }
 
   cleanJiraRef(ref: string | null | undefined): string {
-    return cleanJiraRef(ref);
+    if (!ref) return '';
+    return ref.replace(/^(PROJ-|JIRA-)/i, '').trim();
   }
 
   getGanttBar(charges: Map<string, number> | undefined): GanttBarRange | null {
-    if (!charges || charges.size === 0 || !this.displayedWeeks.length) return null;
-    let firstIndex = -1;
-    let lastIndex = -1;
-    for (let i = 0; i < this.displayedWeeks.length; i++) {
-      if ((charges.get(formatWeekStart(this.displayedWeeks[i])) || 0) > 0) {
-        if (firstIndex === -1) firstIndex = i;
-        lastIndex = i;
-      }
-    }
-    if (firstIndex === -1) return null;
-    const totalWeeks = this.displayedWeeks.length;
-    return { left: (firstIndex / totalWeeks) * 100, width: ((lastIndex - firstIndex + 1) / totalWeeks) * 100 };
+    return calculateGanttBar(charges, this.displayedWeeks);
   }
 
   getAssociatedProject(
-    row: { originalProject?: Projet; projectId?: string; resource?: ResourceRow } | undefined,
+    row?: { originalProject?: Projet; projectId?: string; resource?: ResourceRow },
     parentRow?: ParentRow,
     childRow?: ChildRow,
   ): Projet | undefined {
-    const mode = this.viewMode();
-    if (mode === 'project') return parentRow?.originalProject || row?.originalProject;
-    if (mode === 'team') return childRow?.originalProject || row?.originalProject;
-    const projId = row?.projectId || row?.resource?.projectId;
-    return projId ? this.allProjects.find((p) => p.id === projId) : undefined;
+    return resolveAssociatedProject(this.viewMode(), this.allProjects, row, parentRow, childRow);
   }
 
   getGanttBarColor(
-    row: { originalProject?: Projet; projectId?: string; resource?: ResourceRow; color?: string } | undefined,
+    row?: { originalProject?: Projet; projectId?: string; resource?: ResourceRow; color?: string },
     parentRow?: ParentRow,
     childRow?: ChildRow,
   ): string {
@@ -371,14 +390,14 @@ export abstract class PlanGridInteractionController {
   }
 
   getGanttJalons(
-    row: { originalProject?: Projet; projectId?: string; resource?: ResourceRow } | undefined,
+    row?: { originalProject?: Projet; projectId?: string; resource?: ResourceRow },
     parentRow?: ParentRow,
     childRow?: ChildRow,
   ): Jalon[] {
     const project = this.getAssociatedProject(row, parentRow, childRow);
     if (!project?.id || !this.displayedWeeks.length) return [];
-    const start = this.displayedWeeks[0];
-    const end = new Date(this.displayedWeeks[this.displayedWeeks.length - 1]);
+    const start = this.displayedWeeks[0]!;
+    const end = new Date(this.displayedWeeks[this.displayedWeeks.length - 1]!);
     end.setDate(end.getDate() + 7);
     const activeTypes = this.filterJalonTypes();
     return this.allJalons.filter((j) => {
@@ -390,18 +409,13 @@ export abstract class PlanGridInteractionController {
   }
 
   getJalonLeftPercentage(jalon: Jalon): number {
-    if (!this.displayedWeeks.length) return 0;
-    const jDate = new Date(jalon.event_date).getTime();
-    const start = this.displayedWeeks[0].getTime();
-    const end = this.displayedWeeks[this.displayedWeeks.length - 1].getTime() + 7 * 24 * 60 * 60 * 1000;
-    if (end <= start) return 0;
-    return Math.max(0, Math.min(100, ((jDate - start) / (end - start)) * 100));
+    return calculateJalonLeftPercentage(jalon, this.displayedWeeks);
   }
 
   get visibleJalons(): Jalon[] {
     if (!this.displayedWeeks.length) return [];
-    const start = this.displayedWeeks[0];
-    const end = new Date(this.displayedWeeks[this.displayedWeeks.length - 1]);
+    const start = this.displayedWeeks[0]!;
+    const end = new Date(this.displayedWeeks[this.displayedWeeks.length - 1]!);
     end.setDate(end.getDate() + 7);
     const activeTypes = this.filterJalonTypes();
     return this.allJalons.filter((j) => {
@@ -431,25 +445,19 @@ export abstract class PlanGridInteractionController {
     });
   }
 
-  private pickJalonColor(type: string, channel: 'badge' | 'bg' | 'text' | 'border'): string {
-    const entry = JALON_PALETTE[type?.toLowerCase()] || JALON_PALETTE['default'];
-    return entry[channel][this.isDarkMode() ? 0 : 1];
-  }
-
   getJalonBadgeColor(type: string): string {
-    return this.pickJalonColor(type, 'badge');
+    return pickJalonColor(type, 'badge', this.checkDarkMode ? this.checkDarkMode() : false);
   }
   getJalonColor(type: string): string {
-    return this.pickJalonColor(type, 'bg');
+    return pickJalonColor(type, 'bg', this.checkDarkMode ? this.checkDarkMode() : false);
   }
   getJalonTextColor(type: string): string {
-    return this.pickJalonColor(type, 'text');
+    return pickJalonColor(type, 'text', this.checkDarkMode ? this.checkDarkMode() : false);
   }
   getJalonBorderColor(type: string): string {
-    return this.pickJalonColor(type, 'border');
+    return pickJalonColor(type, 'border', this.checkDarkMode ? this.checkDarkMode() : false);
   }
 
-  // --- Row/Cell Formatting & Metrics Helpers ---
   getCellTooltip(resource: ResourceRow, week: Date, cell?: ResourceCellData): string {
     const weekKey = formatWeekStart(week);
     const val = resource.charges?.get(weekKey) || 0;
@@ -496,7 +504,7 @@ export abstract class PlanGridInteractionController {
   getBadgePrefix(): string {
     const yearSel = this.selectedCapacityYear();
     if (yearSel === 'today') {
-      const d = this.getTodayWeekStart();
+      const d = this.getTodayWeekStartFn ? this.getTodayWeekStartFn() : new Date();
       return `Dès le ${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')} :`;
     }
     if (yearSel === 'all') return 'Tout :';
@@ -552,13 +560,19 @@ export abstract class PlanGridInteractionController {
           const updated = new Set(this.copiedCodes());
           updated.delete(idToStore);
           this.copiedCodes.set(updated);
+          this.cdr.markForCheck();
         }, 2000);
       })
       .catch((err) => console.error('Failed to copy code: ', err));
   }
 
-  // --- Dropdowns, Popovers, Tooltips & Column Resize ---
-  protected closeAllFilterDropdowns() {
+  // --- Dropdowns & Menus ---
+  toggleGlobalFilters() {
+    this.showGlobalFilters.set(!this.showGlobalFilters());
+    if (!this.showGlobalFilters()) this.closeAllFilterDropdowns();
+  }
+
+  closeAllFilterDropdowns() {
     this.openEquipeDropdown = false;
     this.openProjetDropdown = false;
     this.openResourceDropdown = false;
@@ -566,11 +580,6 @@ export abstract class PlanGridInteractionController {
     this.showPeriodDropdown = false;
     this.openSizeDropdown = false;
     this.openJalonDropdown = false;
-  }
-
-  toggleGlobalFilters() {
-    this.showGlobalFilters.set(!this.showGlobalFilters());
-    if (!this.showGlobalFilters()) this.closeAllFilterDropdowns();
   }
 
   toggleViewDropdown(event: MouseEvent) {
@@ -725,56 +734,25 @@ export abstract class PlanGridInteractionController {
     return this.selectedStartDate ? formatLocalDate(this.selectedStartDate) : '';
   }
 
-  private clearTooltipTimers() {
-    if (this.tooltipShowTimer) clearTimeout(this.tooltipShowTimer);
-    if (this.tooltipHideTimer) clearTimeout(this.tooltipHideTimer);
-    this.tooltipShowTimer = null;
-    this.tooltipHideTimer = null;
-  }
-
-  private isTooltipBlocked(): boolean {
-    return this.isDragging || this.isMovingSelection || this.isResizing || this.selectedCells.length > 0 || this.isSaving;
-  }
-
   showTooltip(event: MouseEvent, text: string) {
-    this.clearTooltipTimers();
-    if (!text || this.isTooltipBlocked()) {
-      if (this.activeTooltip !== null) {
-        this.activeTooltip = null;
-        this.cdr.markForCheck();
-      }
-      return;
-    }
-    if (this.activeTooltip === text) return;
-    if (this.activeTooltip !== null) {
-      this.activeTooltip = null;
-      this.cdr.markForCheck();
-    }
-    this.tooltipShowTimer = setTimeout(() => {
-      if (this.isTooltipBlocked()) return;
-      this.activeTooltip = text;
-      updateTooltipDomPosition(event, this.tooltipElement?.nativeElement);
-      this.cdr.markForCheck();
-    }, 400);
+    const isBlocked = () =>
+      this.isDragging ||
+      this.isMovingSelection ||
+      this.isResizing ||
+      this.selectedCells.length > 0;
+
+    this.tooltip.showTooltip(event, text, isBlocked, this.tooltipElement?.nativeElement);
   }
 
   hideTooltip() {
-    this.clearTooltipTimers();
-    this.tooltipHideTimer = setTimeout(() => {
-      if (this.activeTooltip !== null) {
-        this.activeTooltip = null;
-        this.cdr.markForCheck();
-      }
-    }, 80);
+    this.tooltip.hideTooltip();
   }
 
   onResizeStart(event: MouseEvent) {
-    event.preventDefault();
-    event.stopPropagation();
-    this.hideTooltip();
     this.isResizing = true;
     this.startX = event.clientX;
     this.startWidth = this.labelColumnWidth();
+    event.preventDefault();
   }
 
   setupResizeObserver() {
@@ -791,14 +769,19 @@ export abstract class PlanGridInteractionController {
     });
   }
 
-  // --- Grid Selection & Drag-Move ---
+  destroy() {
+    this.resizeObserver?.disconnect();
+    this.tooltip.hideTooltip();
+    this.selection.clearSelection();
+  }
+
   get selectionStartWeekDate(): Date | null {
     if (this.selectedCells.length === 0) return null;
-    return [...this.selectedCells].sort((a, b) => a.week.getTime() - b.week.getTime())[0].week;
+    return [...this.selectedCells].sort((a, b) => a.week.getTime() - b.week.getTime())[0]!.week;
   }
 
   get selectionDaysPerWeek(): number {
-    return this.selectedCells.length > 0 ? this.selectedCells[0].resource.jours_par_semaine || 5 : 5;
+    return this.selectedCells.length > 0 ? this.selectedCells[0]!.resource.jours_par_semaine || 5 : 5;
   }
 
   get dragProjectionDays(): number {
@@ -815,14 +798,18 @@ export abstract class PlanGridInteractionController {
     return total;
   }
 
-  getResourceUniqueId(resource: Pick<ResourceRow, 'id' | 'type'> & { uniqueId?: string }, child: Pick<ChildRow, 'id'>, parent: Pick<ParentRow, 'id'>): string {
+  getResourceUniqueId(
+    resource: Pick<ResourceRow, 'id' | 'type'> & { uniqueId?: string },
+    child: Pick<ChildRow, 'id'>,
+    parent: Pick<ParentRow, 'id'>,
+  ): string {
     if (resource.uniqueId) return resource.uniqueId;
     return `${parent.id}_${child.id}_${resource.id}_${resource.type}`;
   }
 
   isServiceSummarySelected(): boolean {
     if (this.viewMode() !== 'service' || this.selectedCells.length === 0) return false;
-    const firstCell = this.selectedCells[0];
+    const firstCell = this.selectedCells[0]!;
     const uid = firstCell.resource.uniqueId;
     return (
       !!uid?.startsWith('service_summary_') ||
@@ -843,13 +830,13 @@ export abstract class PlanGridInteractionController {
 
   isCellGhostSelected(resource: ResourceRow, weekIndex: number, child: ChildRow, parent: ParentRow): boolean {
     if (!this.isMovingSelection || this.moveGhostOffset === 0 || this.selectedCells.length === 0) return false;
-    const firstCell = this.selectedCells[0];
+    const firstCell = this.selectedCells[0]!;
     if (this.getResourceUniqueId(resource, child, parent) !== this.getResourceUniqueId(firstCell.resource, { id: firstCell.childId }, { id: firstCell.parentId })) {
       return false;
     }
     const sourceWeekIndex = weekIndex - this.moveGhostOffset;
     if (sourceWeekIndex < 0 || sourceWeekIndex >= this.displayedWeeks.length) return false;
-    return this.isCellSelected(resource, this.displayedWeeks[sourceWeekIndex]);
+    return this.isCellSelected(resource, this.displayedWeeks[sourceWeekIndex]!);
   }
 
   getAbsOffset(): number {
@@ -860,7 +847,7 @@ export abstract class PlanGridInteractionController {
     if (!this.isMovingSelection || this.moveGhostOffset === 0) return null;
     const sourceWeekIndex = weekIndex - this.moveGhostOffset;
     if (sourceWeekIndex < 0 || sourceWeekIndex >= this.displayedWeeks.length) return null;
-    const sourceWeek = this.displayedWeeks[sourceWeekIndex];
+    const sourceWeek = this.displayedWeeks[sourceWeekIndex]!;
     return this.isCellSelected(resource, sourceWeek) ? resource.charges.get(formatWeekStart(sourceWeek)) || 0 : null;
   }
 
@@ -884,44 +871,18 @@ export abstract class PlanGridInteractionController {
   protected shouldShowProjectionTooltip(): boolean {
     if (this.selectedCells.length <= 1 || !this.dragStartCellValue || this.dragStartCellValue <= 0) return false;
     for (let i = 1; i < this.selectedCells.length; i++) {
-      const cell = this.selectedCells[i];
+      const cell = this.selectedCells[i]!;
       if ((cell.resource.charges.get(formatWeekStart(cell.week)) || 0) > 0) return false;
     }
     return true;
   }
 
   updateSelection(child: ChildRow, parent: ParentRow) {
-    if (!this.dragStartResource || this.dragStartWeekIndex < 0 || this.dragEndWeekIndex < 0) {
-      this.selectedCells = [];
-      return;
-    }
-    const cells: SelectedCell[] = [];
-    const startIndex = Math.min(this.dragStartWeekIndex, this.dragEndWeekIndex);
-    const endIndex = Math.max(this.dragStartWeekIndex, this.dragEndWeekIndex);
-    for (let i = startIndex; i <= endIndex; i++) {
-      cells.push({ resource: this.dragStartResource, week: this.displayedWeeks[i], childId: child.id, parentId: parent.id });
-    }
-    this.selectedCells = cells;
+    this.selection.updateSelectedCells(this.displayedWeeks, child.id, parent.id);
   }
 
   clearSelection() {
-    this.selectedCells = [];
-    this.isSelectionFinished = false;
-    this.toolbarPosition = null;
-    this.toolbarVisible = false;
-    this.dragStartResource = null;
-    this.dragStartWeekIndex = -1;
-    this.dragEndWeekIndex = -1;
-    this.bulkChargeValue = null;
-    this.bulkComment = '';
-    this.dragStartCellValue = null;
-    this.dragProjectionTooltipVisible = false;
-    this.isMovingSelection = false;
-    this.isMoveCommitting = false;
-    this.isCommittingSelection = false;
-    this.projectionCommitting = null;
-    this.isOverSelectionBorder = false;
-    this.moveGhostOffset = 0;
+    this.selection.clearSelection();
   }
 
   closeServiceSelectionModal(): void {
@@ -931,8 +892,7 @@ export abstract class PlanGridInteractionController {
   }
 
   onMouseDown(event: MouseEvent, resource: ResourceRow, child: ChildRow, parent: ParentRow) {
-    this.activeTooltip = null;
-    this.hideTooltip();
+    this.tooltip.clear();
     if (this.isOverSelectionBorder) {
       if (this.viewMode() === 'service' && this.isServiceSummarySelected()) return;
       this.isMovingSelection = true;
@@ -979,7 +939,9 @@ export abstract class PlanGridInteractionController {
   }
 
   onGlobalMouseMove(event: MouseEvent) {
-    if (this.activeTooltip) updateTooltipDomPosition(event, this.tooltipElement?.nativeElement);
+    if (this.activeTooltip) {
+      updateTooltipDomPosition(event, this.tooltipElement?.nativeElement);
+    }
 
     if (this.isDragging && this.dragStartResource) {
       const target = event.target as HTMLElement;
@@ -1033,7 +995,7 @@ export abstract class PlanGridInteractionController {
         const margin = 5;
         const resId = target.closest('.calendar-row')?.getAttribute('data-resource-id');
         const weekIndex = parseInt(cell.getAttribute('data-week-index') || '-1', 10);
-        const firstCell = this.selectedCells[0];
+        const firstCell = this.selectedCells[0]!;
         const selResId = this.getResourceUniqueId(firstCell.resource, { id: firstCell.childId }, { id: firstCell.parentId });
         if (resId && resId === selResId) {
           const selectedWeeks = this.selectedCells.map((c) => this.displayedWeeks.findIndex((w) => w.getTime() === c.week.getTime()));
@@ -1059,7 +1021,9 @@ export abstract class PlanGridInteractionController {
     if (this.isMovingSelection) {
       if (this.moveGhostOffset !== 0) {
         this.isMoveCommitting = true;
-        this.ngZone.run(() => this.executeMove());
+        this.ngZone.run(() => {
+          if (this.onExecuteMove) this.onExecuteMove();
+        });
       } else {
         this.ngZone.run(() => {
           this.isMovingSelection = false;
@@ -1085,12 +1049,12 @@ export abstract class PlanGridInteractionController {
           let remainingCapacityDays = 0;
           let hasCapacityData = false;
 
-          const firstCell = this.selectedCells[0];
+          const firstCell = this.selectedCells[0]!;
           const parentRow = this.dragStartParent;
 
           const sortedCells = [...this.selectedCells].sort((a, b) => a.week.getTime() - b.week.getTime());
-          const startDate = sortedCells.length > 0 ? sortedCells[0].week : null;
-          const endDate = sortedCells.length > 0 ? sortedCells[sortedCells.length - 1].week : null;
+          const startDate = sortedCells.length > 0 ? sortedCells[0]!.week : null;
+          const endDate = sortedCells.length > 0 ? sortedCells[sortedCells.length - 1]!.week : null;
 
           for (const cell of this.selectedCells) {
             const weekKey = formatWeekStart(cell.week);
@@ -1162,7 +1126,7 @@ export abstract class PlanGridInteractionController {
             this.bulkComment = '';
           } else if (this.selectedCells.length === 1) {
             this.bulkChargeValue = this.dragStartCellValue;
-            const firstCell = this.selectedCells[0];
+            const firstCell = this.selectedCells[0]!;
             this.bulkComment = firstCell.resource.comments?.get(formatWeekStart(firstCell.week)) || '';
           } else {
             this.bulkChargeValue = null;
@@ -1175,17 +1139,17 @@ export abstract class PlanGridInteractionController {
     });
   }
 
-  private getSelectedEndCellDom(): { cellElement: Element; rowElement: Element; isHidden: boolean; wrapperEl: Element | null; rect: DOMRect } | null {
+  private getSelectedEndCellDom(): { cellElement: Element; rowElement: Element; isHidden: boolean; wrapperEl: HTMLElement | null; rect: DOMRect } | null {
     if (!this.dragStartResource || this.dragEndWeekIndex < 0 || this.selectedCells.length === 0) return null;
-    const firstCell = this.selectedCells[0];
+    const firstCell = this.selectedCells[0]!;
     const uniqueId = this.getResourceUniqueId(firstCell.resource, { id: firstCell.childId }, { id: firstCell.parentId });
     const rowElement = document.querySelector(`[data-resource-id="${uniqueId}"]`);
     const cellElement = rowElement?.querySelector(`[data-week-index="${this.dragEndWeekIndex}"]`);
     if (!rowElement || !cellElement) return null;
 
     const rect = cellElement.getBoundingClientRect();
-    const wrapperEl = document.querySelector('.calendar-wrapper');
-    const labelEl = rowElement.querySelector('.label-cell');
+    const wrapperEl = document.querySelector('.calendar-wrapper') as HTMLElement | null;
+    const labelEl = rowElement.querySelector('.label-cell') as HTMLElement | null;
     const headerEl = this.headerRowElement?.nativeElement;
     const milestonesEl = this.milestonesRowElement?.nativeElement;
 
@@ -1202,31 +1166,16 @@ export abstract class PlanGridInteractionController {
   updateToolbarPosition() {
     const dom = this.getSelectedEndCellDom();
     if (!dom) return;
-    if (dom.isHidden) {
-      this.toolbarVisible = false;
-      this.cdr.detectChanges();
-      return;
-    }
-    const pos = calculateBestToolbarPosition({
-      rect: dom.rect,
-      viewportWidth: window.innerWidth,
-      viewportHeight: window.innerHeight,
+    const pos = computeFloatingToolbarPosition({
+      targetRect: dom.rect,
+      wrapperEl: dom.wrapperEl,
+      headerEl: this.headerRowElement?.nativeElement,
+      labelEl: dom.rowElement.querySelector('.label-cell') as HTMLElement | null,
       dragStartWeekIndex: this.dragStartWeekIndex,
       dragEndWeekIndex: this.dragEndWeekIndex,
-      bottomSafetyMargin: 150,
-      rightSafetyMargin: 320,
     });
-    if (dom.wrapperEl) {
-      const wrapperRect = dom.wrapperEl.getBoundingClientRect();
-      this.toolbarPosition = {
-        top: pos.top - wrapperRect.top + dom.wrapperEl.scrollTop,
-        left: pos.left - wrapperRect.left + dom.wrapperEl.scrollLeft,
-        transform: pos.transform,
-      };
-    } else {
-      this.toolbarPosition = pos;
-    }
-    this.toolbarVisible = true;
+    this.toolbarVisible = pos.visible;
+    this.toolbarPosition = pos.position;
     this.cdr.detectChanges();
   }
 
