@@ -1,59 +1,9 @@
-# Règles de codage et de sécurité du projet
+# Règles du projet
 
-## Sécurité & Clés API / Identifiants
-- **Règle :** Ne JAMAIS écrire, coder en dur ou insérer de variables d'environnement de type clé d'API, token ou secret directement dans les fichiers de code source ou les scripts (scripts de test, migrations, utilitaires).
-- **Action :** Importer et utiliser systématiquement la configuration dynamique issue des fichiers d'environnement dédiés (ex: `src/environments/environment.ts`, `environment.prod.ts` ou fichiers `.env`).
+Ce projet applique une organisation modulaire des règles et directives via le dossier `.agents/rules/` :
 
-## Angular & Typescript
-- Utiliser exclusivement la nouvelle syntaxe de contrôle de flux native d'Angular (blocs `@if` et `@for`) à la place des anciennes directives structurelles (`*ngIf`, `*ngFor`).
-- Préférer l'utilisation de typages stricts.
-- Toujours utiliser la structure séparée html, CSS et ts.
-
-## Supabase / PostgreSQL Pagination & Stable Order
-- **Règle :** Chaque fois que des requêtes Supabase sont paginées (via offset, range, limit ou via la fonction utilitaire `paginateQuery`), il est obligatoire d'inclure une clause de tri `.order()` déterministe et unique AVANT le `.range()` (ex: trier par clé primaire `id` ou inclure l'index unique en fin de chaîne).
-- **Raison :** Sans tri déterministe, PostgreSQL ne garantit aucun ordre par défaut. Les décalages de pagination (`offset` / `range`) peuvent renvoyer des lignes en double ou en omettre certaines entre deux requêtes successives.
-- **Action :** Ajouter systématiquement un `.order('id', { ascending: true })` AVANT le `.range()` en fin de requête en guise de clé de tri stable (tie-breaker) pour toute requête paginée.
-
-## Package Manager & Build
-- **Règle :** Utiliser systématiquement `pnpm` plutôt que `npm` pour les commandes et scripts de ce projet.
-- **Action :** Pour compiler et vérifier le projet, exécuter obligatoirement `pnpm build` (ou `pnpm run build`) au lieu de `npm run build`.
-
-## Documentation & Artefacts Markdown (OpenSpec, ADRs)
-- **Règle :** Dans tous les fichiers Markdown générés ou modifiés (spécifications, propositions, designs, ADRs, tasks, docs), ne JAMAIS insérer de chemins de fichiers absolus (ex: `file:///c:/...` ou `C:\...`).
-- **Action :** Utiliser systématiquement des chemins relatifs par rapport au fichier courant ou à la racine du projet (ex: `src/...` ou `../../../src/...`).
-
-### Règles de recherche et d'exploration de fichiers
-- Utilise systématiquement `rg` (ripgrep) pour rechercher du texte ou lister les fichiers d'un dossier.
-- N'utilise JAMAIS les cmdlets PowerShell d'exploration ou de recherche (`Get-ChildItem`, `Select-String`, `dir`, `ls`, `gci`).
-- Syntaxes courantes :
-  - Lister les fichiers d'un dossier : `rg --files <chemin>`
-  - Chercher du texte dans les fichiers : `rg "<motif>" <chemin>`
-  - Filtrer par extensions de fichier : `rg -g "*.{ts,html}" "<motif>" <chemin>`
-- Privilégie systématiquement les commandes atomiques SANS pipe (`|`), sans redirection ni chaînage (`&&`, `;`) pour respecter l'Allowlist du terminal.
-- Si `rg` n'est pas disponible, demande confirmation avant d'utiliser une alternative.
-
-# Directives de Développement - Architecture & Qualité (SOLID)
-
-## Philosophie de conception (Deep Modules)
-- **Privilégier les modules profonds :** Chaque composant ou service doit masquer un maximum de complexité derrière une interface la plus simple et étroite possible.
-- **Interdiction des modules "pass-through" :** Ne pas créer de fichiers ou de fonctions dont le seul but est de relayer des données sans valeur ajoutée.
-- **Encapsulation forte :** Les détails d'implémentation (appels réseaux complexes, transformations de données tordues) doivent être enfouis dans les couches basses et ne jamais fuiter dans l'UI ou le code appelant.
-
-## Règle d'or : Composition vs Héritage
-- Privilégier systématiquement la **composition** et l'injection de dépendances pour réutiliser du comportement (ex: services injectés, stratégies, helpers).
-- Préférer l'implémentation d'interfaces (`implements`) à l'héritage de comportement, pour maintenir un couplage lâche.
-
-## 1. Limite de taille des fichiers
-- **Taille maximale par fichier `.ts` : 1000 lignes. (+ ou - 20%)**
-- Si un fichier approche ou dépasse cette limite, l'agent **doit** le refactoriser en extrayant la logique dans de nouveaux modules (composants, services, helpers, stores).
-
-## 2. Application des principes SOLID
-- **SRP (Responsabilité Unique) :** Un fichier / une classe / un composant ne doit avoir qu'une seule raison d'être. Séparer strictement la couche UI, la gestion d'état (store/service) et la logique métier pure.
-- **OCP (Open Close Principle) / DIP (Dependency Inversion Principle) :** Utiliser systématiquement des interfaces et l'injection de dépendances pour les services. Ne pas lier directement un composant à une implémentation concrète d'API ou de stockage.
-- **ISP (Interface Segregation Principle) :** Diviser les grosses interfaces d'objets en sous-interfaces ciblées selon l'utilisation réelle.
-
-## 3. Workflow de refactoring obligatoire
-Lorsqu'une modification risque d'alourdir un fichier existant :
-1. Proposer un plan de découpage avant d'écrire le code.
-2. Créer les nouveaux fichiers modulaires.
-3. Déplacer le code existant de manière propre sans régresser.
+@[Sécurité & Clés API](rules/security.md)
+@[Outils, Terminal & Shell](rules/tooling-and-shell.md)
+@[Angular & TypeScript](rules/angular-standards.md)
+@[Supabase & Base de données](rules/database.md)
+@[Architecture, SOLID & Qualité](rules/architecture-solid.md)
