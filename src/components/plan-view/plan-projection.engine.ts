@@ -9,39 +9,77 @@
  * - Agréger les jours planifiés (RAF, année, tout) et résoudre les chiffres budgétaires par service, équipe et projet.
  * - Appliquer le filtrage multicritères hiérarchique (`applyPlanFilters`).
  */
-import { getISOWeekYear } from 'date-fns';
 import { Charge, Projet } from '../../models/types';
-import { Chiffre } from '../../models/chiffres.type';
 import { textContains } from '../../utils/text.utils';
 import { sortByRank } from '../../utils/lexorank.utils';
 import {
   PlanViewMode,
-  ChiffreCategory,
-  CapacityYearSelection,
   PlannedDaysPeriod,
-  SizeFilterOperator,
+  ChiffreCategory,
   ResourceRow,
   ChildRow,
   ParentRow,
   PlanRawDataset,
   PlanFilterCriteria,
 } from './plan-view.models';
+export * from './plan-metrics.calculator';
+import {
+  getPlannedDaysForResource,
+  getPlannedDaysForProjectParent,
+  getChildTotalPlannedDays,
+  getChiffreValueForMode,
+  getChiffreValueForServiceProject,
+  getChiffreValueForTeamProject,
+  getChiffreValueForProjectParent,
+  checkSizeMatch,
+  hasChargesInPeriod,
+} from './plan-metrics.calculator';
 
 export function formatWeekStart(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-export function formatLocalDate(d: Date): string {
-  return formatWeekStart(d);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
 export function cleanJiraRef(ref: string | null | undefined): string {
   if (!ref) return '';
   const match = ref.match(/(SUIVI-\d+)/i);
   return match ? match[1].toUpperCase() : ref.trim();
+}
+
+/** Helpers de construction et d'analyse des identifiants et clés composites */
+export function buildActorKey(type: 'role' | 'personne', id?: string): string {
+  return `${type}_${id || ''}`;
+}
+
+export function buildResourceRowId(teamId: string | undefined, actorKey: string): string {
+  return `${teamId || ''}_${actorKey}`;
+}
+
+export function extractTeamIdFromRowId(rowId: string): string {
+  return rowId.split('_')[0];
+}
+
+export function parseResourceRowId(rowId: string): { teamId: string; actorType: 'role' | 'personne'; actorId: string } | null {
+  const parts = rowId.split('_');
+  if (parts.length >= 3 && (parts[1] === 'role' || parts[1] === 'personne')) {
+    return {
+      teamId: parts[0],
+      actorType: parts[1],
+      actorId: parts.slice(2).join('_'),
+    };
+  }
+  return null;
+}
+
+export function buildServiceProjectUniqueId(serviceId: string | undefined, projectId: string): string {
+  return `service_project_${serviceId || ''}_${projectId}`;
+}
+
+export function buildServiceSummaryUniqueId(serviceId: string | undefined): string {
+  return `service_summary_${serviceId || ''}`;
+}
+
+export function buildServiceResourceUniqueId(serviceId: string | undefined, projectId: string, teamId: string | undefined, actorKey: string): string {
+  return `service_${serviceId || ''}_${projectId}_${teamId || ''}_${actorKey}`;
 }
 
 /**
@@ -110,7 +148,7 @@ function resolveChargeActor(dataset: Pick<PlanRawDataset, 'availableRoles' | 'av
     const role = dataset.availableRoles.find((r) => r.id === charge.role_id);
     return {
       id: charge.role_id,
-      key: `role_${charge.role_id}`,
+      key: buildActorKey('role', charge.role_id),
       label: role ? role.nom : 'Unknown Role',
       type: 'role' as const,
       jours: role?.jours_par_semaine || fallbackDays,
@@ -121,7 +159,7 @@ function resolveChargeActor(dataset: Pick<PlanRawDataset, 'availableRoles' | 'av
     const p = dataset.availablePersonnes.find((pers) => pers.id === charge.personne_id);
     return {
       id: charge.personne_id,
-      key: `personne_${charge.personne_id}`,
+      key: buildActorKey('personne', charge.personne_id),
       label: p ? `${p.prenom} ${p.nom}` : 'Unknown Person',
       type: 'personne' as const,
       jours: p?.jours_par_semaine || fallbackDays,
@@ -173,6 +211,380 @@ function accumulateGroupResources(
     .sort((a, b) => a.label.localeCompare(b.label));
 }
 
+interface TreeBuildContext {
+  dataset: PlanRawDataset;
+  manualStates: Map<string, boolean>;
+  isDefaultExpanded: boolean;
+  weekFilters: number[];
+  displayedWeeks: Date[];
+  activeEquipeIds: string[];
+  activeResourceIds: string[];
+}
+
+function buildProjectTree(ctx: TreeBuildContext): ParentRow[] {
+  const { dataset, manualStates, isDefaultExpanded, weekFilters, displayedWeeks } = ctx;
+  const rows: ParentRow[] = [];
+  const sortedProjects = sortByRank(dataset.allProjects, (p) => p.rank, (a, b) => a.nom_projet.localeCompare(b.nom_projet));
+
+  for (const project of sortedProjects) {
+    const projectCharges = dataset.allCharges.filter((c) => c.projet_id === project.id);
+    const chargeTeamIds = projectCharges.map((c) => c.equipe_id).filter((id): id is string => !!id);
+    const linkedTeamIds = dataset.allLinks.filter((l) => l.projet_id === project.id).map((l) => l.equipe_id);
+    const involvedTeamIds = new Set([...chargeTeamIds, ...linkedTeamIds]);
+    const children: ChildRow[] = [];
+    const parentTotal = new Map<string, number>();
+
+    for (const teamId of involvedTeamIds) {
+      const team = dataset.allEquipes.find((e) => e.id === teamId);
+      const teamCharges = new Map<string, number>();
+      const filteredResources = accumulateGroupResources(
+        dataset,
+        projectCharges.filter((c) => c.equipe_id === teamId),
+        `${project.id}_${teamId}`,
+        project.id,
+        teamCharges,
+        parentTotal,
+        weekFilters,
+        displayedWeeks,
+      );
+      children.push({
+        id: teamId,
+        label: team ? team.nom : 'No Team',
+        code: team?.code,
+        color: team?.color,
+        expanded: manualStates.get(`${project.id}_${teamId}`) ?? isDefaultExpanded,
+        resources: filteredResources,
+        charges: teamCharges,
+      });
+    }
+    children.sort((a, b) => a.label.localeCompare(b.label));
+    rows.push({
+      id: project.id!,
+      label: project.nom_projet,
+      code: project.code_projet,
+      reference_externe: project.reference_externe,
+      color: project.color,
+      expanded: manualStates.get(project.id!) ?? isDefaultExpanded,
+      children,
+      totalCharges: parentTotal,
+      originalProject: project,
+    });
+  }
+  return rows;
+}
+
+function buildTeamTree(ctx: TreeBuildContext): ParentRow[] {
+  const { dataset, manualStates, isDefaultExpanded, weekFilters, displayedWeeks } = ctx;
+  const rows: ParentRow[] = [];
+  const sortedTeams = [...dataset.allEquipes].sort((a, b) => a.nom.localeCompare(b.nom));
+
+  for (const team of sortedTeams) {
+    const teamCharges = dataset.allCharges.filter((c) => c.equipe_id === team.id);
+    const chargeProjectIds = teamCharges.map((c) => c.projet_id).filter((id): id is string => !!id);
+    const linkedProjectIds = dataset.allLinks.filter((l) => l.equipe_id === team.id).map((l) => l.projet_id);
+    const involvedProjectIds = new Set([...chargeProjectIds, ...linkedProjectIds]);
+    const children: ChildRow[] = [];
+    const parentTotal = new Map<string, number>();
+    const sortedInvolvedProjects = sortByRank(
+      dataset.allProjects.filter((p) => involvedProjectIds.has(p.id!)),
+      (p) => p.rank,
+      (a, b) => a.nom_projet.localeCompare(b.nom_projet),
+    );
+
+    for (const project of sortedInvolvedProjects) {
+      const projectId = project.id!;
+      const projectCharges = new Map<string, number>();
+      const filteredResources = accumulateGroupResources(
+        dataset,
+        teamCharges.filter((c) => c.projet_id === projectId),
+        `${team.id}_${projectId}`,
+        projectId,
+        projectCharges,
+        parentTotal,
+        weekFilters,
+        displayedWeeks,
+      );
+      children.push({
+        id: projectId,
+        label: project.nom_projet,
+        code: project.code_projet,
+        reference_externe: project.reference_externe,
+        color: project.color,
+        expanded: manualStates.get(`${team.id}_${projectId}`) ?? isDefaultExpanded,
+        resources: filteredResources,
+        charges: projectCharges,
+        originalProject: project,
+      });
+    }
+    rows.push({
+      id: team.id!,
+      label: team.nom,
+      code: team.code,
+      color: team.color,
+      expanded: manualStates.get(team.id!) ?? isDefaultExpanded,
+      children,
+      totalCharges: parentTotal,
+    });
+  }
+  return rows;
+}
+
+function buildResourceTree(ctx: TreeBuildContext): ParentRow[] {
+  const { dataset, manualStates, isDefaultExpanded, weekFilters, displayedWeeks } = ctx;
+  const rows: ParentRow[] = [];
+  const sortedTeams = [...dataset.allEquipes].sort((a, b) => a.nom.localeCompare(b.nom));
+
+  for (const team of sortedTeams) {
+    const teamCharges = dataset.allCharges.filter((c) => c.equipe_id === team.id);
+    const resourceMap = new Map<
+      string,
+      {
+        label: string;
+        type: 'role' | 'personne';
+        jours_par_semaine: number;
+        color?: string;
+        charges: Map<string, number>;
+        comments: Map<string, string>;
+        projectDetailedMap: Map<string, ResourceRow>;
+      }
+    >();
+
+    for (const att of dataset.allRoleAttachments.filter((a) => a.equipe_id === team.id)) {
+      const role = dataset.availableRoles.find((r) => r.id === att.role_id);
+      if (role) {
+        resourceMap.set(buildActorKey('role', role.id), {
+          label: role.nom,
+          type: 'role',
+          jours_par_semaine: role.jours_par_semaine,
+          color: role.color,
+          charges: new Map(),
+          comments: new Map(),
+          projectDetailedMap: new Map(),
+        });
+      }
+    }
+    for (const p of dataset.availablePersonnes.filter((pers) => pers.equipe_id === team.id)) {
+      resourceMap.set(buildActorKey('personne', p.id!), {
+        label: `${p.prenom} ${p.nom}`,
+        type: 'personne',
+        jours_par_semaine: p.jours_par_semaine,
+        color: p.color,
+        charges: new Map(),
+        comments: new Map(),
+        projectDetailedMap: new Map(),
+      });
+    }
+
+    for (const charge of teamCharges) {
+      const actor = resolveChargeActor(dataset, charge, 0);
+      if (!actor) continue;
+      if (!resourceMap.has(actor.key)) {
+        resourceMap.set(actor.key, {
+          label: actor.label,
+          type: actor.type,
+          jours_par_semaine: actor.jours,
+          color: actor.color,
+          charges: new Map(),
+          comments: new Map(),
+          projectDetailedMap: new Map(),
+        });
+      }
+      const res = resourceMap.get(actor.key)!;
+      const weekKey = charge.semaine_debut?.split('T')[0];
+      const pId = charge.projet_id || 'no_project';
+      if (!res.projectDetailedMap.has(pId)) {
+        const project = dataset.allProjects.find((p) => p.id === pId);
+        res.projectDetailedMap.set(pId, {
+          id: pId,
+          uniqueId: `${team.id}_${actor.key}_${pId}`,
+          label: project ? project.nom_projet : 'Sans projet',
+          code: project?.code_projet,
+          reference_externe: project?.reference_externe,
+          type: res.type,
+          jours_par_semaine: res.jours_par_semaine,
+          charges: new Map(),
+          comments: new Map(),
+          color: project?.color,
+          resourceId: actor.id,
+          projectId: pId,
+        });
+      }
+      if (weekKey) {
+        res.charges.set(weekKey, (res.charges.get(weekKey) || 0) + charge.unite_ressource);
+        if (charge.comment) res.comments.set(weekKey, charge.comment);
+        const detRow = res.projectDetailedMap.get(pId)!;
+        detRow.charges.set(weekKey, (detRow.charges.get(weekKey) || 0) + charge.unite_ressource);
+        if (charge.comment) detRow.comments?.set(weekKey, charge.comment);
+      }
+    }
+
+    resourceMap.forEach((res, rKey) => {
+      const projectResources = sortByRank(
+        Array.from(res.projectDetailedMap.values()),
+        (r) => dataset.allProjects.find((p) => p.id === r.projectId)?.rank,
+        (a, b) => a.label.localeCompare(b.label),
+      ).filter((r) => shouldShowResourceByWeekFilters(r, weekFilters, displayedWeeks));
+
+      const rowId = buildResourceRowId(team.id, rKey);
+      rows.push({
+        id: rowId,
+        label: `${team.nom} - ${res.label}`,
+        code: team.code,
+        color: team.color,
+        expanded: manualStates.get(rowId) ?? isDefaultExpanded,
+        children: [{ id: rKey, label: res.label, color: res.color, expanded: true, charges: res.charges, resources: projectResources }],
+        totalCharges: res.charges,
+      });
+    });
+  }
+  return rows;
+}
+
+function buildServiceTree(ctx: TreeBuildContext): ParentRow[] {
+  const { dataset, manualStates, isDefaultExpanded, weekFilters, displayedWeeks, activeEquipeIds, activeResourceIds } = ctx;
+  const rows: ParentRow[] = [];
+  const sortedServices = [...dataset.allServices].sort((a, b) => a.nom.localeCompare(b.nom));
+
+  for (const service of sortedServices) {
+    const parentTotal = new Map<string, number>();
+    const parentDailyCharges = new Map<string, number>();
+    const projectMap = new Map<
+      string,
+      {
+        project?: Projet;
+        childCharges: Map<string, number>;
+        childDailyCharges: Map<string, number>;
+        resourceMap: Map<string, ResourceRow>;
+      }
+    >();
+
+    for (const charge of dataset.allCharges) {
+      const actor = resolveChargeActor(dataset, charge, 5);
+      if (!actor) continue;
+      if (activeEquipeIds.length > 0 && (!charge.equipe_id || !activeEquipeIds.includes(charge.equipe_id))) continue;
+      if (activeResourceIds.length > 0 && !activeResourceIds.includes(`${actor.type}:${actor.id}`)) continue;
+      if (getResourceServiceId(dataset, actor.type, actor.id, charge.equipe_id) !== service.id) continue;
+
+      const pId = charge.projet_id || 'no_project';
+      if (!projectMap.has(pId)) {
+        const project = dataset.allProjects.find((p) => p.id === pId);
+        projectMap.set(pId, {
+          project,
+          childCharges: new Map<string, number>(),
+          childDailyCharges: new Map<string, number>(),
+          resourceMap: new Map<string, ResourceRow>(),
+        });
+      }
+
+      const projEntry = projectMap.get(pId)!;
+      const equipe = dataset.allEquipes.find((e) => e.id === charge.equipe_id);
+      const resKey = `${charge.equipe_id || 'no_team'}_${actor.key}`;
+
+      if (!projEntry.resourceMap.has(resKey)) {
+        projEntry.resourceMap.set(resKey, {
+          id: actor.id,
+          uniqueId: buildServiceResourceUniqueId(service.id, pId, charge.equipe_id || 'no_team', actor.key),
+          label: `${equipe?.nom || 'Équipe'} - ${actor.label}`,
+          type: actor.type,
+          jours_par_semaine: actor.jours,
+          charges: new Map<string, number>(),
+          dailyCharges: new Map<string, number>(),
+          comments: new Map<string, string>(),
+          color: equipe?.color || actor.color,
+          resourceId: actor.id,
+          projectId: pId,
+          equipeId: charge.equipe_id,
+        });
+      }
+
+      const resRow = projEntry.resourceMap.get(resKey)!;
+      const weekKey = charge.semaine_debut?.split('T')[0];
+      if (weekKey) {
+        parentTotal.set(weekKey, (parentTotal.get(weekKey) || 0) + charge.unite_ressource);
+        parentDailyCharges.set(weekKey, (parentDailyCharges.get(weekKey) || 0) + charge.unite_ressource * actor.jours);
+
+        projEntry.childCharges.set(weekKey, (projEntry.childCharges.get(weekKey) || 0) + charge.unite_ressource);
+        projEntry.childDailyCharges.set(weekKey, (projEntry.childDailyCharges.get(weekKey) || 0) + charge.unite_ressource * actor.jours);
+
+        resRow.charges.set(weekKey, (resRow.charges.get(weekKey) || 0) + charge.unite_ressource);
+        resRow.dailyCharges!.set(weekKey, (resRow.dailyCharges!.get(weekKey) || 0) + charge.unite_ressource * actor.jours);
+        if (charge.comment) {
+          resRow.comments?.set(weekKey, charge.comment);
+        }
+      }
+    }
+
+    const children: ChildRow[] = [];
+    const sortedProjectEntries = Array.from(projectMap.entries()).sort(([_pIdA, a], [_pIdB, b]) => {
+      const rankA = a.project?.rank;
+      const rankB = b.project?.rank;
+      if (rankA !== undefined && rankB !== undefined) {
+        const c = rankA.localeCompare(rankB);
+        if (c !== 0) return c;
+      }
+      const nameA = a.project?.nom_projet || 'Sans projet';
+      const nameB = b.project?.nom_projet || 'Sans projet';
+      return nameA.localeCompare(nameB);
+    });
+
+    for (const [pId, entry] of sortedProjectEntries) {
+      const sortedResources = Array.from(entry.resourceMap.values())
+        .filter((r) => shouldShowResourceByWeekFilters(r, weekFilters, displayedWeeks))
+        .sort((a, b) => a.label.localeCompare(b.label));
+
+      const isChildExpanded = manualStates.get(`${service.id}_${pId}`) ?? isDefaultExpanded;
+
+      const projectSummaryResource: ResourceRow = {
+        id: pId,
+        uniqueId: buildServiceProjectUniqueId(service.id, pId),
+        label: entry.project ? entry.project.nom_projet : 'Sans projet',
+        code: entry.project?.code_projet,
+        reference_externe: entry.project?.reference_externe,
+        type: 'role',
+        jours_par_semaine: 5,
+        charges: entry.childCharges,
+        dailyCharges: entry.childDailyCharges,
+        color: entry.project?.color,
+        projectId: pId,
+        resourceId: service.id,
+      };
+
+      children.push({
+        id: pId,
+        label: entry.project ? entry.project.nom_projet : 'Sans projet',
+        code: entry.project?.code_projet,
+        reference_externe: entry.project?.reference_externe,
+        color: entry.project?.color,
+        expanded: isChildExpanded,
+        resources: sortedResources,
+        charges: entry.childCharges,
+        dailyCharges: entry.childDailyCharges,
+        originalProject: entry.project,
+        summaryResource: projectSummaryResource,
+      });
+    }
+
+    const isExpanded = manualStates.get(service.id!) ?? isDefaultExpanded;
+    rows.push({
+      id: service.id!,
+      label: service.nom,
+      expanded: isExpanded,
+      children,
+      totalCharges: parentTotal,
+      summaryResource: {
+        id: service.id!,
+        uniqueId: buildServiceSummaryUniqueId(service.id),
+        label: service.nom,
+        type: 'role',
+        jours_par_semaine: 5,
+        charges: parentTotal,
+        dailyCharges: parentDailyCharges,
+      },
+    });
+  }
+  return rows;
+}
+
 export function buildPlanTree(
   dataset: PlanRawDataset,
   viewMode: PlanViewMode,
@@ -183,350 +595,28 @@ export function buildPlanTree(
   activeEquipeIds: string[],
   activeResourceIds: string[],
 ): ParentRow[] {
-  const rows: ParentRow[] = [];
+  const ctx: TreeBuildContext = {
+    dataset,
+    manualStates,
+    isDefaultExpanded,
+    weekFilters,
+    displayedWeeks,
+    activeEquipeIds,
+    activeResourceIds,
+  };
 
-  if (viewMode === 'project') {
-    const sortedProjects = sortByRank(dataset.allProjects, (p) => p.rank, (a, b) => a.nom_projet.localeCompare(b.nom_projet));
-    for (const project of sortedProjects) {
-      const projectCharges = dataset.allCharges.filter((c) => c.projet_id === project.id);
-      const chargeTeamIds = projectCharges.map((c) => c.equipe_id).filter((id): id is string => !!id);
-      const linkedTeamIds = dataset.allLinks.filter((l) => l.projet_id === project.id).map((l) => l.equipe_id);
-      const involvedTeamIds = new Set([...chargeTeamIds, ...linkedTeamIds]);
-      const children: ChildRow[] = [];
-      const parentTotal = new Map<string, number>();
-
-      for (const teamId of involvedTeamIds) {
-        const team = dataset.allEquipes.find((e) => e.id === teamId);
-        const teamCharges = new Map<string, number>();
-        const filteredResources = accumulateGroupResources(
-          dataset,
-          projectCharges.filter((c) => c.equipe_id === teamId),
-          `${project.id}_${teamId}`,
-          project.id,
-          teamCharges,
-          parentTotal,
-          weekFilters,
-          displayedWeeks,
-        );
-        children.push({
-          id: teamId,
-          label: team ? team.nom : 'No Team',
-          code: team?.code,
-          color: team?.color,
-          expanded: manualStates.get(`${project.id}_${teamId}`) ?? isDefaultExpanded,
-          resources: filteredResources,
-          charges: teamCharges,
-        });
-      }
-      children.sort((a, b) => a.label.localeCompare(b.label));
-      rows.push({
-        id: project.id!,
-        label: project.nom_projet,
-        code: project.code_projet,
-        reference_externe: project.reference_externe,
-        color: project.color,
-        expanded: manualStates.get(project.id!) ?? isDefaultExpanded,
-        children,
-        totalCharges: parentTotal,
-        originalProject: project,
-      });
-    }
-  } else if (viewMode === 'team') {
-    const sortedTeams = [...dataset.allEquipes].sort((a, b) => a.nom.localeCompare(b.nom));
-    for (const team of sortedTeams) {
-      const teamCharges = dataset.allCharges.filter((c) => c.equipe_id === team.id);
-      const chargeProjectIds = teamCharges.map((c) => c.projet_id).filter((id): id is string => !!id);
-      const linkedProjectIds = dataset.allLinks.filter((l) => l.equipe_id === team.id).map((l) => l.projet_id);
-      const involvedProjectIds = new Set([...chargeProjectIds, ...linkedProjectIds]);
-      const children: ChildRow[] = [];
-      const parentTotal = new Map<string, number>();
-      const sortedInvolvedProjects = sortByRank(
-        dataset.allProjects.filter((p) => involvedProjectIds.has(p.id!)),
-        (p) => p.rank,
-        (a, b) => a.nom_projet.localeCompare(b.nom_projet),
-      );
-
-      for (const project of sortedInvolvedProjects) {
-        const projectId = project.id!;
-        const projectCharges = new Map<string, number>();
-        const filteredResources = accumulateGroupResources(
-          dataset,
-          teamCharges.filter((c) => c.projet_id === projectId),
-          `${team.id}_${projectId}`,
-          projectId,
-          projectCharges,
-          parentTotal,
-          weekFilters,
-          displayedWeeks,
-        );
-        children.push({
-          id: projectId,
-          label: project.nom_projet,
-          code: project.code_projet,
-          reference_externe: project.reference_externe,
-          color: project.color,
-          expanded: manualStates.get(`${team.id}_${projectId}`) ?? isDefaultExpanded,
-          resources: filteredResources,
-          charges: projectCharges,
-          originalProject: project,
-        });
-      }
-      rows.push({
-        id: team.id!,
-        label: team.nom,
-        code: team.code,
-        color: team.color,
-        expanded: manualStates.get(team.id!) ?? isDefaultExpanded,
-        children,
-        totalCharges: parentTotal,
-      });
-    }
-  } else if (viewMode === 'resource') {
-    const sortedTeams = [...dataset.allEquipes].sort((a, b) => a.nom.localeCompare(b.nom));
-    for (const team of sortedTeams) {
-      const teamCharges = dataset.allCharges.filter((c) => c.equipe_id === team.id);
-      const resourceMap = new Map<
-        string,
-        {
-          label: string;
-          type: 'role' | 'personne';
-          jours_par_semaine: number;
-          color?: string;
-          charges: Map<string, number>;
-          comments: Map<string, string>;
-          projectDetailedMap: Map<string, ResourceRow>;
-        }
-      >();
-
-      for (const att of dataset.allRoleAttachments.filter((a) => a.equipe_id === team.id)) {
-        const role = dataset.availableRoles.find((r) => r.id === att.role_id);
-        if (role) {
-          resourceMap.set(`role_${role.id}`, {
-            label: role.nom,
-            type: 'role',
-            jours_par_semaine: role.jours_par_semaine,
-            color: role.color,
-            charges: new Map(),
-            comments: new Map(),
-            projectDetailedMap: new Map(),
-          });
-        }
-      }
-      for (const p of dataset.availablePersonnes.filter((pers) => pers.equipe_id === team.id)) {
-        resourceMap.set(`personne_${p.id}`, {
-          label: `${p.prenom} ${p.nom}`,
-          type: 'personne',
-          jours_par_semaine: p.jours_par_semaine,
-          color: p.color,
-          charges: new Map(),
-          comments: new Map(),
-          projectDetailedMap: new Map(),
-        });
-      }
-
-      for (const charge of teamCharges) {
-        const actor = resolveChargeActor(dataset, charge, 0);
-        if (!actor) continue;
-        if (!resourceMap.has(actor.key)) {
-          resourceMap.set(actor.key, {
-            label: actor.label,
-            type: actor.type,
-            jours_par_semaine: actor.jours,
-            color: actor.color,
-            charges: new Map(),
-            comments: new Map(),
-            projectDetailedMap: new Map(),
-          });
-        }
-        const res = resourceMap.get(actor.key)!;
-        const weekKey = charge.semaine_debut?.split('T')[0];
-        const pId = charge.projet_id || 'no_project';
-        if (!res.projectDetailedMap.has(pId)) {
-          const project = dataset.allProjects.find((p) => p.id === pId);
-          res.projectDetailedMap.set(pId, {
-            id: pId,
-            uniqueId: `${team.id}_${actor.key}_${pId}`,
-            label: project ? project.nom_projet : 'Sans projet',
-            code: project?.code_projet,
-            reference_externe: project?.reference_externe,
-            type: res.type,
-            jours_par_semaine: res.jours_par_semaine,
-            charges: new Map(),
-            comments: new Map(),
-            color: project?.color,
-            resourceId: actor.id,
-            projectId: pId,
-          });
-        }
-        if (weekKey) {
-          res.charges.set(weekKey, (res.charges.get(weekKey) || 0) + charge.unite_ressource);
-          if (charge.comment) res.comments.set(weekKey, charge.comment);
-          const detRow = res.projectDetailedMap.get(pId)!;
-          detRow.charges.set(weekKey, (detRow.charges.get(weekKey) || 0) + charge.unite_ressource);
-          if (charge.comment) detRow.comments?.set(weekKey, charge.comment);
-        }
-      }
-
-      resourceMap.forEach((res, rKey) => {
-        const projectResources = sortByRank(
-          Array.from(res.projectDetailedMap.values()),
-          (r) => dataset.allProjects.find((p) => p.id === r.projectId)?.rank,
-          (a, b) => a.label.localeCompare(b.label),
-        ).filter((r) => shouldShowResourceByWeekFilters(r, weekFilters, displayedWeeks));
-
-        rows.push({
-          id: `${team.id}_${rKey}`,
-          label: `${team.nom} - ${res.label}`,
-          code: team.code,
-          color: team.color,
-          expanded: manualStates.get(`${team.id}_${rKey}`) ?? isDefaultExpanded,
-          children: [{ id: rKey, label: res.label, color: res.color, expanded: true, charges: res.charges, resources: projectResources }],
-          totalCharges: res.charges,
-        });
-      });
-    }
-  } else if (viewMode === 'service') {
-    const sortedServices = [...dataset.allServices].sort((a, b) => a.nom.localeCompare(b.nom));
-    for (const service of sortedServices) {
-      const parentTotal = new Map<string, number>();
-      const parentDailyCharges = new Map<string, number>();
-      const projectMap = new Map<
-        string,
-        {
-          project?: Projet;
-          childCharges: Map<string, number>;
-          childDailyCharges: Map<string, number>;
-          resourceMap: Map<string, ResourceRow>;
-        }
-      >();
-
-      for (const charge of dataset.allCharges) {
-        const actor = resolveChargeActor(dataset, charge, 5);
-        if (!actor) continue;
-        if (activeEquipeIds.length > 0 && (!charge.equipe_id || !activeEquipeIds.includes(charge.equipe_id))) continue;
-        if (activeResourceIds.length > 0 && !activeResourceIds.includes(`${actor.type}:${actor.id}`)) continue;
-        if (getResourceServiceId(dataset, actor.type, actor.id, charge.equipe_id) !== service.id) continue;
-
-        const pId = charge.projet_id || 'no_project';
-        if (!projectMap.has(pId)) {
-          const project = dataset.allProjects.find((p) => p.id === pId);
-          projectMap.set(pId, {
-            project,
-            childCharges: new Map<string, number>(),
-            childDailyCharges: new Map<string, number>(),
-            resourceMap: new Map<string, ResourceRow>(),
-          });
-        }
-
-        const projEntry = projectMap.get(pId)!;
-        const equipe = dataset.allEquipes.find((e) => e.id === charge.equipe_id);
-        const resKey = `${charge.equipe_id || 'no_team'}_${actor.key}`;
-
-        if (!projEntry.resourceMap.has(resKey)) {
-          projEntry.resourceMap.set(resKey, {
-            id: actor.id,
-            uniqueId: `service_${service.id}_${pId}_${charge.equipe_id || 'no_team'}_${actor.key}`,
-            label: `${equipe?.nom || 'Équipe'} - ${actor.label}`,
-            type: actor.type,
-            jours_par_semaine: actor.jours,
-            charges: new Map<string, number>(),
-            dailyCharges: new Map<string, number>(),
-            comments: new Map<string, string>(),
-            color: equipe?.color || actor.color,
-            resourceId: actor.id,
-            projectId: pId,
-            equipeId: charge.equipe_id,
-          });
-        }
-
-        const resRow = projEntry.resourceMap.get(resKey)!;
-        const weekKey = charge.semaine_debut?.split('T')[0];
-        if (weekKey) {
-          parentTotal.set(weekKey, (parentTotal.get(weekKey) || 0) + charge.unite_ressource);
-          parentDailyCharges.set(weekKey, (parentDailyCharges.get(weekKey) || 0) + charge.unite_ressource * actor.jours);
-
-          projEntry.childCharges.set(weekKey, (projEntry.childCharges.get(weekKey) || 0) + charge.unite_ressource);
-          projEntry.childDailyCharges.set(weekKey, (projEntry.childDailyCharges.get(weekKey) || 0) + charge.unite_ressource * actor.jours);
-
-          resRow.charges.set(weekKey, (resRow.charges.get(weekKey) || 0) + charge.unite_ressource);
-          resRow.dailyCharges!.set(weekKey, (resRow.dailyCharges!.get(weekKey) || 0) + charge.unite_ressource * actor.jours);
-          if (charge.comment) {
-            resRow.comments?.set(weekKey, charge.comment);
-          }
-        }
-      }
-
-      const children: ChildRow[] = [];
-      const sortedProjectEntries = Array.from(projectMap.entries()).sort(([_pIdA, a], [_pIdB, b]) => {
-        const rankA = a.project?.rank;
-        const rankB = b.project?.rank;
-        if (rankA !== undefined && rankB !== undefined) {
-          const c = rankA.localeCompare(rankB);
-          if (c !== 0) return c;
-        }
-        const nameA = a.project?.nom_projet || 'Sans projet';
-        const nameB = b.project?.nom_projet || 'Sans projet';
-        return nameA.localeCompare(nameB);
-      });
-
-      for (const [pId, entry] of sortedProjectEntries) {
-        const sortedResources = Array.from(entry.resourceMap.values())
-          .filter((r) => shouldShowResourceByWeekFilters(r, weekFilters, displayedWeeks))
-          .sort((a, b) => a.label.localeCompare(b.label));
-
-        const isChildExpanded = manualStates.get(`${service.id}_${pId}`) ?? isDefaultExpanded;
-
-        const projectSummaryResource: ResourceRow = {
-          id: pId,
-          uniqueId: `service_project_${service.id}_${pId}`,
-          label: entry.project ? entry.project.nom_projet : 'Sans projet',
-          code: entry.project?.code_projet,
-          reference_externe: entry.project?.reference_externe,
-          type: 'role',
-          jours_par_semaine: 5,
-          charges: entry.childCharges,
-          dailyCharges: entry.childDailyCharges,
-          color: entry.project?.color,
-          projectId: pId,
-          resourceId: service.id,
-        };
-
-        children.push({
-          id: pId,
-          label: entry.project ? entry.project.nom_projet : 'Sans projet',
-          code: entry.project?.code_projet,
-          reference_externe: entry.project?.reference_externe,
-          color: entry.project?.color,
-          expanded: isChildExpanded,
-          resources: sortedResources,
-          charges: entry.childCharges,
-          dailyCharges: entry.childDailyCharges,
-          originalProject: entry.project,
-          summaryResource: projectSummaryResource,
-        });
-      }
-
-      const isExpanded = manualStates.get(service.id!) ?? isDefaultExpanded;
-      rows.push({
-        id: service.id!,
-        label: service.nom,
-        expanded: isExpanded,
-        children,
-        totalCharges: parentTotal,
-        summaryResource: {
-          id: service.id!,
-          uniqueId: `service_summary_${service.id}`,
-          label: service.nom,
-          type: 'role',
-          jours_par_semaine: 5,
-          charges: parentTotal,
-          dailyCharges: parentDailyCharges,
-        },
-      });
-    }
+  switch (viewMode) {
+    case 'project':
+      return buildProjectTree(ctx);
+    case 'team':
+      return buildTeamTree(ctx);
+    case 'resource':
+      return buildResourceTree(ctx);
+    case 'service':
+      return buildServiceTree(ctx);
+    default:
+      return [];
   }
-
-  return rows;
 }
 
 export function calculateUsageMap(dataset: Pick<PlanRawDataset, 'allCharges' | 'usageMap'>): void {
@@ -638,7 +728,6 @@ function computeParentAndChildMetrics(
 ): void {
   for (const parent of rows) {
     if (initResourceMetrics || !parent.metrics) parent.metrics = new Map();
-    const teamIdFromParent = viewMode === 'resource' ? parent.id.split('_')[0] : parent.id;
     const serviceResourceKeys = viewMode === 'service' ? getServiceResourceKeys(dataset, parent.id, activeEquipeIds, activeResourceIds) : null;
 
     if (initResourceMetrics) {
@@ -673,8 +762,9 @@ function computeParentAndChildMetrics(
       }
 
       if (viewMode === 'resource') {
-        const parts = parent.id.split('_');
-        totalCapacity = dataset.capacityIndex.get(`${teamIdFromParent}_${parts[1]}_${parts.slice(2).join('_')}_${weekKey}`) || 0;
+        const parsed = parseResourceRowId(parent.id);
+        const capKey = parsed ? `${parsed.teamId}_${parsed.actorType}_${parsed.actorId}_${weekKey}` : '';
+        totalCapacity = capKey ? (dataset.capacityIndex.get(capKey) || 0) : 0;
       } else if (viewMode === 'service' && serviceResourceKeys) {
         total = parent.totalCharges?.get(weekKey) || 0;
         for (const resKey of serviceResourceKeys) {
@@ -720,207 +810,6 @@ export function calculateFilteredTreeMetrics(
   activeResourceIds: string[],
 ): void {
   computeParentAndChildMetrics(dataset, rows, viewMode, displayedWeeks, activeEquipeIds, activeResourceIds, false);
-}
-
-export function getPlannedDaysForResource(resource: ResourceRow, period: PlannedDaysPeriod, todayWeekStart: Date): number {
-  let total = 0;
-  const todayWeekStartStr = formatLocalDate(todayWeekStart);
-  const sourceMap = resource.dailyCharges ?? resource.charges;
-  const useDirectDays = !!resource.dailyCharges;
-
-  sourceMap.forEach((val, weekStr) => {
-    let match: boolean;
-    if (period === 'today') match = weekStr >= todayWeekStartStr;
-    else if (period === 'all') match = true;
-    else {
-      const [y, m, d] = weekStr.split('-').map(Number);
-      match = getISOWeekYear(new Date(y, m - 1, d)).toString() === period;
-    }
-    if (match) total += useDirectDays ? val || 0 : (val || 0) * (resource.jours_par_semaine || 5);
-  });
-  return total;
-}
-
-export function getPlannedDaysForChildInTeam(child: ChildRow, period: PlannedDaysPeriod, todayWeekStart: Date): number {
-  let total = 0;
-  for (const res of child.resources) total += getPlannedDaysForResource(res, period, todayWeekStart);
-  return total;
-}
-
-export function getPlannedDaysForProjectParent(
-  parent: ParentRow,
-  period: PlannedDaysPeriod,
-  filterEquipeIds: string[],
-  todayWeekStart: Date,
-): number {
-  let total = 0;
-  for (const teamChild of parent.children) {
-    if (filterEquipeIds.length > 0 && !filterEquipeIds.includes(teamChild.id)) continue;
-    for (const res of teamChild.resources) total += getPlannedDaysForResource(res, period, todayWeekStart);
-  }
-  return total;
-}
-
-export function getResourceTotalPlannedDays(
-  resource: ResourceRow,
-  yearSel: CapacityYearSelection,
-  selectedStartDate: Date | null,
-  todayWeekStart: Date,
-): number {
-  let total = 0;
-  const sourceMap = resource.dailyCharges ?? resource.charges;
-  const useDirectDays = !!resource.dailyCharges;
-  const todayWeekStartStr = formatLocalDate(todayWeekStart);
-  const selectedStartStr = selectedStartDate ? formatLocalDate(selectedStartDate) : '';
-
-  sourceMap.forEach((val, weekStr) => {
-    const dayContribution = useDirectDays ? val : val * resource.jours_par_semaine;
-    if (yearSel === 'today') {
-      if (weekStr >= todayWeekStartStr) total += dayContribution;
-    } else if (yearSel === 'custom' && selectedStartDate) {
-      if (weekStr >= selectedStartStr) total += dayContribution;
-    } else {
-      const [y, m, d] = weekStr.split('-').map(Number);
-      const isoYear = getISOWeekYear(new Date(y, m - 1, d)).toString();
-      if (yearSel === 'all' || isoYear === yearSel) total += dayContribution;
-    }
-  });
-  return total;
-}
-
-export function getChildTotalPlannedDays(
-  child: ChildRow,
-  yearSel: CapacityYearSelection,
-  selectedStartDate: Date | null,
-  todayWeekStart: Date,
-): number {
-  if (child.resources && child.resources.length > 0) {
-    return child.resources.reduce(
-      (sum, res) => sum + getResourceTotalPlannedDays(res, yearSel, selectedStartDate, todayWeekStart),
-      0,
-    );
-  }
-  let total = 0;
-  const sourceMap = child.dailyCharges ?? child.charges;
-  const useDirectDays = !!child.dailyCharges;
-  const todayWeekStartStr = formatLocalDate(todayWeekStart);
-  const selectedStartStr = selectedStartDate ? formatLocalDate(selectedStartDate) : '';
-
-  sourceMap.forEach((val, weekStr) => {
-    const dayContribution = useDirectDays ? val : val * 5;
-    if (yearSel === 'today') {
-      if (weekStr >= todayWeekStartStr) total += dayContribution;
-    } else if (yearSel === 'custom' && selectedStartDate) {
-      if (weekStr >= selectedStartStr) total += dayContribution;
-    } else {
-      const [y, m, d] = weekStr.split('-').map(Number);
-      const isoYear = getISOWeekYear(new Date(y, m - 1, d)).toString();
-      if (yearSel === 'all' || isoYear === yearSel) total += dayContribution;
-    }
-  });
-  return total;
-}
-
-function readChiffreCategory(chiffre: Chiffre, mode: ChiffreCategory): number | null {
-  if (mode === 'restant') return (chiffre.previsionnel ?? 0) - (chiffre.consomme ?? 0);
-  const value = chiffre[mode];
-  return value !== undefined ? value : null;
-}
-
-export function getChiffreValueForServiceProject(
-  allChiffres: Chiffre[],
-  serviceId: string,
-  projectId: string,
-  mode: ChiffreCategory,
-): number | null {
-  if (!serviceId || !projectId) return null;
-  const chiffre = allChiffres.find((c) => c.id_projet === projectId && c.id_service === serviceId);
-  return chiffre ? readChiffreCategory(chiffre, mode) : null;
-}
-
-export function getChiffreValueForMode(
-  dataset: Pick<PlanRawDataset, 'availablePersonnes' | 'allRoleAttachments' | 'allEquipes' | 'allChiffres'>,
-  teamId: string,
-  projectId: string,
-  resourceId: string | undefined,
-  resourceType: 'role' | 'personne' | undefined,
-  mode: ChiffreCategory,
-): number | null {
-  let idService: string | null = null;
-  if (resourceType === 'personne' && resourceId) {
-    idService = dataset.availablePersonnes.find((p) => p.id === resourceId)?.service_id ?? null;
-  } else if (resourceType === 'role' && resourceId) {
-    idService = dataset.allRoleAttachments.find((a) => a.role_id === resourceId && a.equipe_id === teamId)?.service_id ?? null;
-  }
-  if (idService === null && !resourceId) {
-    idService = dataset.allEquipes.find((e) => e.id === teamId)?.service_id ?? null;
-  }
-  if (idService === null || !projectId) return null;
-  return getChiffreValueForServiceProject(dataset.allChiffres, idService, projectId, mode);
-}
-
-function sumChiffresForTeamIds(
-  dataset: Pick<PlanRawDataset, 'allEquipes' | 'allRoleAttachments' | 'availablePersonnes' | 'allChiffres'>,
-  teamIds: string[],
-  projectId: string,
-  category: ChiffreCategory,
-): number | null {
-  const serviceIds = new Set<string>();
-  for (const teamId of teamIds) {
-    const team = dataset.allEquipes.find((e) => e.id === teamId);
-    if (team?.service_id) serviceIds.add(team.service_id);
-    for (const att of dataset.allRoleAttachments) {
-      if (att.equipe_id === teamId && att.service_id) serviceIds.add(att.service_id);
-    }
-    for (const pers of dataset.availablePersonnes) {
-      if (pers.equipe_id === teamId && pers.service_id) serviceIds.add(pers.service_id);
-    }
-  }
-  if (serviceIds.size === 0) return null;
-  let total = 0;
-  let found = false;
-  for (const sId of serviceIds) {
-    const val = getChiffreValueForServiceProject(dataset.allChiffres, sId, projectId, category);
-    if (val !== null) {
-      found = true;
-      total += val;
-    }
-  }
-  return found ? total : null;
-}
-
-export function getChiffreValueForTeamProject(
-  dataset: Pick<PlanRawDataset, 'allEquipes' | 'allRoleAttachments' | 'availablePersonnes' | 'allChiffres'>,
-  teamId: string,
-  projectId: string,
-  category: ChiffreCategory,
-): number | null {
-  return sumChiffresForTeamIds(dataset, [teamId], projectId, category);
-}
-
-export function getChiffreValueForProjectParent(
-  dataset: Pick<PlanRawDataset, 'allEquipes' | 'allRoleAttachments' | 'availablePersonnes' | 'allChiffres'>,
-  parent: ParentRow,
-  filterEquipeIds: string[],
-  category: ChiffreCategory,
-): number | null {
-  const teamIds = parent.children
-    .map((c) => c.id)
-    .filter((id) => filterEquipeIds.length === 0 || filterEquipeIds.includes(id));
-  return sumChiffresForTeamIds(dataset, teamIds, parent.id, category);
-}
-
-export function checkSizeMatch(val: number | null, operator: SizeFilterOperator, targetValue: number): boolean {
-  if (val === null) return false;
-  return operator === 'gte' ? val >= targetValue : val <= targetValue;
-}
-
-function hasChargesInPeriod(chargesMap: Map<string, number> | undefined, startDate: string, endDate: string): boolean {
-  if (!chargesMap || chargesMap.size === 0) return false;
-  for (const [weekKey, val] of chargesMap.entries()) {
-    if (val > 0 && weekKey >= startDate && weekKey <= endDate) return true;
-  }
-  return false;
 }
 
 export function applyPlanFilters(
@@ -983,7 +872,7 @@ export function applyPlanFilters(
     const pMatches = matchesRowText(parent);
     const parentPassesEquipe =
       !criteria.filterEquipeIds.length ||
-      (viewMode === 'team' ? criteria.filterEquipeIds.includes(parent.id) : isResourceMode ? criteria.filterEquipeIds.includes(parent.id.split('_')[0]) : true);
+      (viewMode === 'team' ? criteria.filterEquipeIds.includes(parent.id) : isResourceMode ? criteria.filterEquipeIds.includes(extractTeamIdFromRowId(parent.id)) : true);
     const parentPassesResource =
       !criteria.filterResourceIds.length ||
       !isResourceMode ||
@@ -1036,7 +925,7 @@ export function applyPlanFilters(
         grandchildrenMatch = child.resources.filter((gr) => {
           let passesLargeProject = true;
           if (sizeEnabled && isProjectLeafMode) {
-            const teamId = parent.id.split('_')[0];
+            const teamId = extractTeamIdFromRowId(parent.id);
             const projectId = gr.projectId || gr.id;
             const val = sizeCriterion.startsWith('charges_')
               ? getPlannedDaysForResource(gr, sizeCriterion.substring(8) as PlannedDaysPeriod, todayWeekStart)
