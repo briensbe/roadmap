@@ -434,7 +434,7 @@ export function buildPlanTree(
             charges: new Map<string, number>(),
             dailyCharges: new Map<string, number>(),
             comments: new Map<string, string>(),
-            color: actor.color || equipe?.color,
+            color: equipe?.color || actor.color,
             resourceId: actor.id,
             projectId: pId,
             equipeId: charge.equipe_id,

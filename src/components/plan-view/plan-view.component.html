@@ -1316,7 +1316,7 @@
                                       class="resource-icon-wrapper"
                                       [style.background-color]="resource.color || '#e2e8f0'">
                                       <lucide-icon
-                                        [name]="resource.type === 'role' ? 'contact' : 'user'"
+                                        [name]="viewMode() === 'service' ? 'users' : (resource.type === 'role' ? 'contact' : 'user')"
                                         [size]="14"
                                         class="resource-icon"></lucide-icon>
                                     </div>
@@ -1789,7 +1789,7 @@
                                       class="resource-icon-wrapper"
                                       [style.background-color]="resource.color || '#e2e8f0'">
                                       <lucide-icon
-                                        [name]="resource.type === 'role' ? 'contact' : 'user'"
+                                        [name]="viewMode() === 'service' ? 'users' : (resource.type === 'role' ? 'contact' : 'user')"
                                         [size]="14"
                                         class="resource-icon"></lucide-icon>
                                     </div>
