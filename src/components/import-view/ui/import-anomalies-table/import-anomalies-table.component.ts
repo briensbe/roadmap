@@ -19,7 +19,8 @@ import {
   FileSpreadsheet,
   Download,
 } from 'lucide-angular';
-import * as XLSX from 'xlsx';
+import * as Excel from 'exceljs';
+import { downloadWorkbook } from '../../../../utils/excel.utils';
 import {
   ImportAnomaliesGroupedProject,
   ImportAnomaliesStats,
@@ -194,13 +195,28 @@ export class ImportAnomaliesTableComponent {
     });
   }
 
-  exportAnomaliesToExcel() {
+  async exportAnomaliesToExcel() {
     const groups = this.anomaliesByPm();
-    const rows: Record<string, string | number | null>[] = [];
+    const workbook = new Excel.Workbook();
+    const worksheet = workbook.addWorksheet('Anomalies Triskell');
 
-    groups.forEach(g => {
-      g.projects.forEach(proj => {
-        proj.services.forEach(srv => {
+    worksheet.columns = [
+      { header: 'Chef de projet', key: 'pm', width: 25 },
+      { header: 'Code Projet', key: 'code', width: 15 },
+      { header: 'Nom Projet', key: 'name', width: 35 },
+      { header: 'Réf JIRA', key: 'jira', width: 20 },
+      { header: 'Service', key: 'service', width: 25 },
+      { header: 'Initial (JH)', key: 'initial', width: 12 },
+      { header: 'Révisé (JH)', key: 'revised', width: 12 },
+      { header: 'Prévisionnel (JH)', key: 'prev', width: 12 },
+      { header: 'Consommé (JH)', key: 'cons', width: 12 },
+      { header: 'Diagnostic', key: 'diag', width: 20 },
+      { header: 'Écart (JH)', key: 'gap', width: 12 },
+    ];
+
+    groups.forEach((g) => {
+      g.projects.forEach((proj) => {
+        proj.services.forEach((srv) => {
           let diag = '';
           let gap = 0;
           if (srv.hasConsumedAnomaly) {
@@ -213,43 +229,25 @@ export class ImportAnomaliesTableComponent {
             diag = 'Conforme';
           }
 
-          rows.push({
-            'Chef de projet': g.pm,
-            'Code Projet': proj.project_code,
-            'Nom Projet': proj.project_name || '',
-            'Réf JIRA': (proj.jira_references || []).join(', '),
-            'Service': srv.service_name,
-            'Initial (JH)': srv.initial_jh,
-            'Révisé (JH)': srv.revised_jh,
-            'Prévisionnel (JH)': srv.previsionnel_jh,
-            'Consommé (JH)': srv.consomme_jh,
-            'Diagnostic': diag,
-            'Écart (JH)': gap,
+          worksheet.addRow({
+            pm: g.pm,
+            code: proj.project_code,
+            name: proj.project_name || '',
+            jira: (proj.jira_references || []).join(', '),
+            service: srv.service_name,
+            initial: srv.initial_jh,
+            revised: srv.revised_jh,
+            prev: srv.previsionnel_jh,
+            cons: srv.consomme_jh,
+            diag,
+            gap,
           });
         });
       });
     });
 
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Anomalies Triskell');
-
-    ws['!cols'] = [
-      { wch: 25 },
-      { wch: 15 },
-      { wch: 35 },
-      { wch: 20 },
-      { wch: 25 },
-      { wch: 12 },
-      { wch: 12 },
-      { wch: 12 },
-      { wch: 12 },
-      { wch: 20 },
-      { wch: 12 },
-    ];
-
     const fileName = `Export_Anomalies_Triskell_${new Date().toISOString().split('T')[0]}.xlsx`;
-    XLSX.writeFile(wb, fileName);
+    await downloadWorkbook(workbook, fileName);
   }
 
   exportAnomaliesToCSV() {

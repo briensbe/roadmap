@@ -27,7 +27,8 @@ import { ProjectModalComponent } from '../project-modal.component';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { calculateNewRank, sortByRank } from '../../utils/lexorank.utils';
 import { storageSignal } from '../../utils/storage-signal';
-import * as XLSX from 'xlsx';
+import * as Excel from 'exceljs';
+import { downloadWorkbook, readWorkbookFromFile } from '../../utils/excel.utils';
 import { textContains } from '../../utils/text.utils';
 
 @Component({
@@ -333,26 +334,37 @@ export class ProjectsViewComponent implements OnInit {
 
   // --- Excel Export ---
 
-  exportToExcel(mode: 'all' | 'filtered') {
+  async exportToExcel(mode: 'all' | 'filtered') {
     this.showExportMenu = false;
     const projects = mode === 'filtered' ? this.filteredProjects() : this.projetsQuery.data() || [];
 
-    const data = projects.map((p) => ({
-      'Code Projet': p.code_projet,
-      'Nom Projet': p.nom_projet,
-      Statut: p.statut,
-      Description: p.description || '',
-      'Référence Externe': p.reference_externe || '',
-      'Chef de Projet': p.chef_projet || '',
-      Couleur: p.color || '',
-    }));
+    const workbook = new Excel.Workbook();
+    const worksheet = workbook.addWorksheet('Projets');
 
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Projets');
+    worksheet.columns = [
+      { header: 'Code Projet', key: 'code_projet', width: 15 },
+      { header: 'Nom Projet', key: 'nom_projet', width: 35 },
+      { header: 'Statut', key: 'statut', width: 15 },
+      { header: 'Description', key: 'description', width: 30 },
+      { header: 'Référence Externe', key: 'reference_externe', width: 20 },
+      { header: 'Chef de Projet', key: 'chef_projet', width: 25 },
+      { header: 'Couleur', key: 'color', width: 15 },
+    ];
+
+    projects.forEach((p) => {
+      worksheet.addRow({
+        code_projet: p.code_projet,
+        nom_projet: p.nom_projet,
+        statut: p.statut,
+        description: p.description || '',
+        reference_externe: p.reference_externe || '',
+        chef_projet: p.chef_projet || '',
+        color: p.color || '',
+      });
+    });
 
     const fileName = `Export_Projets_${mode === 'filtered' ? 'Filtrés_' : ''}${new Date().toISOString().split('T')[0]}.xlsx`;
-    XLSX.writeFile(wb, fileName);
+    await downloadWorkbook(workbook, fileName);
   }
 
   // --- Excel Import ---
@@ -365,22 +377,61 @@ export class ProjectsViewComponent implements OnInit {
   }
 
   async importFromExcel(event: any) {
-    const file = event.target.files[0];
+    const file = event.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = async (e: any) => {
-      const bstr = e.target.result;
-      const wb = XLSX.read(bstr, { type: 'binary' });
-      const wsname = wb.SheetNames[0];
-      const ws = wb.Sheets[wsname];
-      const data = XLSX.utils.sheet_to_json(ws) as any[];
+    try {
+      const workbook = await readWorkbookFromFile(file);
+      const worksheet = workbook.worksheets[0];
+      if (!worksheet) {
+        this.confirmTitle = 'Erreur d’import';
+        this.confirmMessage = 'Le fichier Excel ne contient aucune feuille.';
+        this.confirmIcon = 'alert-circle';
+        this.confirmLabel = 'Fermer';
+        this.confirmVariant = 'danger';
+        this.showCancelButton = false;
+        this.showConfirmModal = true;
+        return;
+      }
 
-      this.processImportData(data);
-      // Reset input
+      const rows: Record<string, any>[] = [];
+      const headerRow = worksheet.getRow(1);
+      const headers: string[] = [];
+
+      headerRow.eachCell((cell, colNumber) => {
+        headers[colNumber] = String(cell.value || '').trim();
+      });
+
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) return;
+        const rowData: Record<string, any> = {};
+        row.eachCell((cell, colNumber) => {
+          const header = headers[colNumber];
+          if (header) {
+            let val = cell.value;
+            if (val && typeof val === 'object') {
+              if ('text' in val) val = (val as any).text;
+              else if ('result' in val) val = (val as any).result;
+            }
+            rowData[header] = val;
+          }
+        });
+        rows.push(rowData);
+      });
+
+      this.processImportData(rows);
+    } catch (err: any) {
+      console.error('Erreur lecture Excel:', err);
+      this.confirmTitle = 'Erreur de lecture';
+      this.confirmMessage = 'Impossible de lire le fichier Excel fourni.';
+      this.confirmIcon = 'alert-circle';
+      this.confirmLabel = 'Fermer';
+      this.confirmVariant = 'danger';
+      this.showCancelButton = false;
+      this.showConfirmModal = true;
+    } finally {
       event.target.value = '';
-    };
-    reader.readAsBinaryString(file);
+    }
   }
 
   private async processImportData(data: any[]) {

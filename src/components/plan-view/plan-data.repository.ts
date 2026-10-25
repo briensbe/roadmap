@@ -12,7 +12,8 @@
  * - Gérer l'export Excel (`.xlsx`) de la planification et le lancement du tutoriel interactif (`driver.js`).
  */
 import { Injectable, inject } from '@angular/core';
-import * as XLSX from 'xlsx';
+import * as Excel from 'exceljs';
+import { downloadWorkbook } from '../../utils/excel.utils';
 import { driver } from 'driver.js';
 import { TeamService } from '../../services/team.service';
 import { ProjetService } from '../../services/projet.service';
@@ -591,7 +592,7 @@ export class PlanDataRepository {
     driverObj.drive();
   }
 
-  exportToExcel(rowsAll: ParentRow[], displayedWeeks: Date[], viewMode: PlanViewMode): void {
+  async exportToExcel(rowsAll: ParentRow[], displayedWeeks: Date[], viewMode: PlanViewMode): Promise<void> {
     const weekHeaders = displayedWeeks.map((w) => {
       const d = w.getDate().toString().padStart(2, '0');
       const m = (w.getMonth() + 1).toString().padStart(2, '0');
@@ -637,22 +638,19 @@ export class PlanDataRepository {
       return (a[4] as string).localeCompare(b[4] as string);
     });
 
-    const ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
-    ws['!cols'] = [
-      { wch: 30 },
-      { wch: 12 },
-      { wch: 15 },
-      { wch: 20 },
-      { wch: 24 },
-      { wch: 10 },
-      ...weekHeaders.map(() => ({ wch: 12 })),
-    ];
+    const workbook = new Excel.Workbook();
+    const worksheet = workbook.addWorksheet('Planification');
 
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Planification');
+    worksheet.addRow(headers);
+    dataRows.forEach((row) => worksheet.addRow(row));
+
+    const colWidths = [30, 12, 15, 20, 24, 10, ...weekHeaders.map(() => 12)];
+    colWidths.forEach((width, index) => {
+      worksheet.getColumn(index + 1).width = width;
+    });
 
     const today = new Date();
     const dateStr = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
-    XLSX.writeFile(wb, `planification_${dateStr}.xlsx`);
+    await downloadWorkbook(workbook, `planification_${dateStr}.xlsx`);
   }
 }
