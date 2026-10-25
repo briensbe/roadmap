@@ -8,13 +8,13 @@
   <!-- Estimations Header (Selection Info) -->
   <div class="selection-info">
     @if (!isCrewdayzMode && mode === 'classic') {
-      <span class="highlight">{{ totalDays | number: '1.1-1' }}j</span>
+      <span class="highlight">{{ totalDays | number: '1.0-1' }}j</span>
       <span class="details"
         >sur <span class="count">{{ selectedCount }}</span> semaine(s)</span
       >
     }
     @if (!isCrewdayzMode && mode === 'projection') {
-      <span class="highlight">{{ actualProjectedDays | number: '1.1-1' }}j</span>
+      <span class="highlight">{{ actualProjectedDays | number: '1.0-1' }}j</span>
       <span class="details">
         sur <span class="count">{{ projectedWeeks }}</span> semaine(s)
         @if (projectionRangeText) {
@@ -25,7 +25,7 @@
     @if (isCrewdayzMode) {
       <div class="crewdayz-info-row">
         <div class="crewdayz-days-summary">
-          <span class="highlight">{{ effectiveCrewdayzDays | number: '1.1-1' }}j</span>
+          <span class="highlight">{{ effectiveCrewdayzDays | number: '1.0-1' }}j</span>
           <span class="details"
             >sur <span class="count">{{ selectedCount }}</span> semaine(s)</span
           >
@@ -35,7 +35,7 @@
             <span class="base-label">Base :</span>
             <span class="base-value">
               @if (crewdayzBaseValue !== null) {
-                <strong>{{ crewdayzBaseValue }} ETP</strong> ({{ crewdayzBaseValue * daysPerWeek | number: '1.1-1' }}j)
+                <strong>{{ crewdayzBaseValue | number: '1.0-1' }} ETP</strong> ({{ crewdayzBaseValue * daysPerWeek | number: '1.0-1' }}j)
               } @else {
                 <em class="text-muted">non mappé (0j)</em>
               }

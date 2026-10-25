@@ -243,7 +243,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
         this.bulkCapaciteValue !== null ? this.bulkCapaciteValue : this.getCapacite(cell.resource, cell.week) || 0;
       total += cap * (cell.resource.jours_par_semaine || 5);
     }
-    return total;
+    return Math.round(total * 10) / 10;
   }
 
   expandAll() {

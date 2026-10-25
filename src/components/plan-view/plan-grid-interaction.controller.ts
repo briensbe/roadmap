@@ -460,16 +460,18 @@ export class PlanGridInteractionController {
 
   getCellTooltip(resource: ResourceRow, week: Date, cell?: ResourceCellData): string {
     const weekKey = formatWeekStart(week);
-    const val = resource.charges?.get(weekKey) || 0;
+    const rawVal = resource.charges?.get(weekKey) || 0;
+    const val = Math.round(rawVal * 10) / 10;
     const comment = cell?.comment ?? resource.comments?.get(weekKey);
-    const hasVisibleAvailability = !!(cell && cell.showAvailability && cell.hasCapRecord && (val > 0 || this.showAvailability()));
-    if (val <= 0 && !comment && !hasVisibleAvailability) return '';
+    const hasVisibleAvailability = !!(cell && cell.showAvailability && cell.hasCapRecord && (rawVal > 0 || this.showAvailability()));
+    if (rawVal <= 0 && !comment && !hasVisibleAvailability) return '';
     const days = resource.dailyCharges
       ? Math.round((resource.dailyCharges.get(weekKey) || 0) * 10) / 10
-      : Math.round(val * (resource.jours_par_semaine || 5) * 10) / 10;
+      : Math.round(rawVal * (resource.jours_par_semaine || 5) * 10) / 10;
     let text = `${resource.label} : ${val} ETP (${days}j)`;
     if (hasVisibleAvailability) {
-      text += ` | Dispo : ${cell!.availability > 0 ? '+' : ''}${cell!.availability} ETP`;
+      const avail = Math.round(cell!.availability * 10) / 10;
+      text += ` | Dispo : ${avail > 0 ? '+' : ''}${avail} ETP`;
     }
     if (comment) text += `\n💬 Note : ${comment}`;
     return text;
@@ -481,24 +483,24 @@ export class PlanGridInteractionController {
       for (const [weekKey, days] of resource.dailyCharges) {
         if (new Date(weekKey).getFullYear() === year) total += days;
       }
-      return total;
+      return Math.round(total * 10) / 10;
     }
     for (const [weekKey, charge] of resource.charges) {
       if (new Date(weekKey).getFullYear() === year) total += charge * resource.jours_par_semaine;
     }
-    return total;
+    return Math.round(total * 10) / 10;
   }
 
   getChildMetricsYear(child: ChildRow, year: number): number {
     let total = 0;
     for (const resource of child.resources) total += this.getResourceMetricsYear(resource, year);
-    return total;
+    return Math.round(total * 10) / 10;
   }
 
   getRowMetricsYear(row: ParentRow, year: number): number {
     let total = 0;
     for (const child of row.children) total += this.getChildMetricsYear(child, year);
-    return total;
+    return Math.round(total * 10) / 10;
   }
 
   getBadgePrefix(): string {
@@ -786,7 +788,7 @@ export class PlanGridInteractionController {
 
   get dragProjectionDays(): number {
     if (!this.dragStartCellValue || this.dragStartCellValue <= 0) return 0;
-    return this.selectedCells.length * this.dragStartCellValue * (this.dragStartResource?.jours_par_semaine || 5);
+    return Math.round(this.selectedCells.length * this.dragStartCellValue * (this.dragStartResource?.jours_par_semaine || 5) * 10) / 10;
   }
 
   get totalSelectedDays(): number {
@@ -795,7 +797,7 @@ export class PlanGridInteractionController {
       const charge = this.bulkChargeValue !== null ? this.bulkChargeValue : this.getResourceValue(cell.resource, cell.week) || 0;
       total += charge * (cell.resource.jours_par_semaine || 0);
     }
-    return total;
+    return Math.round(total * 10) / 10;
   }
 
   getResourceUniqueId(

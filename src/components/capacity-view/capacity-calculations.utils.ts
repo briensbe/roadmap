@@ -14,7 +14,8 @@ export function calculateTeamTotalCapacity(
   week: Date,
   getCapaciteFn: (res: ResourceRow, w: Date) => number,
 ): number {
-  return teamRow.resources.reduce((sum, resource) => sum + getCapaciteFn(resource, week), 0);
+  const sum = teamRow.resources.reduce((acc, resource) => acc + getCapaciteFn(resource, week), 0);
+  return Math.round(sum * 100) / 100;
 }
 
 export function calculateTeamTotalDays(
@@ -22,10 +23,11 @@ export function calculateTeamTotalDays(
   week: Date,
   getCapaciteFn: (res: ResourceRow, w: Date) => number,
 ): number {
-  return teamRow.resources.reduce(
-    (sum, resource) => sum + getCapaciteFn(resource, week) * resource.jours_par_semaine,
+  const sum = teamRow.resources.reduce(
+    (acc, resource) => acc + getCapaciteFn(resource, week) * resource.jours_par_semaine,
     0,
   );
+  return Math.round(sum * 10) / 10;
 }
 
 export function calculateResourceTotalPlannedDays(
@@ -59,7 +61,7 @@ export function calculateResourceTotalPlannedDays(
       }
     }
   }
-  return total;
+  return Math.round(total * 10) / 10;
 }
 
 export function formatCapacityCellTooltip(
@@ -68,18 +70,22 @@ export function formatCapacityCellTooltip(
   base: number | null,
   custom?: ResourceWeekData,
 ): string {
+  const roundVal = (n: number) => Math.round(n * 100) / 100;
+  const effFmt = roundVal(eff);
+  const baseFmt = roundVal(base ?? 0);
   let text = '';
   if (source === 'crewdayz') {
     if (custom?.override_capacite !== null && custom?.override_capacite !== undefined) {
-      text = `Capacité forcée : ${custom.override_capacite} ETP (Base Crewdayz : ${base ?? 0} ETP)`;
+      text = `Capacité forcée : ${roundVal(custom.override_capacite)} ETP (Base Crewdayz : ${baseFmt} ETP)`;
     } else if (custom?.override_delta !== null && custom?.override_delta !== undefined) {
-      const sign = custom.override_delta > 0 ? '+' : '';
-      text = `Base Crewdayz : ${base ?? 0} ETP | Delta : ${sign}${custom.override_delta} ETP → Total : ${eff} ETP`;
+      const deltaFmt = roundVal(custom.override_delta);
+      const sign = deltaFmt > 0 ? '+' : '';
+      text = `Base Crewdayz : ${baseFmt} ETP | Delta : ${sign}${deltaFmt} ETP → Total : ${effFmt} ETP`;
     } else {
-      text = `Disponibilité Crewdayz : ${base ?? 0} ETP`;
+      text = `Disponibilité Crewdayz : ${baseFmt} ETP`;
     }
   } else {
-    text = `Capacité Roadmap : ${eff} ETP`;
+    text = `Capacité Roadmap : ${effFmt} ETP`;
   }
 
   if (custom?.comment) {

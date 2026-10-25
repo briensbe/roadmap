@@ -19,7 +19,7 @@
       <span class="projection-val">{{ dragProjectionDays | number: '1.0-1' }}j</span>
     </div>
     <div class="projection-formula">
-      {{ selectedCells.length }}sem × {{ dragStartCellValue }}res × {{ selectionDaysPerWeek }}j
+      {{ selectedCells.length }}sem × {{ dragStartCellValue | number: '1.0-1' }}res × {{ selectionDaysPerWeek }}j
     </div>
   </div>
   <div class="capacity-header">

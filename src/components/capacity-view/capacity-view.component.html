@@ -280,7 +280,7 @@
                         </div>
                         @if (showDaysInCells) {
                           <div class="days-value">
-                            {{ getTeamTotalDays(teamRow, week) | number: '1.1-1' }}j
+                            {{ getTeamTotalDays(teamRow, week) | number: '1.0-1' }}j
                           </div>
                         }
                       </div>
@@ -343,7 +343,7 @@
                         @if (getEffectiveCapacity(resource, week) > 0) {
                           <div class="cell-content">
                             <div class="capacity-value">
-                              {{ getEffectiveCapacity(resource, week) }}
+                              {{ getEffectiveCapacity(resource, week) | number: '1.0-1' }}
                               @if (hasOverride(resource, week)) {
                                 <span class="override-indicator" title="Capacité forcée manuellement">✏️</span>
                               }
@@ -353,7 +353,7 @@
                                 class="delta-pill"
                                 [class.delta-pos]="getDelta(resource, week)! > 0"
                                 [class.delta-neg]="getDelta(resource, week)! < 0">
-                                {{ getDelta(resource, week)! > 0 ? '+' : '' }}{{ getDelta(resource, week) }}
+                                {{ getDelta(resource, week)! > 0 ? '+' : '' }}{{ getDelta(resource, week) | number: '1.0-1' }}
                               </div>
                             }
                             @if (getComment(resource, week)) {
@@ -363,7 +363,7 @@
                             }
                             @if (showDaysInCells) {
                               <div class="days-value">
-                                {{ getEffectiveCapacity(resource, week) * resource.jours_par_semaine | number: '1.1-1' }}j
+                                {{ getEffectiveCapacity(resource, week) * resource.jours_par_semaine | number: '1.0-1' }}j
                               </div>
                             }
                           </div>

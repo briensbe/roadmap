@@ -200,10 +200,10 @@ function accumulateGroupResources(
     const resource = resourceMap.get(actor.key)!;
     if (charge.semaine_debut) {
       const weekKey = charge.semaine_debut.split('T')[0];
-      resource.charges.set(weekKey, (resource.charges.get(weekKey) || 0) + charge.unite_ressource);
+      resource.charges.set(weekKey, Math.round(((resource.charges.get(weekKey) || 0) + charge.unite_ressource) * 100) / 100);
       if (charge.comment) resource.comments?.set(weekKey, charge.comment);
-      childTotals.set(weekKey, (childTotals.get(weekKey) || 0) + charge.unite_ressource);
-      parentTotals.set(weekKey, (parentTotals.get(weekKey) || 0) + charge.unite_ressource);
+      childTotals.set(weekKey, Math.round(((childTotals.get(weekKey) || 0) + charge.unite_ressource) * 100) / 100);
+      parentTotals.set(weekKey, Math.round(((parentTotals.get(weekKey) || 0) + charge.unite_ressource) * 100) / 100);
     }
   }
   return Array.from(resourceMap.values())
@@ -410,10 +410,10 @@ function buildResourceTree(ctx: TreeBuildContext): ParentRow[] {
         });
       }
       if (weekKey) {
-        res.charges.set(weekKey, (res.charges.get(weekKey) || 0) + charge.unite_ressource);
+        res.charges.set(weekKey, Math.round(((res.charges.get(weekKey) || 0) + charge.unite_ressource) * 100) / 100);
         if (charge.comment) res.comments.set(weekKey, charge.comment);
         const detRow = res.projectDetailedMap.get(pId)!;
-        detRow.charges.set(weekKey, (detRow.charges.get(weekKey) || 0) + charge.unite_ressource);
+        detRow.charges.set(weekKey, Math.round(((detRow.charges.get(weekKey) || 0) + charge.unite_ressource) * 100) / 100);
         if (charge.comment) detRow.comments?.set(weekKey, charge.comment);
       }
     }
@@ -500,14 +500,14 @@ function buildServiceTree(ctx: TreeBuildContext): ParentRow[] {
       const resRow = projEntry.resourceMap.get(resKey)!;
       const weekKey = charge.semaine_debut?.split('T')[0];
       if (weekKey) {
-        parentTotal.set(weekKey, (parentTotal.get(weekKey) || 0) + charge.unite_ressource);
-        parentDailyCharges.set(weekKey, (parentDailyCharges.get(weekKey) || 0) + charge.unite_ressource * actor.jours);
+        parentTotal.set(weekKey, Math.round(((parentTotal.get(weekKey) || 0) + charge.unite_ressource) * 100) / 100);
+        parentDailyCharges.set(weekKey, Math.round(((parentDailyCharges.get(weekKey) || 0) + charge.unite_ressource * actor.jours) * 100) / 100);
 
-        projEntry.childCharges.set(weekKey, (projEntry.childCharges.get(weekKey) || 0) + charge.unite_ressource);
-        projEntry.childDailyCharges.set(weekKey, (projEntry.childDailyCharges.get(weekKey) || 0) + charge.unite_ressource * actor.jours);
+        projEntry.childCharges.set(weekKey, Math.round(((projEntry.childCharges.get(weekKey) || 0) + charge.unite_ressource) * 100) / 100);
+        projEntry.childDailyCharges.set(weekKey, Math.round(((projEntry.childDailyCharges.get(weekKey) || 0) + charge.unite_ressource * actor.jours) * 100) / 100);
 
-        resRow.charges.set(weekKey, (resRow.charges.get(weekKey) || 0) + charge.unite_ressource);
-        resRow.dailyCharges!.set(weekKey, (resRow.dailyCharges!.get(weekKey) || 0) + charge.unite_ressource * actor.jours);
+        resRow.charges.set(weekKey, Math.round(((resRow.charges.get(weekKey) || 0) + charge.unite_ressource) * 100) / 100);
+        resRow.dailyCharges!.set(weekKey, Math.round(((resRow.dailyCharges!.get(weekKey) || 0) + charge.unite_ressource * actor.jours) * 100) / 100);
         if (charge.comment) {
           resRow.comments?.set(weekKey, charge.comment);
         }
@@ -627,7 +627,8 @@ export function calculateUsageMap(dataset: Pick<PlanRawDataset, 'allCharges' | '
     const resourceKey = charge.role_id ? `role_${charge.role_id}` : charge.personne_id ? `personne_${charge.personne_id}` : null;
     if (!resourceKey) continue;
     const mapKey = `${charge.equipe_id}_${resourceKey}_${weekKey}`;
-    dataset.usageMap.set(mapKey, (dataset.usageMap.get(mapKey) || 0) + charge.unite_ressource);
+    const nextVal = Math.round(((dataset.usageMap.get(mapKey) || 0) + charge.unite_ressource) * 100) / 100;
+    dataset.usageMap.set(mapKey, nextVal);
   }
 }
 
@@ -640,7 +641,8 @@ export function getAvailability(
   const weekKey = formatWeekStart(week);
   const rId = resource.resourceId || resource.id;
   const mapKey = `${teamId}_${resource.type}_${rId}_${weekKey}`;
-  return (dataset.capacityIndex.get(mapKey) || 0) - (dataset.usageMap.get(mapKey) || 0);
+  const raw = (dataset.capacityIndex.get(mapKey) || 0) - (dataset.usageMap.get(mapKey) || 0);
+  return Math.round(raw * 100) / 100;
 }
 
 export function shouldShowAvailability(
@@ -783,9 +785,11 @@ function computeParentAndChildMetrics(
         }
       }
 
-      const availability = totalCapacity - total;
-      const status = totalCapacity > 0 || total > 0 ? (availability > 0 ? 'positive' : availability === 0 ? 'zero' : 'negative') : 'none';
-      parent.metrics.set(weekKey, { total, capacity: totalCapacity, availability, status });
+      const totalRounded = Math.round(total * 100) / 100;
+      const capRounded = Math.round(totalCapacity * 100) / 100;
+      const availability = Math.round((capRounded - totalRounded) * 100) / 100;
+      const status = capRounded > 0 || totalRounded > 0 ? (availability > 0 ? 'positive' : availability === 0 ? 'zero' : 'negative') : 'none';
+      parent.metrics.set(weekKey, { total: totalRounded, capacity: capRounded, availability, status });
     }
   }
 }

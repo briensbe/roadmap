@@ -40,13 +40,13 @@ export function getPlannedDaysForResource(resource: ResourceRow, period: Planned
     }
     if (match) total += useDirectDays ? val || 0 : (val || 0) * (resource.jours_par_semaine || 5);
   });
-  return total;
+  return Math.round(total * 10) / 10;
 }
 
 export function getPlannedDaysForChildInTeam(child: ChildRow, period: PlannedDaysPeriod, todayWeekStart: Date): number {
   let total = 0;
   for (const res of child.resources) total += getPlannedDaysForResource(res, period, todayWeekStart);
-  return total;
+  return Math.round(total * 10) / 10;
 }
 
 export function getPlannedDaysForProjectParent(
@@ -60,7 +60,7 @@ export function getPlannedDaysForProjectParent(
     if (filterEquipeIds.length > 0 && !filterEquipeIds.includes(teamChild.id)) continue;
     for (const res of teamChild.resources) total += getPlannedDaysForResource(res, period, todayWeekStart);
   }
-  return total;
+  return Math.round(total * 10) / 10;
 }
 
 export function getResourceTotalPlannedDays(
@@ -87,7 +87,7 @@ export function getResourceTotalPlannedDays(
       if (yearSel === 'all' || isoYear === yearSel) total += dayContribution;
     }
   });
-  return total;
+  return Math.round(total * 10) / 10;
 }
 
 export function getChildTotalPlannedDays(
@@ -97,10 +97,11 @@ export function getChildTotalPlannedDays(
   todayWeekStart: Date,
 ): number {
   if (child.resources && child.resources.length > 0) {
-    return child.resources.reduce(
-      (sum, res) => sum + getResourceTotalPlannedDays(res, yearSel, selectedStartDate, todayWeekStart),
+    const sum = child.resources.reduce(
+      (acc, res) => acc + getResourceTotalPlannedDays(res, yearSel, selectedStartDate, todayWeekStart),
       0,
     );
+    return Math.round(sum * 10) / 10;
   }
   let total = 0;
   const sourceMap = child.dailyCharges ?? child.charges;
@@ -120,13 +121,13 @@ export function getChildTotalPlannedDays(
       if (yearSel === 'all' || isoYear === yearSel) total += dayContribution;
     }
   });
-  return total;
+  return Math.round(total * 10) / 10;
 }
 
 export function readChiffreCategory(chiffre: Chiffre, mode: ChiffreCategory): number | null {
-  if (mode === 'restant') return (chiffre.previsionnel ?? 0) - (chiffre.consomme ?? 0);
+  if (mode === 'restant') return Math.round(((chiffre.previsionnel ?? 0) - (chiffre.consomme ?? 0)) * 10) / 10;
   const value = chiffre[mode];
-  return value !== undefined ? value : null;
+  return value !== undefined && value !== null ? Math.round(value * 10) / 10 : null;
 }
 
 export function getChiffreValueForServiceProject(
@@ -188,7 +189,7 @@ export function sumChiffresForTeamIds(
       total += val;
     }
   }
-  return found ? total : null;
+  return found ? Math.round(total * 10) / 10 : null;
 }
 
 export function getChiffreValueForTeamProject(
