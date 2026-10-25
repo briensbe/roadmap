@@ -1,0 +1,24 @@
+<div
+  class="year-popover chiffre-popover"
+  [style.top.px]="position().top"
+  [style.left.px]="position().left"
+  [style.transform]="position().transform"
+  (click)="$event.stopPropagation()">
+  <div
+    class="popover-arrow"
+    [class.top]="arrowSide() === 'top'"
+    [class.bottom]="arrowSide() === 'bottom'"></div>
+  <div class="popover-content">
+    @for (item of categories; track item.key) {
+      <button
+        class="popover-item"
+        [class.active]="chiffreMode() === item.key"
+        (click)="modeSelect.emit(item.key)">
+        <span>{{ item.label }}</span>
+        <span class="popover-item-val">
+          {{ previewValues()[item.key] !== null ? (previewValues()[item.key] | number: '1.0-1') + 'j' : '—' }}
+        </span>
+      </button>
+    }
+  </div>
+</div>

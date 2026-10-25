@@ -40,12 +40,13 @@ import {
 import { textContains } from '../../utils/text.utils';
 import { SettingsService } from '../../services/settings.service';
 import { AdministrationComponent } from '../administration/administration.component';
+import { ImportAnomaliesTableComponent } from './ui/import-anomalies-table/import-anomalies-table.component';
 import * as XLSX from 'xlsx';
 
 @Component({
   selector: 'app-import-view',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, LucideAngularModule, AdministrationComponent],
+  imports: [CommonModule, FormsModule, RouterLink, LucideAngularModule, AdministrationComponent, ImportAnomaliesTableComponent],
   templateUrl: './import-view.component.html',
   styleUrl: './import-view.component.css',
 })

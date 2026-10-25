@@ -1,0 +1,405 @@
+@if (!showGlobalFilters() && activeFiltersCount() > 0) {
+  <div class="filter-summary-bar">
+    <div class="summary-content">
+      <lucide-icon [img]="Filter" [size]="14" class="summary-icon"></lucide-icon>
+      <span class="summary-label">Filtres actifs :</span>
+      <span class="summary-text">{{ activeFiltersSummary() }}</span>
+    </div>
+    <div class="summary-actions">
+      <button class="btn-summary btn-show" (click)="toggleGlobalFilters.emit()">Modifier</button>
+      <button class="btn-summary btn-clear" (click)="clearAllFilters.emit()" title="Réinitialiser tous les filtres">
+        <lucide-icon [img]="Trash2" [size]="12"></lucide-icon>
+        Effacer
+      </button>
+    </div>
+  </div>
+}
+
+@if (showGlobalFilters()) {
+  <div class="calendar-controls">
+    <div class="header-search-bar">
+      <lucide-icon [img]="Search" [size]="16" class="search-icon"></lucide-icon>
+      <input
+        type="text"
+        class="header-search-input"
+        placeholder="Rechercher un projet, une équipe…"
+        [ngModel]="globalSearch()"
+        (ngModelChange)="searchChange.emit($event)"
+        #searchInput />
+      @if (searchInput.value) {
+        <button class="search-clear-btn" (click)="searchInput.value = ''; searchChange.emit('')">
+          <lucide-icon [img]="X" [size]="14"></lucide-icon>
+        </button>
+      }
+    </div>
+    <!-- Filters bar -->
+    <div class="filters-bar" #filtersContainer>
+      <div class="filter-group equipe-filter-group">
+        <div class="filter-pill" (click)="dropdownToggle.emit({ name: 'equipe', event: $event })">
+          <span class="filter-title">Équipes</span>
+          <span class="chip-list">
+            @for (id of filterEquipeIds(); track id) {
+              <span class="chip">{{ getEquipeName(id) }}</span>
+            }
+            @if (filterEquipeIds().length === 0) {
+              <span class="chip placeholder">Tous</span>
+            }
+          </span>
+        </div>
+        @if (openEquipeDropdown()) {
+          <div class="filters-dropdown" (click)="$event.stopPropagation()">
+            <div class="dropdown-header">
+              <span>{{ filterEquipeIds().length }} sélectionnée(s)</span>
+              @if (filterEquipeIds().length > 0) {
+                <button
+                  class="btn-clear"
+                  (click)="equipeClear.emit(); $event.stopPropagation()">
+                  Effacer
+                </button>
+              }
+            </div>
+            <div class="dropdown-list">
+              @for (e of allEquipes(); track e.id) {
+                <label class="dropdown-item" style="cursor: pointer">
+                  <input
+                    type="checkbox"
+                    [value]="e.id"
+                    (change)="equipeToggle.emit({ id: e.id!, event: $event })"
+                    [checked]="filterEquipeIds().includes(e.id!)"
+                    style="margin: 0; cursor: pointer" />
+                  <div
+                    class="item-color-badge"
+                    [style.background-color]="e.color || '#e2e8f0'"
+                    style="width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0"></div>
+                  <span class="item-label">{{ e.nom }}</span>
+                </label>
+              }
+            </div>
+          </div>
+        }
+      </div>
+      <div class="filter-group projet-filter-group">
+        <div class="filter-pill" (click)="dropdownToggle.emit({ name: 'projet', event: $event })">
+          <span class="filter-title">Projets</span>
+          <span class="chip-list">
+            @for (id of filterProjetIds(); track id) {
+              <span class="chip">{{ getProjetLabel(id) }}</span>
+            }
+            @if (filterProjetIds().length === 0) {
+              <span class="chip placeholder">Tous</span>
+            }
+          </span>
+        </div>
+        @if (openProjetDropdown()) {
+          <div class="filters-dropdown" (click)="$event.stopPropagation()">
+            <div class="dropdown-search">
+              <input
+                type="text"
+                class="search-input"
+                placeholder="Rechercher un projet..."
+                [ngModel]="filterProjetSearch()"
+                (ngModelChange)="projetSearchChange.emit($event)"
+                (click)="$event.stopPropagation()" />
+              @if (filterProjetSearch()) {
+                <lucide-icon
+                  [img]="X"
+                  [size]="14"
+                  class="clear-search"
+                  (click)="projetSearchChange.emit('')"></lucide-icon>
+              }
+            </div>
+            @if (filteredProjectsForDropdown().length > 0) {
+              <div class="dropdown-actions">
+                <button class="btn-link" (click)="selectAllProjects.emit()">Tout sélectionner</button>
+                <button class="btn-link text-danger" (click)="deselectAllProjects.emit()">Tout désélectionner</button>
+              </div>
+            }
+            <div class="dropdown-list">
+              @for (p of filteredProjectsForDropdown(); track p.id) {
+                <label class="dropdown-item">
+                  <input
+                    type="checkbox"
+                    [value]="p.id"
+                    (change)="projetToggle.emit({ id: p.id!, event: $event })"
+                    [checked]="filterProjetIds().includes(p.id!)" />
+                  <span class="p-code">{{ p.code_projet }}</span> — {{ p.nom_projet }}
+                </label>
+              }
+              @if (filteredProjectsForDropdown().length === 0) {
+                <div class="no-results">Aucun projet trouvé</div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+      <div class="filter-group">
+        <div class="filter-pill" (click)="dropdownToggle.emit({ name: 'statut', event: $event })">
+          <span class="filter-title">Statuts</span>
+          <span class="chip-list">
+            @for (s of filterStatusIds(); track s) {
+              <span class="chip">{{ s }}</span>
+            }
+            @if (filterStatusIds().length === 0) {
+              <span class="chip placeholder">Tous</span>
+            }
+          </span>
+        </div>
+        @if (openStatusDropdown()) {
+          <div class="filters-dropdown" (click)="$event.stopPropagation()">
+            <div class="dropdown-header">
+              <span>{{ filterStatusIds().length }} sélectionné(s)</span>
+              @if (filterStatusIds().length > 0) {
+                <button
+                  class="btn-clear"
+                  (click)="statusClear.emit(); $event.stopPropagation()">
+                  Effacer
+                </button>
+              }
+            </div>
+            <div class="dropdown-list">
+              @for (s of projectStatuses(); track s) {
+                <label class="dropdown-item" style="cursor: pointer">
+                  <input
+                    type="checkbox"
+                    [value]="s"
+                    (change)="statusToggle.emit({ status: s, event: $event })"
+                    [checked]="filterStatusIds().includes(s)"
+                    style="margin: 0; cursor: pointer" />
+                  <span class="status-badge" [attr.data-status]="s" style="margin: 0">{{ s }}</span>
+                </label>
+              }
+            </div>
+          </div>
+        }
+      </div>
+      <div class="filter-group">
+        <div class="filter-pill" (click)="dropdownToggle.emit({ name: 'resource', event: $event })">
+          <span class="filter-title">Rôle / Personne</span>
+          <span class="chip-list">
+            @for (sel of filterResourceIds(); track sel) {
+              <span class="chip">{{ getResourceLabel(sel) }}</span>
+            }
+            @if (filterResourceIds().length === 0) {
+              <span class="chip placeholder">Tous</span>
+            }
+          </span>
+        </div>
+        @if (openResourceDropdown()) {
+          <div class="filters-dropdown" (click)="$event.stopPropagation()">
+            <div class="dropdown-header">
+              <span>{{ filterResourceIds().length }} sélectionné(s)</span>
+              @if (filterResourceIds().length > 0) {
+                <button
+                  class="btn-clear"
+                  (click)="resourceClear.emit(); $event.stopPropagation()">
+                  Effacer
+                </button>
+              }
+            </div>
+            <div class="dropdown-list">
+              <div class="dropdown-group">Rôles</div>
+              @for (r of availableRoles(); track r.id) {
+                <label class="dropdown-item" style="cursor: pointer">
+                  <input
+                    type="checkbox"
+                    [value]="'role:' + r.id"
+                    (change)="resourceToggle.emit({ key: 'role:' + r.id, event: $event })"
+                    [checked]="filterResourceIds().includes('role:' + r.id)"
+                    style="margin: 0; cursor: pointer" />
+                  <div
+                    class="item-color-badge"
+                    [style.background-color]="r.color || '#e2e8f0'"
+                    style="width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0"></div>
+                  <span class="item-label">{{ r.nom }}</span>
+                </label>
+              }
+              <div class="dropdown-group">Personnes</div>
+              @for (p of availablePersonnes(); track p.id) {
+                <label class="dropdown-item" style="cursor: pointer">
+                  <input
+                    type="checkbox"
+                    [value]="'personne:' + p.id"
+                    (change)="resourceToggle.emit({ key: 'personne:' + p.id, event: $event })"
+                    [checked]="filterResourceIds().includes('personne:' + p.id)"
+                    style="margin: 0; cursor: pointer" />
+                  <div
+                    class="item-color-badge"
+                    [style.background-color]="p.color || '#e2e8f0'"
+                    style="width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0"></div>
+                  <span class="item-label">{{ p.prenom }} {{ p.nom }}</span>
+                </label>
+              }
+            </div>
+          </div>
+        }
+      </div>
+      <!-- Filtre Charges > 0 sur Période -->
+      <div class="filter-group period-filter-group">
+        <div
+          class="filter-pill filter-pill-period"
+          [class.filter-pill-active]="filterPeriodEnabled()"
+          (click)="periodDropdownToggle.emit($event)"
+          id="period-filter-pill">
+          <span class="filter-title">Charges > 0</span>
+          <span class="chip-list">
+            <span class="chip period-chip" [class.period-chip-disabled]="!filterPeriodEnabled()">{{
+              periodLabel()
+            }}</span>
+          </span>
+        </div>
+        @if (showPeriodDropdown()) {
+          <div class="filters-dropdown period-dropdown" (click)="$event.stopPropagation()">
+            <!-- Toggle Activer/Désactiver -->
+            <div class="period-toggle-row">
+              <span class="period-toggle-title">Masquer par date les projets sans charges</span>
+              <label class="premium-switch">
+                <input type="checkbox" [ngModel]="filterPeriodEnabled()" (ngModelChange)="periodToggle.emit($event)" />
+                <span class="premium-slider"></span>
+              </label>
+            </div>
+            <div class="period-dropdown-divider"></div>
+            <!-- Section Contenu Période (grisée si désactivée) -->
+            <div class="period-dropdown-content" [class.disabled]="!filterPeriodEnabled()">
+              <div class="period-section-label">Raccourcis</div>
+              <div class="period-presets">
+                <button
+                  class="period-preset-btn"
+                  [class.active]="activePeriodPreset() === 3"
+                  (click)="periodPresetChange.emit(3)">
+                  3 mois
+                </button>
+                <button
+                  class="period-preset-btn"
+                  [class.active]="activePeriodPreset() === 6"
+                  (click)="periodPresetChange.emit(6)">
+                  6 mois
+                </button>
+                <button
+                  class="period-preset-btn"
+                  [class.active]="activePeriodPreset() === 12"
+                  (click)="periodPresetChange.emit(12)">
+                  12 mois
+                </button>
+              </div>
+              <div class="period-section-label" style="margin-top: 12px">Dates personnalisées</div>
+              <div class="period-date-row">
+                <div class="period-date-field">
+                  <label class="period-date-label">Du</label>
+                  <input
+                    type="date"
+                    class="period-date-input"
+                    [ngModel]="effectivePeriodStart()"
+                    (ngModelChange)="periodStartChange.emit($event)" />
+                </div>
+                <span class="period-date-arrow">→</span>
+                <div class="period-date-field">
+                  <label class="period-date-label">Au</label>
+                  <input
+                    type="date"
+                    class="period-date-input"
+                    [ngModel]="effectivePeriodEnd()"
+                    (ngModelChange)="periodEndChange.emit($event)" />
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+      <!-- Filtre Taille Projet -->
+      <div class="filter-group size-filter-group">
+        <div
+          class="filter-pill filter-pill-size"
+          [class.filter-pill-active]="filterSizeEnabled()"
+          (click)="dropdownToggle.emit({ name: 'size', event: $event })"
+          id="size-filter-pill">
+          <span class="filter-title">Taille Projet</span>
+          <span class="chip-list">
+            <span class="chip size-chip" [class.size-chip-disabled]="!filterSizeEnabled()">{{
+              sizeFilterLabel()
+            }}</span>
+          </span>
+        </div>
+        @if (openSizeDropdown()) {
+          <div class="filters-dropdown size-dropdown" (click)="$event.stopPropagation()">
+            <!-- Toggle Activer/Désactiver -->
+            <div class="size-toggle-row">
+              <span class="size-toggle-title">Activer le filtre</span>
+              <label class="premium-switch">
+                <input type="checkbox" [ngModel]="filterSizeEnabled()" (ngModelChange)="sizeFilterToggle.emit($event)" />
+                <span class="premium-slider"></span>
+              </label>
+            </div>
+            <div class="size-dropdown-divider"></div>
+            <!-- Section Contenu Taille (grisée si désactivée) -->
+            <div class="size-dropdown-content" [class.disabled]="!filterSizeEnabled()">
+              <div class="size-field-group">
+                <label class="size-label">Critère</label>
+                <select
+                  class="size-select"
+                  [ngModel]="filterSizeCriterion()"
+                  (ngModelChange)="sizeCriterionChange.emit($event)">
+                  <optgroup label="Charges planifiées (jours)">
+                    <option value="charges_today">RAF (Dès cette sem.)</option>
+                    <option value="charges_all">Tout cumulé</option>
+                    @for (year of selectableYears(); track year) {
+                      <option [value]="'charges_' + year">Année {{ year }}</option>
+                    }
+                  </optgroup>
+                  <optgroup label="Chiffres Triskell (jours)">
+                    <option value="chiffre_initial">Initial</option>
+                    <option value="chiffre_revise">Révisé</option>
+                    <option value="chiffre_previsionnel">Prévisionnel</option>
+                    <option value="chiffre_consomme">Consommé</option>
+                    <option value="chiffre_restant">Restant</option>
+                  </optgroup>
+                </select>
+              </div>
+              <div class="size-field-group" style="margin-top: 12px">
+                <label class="size-label">Relation</label>
+                <div class="size-operator-buttons">
+                  <button
+                    type="button"
+                    class="operator-btn"
+                    [class.active]="filterSizeOperator() === 'gte'"
+                    (click)="sizeOperatorChange.emit('gte')">
+                    Supérieur ou égal (≥)
+                  </button>
+                  <button
+                    type="button"
+                    class="operator-btn"
+                    [class.active]="filterSizeOperator() === 'lte'"
+                    (click)="sizeOperatorChange.emit('lte')">
+                    Inférieur ou égal (≤)
+                  </button>
+                </div>
+              </div>
+              <div class="size-field-group" style="margin-top: 12px">
+                <label class="size-label">Valeur (jours)</label>
+                <input
+                  type="number"
+                  class="size-input"
+                  placeholder="Ex: 100"
+                  [ngModel]="filterSizeValue()"
+                  (ngModelChange)="sizeValueChange.emit($event)"
+                  min="0" />
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+    @if (filteredWeekCount() > 0) {
+      <div class="filter-status-badge">
+        <lucide-icon [img]="Filter" [size]="14"></lucide-icon>
+        <span>
+          {{ filteredWeekCount() }} semaine{{ filteredWeekCount() > 1 ? 's' : '' }} filtrée{{
+            filteredWeekCount() > 1 ? 's' : ''
+          }}
+        </span>
+        <button class="filter-clear-btn" (click)="clearAllWeekFilters.emit()" title="Effacer tous les filtres">
+          Effacer
+        </button>
+      </div>
+    }
+  </div>
+}

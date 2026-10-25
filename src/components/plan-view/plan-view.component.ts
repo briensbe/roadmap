@@ -52,6 +52,9 @@ import { HoverTooltipController } from '../../shared/grid/hover-tooltip.controll
 
 export { LucideIconsModule } from './plan-view.models';
 
+import { PlanFilterToolbarComponent } from './ui/plan-filter-toolbar/plan-filter-toolbar.component';
+import { PlanChiffrePopoverComponent } from './ui/plan-chiffre-popover/plan-chiffre-popover.component';
+
 @Component({
   selector: 'app-plan-view',
   standalone: true,
@@ -66,6 +69,8 @@ export { LucideIconsModule } from './plan-view.models';
     DragDropModule,
     ChiffresModalComponent,
     ServiceSelectionModalComponent,
+    PlanFilterToolbarComponent,
+    PlanChiffrePopoverComponent,
   ],
   providers: [
     GridSelectionController,
@@ -708,6 +713,16 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.viewMode() === 'service'
       ? this.getChiffreValueForServiceProject(d.teamId, d.projectId, mode)
       : this.getChiffreValueForMode(d.teamId, d.projectId, d.resourceId, d.resourceType, mode);
+  }
+
+  get chiffrePreviewValues(): Record<M.ChiffreCategory, number | null> {
+    return {
+      initial: this.getChiffrePreviewValue('initial'),
+      revise: this.getChiffrePreviewValue('revise'),
+      previsionnel: this.getChiffrePreviewValue('previsionnel'),
+      consomme: this.getChiffrePreviewValue('consomme'),
+      restant: this.getChiffrePreviewValue('restant'),
+    };
   }
 
   checkSizeMatch(val: number | null): boolean {
