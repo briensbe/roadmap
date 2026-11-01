@@ -1,5 +1,42 @@
 [
   {
+    "version": "2026.11.01",
+    "date": "2026-11-01",
+    "news": [
+      {
+        "title": "Inscription et Authentification par code OTP",
+        "items": [
+          "Nouveau parcours d'inscription sécurisé avec validation par code OTP à 6 chiffres envoyé par e-mail."
+        ]
+      },
+      {
+        "title": "Backend & Sécurité Supabase (supabase-shared)",
+        "items": [
+          "Contrôle d'accès et sécurité (RBAC & RLS) : mise en place des profils utilisateurs (roadmap_user_profiles), verrouillage strict des politiques de sécurité.",
+          "Sécurisation de l'Edge Function webhook : fiabilisation de la validation des signatures (timingSafeEqual) et assainissement des journaux d'exécution."
+        ]
+      },
+      {
+        "title": "Maintenance & Dépendances",
+        "items": ["Mise à niveau du framework Angular et mise à jour de sécurité des dépendances tierces."]
+      },
+      {
+        "title": "ExcelJS & Gestion des arrondis",
+        "items": [
+          "Standardisation et fiabilisation des exports Excel grâce à l'adoption exclusive de la bibliothèque ExcelJS (abandon de SheetJS)",
+          "Harmonisation et meilleure précision dans le calcul et l'affichage des arrondis sur les charges planifiées."
+        ]
+      },
+      {
+        "title": "Fiabilité & Amélioration de l'expérience utilisateur",
+        "items": [
+          "Remplacement des alertes système natives par des messages intégrés à l'application pour une interface plus moderne et agréable.",
+          "Sélection dynamique des années"
+        ]
+      }
+    ]
+  },
+  {
     "version": "2026.10.23",
     "date": "2026-10-23",
     "news": [
