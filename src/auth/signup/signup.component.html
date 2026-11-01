@@ -70,29 +70,60 @@
       </button>
     </form>
 
-    <p>Vous avez déjà un compte ? <a (click)="navigateToLogin()">Se connecter</a></p>
+    <div class="auth-footer-stack">
+      <p>Vous avez déjà un compte ? <a (click)="navigateToLogin()">Se connecter</a></p>
+      <p>Vous avez déjà reçu un code ? <a (click)="goToVerifyOtp()">Saisir mon code</a></p>
+    </div>
   }
 
   @if (step() === 'verify-otp') {
     <form (ngSubmit)="verifyOtp()">
-      <div class="masked-email-card">
-        <div class="masked-email-info">
-          <lucide-icon [img]="Mail" size="18" class="email-icon"></lucide-icon>
-          <div class="masked-email-text">
-            <span class="masked-email-label">Code envoyé à</span>
-            <span class="masked-email-value">{{ maskedEmail() }}</span>
+      @if (email() && !isEditingEmail()) {
+        <div class="masked-email-card">
+          <div class="masked-email-info">
+            <lucide-icon [img]="Mail" size="18" class="email-icon"></lucide-icon>
+            <div class="masked-email-text">
+              <span class="masked-email-label">Code envoyé à</span>
+              <span class="masked-email-value">{{ maskedEmail() }}</span>
+            </div>
           </div>
+          <button
+            type="button"
+            class="btn-text-link edit-email-btn"
+            (click)="toggleEditEmail()"
+            [disabled]="loading() || resending()"
+          >
+            <lucide-icon [img]="Edit2" size="13"></lucide-icon>
+            <span>Modifier</span>
+          </button>
         </div>
-        <button
-          type="button"
-          class="btn-text-link edit-email-btn"
-          (click)="backToForm()"
-          [disabled]="loading() || resending()"
-        >
-          <lucide-icon [img]="Edit2" size="13"></lucide-icon>
-          <span>Modifier</span>
-        </button>
-      </div>
+      } @else {
+        <div class="form-group-custom">
+          <div class="label-with-action">
+            <label for="otpEmail">Adresse Email</label>
+            @if (email()) {
+              <button
+                type="button"
+                class="btn-text-link"
+                (click)="toggleEditEmail()"
+                [disabled]="loading()"
+              >
+                Masquer
+              </button>
+            }
+          </div>
+          <input
+            id="otpEmail"
+            type="email"
+            [ngModel]="email()"
+            (ngModelChange)="email.set($event)"
+            name="otpEmail"
+            [placeholder]="emailPlaceholder()"
+            required
+            autocomplete="email"
+          />
+        </div>
+      }
 
       <p class="input-description">Saisissez le code à 6 chiffres reçu dans votre boîte de réception.</p>
       

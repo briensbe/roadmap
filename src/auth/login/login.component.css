@@ -210,6 +210,26 @@ a:hover {
 
 .error-action {
   margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.btn-primary-action {
+  background-color: var(--color-primary);
+  color: #ffffff;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.45rem 0.9rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-primary-action:hover {
+  background-color: var(--color-primary-hover);
 }
 
 .resend-btn {

@@ -47,11 +47,18 @@
         <div class="error-action">
           <button
             type="button"
+            class="btn-primary-action"
+            (click)="goToOtpVerification()"
+          >
+            Saisir mon code de confirmation
+          </button>
+          <button
+            type="button"
             class="resend-btn"
             (click)="resendConfirmation()"
             [disabled]="resendLoading()"
           >
-            {{ resendLoading() ? 'Envoi en cours...' : 'Renvoyer le lien de confirmation' }}
+            {{ resendLoading() ? 'Envoi en cours...' : 'Renvoyer le code' }}
           </button>
         </div>
       }

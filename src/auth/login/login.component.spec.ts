@@ -122,4 +122,19 @@ describe('LoginComponent', () => {
     expect(resendEmailCalledWith).toBe('test@example.com');
     expect(component.resendSuccessMessage()).toContain('Un nouvel e-mail de confirmation');
   });
+
+  it('should navigate to signup with verify-otp step and email query param', () => {
+    let navigatedTo: any = null;
+    let navigatedParams: any = null;
+    mockRouter.navigate = (commands: any[], extras: any) => {
+      navigatedTo = commands;
+      navigatedParams = extras?.queryParams;
+    };
+
+    component.email.set('user@example.com');
+    component.goToOtpVerification();
+
+    expect(navigatedTo).toEqual(['/signup']);
+    expect(navigatedParams).toEqual({ step: 'verify-otp', email: 'user@example.com' });
+  });
 });

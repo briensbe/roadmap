@@ -1,7 +1,7 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../services/supabase.service';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import {
   LucideAngularModule,
@@ -28,10 +28,11 @@ export type SignupStep = 'form' | 'verify-otp';
   templateUrl: './signup.component.html',
   styleUrl: './signup.component.css',
 })
-export class SignupComponent {
+export class SignupComponent implements OnInit {
   step = signal<SignupStep>('form');
   name = signal('');
   email = signal('');
+  isEditingEmail = signal(false);
   password = signal('');
   confirmPassword = signal('');
   showPassword = signal(false);
@@ -59,6 +60,30 @@ export class SignupComponent {
 
   private readonly supabaseService = inject(SupabaseService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+
+  ngOnInit() {
+    this.route.queryParams.subscribe((params) => {
+      const stepParam = params['step'];
+      const emailParam = params['email'];
+
+      if (stepParam === 'verify-otp') {
+        if (emailParam) {
+          this.email.set(emailParam);
+        }
+        this.step.set('verify-otp');
+        return;
+      }
+
+      // Check sessionStorage for pending confirmation email
+      const pendingEmail = sessionStorage.getItem('pendingConfirmationEmail');
+      if (pendingEmail && !this.email()) {
+        this.email.set(pendingEmail);
+        this.step.set('verify-otp');
+        this.successMessage.set('Reprise de la confirmation pour votre compte.');
+      }
+    });
+  }
 
   togglePasswordVisibility() {
     this.showPassword.update((value) => !value);
@@ -66,6 +91,16 @@ export class SignupComponent {
 
   toggleConfirmPasswordVisibility() {
     this.showConfirmPassword.update((value) => !value);
+  }
+
+  toggleEditEmail() {
+    this.isEditingEmail.update((val) => !val);
+  }
+
+  goToVerifyOtp() {
+    this.step.set('verify-otp');
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
   }
 
   async signUp() {
@@ -108,6 +143,7 @@ export class SignupComponent {
       } else {
         // Ensure any session created during signup is cleared before OTP verification
         await this.supabaseService.signOut();
+        sessionStorage.setItem('pendingConfirmationEmail', this.email().trim());
         this.step.set('verify-otp');
         this.successMessage.set('Compte créé ! Un code de confirmation à 6 chiffres vient de vous être envoyé par e-mail.');
       }
@@ -131,6 +167,7 @@ export class SignupComponent {
     this.loading.set(true);
     try {
       await this.supabaseService.verifySignupOtp(this.email(), code);
+      sessionStorage.removeItem('pendingConfirmationEmail');
       this.successMessage.set('Votre compte a été confirmé avec succès ! Redirection en cours...');
       setTimeout(() => {
         this.router.navigate(['/']);
@@ -161,8 +198,10 @@ export class SignupComponent {
   }
 
   backToForm() {
+    sessionStorage.removeItem('pendingConfirmationEmail');
     this.step.set('form');
     this.otpCode.set('');
+    this.isEditingEmail.set(false);
     this.errorMessage.set(null);
     this.successMessage.set(null);
   }
