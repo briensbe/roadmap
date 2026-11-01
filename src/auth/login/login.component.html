@@ -34,9 +34,27 @@
     </button>
   </form>
 
+  @if (resendSuccessMessage()) {
+    <div class="message success">
+      {{ resendSuccessMessage() }}
+    </div>
+  }
+
   @if (errorMessage()) {
     <div class="message error">
-      {{ errorMessage() }}
+      <span>{{ errorMessage() }}</span>
+      @if (unconfirmedEmail()) {
+        <div class="error-action">
+          <button
+            type="button"
+            class="resend-btn"
+            (click)="resendConfirmation()"
+            [disabled]="resendLoading()"
+          >
+            {{ resendLoading() ? 'Envoi en cours...' : 'Renvoyer le lien de confirmation' }}
+          </button>
+        </div>
+      }
     </div>
   }
 

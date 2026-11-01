@@ -80,7 +80,9 @@ export class SignupComponent {
       if (error) {
         this.errorMessage.set(error.message);
       } else {
-        this.successMessage.set('Inscription réussie ! Veuillez vérifier vos e-mails pour confirmer votre compte.');
+        // Ensure any session created during signup is cleared so user cannot access the app before email validation
+        await this.supabaseService.signOut();
+        this.successMessage.set('Inscription réussie ! Veuillez vérifier vos e-mails pour confirmer votre compte avant de vous connecter.');
         // Navigate to login after 5 seconds
         setTimeout(() => {
           this.router.navigate(['/login']);

@@ -14,7 +14,14 @@ export const AuthGuard: CanActivateFn = async (route, state) => {
 
   // 1. On vérifie d'abord le Signal (instantané, pas de réseau)
   const user = supabaseService.user();
-  if (user) return true;
+  if (user) {
+    if (!user.email_confirmed_at) {
+      await supabaseService.signOut();
+      router.navigate(['/login'], { queryParams: { reason: 'unconfirmed_email' } });
+      return false;
+    }
+    return true;
+  }
 
   // 2. Si le signal est null (ex: premier chargement),
   // on utilise la méthode robuste qui va chercher plus loin
@@ -24,5 +31,12 @@ export const AuthGuard: CanActivateFn = async (route, state) => {
     router.navigate(['/login'], { queryParams: { returnUrl: state.url } });
     return false;
   }
+
+  if (!data.user.email_confirmed_at) {
+    await supabaseService.signOut();
+    router.navigate(['/login'], { queryParams: { reason: 'unconfirmed_email' } });
+    return false;
+  }
+
   return true;
 };

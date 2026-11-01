@@ -12,6 +12,8 @@ describe('LoginComponent', () => {
   let mockSupabaseService: {
     signInWithEmail: any;
     signInWithGoogle: any;
+    resendConfirmationEmail: any;
+    signOut: any;
   };
   let mockRouter: {
     navigate: any;
@@ -22,6 +24,8 @@ describe('LoginComponent', () => {
     mockSupabaseService = {
       signInWithEmail: () => Promise.resolve({ error: null }),
       signInWithGoogle: () => Promise.resolve({ error: null }),
+      resendConfirmationEmail: () => Promise.resolve({ error: null }),
+      signOut: () => Promise.resolve(),
     };
 
     mockRouter = {
@@ -89,5 +93,33 @@ describe('LoginComponent', () => {
 
     expect(googleCalled).toBe(false);
     expect(component.errorMessage()).toBe('La connexion avec Google est désactivée.');
+  });
+
+  it('should detect unconfirmed email error and display friendly message', async () => {
+    mockSupabaseService.signInWithEmail = () => {
+      return Promise.resolve({ error: { message: 'Email not confirmed' } });
+    };
+
+    component.email.set('user@example.com');
+    component.password.set('password123');
+
+    await component.signInWithEmail();
+
+    expect(component.unconfirmedEmail()).toBe(true);
+    expect(component.errorMessage()).toContain("n'a pas encore été confirmée");
+  });
+
+  it('should call resendConfirmationEmail when resendConfirmation is triggered', async () => {
+    let resendEmailCalledWith = '';
+    mockSupabaseService.resendConfirmationEmail = (email: string) => {
+      resendEmailCalledWith = email;
+      return Promise.resolve({ error: null });
+    };
+
+    component.email.set('test@example.com');
+    await component.resendConfirmation();
+
+    expect(resendEmailCalledWith).toBe('test@example.com');
+    expect(component.resendSuccessMessage()).toContain('Un nouvel e-mail de confirmation');
   });
 });

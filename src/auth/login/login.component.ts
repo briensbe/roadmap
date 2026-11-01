@@ -21,6 +21,9 @@ export class LoginComponent implements OnInit {
   password = signal('');
   showPassword = signal(false);
   sessionExpired = signal(false);
+  unconfirmedEmail = signal(false);
+  resendLoading = signal(false);
+  resendSuccessMessage = signal<string | null>(null);
   loading = signal(false);
   errorMessage = signal<string | null>(null);
 
@@ -156,6 +159,11 @@ export class LoginComponent implements OnInit {
     this.route.queryParams.subscribe((params) => {
       if (params['reason'] === 'session_expired') {
         this.sessionExpired.set(true);
+      } else if (params['reason'] === 'unconfirmed_email') {
+        this.unconfirmedEmail.set(true);
+        this.errorMessage.set(
+          "Votre adresse e-mail n'a pas encore été confirmée. Veuillez cliquer sur le lien reçu par e-mail avant de vous connecter."
+        );
       }
     });
   }
@@ -167,13 +175,22 @@ export class LoginComponent implements OnInit {
   async signInWithEmail() {
     this.loading.set(true);
     this.errorMessage.set(null);
+    this.unconfirmedEmail.set(false);
+    this.resendSuccessMessage.set(null);
     try {
       const { error } = await this.supabaseService.signInWithEmail({
         email: this.email(),
         password: this.password(),
       });
       if (error) {
-        this.errorMessage.set(error.message);
+        if (error.message?.toLowerCase().includes('email not confirmed')) {
+          this.unconfirmedEmail.set(true);
+          this.errorMessage.set(
+            "Votre adresse e-mail n'a pas encore été confirmée. Veuillez cliquer sur le lien reçu dans votre boîte de réception avant de vous connecter."
+          );
+        } else {
+          this.errorMessage.set(error.message);
+        }
       } else {
         const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
         this.router.navigateByUrl(returnUrl);
@@ -182,6 +199,30 @@ export class LoginComponent implements OnInit {
       this.errorMessage.set(err.message || 'Une erreur est survenue lors de la connexion.');
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  async resendConfirmation() {
+    const targetEmail = this.email().trim();
+    if (!targetEmail) {
+      this.errorMessage.set('Veuillez renseigner votre adresse e-mail pour renvoyer le lien.');
+      return;
+    }
+    this.resendLoading.set(true);
+    this.resendSuccessMessage.set(null);
+    try {
+      const { error } = await this.supabaseService.resendConfirmationEmail(targetEmail);
+      if (error) {
+        this.errorMessage.set(error.message || "Erreur lors de l'envoi du mail.");
+      } else {
+        this.resendSuccessMessage.set(
+          'Un nouvel e-mail de confirmation vient de vous être envoyé. Vérifiez votre boîte de réception !'
+        );
+      }
+    } catch (err: any) {
+      this.errorMessage.set(err.message || "Erreur lors de l'envoi du mail.");
+    } finally {
+      this.resendLoading.set(false);
     }
   }
 
