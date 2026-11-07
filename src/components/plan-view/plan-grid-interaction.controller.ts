@@ -86,7 +86,7 @@ export class PlanGridInteractionController {
 
   // Signaux d'état de vue et filtres
   viewMode = storageSignal<PlanViewMode>('plan-view-mode', 'resource');
-  zoomLevel = storageSignal<ZoomLevel>('plan-view-zoom-level', 'normal');
+  zoomLevel = storageSignal<ZoomLevel>('plan-view-zoom-level', 'compact');
   showAvailability = storageSignal<boolean>('plan-view-show-availability', false);
   weekFilters = storageSignal<number[]>('plan-view-week-filters', []);
   chiffreMode = storageSignal<ChiffreCategory>('plan-view-chiffre-mode', 'previsionnel');

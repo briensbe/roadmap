@@ -195,7 +195,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   }
 
   showDaysInCells = false;
-  zoomLevel = storageSignal<'compact' | 'normal'>('capacity-view-zoom-level', 'normal');
+  zoomLevel = storageSignal<'compact' | 'normal'>('capacity-view-zoom-level', 'compact');
   private isDefaultExpanded = true;
   private manualStates = new Map<string, boolean>();
 

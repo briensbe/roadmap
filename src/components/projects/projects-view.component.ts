@@ -48,7 +48,7 @@ import { textContains } from '../../utils/text.utils';
 })
 export class ProjectsViewComponent implements OnInit {
   viewMode = storageSignal<'list' | 'card' | 'table'>('projects_view_mode', 'list');
-  searchQuery = signal('');
+  searchQuery = storageSignal<string>('projects_view_search_query', '');
   statusFilter = storageSignal<string[]>('projects_view_status_filter', []);
   showStatusDropdown = signal(false);
   ChevronDown = ChevronDown;

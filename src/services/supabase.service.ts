@@ -16,7 +16,23 @@ export class SupabaseService {
   private _user = signal<User | null>(null);
   private _isPasswordRecovery = signal(false);
   private _isLocalLogout = false;
+  private _accessToken: string | null = null;
+  private readonly beforeSignOutCallbacks: Array<() => Promise<void>> = [];
   private initializationPromise: Promise<void>;
+
+  /**
+   * Synchronous getter for active session access token
+   */
+  get accessToken(): string | null {
+    return this._accessToken;
+  }
+
+  /**
+   * Register a hook to be executed before user session is cleared on sign out
+   */
+  registerBeforeSignOut(cb: () => Promise<void>) {
+    this.beforeSignOutCallbacks.push(cb);
+  }
 
   /**
    * Observable pour suivre l'état de l'authentification (compatibilité ascendante)
@@ -60,6 +76,7 @@ export class SupabaseService {
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (session?.user) {
           this._user.set(session.user);
+          this._accessToken = session.access_token ?? null;
         }
       } catch (err) {
         console.error('Error fetching initial session:', err);
@@ -263,6 +280,7 @@ export class SupabaseService {
     } = await this.supabase.auth.getSession();
     if (session?.user) {
       this._user.set(session.user);
+      this._accessToken = session.access_token ?? null;
       return { data: { user: session.user }, error: null };
     }
 
@@ -278,12 +296,22 @@ export class SupabaseService {
    * Déconnexion de l'utilisateur courant
    */
   async signOut() {
+    // Exécuter les callbacks préalables (ex: flush des préférences)
+    for (const cb of this.beforeSignOutCallbacks) {
+      try {
+        await cb();
+      } catch (e) {
+        console.warn('[SupabaseService] Error in beforeSignOutCallback:', e);
+      }
+    }
+
     // On marque la déconnexion comme locale
     this._isLocalLogout = true;
 
     // On vide immédiatement le cache local avant même l'appel réseau
     this._user.set(null);
     this._isPasswordRecovery.set(false);
+    this._accessToken = null;
     this.authState$.next(null);
 
     try {
@@ -393,6 +421,7 @@ export class SupabaseService {
 
       this.authState$.next({ event, session });
       this._user.set(session?.user ?? null);
+      this._accessToken = session?.access_token ?? null;
 
       if (session?.user) {
         sessionStorage.setItem(sessionStorageUserKey, JSON.stringify(session.user));

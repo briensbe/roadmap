@@ -27,6 +27,7 @@ import { CrewdayzIntegrationService } from '../../services/crewdayz-integration.
 import { SettingsService } from '../../services/settings.service';
 import { CalendarService } from '../../services/calendar.service';
 import { ThemeService } from '../../services/theme.service';
+import { PreferencesService } from '../../services/preferences.service';
 import { Capacite, Projet, Role, Personne, Equipe } from '../../models/types';
 import { calculateNewRank, sortByRank } from '../../utils/lexorank.utils';
 import {
@@ -57,6 +58,7 @@ export class PlanDataRepository {
   public readonly settingsService = inject(SettingsService);
   public readonly calendarService = inject(CalendarService);
   public readonly themeService = inject(ThemeService);
+  public readonly preferencesService = inject(PreferencesService, { optional: true });
 
   async loadDataset(
     displayedWeeks: Date[],
@@ -581,10 +583,17 @@ export class PlanDataRepository {
       steps,
       onDestroyed: () => {
         if (mode === 'full') {
-          localStorage.setItem('tutorial-actions-menu-v1', 'true');
-          localStorage.setItem('tutorial-view-mode-selector-v1', 'true');
+          try {
+            localStorage.setItem('tutorial-actions-menu-v1', 'true');
+            localStorage.setItem('tutorial-view-mode-selector-v1', 'true');
+          } catch {}
+          this.preferencesService?.setScreenPreference('plan', 'hasSeenTutorialActions', true);
+          this.preferencesService?.setScreenPreference('plan', 'hasSeenTutorialViewMode', true);
         } else {
-          localStorage.setItem('tutorial-view-mode-selector-v1', 'true');
+          try {
+            localStorage.setItem('tutorial-view-mode-selector-v1', 'true');
+          } catch {}
+          this.preferencesService?.setScreenPreference('plan', 'hasSeenTutorialViewMode', true);
         }
       },
     });

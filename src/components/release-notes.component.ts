@@ -6,6 +6,7 @@ import { filter } from 'rxjs/operators';
 import { ReleaseNotesService } from '../services/release-notes.service';
 import { EasterEggService } from '../services/easter-egg.service';
 import { SupabaseService } from '../services/supabase.service';
+import { PreferencesService } from '../services/preferences.service';
 import { Subscription } from 'rxjs';
 import { environment } from '../environments/environment';
 
@@ -62,6 +63,7 @@ export class ReleaseNotesComponent implements OnInit, OnDestroy {
     private easterEggService: EasterEggService,
     private supabaseService: SupabaseService,
     private router: Router,
+    private preferencesService: PreferencesService,
   ) {}
 
   async ngOnInit() {
@@ -163,7 +165,8 @@ export class ReleaseNotesComponent implements OnInit, OnDestroy {
   private checkVisibility() {
     if (this.notes.length === 0 || this.hasBeenClosedInSession) return;
     const latestVersion = this.notes[0].version;
-    const lastSeenVersion = localStorage.getItem(this.STORAGE_KEY);
+    const remoteVersion = this.preferencesService.preferences().releaseNotes?.lastSeenVersion;
+    const lastSeenVersion = remoteVersion || localStorage.getItem(this.STORAGE_KEY);
 
     if (lastSeenVersion !== latestVersion) {
       this.showHistory = false;
@@ -194,7 +197,9 @@ export class ReleaseNotesComponent implements OnInit, OnDestroy {
 
   dontShowAgain() {
     if (this.notes.length > 0) {
-      localStorage.setItem(this.STORAGE_KEY, this.notes[0].version);
+      const version = this.notes[0].version;
+      localStorage.setItem(this.STORAGE_KEY, version);
+      this.preferencesService.setLastSeenReleaseNotesVersion(version);
     }
     this.close();
   }

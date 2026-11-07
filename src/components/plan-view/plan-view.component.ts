@@ -18,6 +18,7 @@ import {
   OnDestroy,
   computed,
   signal,
+  effect,
   inject,
   WritableSignal,
   ElementRef,
@@ -46,6 +47,7 @@ import {
 } from './plan-grid-interaction.controller';
 import { PlanDataRepository } from './plan-data.repository';
 import { ToastService } from '../../services/toast.service';
+import { PreferencesService } from '../../services/preferences.service';
 import { toErrorMessage } from '../../utils/error-message';
 import { GridSelectionController } from '../../shared/grid/grid-selection.controller';
 import { HoverTooltipController } from '../../shared/grid/hover-tooltip.controller';
@@ -84,6 +86,7 @@ import { PlanChiffrePopoverComponent } from './ui/plan-chiffre-popover/plan-chif
 export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly repo = inject(PlanDataRepository);
   private readonly toast = inject(ToastService);
+  private readonly preferencesService = inject(PreferencesService, { optional: true });
   protected readonly cdr = inject(ChangeDetectorRef);
   protected readonly ngZone = inject(NgZone);
   readonly gridCtrl = inject(PlanGridInteractionController);
@@ -343,10 +346,10 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   filterProjetIds = storageSignal<string[]>('plan-view-filter-projets', []);
   filterResourceIds = storageSignal<string[]>('plan-view-filter-resources', []);
   filterStatusIds = storageSignal<string[]>('plan-view-filter-statuses', []);
-  filterPeriodEnabled = signal<boolean>(false);
+  filterPeriodEnabled = storageSignal<boolean>('plan-view-filter-period-enabled', false);
   filterPeriodStart = storageSignal<string>('plan-view-filter-period-start', '');
   filterPeriodEnd = storageSignal<string>('plan-view-filter-period-end', '');
-  filterSizeEnabled = signal<boolean>(false);
+  filterSizeEnabled = storageSignal<boolean>('plan-view-filter-size-enabled', false);
   filterSizeCriterion = storageSignal<M.SizeFilterCriterion>('plan-view-filter-size-criterion', 'charges_all');
   filterSizeOperator = storageSignal<M.SizeFilterOperator>('plan-view-filter-size-operator', 'gte');
   filterSizeValue = storageSignal<number | null>('plan-view-filter-size-value', null);
@@ -431,6 +434,33 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   activeFiltersCount = computed(() => M.computeActiveFiltersCount(this.filterSummaryState));
   activeFiltersSummary = computed(() => M.computeActiveFiltersSummary(this.filterSummaryState));
 
+  constructor() {
+    // Re-apply filters automatically whenever remote preferences update signals or local signals change
+    effect(() => {
+      // Track reactive filter signals
+      this.filterEquipeIds();
+      this.filterProjetIds();
+      this.filterResourceIds();
+      this.filterStatusIds();
+      this.filterPeriodEnabled();
+      this.filterPeriodStart();
+      this.filterPeriodEnd();
+      this.filterSizeEnabled();
+      this.filterSizeCriterion();
+      this.filterSizeOperator();
+      this.filterSizeValue();
+      this.globalSearch();
+      this.weekFilters();
+      this.viewMode();
+
+      // Only trigger if dataset rows have already been populated
+      if (this.rowsAll.length > 0) {
+        this.buildTree();
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
   ngOnInit() {
     this.gridCtrl.onExecuteMove = () => this.executeMove();
     this.gridCtrl.checkDarkMode = () => this.repo.themeService.isDarkMode();
@@ -492,6 +522,10 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    if (this.tutorialTimer) {
+      clearTimeout(this.tutorialTimer);
+      this.tutorialTimer = null;
+    }
     this.gridCtrl.destroy();
     this.globalMouseMoveListener?.();
     this.globalMouseUpListener?.();
@@ -1410,18 +1444,37 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
+  private tutorialTimer: ReturnType<typeof setTimeout> | null = null;
+  private tutorialTriggered = false;
+
   restartTutorial() {
     this.showActionsMenu = false;
     this.startTutorial(true);
   }
 
   private startTutorial(force = false) {
-    const hasSeenActions = !!localStorage.getItem('tutorial-actions-menu-v1');
-    const hasSeenVue = !!localStorage.getItem('tutorial-view-mode-selector-v1');
-    if (!force && hasSeenActions && hasSeenVue) return;
+    if (this.tutorialTriggered && !force) return;
 
-    const mode: 'full' | 'vue-only' = !force && hasSeenActions && !hasSeenVue ? 'vue-only' : 'full';
-    const launch = () => {
+    const checkAndLaunch = () => {
+      let localActions = false;
+      let localVue = false;
+      try {
+        localActions = !!localStorage.getItem('tutorial-actions-menu-v1');
+        localVue = !!localStorage.getItem('tutorial-view-mode-selector-v1');
+      } catch {}
+
+      const hasSeenActions = this.preferencesService
+        ? this.preferencesService.getScreenPreference<boolean>('plan', 'hasSeenTutorialActions', localActions)
+        : localActions;
+      const hasSeenVue = this.preferencesService
+        ? this.preferencesService.getScreenPreference<boolean>('plan', 'hasSeenTutorialViewMode', localVue)
+        : localVue;
+
+      if (!force && hasSeenActions && hasSeenVue) return;
+
+      this.tutorialTriggered = true;
+      const mode: 'full' | 'vue-only' = !force && hasSeenActions && !hasSeenVue ? 'vue-only' : 'full';
+
       if (!this.showGlobalFilters()) {
         this.showGlobalFilters.set(true);
         this.cdr.detectChanges();
@@ -1429,7 +1482,33 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
       this.repo.runDriverTutorial(mode);
     };
 
-    if (force) launch();
-    else setTimeout(launch, 2000);
+    if (force) {
+      checkAndLaunch();
+      return;
+    }
+
+    if (this.tutorialTimer) {
+      clearTimeout(this.tutorialTimer);
+      this.tutorialTimer = null;
+    }
+
+    // Si les préférences ne sont pas encore chargées depuis Supabase, on vérifie à intervalles réguliers (polling court sur signal)
+    if (this.preferencesService && !this.preferencesService.isLoaded()) {
+      let attempts = 0;
+      const maxAttempts = 20; // 20 * 200ms = 4s max
+      const interval = setInterval(() => {
+        attempts++;
+        if (this.preferencesService?.isLoaded() || attempts >= maxAttempts) {
+          clearInterval(interval);
+          this.tutorialTimer = setTimeout(checkAndLaunch, 1000);
+        }
+      }, 200);
+      this.tutorialTimer = setTimeout(() => {
+        clearInterval(interval);
+        checkAndLaunch();
+      }, 4500);
+    } else {
+      this.tutorialTimer = setTimeout(checkAndLaunch, 2000);
+    }
   }
 }

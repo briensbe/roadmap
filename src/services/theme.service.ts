@@ -1,4 +1,5 @@
-import { Injectable, signal, computed, effect } from '@angular/core';
+import { Injectable, signal, computed, effect, inject } from '@angular/core';
+import { PreferencesService } from './preferences.service';
 
 export type ThemePreference = 'light' | 'dark' | 'system';
 export type EffectiveTheme = 'light' | 'dark';
@@ -9,6 +10,8 @@ export const THEME_STORAGE_KEY = 'roadmap_theme_preference';
   providedIn: 'root',
 })
 export class ThemeService {
+  private readonly preferencesService = inject(PreferencesService, { optional: true });
+
   private readonly mediaQuery =
     typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
 
@@ -37,6 +40,16 @@ export class ThemeService {
         this.systemPrefersDark.set(e.matches);
       };
       this.mediaQuery.addEventListener('change', listener);
+    }
+
+    // Effect to sync preference from PreferencesService if loaded
+    if (this.preferencesService) {
+      effect(() => {
+        const remoteTheme = this.preferencesService?.preferences().theme;
+        if (remoteTheme && remoteTheme !== this.preference()) {
+          this.preference.set(remoteTheme);
+        }
+      });
     }
 
     // Effect to apply/remove .dark-mode class on body & documentElement whenever effectiveTheme changes
@@ -73,6 +86,7 @@ export class ThemeService {
    */
   setPreference(pref: ThemePreference): void {
     this.preference.set(pref);
+    this.preferencesService?.setTheme(pref);
   }
 
   /**
