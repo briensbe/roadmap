@@ -4,6 +4,10 @@
 - **Règle :** Utiliser systématiquement `pnpm` plutôt que `npm` pour les commandes et scripts de ce projet.
 - **Action :** Pour compiler et vérifier le projet, exécuter obligatoirement `pnpm build` (ou `pnpm run build`) au lieu de `npm run build`.
 
+## Environnement Node.js & CLI Globales (OpenSpec, pnpm)
+- **Règle :** L'exécutable Node.js et les CLI globales (dont `openspec.cmd` et `pnpm`) se trouvent dans le répertoire `C:\nvm4w\nodejs`.
+- **Action :** Pour exécuter `openspec`, `pnpm` ou `node` dans le terminal sans erreur `CommandNotFoundException`, toujours préfixer le PATH avec `$env:PATH = "C:\nvm4w\nodejs;" + $env:PATH` et exécuter avec `BypassSandbox: true` si l'accès à `C:\nvm4w` est requis. Ne jamais chercher `node.exe` ou `openspec` à l'aveugle avec des outils d'exploration.
+
 ## Règles de recherche, d'exploration et de comptage
 - Utilise systématiquement `rg` (ripgrep) pour rechercher du texte, lister les fichiers d'un dossier ou compter les lignes.
 - N'utilise JAMAIS les cmdlets PowerShell d'exploration, de lecture ou de comptage (`Get-Content`, `(Get-Content ...).Length`, `Get-ChildItem`, `Select-String`, `dir`, `ls`, `gci`).
