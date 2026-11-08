@@ -384,7 +384,19 @@
 .selection-actions-readonly {
   display: flex;
   justify-content: flex-end;
-  margin-top: 10px;
+  margin-top: 12px;
+}
+
+.selection-actions.selection-actions-readonly button,
+.selection-actions button.btn-close-action,
+.selection-toolbar.read-only .selection-actions button {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 76px;
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 6px;
 }
 
 .btn-close-readonly {

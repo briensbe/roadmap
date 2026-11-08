@@ -405,6 +405,12 @@ textarea:focus {
   flex: 1;
 }
 
+.selection-actions.selection-actions-readonly button,
+.selection-actions button.btn-close-action {
+  flex: 0 0 auto;
+  width: auto;
+}
+
 .bulk-input {
   width: 100%;
   padding: 6px 12px;

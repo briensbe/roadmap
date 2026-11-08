@@ -264,7 +264,7 @@
 
   <div class="selection-actions" [class.selection-actions-readonly]="readOnly">
     @if (readOnly) {
-      <button class="btn btn-secondary btn-sm" (click)="onCancel()">Fermer</button>
+      <button type="button" class="btn btn-secondary btn-sm btn-close-action" (click)="onCancel()">Fermer</button>
     } @else {
       @if (isCrewdayzMode) {
         @if (isConfirmingReset) {
