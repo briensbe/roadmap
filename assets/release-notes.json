@@ -1,5 +1,24 @@
 [
   {
+    "version": "2026.11.08",
+    "date": "2026-11-08",
+    "news": [
+      {
+        "title": "Gestion des profils et affichage du rôle utilisateur",
+        "items": [
+          "Affichage dynamique du rôle attribué (Lecteur, Éditeur ou Administrateur) et de sa description détaillée dans la page Profil utilisateur, avec badges visuels dédiés.",
+          "Sécurisation et ergonomie du mode Consultation (Viewer)"
+        ]
+      },
+      {
+        "title": "Persistance Cloud des préférences utilisateur",
+        "items": [
+          "Sauvegarde et synchronisation automatique des préférences d'affichage (thème sombre/clair, niveau de zoom compact/normal, complétion des tutoriels) directement dans la base de données via un adaptateur réactif, assurant la continuité de l'expérience sur tous vos appareils."
+        ]
+      }
+    ]
+  },
+  {
     "version": "2026.11.01",
     "date": "2026-11-01",
     "news": [
