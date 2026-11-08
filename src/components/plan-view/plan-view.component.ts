@@ -47,6 +47,7 @@ import {
 } from './plan-grid-interaction.controller';
 import { PlanDataRepository } from './plan-data.repository';
 import { ToastService } from '../../services/toast.service';
+import { PermissionService } from '../../services/permission.service';
 import { PreferencesService } from '../../services/preferences.service';
 import { toErrorMessage } from '../../utils/error-message';
 import { GridSelectionController } from '../../shared/grid/grid-selection.controller';
@@ -86,6 +87,7 @@ import { PlanChiffrePopoverComponent } from './ui/plan-chiffre-popover/plan-chif
 export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly repo = inject(PlanDataRepository);
   private readonly toast = inject(ToastService);
+  readonly permissionService = inject(PermissionService);
   private readonly preferencesService = inject(PreferencesService, { optional: true });
   protected readonly cdr = inject(ChangeDetectorRef);
   protected readonly ngZone = inject(NgZone);
@@ -1025,6 +1027,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async moveToTop(row: M.ParentRow) {
+    if (!this.permissionService.ensureCanEdit()) return;
     if (this.viewMode() !== 'project') return;
     const currentIndex = this.rows.indexOf(row);
     if (currentIndex <= 0) return;
@@ -1033,6 +1036,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async moveToBottom(row: M.ParentRow) {
+    if (!this.permissionService.ensureCanEdit()) return;
     if (this.viewMode() !== 'project') return;
     const currentIndex = this.rows.indexOf(row);
     if (currentIndex === -1 || currentIndex === this.rows.length - 1) return;
@@ -1097,6 +1101,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   openLinkModal(row: M.ParentRow, child?: M.ChildRow) {
+    if (!this.permissionService.ensureCanEdit()) return;
     this.selectedParentRow = row;
     this.selectedChildRowToLink = child || null;
     this.selectedIdToLink = '';
@@ -1131,6 +1136,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async linkItem() {
+    if (!this.permissionService.ensureCanEdit()) return;
     if (!this.selectedParentRow) return;
     if (this.viewMode() === 'project') {
       if (!this.selectedIdToLink) return;
@@ -1180,12 +1186,14 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   openNewProjectFromLink() {
+    if (!this.permissionService.ensureCanEdit()) return;
     this.projectToEdit = {};
     this.isCreatingProjectFromLink = true;
     this.showProjectModal = true;
   }
 
   openProjectEdit(project: M.Projet) {
+    if (!this.permissionService.ensureCanEdit()) return;
     if (project) {
       this.projectToEdit = { ...project };
       this.showProjectModal = true;
@@ -1220,6 +1228,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async openAddResourceModal(child: M.ChildRow, parent: M.ParentRow) {
+    if (!this.permissionService.ensureCanEdit()) return;
     this.selectedChildRow = child;
     this.selectedParentForResource = parent;
     this.resourceTypeToAdd = 'role';
@@ -1245,6 +1254,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async addResourceToCharge() {
+    if (!this.permissionService.ensureCanEdit()) return;
     if (!this.selectedChildRow || !this.selectedParentForResource || !this.selectedResourceId) return;
     try {
       await this.repo.addResourceToCharge(
@@ -1295,6 +1305,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async removeResource(resource: M.ResourceRow, child: M.ChildRow, parent: M.ParentRow) {
+    if (!this.permissionService.ensureCanEdit()) return;
     this.promptConfirmAndReload(
       'Supprimer la ressource',
       `Êtes - vous sûr de vouloir supprimer "${resource.label}" ?\nCela supprimera toutes les charges associées à cette ressource.`,
@@ -1304,6 +1315,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async removeChild(child: M.ChildRow, parent: M.ParentRow) {
+    if (!this.permissionService.ensureCanEdit()) return;
     const label = this.viewMode() === 'resource' ? 'la ressource' : this.viewMode() === 'project' ? "l'équipe" : 'le projet';
     this.promptConfirmAndReload(
       `Retirer ${label}`,
@@ -1314,6 +1326,15 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async executeMove() {
+    if (!this.permissionService.ensureCanEdit()) {
+      this.isMovingSelection = false;
+      this.isMoveCommitting = false;
+      this.isSaving = false;
+      this.isOverSelectionBorder = false;
+      this.moveGhostOffset = 0;
+      this.cdr.markForCheck();
+      return;
+    }
     if (this.selectedCells.length === 0 || this.moveGhostOffset === 0) return;
     this.isSaving = true;
     this.cdr.markForCheck();
@@ -1335,6 +1356,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async applyBulkCharge(value: number | null, comment?: string) {
+    if (!this.permissionService.ensureCanEdit()) return;
     if (this.selectedCells.length === 0 || value == null) return;
     this.bulkChargeValue = value;
     const targetComment = comment !== undefined ? comment : this.bulkComment;
@@ -1356,6 +1378,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async applyProjection(data: { resources: number; totalDays: number }) {
+    if (!this.permissionService.ensureCanEdit()) return;
     if (this.selectedCells.length === 0) return;
     this.isSaving = true;
     try {

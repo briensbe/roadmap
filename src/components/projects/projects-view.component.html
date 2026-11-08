@@ -17,11 +17,13 @@
           </div>
         }
       </div>
-      <button class="btn btn-secondary" (click)="triggerImport()">
-        <lucide-icon [img]="FileDown" [size]="18"></lucide-icon>
-        Importer
-      </button>
-      <button class="btn btn-primary" (click)="openCreateModal()">+ Nouveau projet</button>
+      @if (permissionService.canEdit()) {
+        <button class="btn btn-secondary" (click)="triggerImport()">
+          <lucide-icon [img]="FileDown" [size]="18"></lucide-icon>
+          Importer
+        </button>
+        <button class="btn btn-primary" (click)="openCreateModal()">+ Nouveau projet</button>
+      }
       <input
         type="file"
         id="excel-import-input"
@@ -199,22 +201,26 @@
                     <div
                       class="dropdown-menu right"
                       [class.up]="i >= filteredProjects().length - 2 && i > 0">
-                      <button class="dropdown-item" (click)="openEditModal(projet)">
-                        <lucide-icon [img]="Edit" [size]="14"></lucide-icon>
-                        Modifier
-                      </button>
+                      @if (permissionService.canEdit()) {
+                        <button class="dropdown-item" (click)="openEditModal(projet)">
+                          <lucide-icon [img]="Edit" [size]="14"></lucide-icon>
+                          Modifier
+                        </button>
+                      }
                       <button class="dropdown-item" (click)="openChiffresModal(projet.id)">
                         <lucide-icon [img]="LucideCalculator" [size]="14"></lucide-icon>
                         Gérer les chiffres
                       </button>
-                      <button class="dropdown-item" (click)="duplicateProjet(projet)">
-                        <lucide-icon [img]="Copy" [size]="14"></lucide-icon>
-                        Dupliquer
-                      </button>
-                      <button class="dropdown-item delete" (click)="deleteProjet(projet)">
-                        <lucide-icon [img]="Trash2" [size]="14"></lucide-icon>
-                        Supprimer
-                      </button>
+                      @if (permissionService.canEdit()) {
+                        <button class="dropdown-item" (click)="duplicateProjet(projet)">
+                          <lucide-icon [img]="Copy" [size]="14"></lucide-icon>
+                          Dupliquer
+                        </button>
+                        <button class="dropdown-item delete" (click)="deleteProjet(projet)">
+                          <lucide-icon [img]="Trash2" [size]="14"></lucide-icon>
+                          Supprimer
+                        </button>
+                      }
                     </div>
                   }
                 </div>
@@ -280,22 +286,26 @@
                   </button>
                   @if (activeMenuId === projet.id) {
                     <div class="dropdown-menu">
-                      <button class="dropdown-item" (click)="openEditModal(projet)">
-                        <lucide-icon [img]="Edit" [size]="14"></lucide-icon>
-                        Modifier
-                      </button>
+                      @if (permissionService.canEdit()) {
+                        <button class="dropdown-item" (click)="openEditModal(projet)">
+                          <lucide-icon [img]="Edit" [size]="14"></lucide-icon>
+                          Modifier
+                        </button>
+                      }
                       <button class="dropdown-item" (click)="openChiffresModal(projet.id)">
                         <lucide-icon [img]="LucideCalculator" [size]="14"></lucide-icon>
                         Gérer les chiffres
                       </button>
-                      <button class="dropdown-item" (click)="duplicateProjet(projet)">
-                        <lucide-icon [img]="Copy" [size]="14"></lucide-icon>
-                        Dupliquer
-                      </button>
-                      <button class="dropdown-item delete" (click)="deleteProjet(projet)">
-                        <lucide-icon [img]="Trash2" [size]="14"></lucide-icon>
-                        Supprimer
-                      </button>
+                      @if (permissionService.canEdit()) {
+                        <button class="dropdown-item" (click)="duplicateProjet(projet)">
+                          <lucide-icon [img]="Copy" [size]="14"></lucide-icon>
+                          Dupliquer
+                        </button>
+                        <button class="dropdown-item delete" (click)="deleteProjet(projet)">
+                          <lucide-icon [img]="Trash2" [size]="14"></lucide-icon>
+                          Supprimer
+                        </button>
+                      }
                     </div>
                   }
                 </div>
@@ -401,22 +411,26 @@
               </button>
               @if (activeMenuId === projet.id) {
                 <div class="dropdown-menu right">
-                  <button class="dropdown-item" (click)="openEditModal(projet)">
-                    <lucide-icon [img]="Edit" [size]="14"></lucide-icon>
-                    Modifier
-                  </button>
+                  @if (permissionService.canEdit()) {
+                    <button class="dropdown-item" (click)="openEditModal(projet)">
+                      <lucide-icon [img]="Edit" [size]="14"></lucide-icon>
+                      Modifier
+                    </button>
+                  }
                   <button class="dropdown-item" (click)="openChiffresModal(projet.id)">
                     <lucide-icon [img]="LucideCalculator" [size]="14"></lucide-icon>
                     Gérer les chiffres
                   </button>
-                  <button class="dropdown-item" (click)="duplicateProjet(projet)">
-                    <lucide-icon [img]="Copy" [size]="14"></lucide-icon>
-                    Dupliquer
-                  </button>
-                  <button class="dropdown-item delete" (click)="deleteProjet(projet)">
-                    <lucide-icon [img]="Trash2" [size]="14"></lucide-icon>
-                    Supprimer
-                  </button>
+                  @if (permissionService.canEdit()) {
+                    <button class="dropdown-item" (click)="duplicateProjet(projet)">
+                      <lucide-icon [img]="Copy" [size]="14"></lucide-icon>
+                      Dupliquer
+                    </button>
+                    <button class="dropdown-item delete" (click)="deleteProjet(projet)">
+                      <lucide-icon [img]="Trash2" [size]="14"></lucide-icon>
+                      Supprimer
+                    </button>
+                  }
                 </div>
               }
             </div>

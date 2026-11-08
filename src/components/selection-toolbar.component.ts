@@ -32,6 +32,7 @@ export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
   @Input() step: string = '0.5';
   @Input() min: string = '0';
   @Input() isSaving: boolean = false;
+  @Input() readOnly: boolean = false;
   @Input() applyLabel: string = 'Appliquer';
   @Input() savingLabel: string = 'Application';
 
@@ -203,6 +204,7 @@ export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
   }
 
   focusActiveInput() {
+    if (this.readOnly) return;
     setTimeout(() => {
       if (this.isCrewdayzMode) {
         if (this.crewdayzAction === 'override') {
@@ -248,6 +250,7 @@ export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
   }
 
   onApply() {
+    if (this.readOnly) return;
     if (this.value === null || this.value === undefined || isNaN(this.value)) {
       this.errorMessage = 'Veuillez saisir une valeur de capacité.';
       this.focusActiveInput();
@@ -263,6 +266,7 @@ export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
   }
 
   onApplyOverride() {
+    if (this.readOnly) return;
     if (this.overrideValue === null || this.overrideValue === undefined || isNaN(this.overrideValue)) {
       this.errorMessage = 'Veuillez saisir une valeur.';
       this.focusActiveInput();
@@ -281,6 +285,7 @@ export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
   }
 
   onApplyDelta() {
+    if (this.readOnly) return;
     if (this.deltaValue === null || this.deltaValue === undefined || isNaN(this.deltaValue)) {
       this.errorMessage = 'Veuillez saisir un delta (ex : +0.5 ou -0.2).';
       this.focusActiveInput();
@@ -304,11 +309,13 @@ export class SelectionToolbarComponent implements OnChanges, OnInit, OnDestroy {
   }
 
   onClearCustomizations() {
+    if (this.readOnly) return;
     this.errorMessage = null;
     this.clearCustomizations.emit();
   }
 
   onProject() {
+    if (this.readOnly) return;
     if (!this.projectionResources || this.projectionResources <= 0) {
       this.errorMessage = 'Veuillez saisir un nombre de ressources supérieur à 0.';
       return;

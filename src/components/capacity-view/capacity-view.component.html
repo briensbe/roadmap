@@ -261,10 +261,12 @@
                     }
                   </div>
                 </div>
-                <button class="btn-hover-add" (click)="openAddResourceModal(teamRow.equipe); $event.stopPropagation()">
-                  <lucide-icon [name]="'plus'" [size]="14"></lucide-icon>
-                  Ressource
-                </button>
+                @if (permissionService.canEdit()) {
+                  <button class="btn-hover-add" (click)="openAddResourceModal(teamRow.equipe); $event.stopPropagation()">
+                    <lucide-icon [name]="'plus'" [size]="14"></lucide-icon>
+                    Ressource
+                  </button>
+                }
               </div>
               <div class="weeks-cells-container">
                 @for (week of displayedWeeks; track week; let i = $index) {
@@ -323,7 +325,9 @@
                       <span class="badge-val">{{ getResourceTotalPlannedDays(resource) | number: '1.0-1' }}</span>
                       <span class="badge-unit">j</span>
                     </div>
-                    <button class="btn-hover-delete" (click)="removeResource(resource, teamRow.equipe)">×</button>
+                    @if (permissionService.canEdit()) {
+                      <button class="btn-hover-delete" (click)="removeResource(resource, teamRow.equipe)">×</button>
+                    }
                   </div>
                   <div class="weeks-cells-container">
                     @for (week of displayedWeeks; track week; let i = $index) {
@@ -388,6 +392,7 @@
       <app-selection-toolbar
         [position]="toolbarPosition"
         [visible]="toolbarVisible"
+        [readOnly]="!permissionService.canEdit()"
         [selectedCount]="selectedCells.length"
         [totalDays]="totalSelectedDays"
         [selectionStartDate]="selectionStartWeekDate"

@@ -1,8 +1,9 @@
-import { Component, Input, Output, EventEmitter, OnInit, HostListener, computed, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, HostListener, computed, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProjetService } from '../services/projet.service';
 import { SettingsService } from '../services/settings.service';
+import { PermissionService } from '../services/permission.service';
 import { Projet, PROJECT_STATUS_LIST } from '../models/types';
 import { LucideAngularModule, Plus, ExternalLink, LucideCalculator } from 'lucide-angular';
 import { ProjectJsonImportComponent } from './project-json-import.component';
@@ -22,6 +23,7 @@ export class ProjectModalComponent implements OnInit {
 
   editableProjet: Partial<Projet> = {};
   isSaving = false;
+  readonly permissionService = inject(PermissionService);
   private externalReferenceUrlQuery = this.settingsService.getSettingQuery('external_reference_url', 'global');
   externalReferenceUrl = computed(() => this.externalReferenceUrlQuery.data()?.value || null);
   isCustomColor = false;
@@ -185,6 +187,7 @@ export class ProjectModalComponent implements OnInit {
   }
 
   async save() {
+    if (!this.permissionService.ensureCanEdit()) return;
     if (!this.editableProjet.nom_projet || this.editableProjet.nom_projet.trim() === '') {
       this.formErrors.nom_projet = true;
       return;

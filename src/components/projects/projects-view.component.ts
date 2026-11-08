@@ -1,9 +1,10 @@
-import { Component, OnInit, HostListener, ElementRef, computed, signal } from '@angular/core';
+import { Component, OnInit, HostListener, ElementRef, computed, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { ProjetService } from '../../services/projet.service';
 import { SettingsService } from '../../services/settings.service';
+import { PermissionService } from '../../services/permission.service';
 import { Projet } from '../../models/types';
 import { ChiffresModalComponent } from '../chiffres/chiffres-modal.component';
 import { Chiffre } from '../../models/chiffres.type';
@@ -47,6 +48,7 @@ import { textContains } from '../../utils/text.utils';
   styleUrl: './projects-view.component.css',
 })
 export class ProjectsViewComponent implements OnInit {
+  readonly permissionService = inject(PermissionService);
   viewMode = storageSignal<'list' | 'card' | 'table'>('projects_view_mode', 'list');
   searchQuery = storageSignal<string>('projects_view_search_query', '');
   statusFilter = storageSignal<string[]>('projects_view_status_filter', []);
@@ -207,6 +209,7 @@ export class ProjectsViewComponent implements OnInit {
   }
 
   async drop(event: CdkDragDrop<Projet[]>) {
+    if (!this.permissionService.ensureCanEdit()) return;
     const projects = [...this.filteredProjects()];
     // Move in local array first to correctly calculate rank neighbors
     moveItemInArray(projects, event.previousIndex, event.currentIndex);
@@ -239,6 +242,7 @@ export class ProjectsViewComponent implements OnInit {
   }
 
   openCreateModal() {
+    if (!this.permissionService.ensureCanEdit()) return;
     this.newProjet = {
       code_projet: '',
       nom_projet: '',
@@ -252,12 +256,14 @@ export class ProjectsViewComponent implements OnInit {
   }
 
   openEditModal(projet: Projet) {
+    if (!this.permissionService.ensureCanEdit()) return;
     this.newProjet = { ...projet };
     this.showProjectModal = true;
     this.activeMenuId = null;
   }
 
   duplicateProjet(projet: Projet) {
+    if (!this.permissionService.ensureCanEdit()) return;
     console.log('PROJET Origine : ', projet);
 
     // Destructure pour exclure les propriétés à ne pas copier
@@ -289,6 +295,7 @@ export class ProjectsViewComponent implements OnInit {
   }
 
   deleteProjet(projet: Projet) {
+    if (!this.permissionService.ensureCanEdit()) return;
     this.activeMenuId = null;
     this.confirmTitle = 'Supprimer le projet';
     this.confirmMessage = `Êtes-vous sûr de vouloir supprimer le projet "${projet.nom_projet}" ?`;
@@ -370,6 +377,7 @@ export class ProjectsViewComponent implements OnInit {
   // --- Excel Import ---
 
   triggerImport() {
+    if (!this.permissionService.ensureCanEdit()) return;
     const fileInput = document.getElementById('excel-import-input') as HTMLInputElement;
     if (fileInput) {
       fileInput.click();
@@ -377,6 +385,7 @@ export class ProjectsViewComponent implements OnInit {
   }
 
   async importFromExcel(event: any) {
+    if (!this.permissionService.ensureCanEdit()) return;
     const file = event.target.files?.[0];
     if (!file) return;
 

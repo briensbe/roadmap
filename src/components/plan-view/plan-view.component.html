@@ -1671,6 +1671,7 @@
       <app-selection-toolbar
         [position]="toolbarPosition"
         [visible]="toolbarVisible"
+        [readOnly]="!permissionService.canEdit()"
         [selectedCount]="selectedCells.length"
         [totalDays]="totalSelectedDays"
         [selectionStartDate]="selectionStartWeekDate"

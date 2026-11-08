@@ -354,6 +354,60 @@
   }
 }
 
+.selection-toolbar.read-only {
+  min-width: 310px;
+  width: 310px;
+}
+
+.selection-toolbar.crewdayz-toolbar.read-only {
+  min-width: 380px !important;
+  width: 380px !important;
+}
+
+.selection-toolbar.read-only .bulk-input:disabled {
+  background: var(--bg-hover);
+  color: var(--text-main);
+  opacity: 0.95;
+  cursor: default;
+  border-color: var(--border-subtle);
+  font-weight: 500;
+}
+
+.selection-info.selection-info-readonly {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.selection-actions-readonly {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.btn-close-readonly {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 3px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.btn-close-readonly:hover {
+  background: var(--bg-hover);
+  color: var(--text-main);
+}
+
 
 
 

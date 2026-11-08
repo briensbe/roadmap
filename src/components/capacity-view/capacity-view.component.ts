@@ -37,6 +37,7 @@ import {
 import { storageSignal } from '../../utils/storage-signal';
 import { YearKey, YearPeriod, getSelectableYears } from '../../utils/year-selection';
 import { ToastService } from '../../services/toast.service';
+import { PermissionService } from '../../services/permission.service';
 import { calculateBestPopoverPosition, PopoverPosition } from '../../utils/selection-positioning';
 import { textContains } from '../../utils/text.utils';
 import { HoverTooltipController } from '../../shared/grid/hover-tooltip.controller';
@@ -107,6 +108,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly ngZone = inject(NgZone);
   private readonly toast = inject(ToastService);
+  readonly permissionService = inject(PermissionService);
 
   displayedWeeks: Date[] = [];
   displayedYears: { year: number; weeksCount: number }[] = [];
@@ -543,6 +545,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   }
 
   async openAddResourceModal(equipe: Equipe) {
+    if (!this.permissionService.ensureCanEdit()) return;
     this.selectedEquipe = equipe;
     this.resourceTypeToAdd = 'role';
     this.selectedResourceId = '';
@@ -554,6 +557,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   }
 
   async addResourceToTeam() {
+    if (!this.permissionService.ensureCanEdit()) return;
     if (!this.selectedEquipe || !this.selectedResourceId) return;
 
     try {
@@ -575,6 +579,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   }
 
   async removeResource(resource: ResourceRow, equipe: Equipe) {
+    if (!this.permissionService.ensureCanEdit()) return;
     this.confirmTitle = 'Supprimer la ressource';
     this.confirmMessage = `Retirer ${resource.label} de l'équipe ${equipe.nom} ?`;
 
@@ -662,6 +667,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   }
 
   async applyBulkCapacite(value: number | null, comment?: string) {
+    if (!this.permissionService.ensureCanEdit()) return;
     if (this.selectedCells.length === 0 || value == null) return;
     this.isSaving = true;
     this.cdr.markForCheck();
@@ -677,6 +683,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   }
 
   async applyBulkOverride(event: { value: number; comment?: string }) {
+    if (!this.permissionService.ensureCanEdit()) return;
     if (this.selectedCells.length === 0) return;
     this.isSaving = true;
     this.cdr.markForCheck();
@@ -692,6 +699,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   }
 
   async applyBulkDelta(event: { delta: number; comment?: string }) {
+    if (!this.permissionService.ensureCanEdit()) return;
     if (this.selectedCells.length === 0) return;
     this.isSaving = true;
     this.cdr.markForCheck();
@@ -707,6 +715,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   }
 
   async applyClearCustomizations() {
+    if (!this.permissionService.ensureCanEdit()) return;
     if (this.selectedCells.length === 0) return;
     this.isSaving = true;
     this.cdr.markForCheck();
@@ -722,6 +731,7 @@ export class CapacityViewComponent implements OnInit, OnDestroy {
   }
 
   async applyCapacityProjection(data: { resources: number; totalDays: number }) {
+    if (!this.permissionService.ensureCanEdit()) return;
     if (this.selectedCells.length === 0) return;
     this.isSaving = true;
     this.cdr.markForCheck();

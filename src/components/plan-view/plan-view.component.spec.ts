@@ -12,11 +12,14 @@ import { ChiffresService } from '../../services/chiffres.service';
 import { ResourceService } from '../../services/resource.service';
 import { CrewdayzIntegrationService } from '../../services/crewdayz-integration.service';
 import { ThemeService } from '../../services/theme.service';
+import { PermissionService } from '../../services/permission.service';
 import { signal } from '@angular/core';
 
 describe('PlanViewComponent - Vue Par Service', () => {
   let component: PlanViewComponent;
   let fixture: ComponentFixture<PlanViewComponent>;
+  let chargeServiceSpy: jasmine.SpyObj<ChargeService>;
+  let permissionServiceSpy: jasmine.SpyObj<PermissionService>;
 
   const week1 = '2026-03-02';
   const week1Date = new Date(2026, 2, 2);
@@ -36,7 +39,7 @@ describe('PlanViewComponent - Vue Par Service', () => {
       'linkProjectToTeam',
       'unlinkProjectFromTeam',
     ]);
-    const chargeServiceSpy = jasmine.createSpyObj('ChargeService', [
+    chargeServiceSpy = jasmine.createSpyObj('ChargeService', [
       'getAllCharges',
       'createOrUpdateCharge',
       'createChargeWithoutDates',
@@ -47,6 +50,12 @@ describe('PlanViewComponent - Vue Par Service', () => {
       'getAvailableRolesForProjectTeam',
       'getAvailablePersonnesForProjectTeam',
     ]);
+    permissionServiceSpy = jasmine.createSpyObj('PermissionService', ['ensureCanEdit'], {
+      canEdit: signal(true),
+      isViewer: signal(false),
+      userRole: signal('editor'),
+    });
+    permissionServiceSpy.ensureCanEdit.and.returnValue(true);
     const rolesServiceSpy = jasmine.createSpyObj('RolesService', ['getAllRoles', 'getAllRoleAttachments']);
     const jalonServiceSpy = jasmine.createSpyObj('JalonService', ['getAllJalons']);
     const settingsServiceSpy = jasmine.createSpyObj('SettingsService', ['getSettingQuery']);
@@ -80,6 +89,7 @@ describe('PlanViewComponent - Vue Par Service', () => {
         { provide: ResourceService, useValue: resourceServiceSpy },
         { provide: CrewdayzIntegrationService, useValue: crewdayzServiceSpy },
         { provide: ThemeService, useValue: themeServiceSpy },
+        { provide: PermissionService, useValue: permissionServiceSpy },
       ],
     }).compileComponents();
 
@@ -360,5 +370,45 @@ describe('PlanViewComponent - Vue Par Service', () => {
     expect(component.serviceSelectionSummary.rowLabel).toBe('Projet Alpha');
     expect(component.serviceSelectionSummary.units).toBe(3.5);
     expect(component.serviceSelectionSummary.days).toBe(17);
+  });
+
+  describe('Viewer permission guards', () => {
+    it('should block applyBulkCharge when ensureCanEdit returns false', async () => {
+      permissionServiceSpy.ensureCanEdit.and.returnValue(false);
+      component.selectedCells = [{ resource: {} as any, week: new Date(), childId: 'c1', parentId: 'p1' }];
+      await component.applyBulkCharge(1);
+      expect(chargeServiceSpy.createOrUpdateCharge).not.toHaveBeenCalled();
+    });
+
+    it('should block executeMove when ensureCanEdit returns false', async () => {
+      permissionServiceSpy.ensureCanEdit.and.returnValue(false);
+      component.selectedCells = [{ resource: {} as any, week: new Date(), childId: 'c1', parentId: 'p1' }];
+      component.moveGhostOffset = 1;
+      await component.executeMove();
+      expect(chargeServiceSpy.bulkMoveCharges).not.toHaveBeenCalled();
+    });
+
+    it('should block openLinkModal when ensureCanEdit returns false', () => {
+      permissionServiceSpy.ensureCanEdit.and.returnValue(false);
+      component.openLinkModal({ id: 'row1' } as any);
+      expect(component.showLinkModal).toBeFalse();
+    });
+
+    it('should block openAddResourceModal when ensureCanEdit returns false', async () => {
+      permissionServiceSpy.ensureCanEdit.and.returnValue(false);
+      await component.openAddResourceModal({ id: 'child1' } as any, { id: 'parent1' } as any);
+      expect(component.showAddResourceModal).toBeFalse();
+    });
+
+    it('should render selection toolbar in read-only mode when viewer selects cells', () => {
+      (permissionServiceSpy.canEdit as any).set(false);
+      (permissionServiceSpy.isViewer as any).set(true);
+      component.selectedCells = [{ resource: {} as any, week: new Date(), childId: 'c1', parentId: 'p1' }];
+      component.isSelectionFinished = true;
+      fixture.detectChanges();
+
+      const toolbar = fixture.nativeElement.querySelector('app-selection-toolbar');
+      expect(toolbar).toBeTruthy();
+    });
   });
 });
