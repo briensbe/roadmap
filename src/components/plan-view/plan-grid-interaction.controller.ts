@@ -93,7 +93,7 @@ export class PlanGridInteractionController {
   planningMode = storageSignal<PlanningMode>('plan-view-planning-mode', 'saisie');
   selectedCapacityYear = storageSignal<CapacityYearSelection>('plan-view-capacity-year', 'today');
   readonly selectableYears: readonly YearKey[] = getSelectableYears();
-  labelColumnWidth = storageSignal<number>('plan-view-label-column-width', 300);
+  labelColumnWidth = storageSignal<number>('plan-view-label-column-width', 450);
   filterJalonTypes = storageSignal<string[]>('plan-view-filter-jalon-types', []);
   filterProjetSearch = storageSignal<string>('plan-view-filter-search', '');
   showGlobalFilters = signal<boolean>(false);
