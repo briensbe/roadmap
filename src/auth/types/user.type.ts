@@ -17,3 +17,13 @@ export type LoginPayload = {
   email: string;
   password: string;
 };
+
+export type RoadmapRole = 'viewer' | 'editor' | 'admin';
+
+export interface RoadmapUserProfile {
+  id: string;
+  email?: string | null;
+  role: RoadmapRole;
+  created_at?: string;
+  updated_at?: string;
+}

@@ -19,6 +19,29 @@
     </div>
 
     <div class="info-row">
+      <lucide-icon [img]="ShieldCheck" class="info-icon" size="20"></lucide-icon>
+      <div class="info-details">
+        <span class="info-label">Rôle attribué</span>
+        <div class="role-badge-container">
+          <span
+            class="role-badge"
+            [class.role-viewer]="userRole() === 'viewer'"
+            [class.role-editor]="userRole() === 'editor'"
+            [class.role-admin]="userRole() === 'admin'"
+            [class.role-none]="!userRole()"
+          >
+            {{ roleLabel() }}
+          </span>
+        </div>
+        @if (roleDescription()) {
+          <span class="role-hint">
+            {{ roleDescription() }}
+          </span>
+        }
+      </div>
+    </div>
+
+    <div class="info-row">
       <lucide-icon [img]="isGoogleUser() ? Globe : Lock" class="info-icon" size="20"></lucide-icon>
       <div class="info-details">
         <span class="info-label">Méthode d'authentification</span>

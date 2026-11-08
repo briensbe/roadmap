@@ -1,10 +1,11 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthResponse, AuthTokenResponse, createClient, SupabaseClient, UserResponse, User } from '@supabase/supabase-js';
 import { BehaviorSubject } from 'rxjs';
-import { LoginPayload, SignupPayload } from '../auth/types/user.type';
+import { LoginPayload, SignupPayload, RoadmapRole, RoadmapUserProfile } from '../auth/types/user.type';
 import { environment } from '../environments/environment';
 import { validateSignupEmail } from '../utils/email-validator';
+import { DB_TABLES } from '../constants/db-tables';
 
 const sessionStorageUserKey = 'roadmapUser'; // A changer si on change d'application (car j'avais repris un ancien nom)
 @Injectable({
@@ -14,6 +15,8 @@ export class SupabaseService {
   private readonly router = inject(Router);
   private supabase: SupabaseClient;
   private _user = signal<User | null>(null);
+  private _userProfile = signal<RoadmapUserProfile | null>(null);
+  private _isProfileLoading = signal<boolean>(false);
   private _isPasswordRecovery = signal(false);
   private _isLocalLogout = false;
   private _accessToken: string | null = null;
@@ -43,6 +46,21 @@ export class SupabaseService {
    * Signal réactif pour l'utilisateur actuellement connecté
    */
   public user = this._user.asReadonly();
+
+  /**
+   * Signal réactif pour le profil Roadmap de l'utilisateur (issu de roadmap_user_profiles)
+   */
+  public userProfile = this._userProfile.asReadonly();
+
+  /**
+   * Signal indiquant si le profil utilisateur est en cours de chargement
+   */
+  public isProfileLoading = this._isProfileLoading.asReadonly();
+
+  /**
+   * Signal calculé pour le rôle Roadmap ('viewer' | 'editor' | 'admin' | null)
+   */
+  public userRole = computed<RoadmapRole | null>(() => this._userProfile()?.role ?? null);
 
   /**
    * Signal réactif indiquant si la session provient d'un lien de récupération de mot de passe
@@ -77,6 +95,7 @@ export class SupabaseService {
         if (session?.user) {
           this._user.set(session.user);
           this._accessToken = session.access_token ?? null;
+          await this.loadUserProfile(session.user.id);
         }
       } catch (err) {
         console.error('Error fetching initial session:', err);
@@ -262,6 +281,45 @@ export class SupabaseService {
   }
 
   /**
+   * Charge le profil utilisateur depuis public.roadmap_user_profiles
+   */
+  async loadUserProfile(userId?: string): Promise<RoadmapUserProfile | null> {
+    const id = userId || this._user()?.id;
+    if (!id) {
+      this._userProfile.set(null);
+      return null;
+    }
+
+    this._isProfileLoading.set(true);
+    try {
+      const { data, error } = await this.supabase
+        .from(DB_TABLES.USER_PROFILES)
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (error) {
+        console.warn('[SupabaseService] Erreur lors du chargement du profil utilisateur:', error);
+        return null;
+      }
+
+      if (data) {
+        const profile = data as RoadmapUserProfile;
+        this._userProfile.set(profile);
+        return profile;
+      } else {
+        this._userProfile.set(null);
+        return null;
+      }
+    } catch (err) {
+      console.error('[SupabaseService] Erreur inattendue chargement profil utilisateur:', err);
+      return null;
+    } finally {
+      this._isProfileLoading.set(false);
+    }
+  }
+
+  /**
    * Récupère l'utilisateur actuellement connecté.
    * Optimisé pour utiliser le cache local et éviter les appels réseau inutiles.
    */
@@ -270,17 +328,26 @@ export class SupabaseService {
 
     const cachedUser = this._user(); // signal -> rapide
     if (cachedUser) {
+      if (!this._userProfile()) {
+        this.loadUserProfile(cachedUser.id).catch((err) => {
+          console.warn('[SupabaseService] Erreur chargement profil getUser cached:', err);
+        });
+      }
       return { data: { user: cachedUser }, error: null };
     }
 
     // Si pas de cache, on essaie getSession qui est rapide (Lit dans le stockage local (très rapide, pas d'appel réseau).)
     const {
       data: { session },
-      error: sessionError,
     } = await this.supabase.auth.getSession();
     if (session?.user) {
       this._user.set(session.user);
       this._accessToken = session.access_token ?? null;
+      if (!this._userProfile()) {
+        this.loadUserProfile(session.user.id).catch((err) => {
+          console.warn('[SupabaseService] Erreur chargement profil getUser session:', err);
+        });
+      }
       return { data: { user: session.user }, error: null };
     }
 
@@ -288,6 +355,11 @@ export class SupabaseService {
     const response = await this.supabase.auth.getUser();
     if (response.data.user) {
       this._user.set(response.data.user);
+      if (!this._userProfile()) {
+        this.loadUserProfile(response.data.user.id).catch((err) => {
+          console.warn('[SupabaseService] Erreur chargement profil getUser response:', err);
+        });
+      }
     }
     return response;
   }
@@ -310,6 +382,7 @@ export class SupabaseService {
 
     // On vide immédiatement le cache local avant même l'appel réseau
     this._user.set(null);
+    this._userProfile.set(null);
     this._isPasswordRecovery.set(false);
     this._accessToken = null;
     this.authState$.next(null);
@@ -425,8 +498,12 @@ export class SupabaseService {
 
       if (session?.user) {
         sessionStorage.setItem(sessionStorageUserKey, JSON.stringify(session.user));
+        this.loadUserProfile(session.user.id).catch((err) => {
+          console.warn('[SupabaseService] Erreur chargement profil authStateChange:', err);
+        });
       } else {
         sessionStorage.removeItem(sessionStorageUserKey);
+        this._userProfile.set(null);
       }
     });
   }

@@ -24,6 +24,7 @@ export const DB_TABLES = {
   CAPACITY_SOURCE_CONFIG: `${DB_PREFIX}capacity_source_config`,
   INTEGRATION_EVENTS: `${DB_PREFIX}integration_events`,
   USER_PREFERENCES: `${DB_PREFIX}user_preferences`,
+  USER_PROFILES: `${DB_PREFIX}user_profiles`,
 } as const;
 
 export const DB_VIEWS = {

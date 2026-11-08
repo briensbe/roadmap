@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, effect, inject, OnInit } from '@angular/core';
 import { SupabaseService } from '../../services/supabase.service';
 import { ThemeService, type ThemePreference } from '../../services/theme.service';
 import {
@@ -25,10 +25,14 @@ import { Router } from '@angular/router';
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.css',
 })
-export class ProfileComponent {
+export class ProfileComponent implements OnInit {
   private readonly supabaseService = inject(SupabaseService);
   public readonly themeService = inject(ThemeService);
   public readonly user = this.supabaseService.user;
+  public readonly userProfile = this.supabaseService.userProfile;
+  public readonly isProfileLoading = this.supabaseService.isProfileLoading;
+  public readonly userRole = this.supabaseService.userRole;
+
   loading = false;
   showInfo = false;
   private readonly router = inject(Router);
@@ -56,6 +60,56 @@ export class ProfileComponent {
   readonly authProviderLabel = computed(() => {
     return this.isGoogleUser() ? 'Compte Google (OAuth)' : 'Email / Mot de passe';
   });
+
+  readonly roleLabel = computed(() => {
+    if (this.isProfileLoading() && !this.userProfile()) {
+      return 'Chargement...';
+    }
+    const role = this.userRole();
+    if (!role) {
+      return 'Aucun rôle attribué';
+    }
+    switch (role) {
+      case 'viewer':
+        return 'Lecteur (viewer)';
+      case 'editor':
+        return 'Éditeur (editor)';
+      case 'admin':
+        return 'Administrateur (admin)';
+      default:
+        return role;
+    }
+  });
+
+  readonly roleDescription = computed(() => {
+    const role = this.userRole();
+    switch (role) {
+      case 'viewer':
+        return 'Accès en lecture seule à la roadmap.';
+      case 'editor':
+        return 'Accès en consultation et modification sur les projets et ressources.';
+      case 'admin':
+        return "Accès complet avec privilèges d'administration et de gestion des accès.";
+      default:
+        return null;
+    }
+  });
+
+  constructor() {
+    effect(() => {
+      const currentUser = this.user();
+      if (currentUser && !this.userProfile()) {
+        this.supabaseService.loadUserProfile(currentUser.id);
+      }
+    });
+  }
+
+  async ngOnInit(): Promise<void> {
+    const currentUser = this.user();
+    if (currentUser && !this.userProfile()) {
+      await this.supabaseService.loadUserProfile(currentUser.id);
+    }
+  }
 
   // Theme options for the selector
   readonly themeOptions: { value: ThemePreference; label: string; icon: LucideIconData }[] = [
