@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { SupabaseService } from '../../services/supabase.service';
+import { AuthConfigService } from '../../services/auth-config.service';
 import {
   LucideAngularModule,
   Eye,
@@ -17,8 +18,7 @@ import {
   Sparkles,
   Edit2,
 } from 'lucide-angular';
-import { environment } from '../../environments/environment';
-import { getEmailPlaceholder, maskEmail } from '../../utils/email-validator';
+import { maskEmail } from '../../utils/email-validator';
 
 export type ResetStep = 'verify-otp' | 'new-password' | 'success';
 
@@ -43,7 +43,8 @@ export class ResetPasswordComponent implements OnInit {
   loading = signal(false);
   resending = signal(false);
 
-  emailPlaceholder = computed(() => getEmailPlaceholder(environment.allowedEmailDomains));
+  private readonly authConfigService = inject(AuthConfigService);
+  emailPlaceholder = computed(() => this.authConfigService.emailPlaceholder());
   maskedEmail = computed(() => maskEmail(this.email()));
 
   // Exposer les icônes pour le template

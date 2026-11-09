@@ -2,6 +2,7 @@ import {
   normalizeDomain,
   extractEmailDomain,
   isEmailDomainAllowed,
+  isEmailAllowed,
   validateSignupEmail,
   getEmailPlaceholder,
   maskEmail,
@@ -10,8 +11,8 @@ import {
 describe('EmailValidator Utility', () => {
   describe('normalizeDomain', () => {
     it('should strip leading @ symbols and lowercase domain', () => {
-      expect(normalizeDomain('@SOPRASTERIA.COM')).toBe('soprasteria.com');
-      expect(normalizeDomain('@@orange.com  ')).toBe('orange.com');
+      expect(normalizeDomain('@CA-TITRES.FR')).toBe('ca-titres.fr');
+      expect(normalizeDomain('@@yahoo.com  ')).toBe('yahoo.com');
       expect(normalizeDomain('  company.fr ')).toBe('company.fr');
     });
   });
@@ -19,7 +20,7 @@ describe('EmailValidator Utility', () => {
   describe('extractEmailDomain', () => {
     it('should extract lowercase domain from valid email', () => {
       expect(extractEmailDomain('user@example.com')).toBe('example.com');
-      expect(extractEmailDomain('USER@SOPRASTERIA.COM')).toBe('soprasteria.com');
+      expect(extractEmailDomain('USER@CA-TITRES.FR')).toBe('ca-titres.fr');
       expect(extractEmailDomain('user.name+tag@sub.domain.org')).toBe('sub.domain.org');
     });
 
@@ -38,57 +39,80 @@ describe('EmailValidator Utility', () => {
     });
 
     it('should allow emails with matching allowed domain (case insensitive)', () => {
-      const allowed = ['soprasteria.com', 'orange.com'];
-      expect(isEmailDomainAllowed('jean.dupont@soprasteria.com', allowed)).toBe(true);
-      expect(isEmailDomainAllowed('JEAN.DUPONT@SOPRASTERIA.COM', allowed)).toBe(true);
-      expect(isEmailDomainAllowed('marie@ORANGE.COM', allowed)).toBe(true);
+      const allowed = ['ca-titres.fr', 'yahoo.com'];
+      expect(isEmailDomainAllowed('jean.dupont@ca-titres.fr', allowed)).toBe(true);
+      expect(isEmailDomainAllowed('JEAN.DUPONT@CA-TITRES.FR', allowed)).toBe(true);
+      expect(isEmailDomainAllowed('marie@YAHOO.COM', allowed)).toBe(true);
     });
 
     it('should allow emails when allowedDomains contains @ prefix', () => {
-      const allowed = ['@soprasteria.com'];
-      expect(isEmailDomainAllowed('jean.dupont@soprasteria.com', allowed)).toBe(true);
+      const allowed = ['@ca-titres.fr'];
+      expect(isEmailDomainAllowed('jean.dupont@ca-titres.fr', allowed)).toBe(true);
     });
 
     it('should reject emails with non-matching domains', () => {
-      const allowed = ['soprasteria.com'];
+      const allowed = ['ca-titres.fr'];
       expect(isEmailDomainAllowed('user@gmail.com', allowed)).toBe(false);
-      expect(isEmailDomainAllowed('user@evil-soprasteria.com', allowed)).toBe(false);
-      expect(isEmailDomainAllowed('user@soprasteria.com.attacker.com', allowed)).toBe(false);
-      expect(isEmailDomainAllowed('user@sub.soprasteria.com', allowed)).toBe(false);
+      expect(isEmailDomainAllowed('user@evil-ca-titres.fr', allowed)).toBe(false);
+      expect(isEmailDomainAllowed('user@ca-titres.fr.attacker.com', allowed)).toBe(false);
+      expect(isEmailDomainAllowed('user@sub.ca-titres.fr', allowed)).toBe(false);
+    });
+  });
+
+  describe('isEmailAllowed', () => {
+    it('should allow any email in permissive mode (empty domains and emails)', () => {
+      expect(isEmailAllowed('user@gmail.com', [], [])).toBe(true);
+      expect(isEmailAllowed('user@anything.org', undefined, undefined)).toBe(true);
+    });
+
+    it('should allow exact match on VIP email even if domain is not allowed', () => {
+      const allowedDomains = ['ca-titres.fr'];
+      const allowedEmails = ['admin.perso@gmail.com', 'vip.partner@external.org'];
+
+      expect(isEmailAllowed('admin.perso@gmail.com', allowedDomains, allowedEmails)).toBe(true);
+      expect(isEmailAllowed('ADMIN.PERSO@GMAIL.COM', allowedDomains, allowedEmails)).toBe(true);
+      expect(isEmailAllowed('other@gmail.com', allowedDomains, allowedEmails)).toBe(false);
+    });
+
+    it('should allow emails matching allowed domains', () => {
+      const allowedDomains = ['ca-titres.fr'];
+      const allowedEmails = ['vip@gmail.com'];
+
+      expect(isEmailAllowed('employe@ca-titres.fr', allowedDomains, allowedEmails)).toBe(true);
+      expect(isEmailAllowed('vip@gmail.com', allowedDomains, allowedEmails)).toBe(true);
+      expect(isEmailAllowed('hacker@evil.com', allowedDomains, allowedEmails)).toBe(false);
     });
   });
 
   describe('validateSignupEmail', () => {
     it('should return invalid for empty email', () => {
-      const result = validateSignupEmail('', ['soprasteria.com']);
+      const result = validateSignupEmail('', ['ca-titres.fr']);
       expect(result.isValid).toBe(false);
       expect(result.errorMessage).toBe('Veuillez saisir une adresse e-mail.');
     });
 
     it('should return invalid for malformed email', () => {
-      const result = validateSignupEmail('invalid-email', ['soprasteria.com']);
+      const result = validateSignupEmail('invalid-email', ['ca-titres.fr']);
       expect(result.isValid).toBe(false);
       expect(result.errorMessage).toBe('Veuillez saisir une adresse e-mail valide.');
     });
 
-    it('should return valid when domain matches single allowed domain', () => {
-      const result = validateSignupEmail('collab@soprasteria.com', ['soprasteria.com']);
+    it('should return valid when domain matches allowed domain', () => {
+      const result = validateSignupEmail('collab@ca-titres.fr', ['ca-titres.fr']);
       expect(result.isValid).toBe(true);
       expect(result.errorMessage).toBeUndefined();
     });
 
-    it('should return explicit single domain error when domain is rejected', () => {
-      const result = validateSignupEmail('user@gmail.com', ['soprasteria.com']);
+    it('should return standardized error message when domain is rejected', () => {
+      const result = validateSignupEmail('user@gmail.com', ['ca-titres.fr']);
       expect(result.isValid).toBe(false);
-      expect(result.errorMessage).toBe('Seules les adresses e-mail du domaine @soprasteria.com sont autorisées.');
+      expect(result.errorMessage).toBe('Veuillez utiliser votre adresse professionnelle autorisée.');
     });
 
-    it('should return explicit multi-domain error when domain is rejected', () => {
-      const result = validateSignupEmail('user@gmail.com', ['soprasteria.com', 'orange.com']);
-      expect(result.isValid).toBe(false);
-      expect(result.errorMessage).toBe(
-        'Seules les adresses e-mail des domaines suivants sont autorisées : @soprasteria.com, @orange.com.'
-      );
+    it('should return valid for VIP email exception', () => {
+      const result = validateSignupEmail('vip@gmail.com', ['ca-titres.fr'], ['vip@gmail.com']);
+      expect(result.isValid).toBe(true);
+      expect(result.errorMessage).toBeUndefined();
     });
   });
 
@@ -99,7 +123,7 @@ describe('EmailValidator Utility', () => {
     });
 
     it('should return placeholder using first allowed domain', () => {
-      expect(getEmailPlaceholder(['soprasteria.com', 'orange.com'])).toBe('jean.dupont@soprasteria.com');
+      expect(getEmailPlaceholder(['ca-titres.fr', 'yahoo.com'])).toBe('jean.dupont@ca-titres.fr');
       expect(getEmailPlaceholder(['@societe.fr'])).toBe('jean.dupont@societe.fr');
     });
 
@@ -128,8 +152,7 @@ describe('EmailValidator Utility', () => {
 
     it('should mask longer local parts properly', () => {
       expect(maskEmail('john.doe@example.com')).toBe('jo***e@example.com');
-      expect(maskEmail('jean.dupont@soprasteria.com')).toBe('je***t@soprasteria.com');
+      expect(maskEmail('jean.dupont@ca-titres.fr')).toBe('je***t@ca-titres.fr');
     });
   });
 });
-

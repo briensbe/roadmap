@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../services/supabase.service';
+import { AuthConfigService } from '../../services/auth-config.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import {
@@ -16,8 +17,7 @@ import {
   CheckCircle,
   ArrowRight,
 } from 'lucide-angular';
-import { environment } from '../../environments/environment';
-import { validateSignupEmail, getEmailPlaceholder, maskEmail } from '../../utils/email-validator';
+import { maskEmail } from '../../utils/email-validator';
 
 export type SignupStep = 'form' | 'verify-otp';
 
@@ -29,6 +29,10 @@ export type SignupStep = 'form' | 'verify-otp';
   styleUrl: './signup.component.css',
 })
 export class SignupComponent implements OnInit {
+  private readonly authConfigService = inject(AuthConfigService);
+  private readonly supabaseService = inject(SupabaseService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   step = signal<SignupStep>('form');
   name = signal('');
   email = signal('');
@@ -43,7 +47,7 @@ export class SignupComponent implements OnInit {
   errorMessage = signal<string | null>(null);
   successMessage = signal<string | null>(null);
 
-  emailPlaceholder = computed(() => getEmailPlaceholder(environment.allowedEmailDomains));
+  emailPlaceholder = computed(() => this.authConfigService.emailPlaceholder());
   maskedEmail = computed(() => maskEmail(this.email()));
 
   // Expose icons for template usage
@@ -57,10 +61,6 @@ export class SignupComponent implements OnInit {
   readonly Edit2 = Edit2;
   readonly CheckCircle = CheckCircle;
   readonly ArrowRight = ArrowRight;
-
-  private readonly supabaseService = inject(SupabaseService);
-  private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
 
   ngOnInit() {
     this.route.queryParams.subscribe((params) => {
@@ -114,9 +114,9 @@ export class SignupComponent implements OnInit {
     }
 
     // Email domain validation
-    const emailValidation = validateSignupEmail(this.email(), environment.allowedEmailDomains);
-    if (!emailValidation.isValid) {
-      this.errorMessage.set(emailValidation.errorMessage || 'Adresse e-mail non valide.');
+    const emailValidation = this.authConfigService.validateEmail(this.email());
+    if (!emailValidation.isValid && emailValidation.errorMessage !== 'Veuillez utiliser votre adresse professionnelle autorisée.') {
+      this.errorMessage.set(emailValidation.errorMessage || 'Veuillez saisir une adresse e-mail valide.');
       return;
     }
 
@@ -132,11 +132,15 @@ export class SignupComponent implements OnInit {
 
     this.loading.set(true);
     try {
-      const { error } = await this.supabaseService.signUpWithEmail({
-        name: this.name(),
-        email: this.email(),
-        password: this.password(),
-      });
+      const { error } = await this.supabaseService.signUpWithEmail(
+        {
+          name: this.name(),
+          email: this.email(),
+          password: this.password(),
+        },
+        this.authConfigService.allowedDomains(),
+        this.authConfigService.allowedEmails()
+      );
 
       if (error) {
         this.errorMessage.set(error.message);

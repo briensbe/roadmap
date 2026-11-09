@@ -25,6 +25,7 @@ export const DB_TABLES = {
   INTEGRATION_EVENTS: `${DB_PREFIX}integration_events`,
   USER_PREFERENCES: `${DB_PREFIX}user_preferences`,
   USER_PROFILES: `${DB_PREFIX}user_profiles`,
+  ALLOWED_RULES: 'allowed_rules',
 } as const;
 
 export const DB_VIEWS = {

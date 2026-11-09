@@ -1,10 +1,9 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { SupabaseService } from '../../services/supabase.service';
+import { AuthConfigService } from '../../services/auth-config.service';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { environment } from '../../environments/environment';
-import { getEmailPlaceholder } from '../../utils/email-validator';
 
 @Component({
   selector: 'app-forgot-password',
@@ -19,10 +18,11 @@ export class ForgotPasswordComponent {
   isError = signal(false);
   loading = signal(false);
 
-  emailPlaceholder = computed(() => getEmailPlaceholder(environment.allowedEmailDomains));
-
+  private readonly authConfigService = inject(AuthConfigService);
   private readonly supabaseService = inject(SupabaseService);
   private readonly router = inject(Router);
+
+  emailPlaceholder = computed(() => this.authConfigService.emailPlaceholder());
 
   async onSubmit() {
     if (!this.email().trim()) {

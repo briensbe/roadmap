@@ -1,5 +1,5 @@
 /**
- * Utilitaires pour la validation du domaine des adresses e-mail
+ * Utilitaires pour la validation du domaine et des exceptions des adresses e-mail
  */
 
 /**
@@ -52,11 +52,55 @@ export function isEmailDomainAllowed(email: string, allowedDomains?: string[]): 
 }
 
 /**
- * Valide une adresse e-mail pour l'inscription en vérifiant le format et les restrictions de domaine.
+ * Vérifie si une adresse e-mail est autorisée en vérifiant :
+ * 1. Si elle correspond à une exception e-mail explicite (ex: compte VIP ou Google OAuth)
+ * 2. Si son domaine correspond à l'un des domaines autorisés
+ * Si allowedDomains et allowedEmails sont vides ou non définis, toutes les adresses e-mail valides sont acceptées (mode permissif).
+ */
+export function isEmailAllowed(
+  email: string,
+  allowedDomains?: string[],
+  allowedEmails?: string[]
+): boolean {
+  const hasDomains = Array.isArray(allowedDomains) && allowedDomains.length > 0;
+  const hasEmails = Array.isArray(allowedEmails) && allowedEmails.length > 0;
+
+  // Si aucune restriction n'est configurée (mode permissif)
+  if (!hasDomains && !hasEmails) {
+    return true;
+  }
+
+  if (!email || typeof email !== 'string') {
+    return false;
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+
+  // 1. Exception e-mail exacte
+  if (hasEmails) {
+    const isExactMatch = allowedEmails!.some(
+      (e) => typeof e === 'string' && e.trim().toLowerCase() === cleanEmail
+    );
+    if (isExactMatch) {
+      return true;
+    }
+  }
+
+  // 2. Domaine autorisé
+  if (hasDomains) {
+    return isEmailDomainAllowed(cleanEmail, allowedDomains);
+  }
+
+  return false;
+}
+
+/**
+ * Valide une adresse e-mail pour l'inscription en vérifiant le format, les restrictions de domaine et les exceptions e-mails.
  */
 export function validateSignupEmail(
   email: string,
-  allowedDomains?: string[]
+  allowedDomains?: string[],
+  allowedEmails?: string[]
 ): { isValid: boolean; errorMessage?: string } {
   if (!email || !email.trim()) {
     return {
@@ -73,22 +117,10 @@ export function validateSignupEmail(
     };
   }
 
-  if (!isEmailDomainAllowed(email, allowedDomains)) {
-    const cleanAllowed = (allowedDomains || [])
-      .map((d) => normalizeDomain(d))
-      .filter((d) => d.length > 0);
-
-    if (cleanAllowed.length === 1) {
-      return {
-        isValid: false,
-        errorMessage: `Seules les adresses e-mail du domaine @${cleanAllowed[0]} sont autorisées.`,
-      };
-    }
-
-    const formattedDomains = cleanAllowed.map((d) => `@${d}`).join(', ');
+  if (!isEmailAllowed(email, allowedDomains, allowedEmails)) {
     return {
       isValid: false,
-      errorMessage: `Seules les adresses e-mail des domaines suivants sont autorisées : ${formattedDomains}.`,
+      errorMessage: 'Veuillez utiliser votre adresse professionnelle autorisée.',
     };
   }
 
@@ -135,4 +167,3 @@ export function maskEmail(email: string): string {
   }
   return `${localPart.substring(0, 2)}***${localPart.substring(localPart.length - 1)}${domainPart}`;
 }
-
