@@ -104,6 +104,7 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly Contact = this.gridCtrl.Contact;
   readonly User = this.gridCtrl.User;
   readonly FileDown = this.gridCtrl.FileDown;
+  readonly FileJson = this.gridCtrl.FileJson;
   readonly MoreVertical = this.gridCtrl.MoreVertical;
   readonly ListTree = this.gridCtrl.ListTree;
   readonly AlignJustify = this.gridCtrl.AlignJustify;
@@ -767,6 +768,33 @@ export class PlanViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   exportToExcel(): void {
     this.repo.exportToExcel(this.rowsAll, this.displayedWeeks, this.viewMode());
+  }
+
+  exportToJson(): void {
+    this.repo.exportToJson({
+      rows: this.rows,
+      dataset: this.dataset,
+      displayedWeeks: this.displayedWeeks,
+      viewMode: this.viewMode(),
+      chiffreMode: this.chiffreMode(),
+      criteria: {
+        viewMode: this.viewMode(),
+        globalSearch: this.globalSearch(),
+        filterEquipeIds: this.filterEquipeIds(),
+        filterProjetIds: this.filterProjetIds(),
+        filterResourceIds: this.filterResourceIds(),
+        filterStatusIds: this.filterStatusIds(),
+        filterPeriodEnabled: this.filterPeriodEnabled(),
+        effectivePeriodStart: this.filterPeriodStart(),
+        effectivePeriodEnd: this.filterPeriodEnd(),
+        filterSizeEnabled: this.filterSizeEnabled(),
+        filterSizeCriterion: this.filterSizeCriterion(),
+        filterSizeOperator: this.filterSizeOperator(),
+        filterSizeValue: this.filterSizeValue(),
+        weekFilters: this.weekFilters(),
+        chiffreMode: this.chiffreMode(),
+      },
+    });
   }
 
   // --- Tree Expansion & View Mode ---

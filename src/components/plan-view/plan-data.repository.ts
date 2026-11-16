@@ -14,6 +14,7 @@
 import { Injectable, inject } from '@angular/core';
 import * as Excel from 'exceljs';
 import { downloadWorkbook } from '../../utils/excel.utils';
+import { exportPlanToJson, PlanJsonExportParams } from './plan-json-exporter';
 import { driver } from 'driver.js';
 import { TeamService } from '../../services/team.service';
 import { ProjetService } from '../../services/projet.service';
@@ -661,5 +662,9 @@ export class PlanDataRepository {
     const today = new Date();
     const dateStr = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
     await downloadWorkbook(workbook, `planification_${dateStr}.xlsx`);
+  }
+
+  exportToJson(params: PlanJsonExportParams): void {
+    exportPlanToJson(params);
   }
 }

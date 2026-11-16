@@ -1,5 +1,19 @@
 [
   {
+    "version": "2026.11.16",
+    "date": "2026-11-16",
+    "news": [
+      {
+        "title": "Export JSON dans la vue Planification",
+        "items": [
+          "Ajout d'un bouton d'export JSON dans le menu Actions de la vue Planification.",
+          "Prise en compte intégrale des filtres actifs (recherche, projets, équipes, ressources, statuts, période, taille, semaines).",
+          "Structuration en nœuds logiques : métadonnées et filtres, synthèse globale des jours planifiés, projets avec jalons et chiffrages, équipes avec disponibilités et métriques, et arborescence exacte de la vue."
+        ]
+      }
+    ]
+  },
+  {
     "version": "2026.11.09",
     "date": "2026-11-09",
     "news": [

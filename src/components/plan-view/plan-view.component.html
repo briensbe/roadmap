@@ -170,6 +170,10 @@
                 <lucide-icon [img]="FileDown" [size]="15"></lucide-icon>
                 Export Excel
               </button>
+              <button class="actions-dropdown-item" (click)="exportToJson(); showActionsMenu = false">
+                <lucide-icon [img]="FileJson" [size]="15"></lucide-icon>
+                Export JSON
+              </button>
             </div>
             <div class="actions-dropdown-divider"></div>
             <!-- Aide -->

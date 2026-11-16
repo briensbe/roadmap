@@ -312,6 +312,7 @@ export class PlanGridInteractionController {
   readonly Contact = PLAN_VIEW_ICONS.Contact;
   readonly User = PLAN_VIEW_ICONS.User;
   readonly FileDown = PLAN_VIEW_ICONS.FileDown;
+  readonly FileJson = PLAN_VIEW_ICONS.FileJson;
   readonly MoreVertical = PLAN_VIEW_ICONS.MoreVertical;
   readonly ListTree = PLAN_VIEW_ICONS.ListTree;
   readonly AlignJustify = PLAN_VIEW_ICONS.AlignJustify;
